@@ -1,14 +1,13 @@
+---
 # This workflow triggers a build of the production docs site
 
 name: Build Production Site
-
 on:
   push:
-    branches: [ main, 'v/*', shared, api, site-search, 'v-WIP/*' ]
-
+    branches: [main, 'v/*', shared, api, site-search, 'v-WIP/*']
 jobs:
   dispatch:
     runs-on: ubuntu-latest
     steps:
-    - name: Trigger build
-      run: curl -X POST -d {} https://api.netlify.com/build_hooks/66758ffda79a9696637991ce
+      - name: Trigger build
+        run: curl -X POST -d {} https://api.netlify.com/build_hooks/66758ffda79a9696637991ce
