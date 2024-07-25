@@ -5,6 +5,8 @@
 
 Redpanda Cloud is a complete data streaming platform delivered as a fully-managed service with automated upgrades and patching, data and partition balancing, and 24x7 support. It continuously monitors and maintains your clusters along with the underlying infrastructure to meet strict performance, availability, reliability, and security requirements. All Redpanda Cloud clusters are deployed with an integrated glossterm:Redpanda Console[].
 
+TIP: For more detailed information about the Redpanda platform, see xref:get-started:intro-to-events.adoc[] and xref:get-started:architecture.adoc[].
+
 == Cluster types
 
 Redpanda offers three types of fully-managed cloud clusters:
@@ -167,6 +169,10 @@ BYOC with customer-managed VPC::
 --
 =====
 
+== Maintenance windows
+
+By default, Redpanda Cloud upgrades take place on Tuesdays. Optionally, on the **Cluster settings** page, you can select a window of specific off-hours for your business for Redpanda to apply updates. All times are in Coordinated Universal Time (UTC). Updates may start at any time during that window. 
+
 == Redpanda Cloud architecture
 
 When you sign up for a Redpanda account, Redpanda creates an organization for you. Your organization contains all your Redpanda resources, including your clusters and networks. Within your organization, Redpanda creates a default resource group to contain your resources. You can rename this resource group, and you can create more resource groups. For example, you may want different resource groups for production and testing. 
@@ -219,17 +225,21 @@ Redpanda Cloud does not support the following self-hosted functionality:
 - Admin API
 - The following `rpk` commands, which use the Admin API:
 
-** `rpk security user`
-** `rpk cluster health`
+** `rpk connect` commands
+** `rpk redpanda` commands
 ** `rpk cluster config`
+** `rpk cluster health`
 ** `rpk cluster license`
 ** `rpk cluster maintenance`
 ** `rpk cluster partitions`
 ** `rpk cluster self-test`
 ** `rpk cluster storage`
-** `rpk generate app`
-** `rpk redpanda`
+** `rpk generate app` (supported in Serverless clusters)
+** `rpk security user` (supported in Serverless clusters)
 ** `rpk topic describe-storage` (all other `rpk topic` commands are supported on both Redpanda Cloud and self-hosted)
+** `rpk transform` (currently in beta for Redpanda Cloud)
+
+NOTE: The `rpk cloud` commands are not supported in self-hosted deployments.
 
 == Next steps
 * xref:get-started:cluster-types/serverless.adoc[Create a Serverless Cluster]
