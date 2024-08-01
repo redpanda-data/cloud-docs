@@ -1,6 +1,7 @@
 = Configure AWS PrivateLink with the Cloud API
 :description: Set up AWS PrivateLink to securely access Redpanda Cloud.
-:page-cloud: true
+:page-aliases: deploy:deployment-option/cloud/aws-privatelink.adoc
+
 
 include::shared:partial$feature-flag.adoc[]
 
@@ -11,9 +12,9 @@ The Redpanda AWS PrivateLink endpoint service provides secure access to Redpanda
 Consider using the PrivateLink endpoint service if you have multiple VPCs and could benefit from a more simplified approach to network management:
 
 * PrivateLink allows overlapping CIDR ranges in VPC networks.
-* PrivateLink does not limit the number of VPC connections. However, VPC peering is limited to 125 connections. See https://aws.amazon.com/privatelink/faqs/[How scalable is AWS PrivateLink?]
+* PrivateLink does not limit the number of VPC connections. However, VPC peering is limited to 125 connections. See https://aws.amazon.com/privatelink/faqs/[How scalable is AWS PrivateLink?^]
 
-After <<get-an-access-token,getting an access token>>, you can <<enable-privatelink-endpoint-service-for-new-clusters,enable PrivateLink when creating a new cluster>>, or you can <<enable-privatelink-endpoint-service-for-existing-clusters,enable PrivateLink for existing clusters>>.
+After <<get-a-cloud-api-access-token,getting an access token>>, you can <<create-new-cluster-with-privatelink-endpoint-service-enabled,enable PrivateLink when creating a new cluster>>, or you can <<enable-privatelink-endpoint-service-for-existing-clusters,enable PrivateLink for existing clusters>>.
 
 TIP: Make sure to replace the variable values in the code examples on this page with your own values, before running the commands in the terminal or in a script.
 
@@ -22,7 +23,7 @@ TIP: Make sure to replace the variable values in the code examples on this page 
 * Install `rpk`.
 * Your Redpanda cluster and <<create-client-vpc,VPC>> must be in the same region.
 * In this guide, you use the xref:manage:api/cloud-api-overview.adoc[Redpanda Cloud API] to enable the Redpanda endpoint service for your clusters. Follow the steps below to <<get-an-access-token,get an access token>>.
-* Use the https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html[AWS CLI] to create a new client VPC or modify an existing one to use the PrivateLink endpoint.
+* Use the https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html[AWS CLI^] to create a new client VPC or modify an existing one to use the PrivateLink endpoint.
 
 == Get a Cloud API access token
 
@@ -33,7 +34,7 @@ TIP: Make sure to replace the variable values in the code examples on this page 
 PUBLIC_API_ENDPOINT="https://api.cloud.redpanda.com"
 ----
 
-. In the https://cloud.redpanda.com/[Redpanda Cloud UI], go to **Resource groups** and select the resource group in which you want to create a cluster.
+. In the https://cloud.redpanda.com/[Redpanda Cloud UI^], go to **Resource groups** and select the resource group in which you want to create a cluster.
 +
 Copy and store the resource group ID (UUID) from the URL in the browser.
 +
@@ -104,7 +105,7 @@ echo $NETWORK_ID
 +
 Wait for the network to be ready before creating the cluster in the next step. You can check the state of the network creation by calling xref:api:ROOT:cloud-api.adoc#get-/v1beta2/networks/-id-[`GET /v1beta2/networks/\{id}`]. You can create the cluster when the state is `STATE_READY`.
 
-. Create a new cluster with the endpoint service enabled by calling xref:api:ROOT:cloud-api.adoc##post-/v1beta2/clusters[`POST /v1beta2/clusters`].
+. Create a new cluster with the endpoint service enabled by calling xref:api:ROOT:cloud-api.adoc#post-/v1beta2/clusters[`POST /v1beta2/clusters`].
 +
 In the example below, make sure to set your own values for the following fields:
 +
@@ -113,7 +114,7 @@ In the example below, make sure to set your own values for the following fields:
 - `type`: `TYPE_DEDICATED` for Dedicated Cloud clusters, or `TYPE_BYOC` for BYOC clusters
 - `tier`: for example, `tier-1-aws-v2-arm`
 - `name`
-- `allowed_principals`: Amazon Resource Names (ARNs) for the AWS principals allowed to access the endpoint service. For example, for all principals in an account, use `arn:aws:iam::account_id:root`. See https://docs.aws.amazon.com/vpc/latest/privatelink/configure-endpoint-service.html#add-remove-permission[Configure an endpoint service] for details.
+- `allowed_principals`: Amazon Resource Names (ARNs) for the AWS principals allowed to access the endpoint service. For example, for all principals in an account, use `arn:aws:iam::account_id:root`. See https://docs.aws.amazon.com/vpc/latest/privatelink/configure-endpoint-service.html#add-remove-permission[Configure an endpoint service^] for details.
 --
 +
 [,bash]
@@ -167,7 +168,7 @@ CLUSTER_ID=<cluster_id>
 In the example below, make sure to set your own value for the following field:
 +
 --
-- `allowed_principals`: Amazon Resource Names (ARNs) for the AWS principals allowed to access the endpoint service. For example, for all principals in an account, use `arn:aws:iam::account_id:root`. See https://docs.aws.amazon.com/vpc/latest/privatelink/configure-endpoint-service.html#add-remove-permission[Configure an endpoint service] for details.
+- `allowed_principals`: Amazon Resource Names (ARNs) for the AWS principals allowed to access the endpoint service. For example, for all principals in an account, use `arn:aws:iam::account_id:root`. See https://docs.aws.amazon.com/vpc/latest/privatelink/configure-endpoint-service.html#add-remove-permission[Configure an endpoint service^] for details.
 --
 +
 [,bash]
