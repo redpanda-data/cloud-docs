@@ -1,7 +1,7 @@
 = Redpanda Cloud Overview
 :description: Learn about Redpanda Serverless, Dedicated, and Bring Your Own Cloud (BYOC) clusters.
-:page-aliases: cloud:dedicated-byoc.adoc, deploy:deployment-option/cloud/dedicated-byoc.adoc
-:page-cloud: true
+:page-aliases: cloud:dedicated-byoc.adoc, deploy:deployment-option/cloud/dedicated-byoc.adoc, deploy:deployment-option/cloud/cloud-overview.adoc
+
 
 Redpanda Cloud is a complete data streaming platform delivered as a fully-managed service with automated upgrades and patching, data and partition balancing, and 24x7 support. It continuously monitors and maintains your clusters along with the underlying infrastructure to meet strict performance, availability, reliability, and security requirements. All Redpanda Cloud clusters are deployed with an integrated glossterm:Redpanda Console[].
 
@@ -19,13 +19,13 @@ NOTE: With standard BYOC clusters, Redpanda manages security policies and resour
 
 === Serverless
 
-With Serverless clusters, you host your data in Redpanda's VPC, and Redpanda handles automatic scaling, provisioning, operations, and maintenance. This is a production-ready deployment option with a cluster available instantly. There is no base cost, and with pay-as-you-go billing after the free trial, you only pay for what you consume. 
+With Serverless clusters, you host your data in Redpanda's VPC, and Redpanda handles automatic scaling, provisioning, operations, and maintenance. This is a production-ready deployment option with a cluster available instantly. There is no base cost, and with pay-as-you-go billing after the free trial, you only pay for what you consume. You can view detailed billing activity for each cluster and edit payment methods on the *Billing* page. 
 
 Available on AWS.
 
 ==== Sign up for Serverless
 
-To start using Serverless, https://redpanda.com/try-redpanda/cloud-trial#serverless[sign up for a free trial^]. New trials receive $100 (USD) in free credits to spend in the first 14 days. This should be enough to run Redpanda with reasonable throughput. No credit card is required for a trial. To continue using Serverless, add a credit card and pay as you go. You can edit payment methods on the Redpanda Cloud *Billing* page. 
+To start using Serverless, https://redpanda.com/try-redpanda/cloud-trial#serverless[sign up for a free trial^]. New trials receive $100 (USD) in free credits to spend in the first 14 days. This should be enough to run Redpanda with reasonable throughput. No credit card is required for a trial. To continue using your Serverless cluster after the free trial, add a credit card and pay as you go. 
 
 NOTE: Serverless is currently in a limited availability (LA) release with xref:get-started:cluster-types/serverless.adoc#limits[usage limits] and no public SLA. During LA, existing clusters can scale to the usage limits, but new clusters may need to wait for availability.
 
@@ -36,16 +36,18 @@ When you create a Dedicated cluster, you select the supported xref:reference:tie
 
 ==== Sign up for Dedicated
 
-To start using Dedicated, contact https://redpanda.com/try-redpanda?section=enterprise-trial[Redpanda sales^] to request a private offer for monthly or annual committed use. With a usage-based billing commitment, you sign up for a monthly or an annual minimum spend amount. You can then use xref:billing:gcp-commit.adoc[Google Cloud Marketplace] or xref:billing:aws-commit.adoc[AWS Marketplace] to quickly provision Dedicated Cloud clusters, and you can view invoices and manage your subscription in the marketplace.
+To start using Dedicated, sign up for a free trial on the AWS Marketplace. New trials receive $300 (USD) in free credits to spend in the first 30 days. AWS Marketplace charges for anything beyond $300 unless you cancel the subscription. After 30 days, you can continue using your Dedicated cluster without any commitment, only paying for what you consume.
+
+You can also contact https://redpanda.com/try-redpanda?section=enterprise-trial[Redpanda sales^] to request a private offer for monthly or annual committed use. With a usage-based billing commitment, you sign up for a monthly or an annual minimum spend amount. You can then use xref:billing:gcp-commit.adoc[Google Cloud Marketplace] or xref:billing:aws-commit.adoc[AWS Marketplace] to quickly provision Dedicated Cloud clusters, and you can view invoices and manage your subscription in the marketplace.
 
 === Bring Your Own Cloud (BYOC)
 
-With BYOC clusters, you deploy Redpanda in your own cloud (AWS or GCP), and all data is
+With BYOC clusters, you deploy Redpanda in your own cloud (AWS, GCP, or Azure), and all data is
 contained in your own environment. This provides an additional layer of security and isolation. When you create a BYOC cluster, you select the supported xref:reference:tiers/byoc-tiers.adoc[tier] that meets your compute and storage needs. Redpanda handles provisioning, operations, and maintenance. See also: <<BYOC architecture>>.
 
 ==== Sign up for BYOC
 
-To start using BYOC, contact https://redpanda.com/try-redpanda?section=enterprise-trial[Redpanda sales^] to request a private offer, and you can be billed either directly or through Google Cloud Marketplace or AWS Marketplace. 
+To start using BYOC, contact https://redpanda.com/try-redpanda?section=enterprise-trial[Redpanda sales^] to request a private offer. You are billed directly or through Google Cloud Marketplace or AWS Marketplace. 
 
 == Serverless vs Dedicated/BYOC
 
@@ -55,7 +57,7 @@ Serverless clusters are a good fit for the following:
 * Spiky workloads (that is, development environments, systems that only occasionally get busy, or workloads that come and go)
 * Fast and dynamic cluster creation: you can use a Serverless cluster as an isolated container for topics
 
-With Serverless, you only pay for what you consume, without any commitment. A cluster is created instantly, so you can surface it in your applications (for example, for tenant isolation). If your workload increases, you can migrate it to a Dedicated or BYOC cluster.
+With Serverless (or if you sign up for Dedicated through the AWS Marketplace), you only pay for what you consume, without any commitment. A cluster is created instantly, so you can surface it in your applications (for example, for tenant isolation). If your workload increases, you can migrate it to a Dedicated or BYOC cluster.
 
 Dedicated and BYOC clusters offer the following features:
 
@@ -216,6 +218,7 @@ image::shared:byoc_apply.png[cloud_byoc_apply]
 
 Redpanda Cloud does not support the following self-hosted functionality:
 
+- FIPS-compliance mode
 - Data transforms (currently in beta for Redpanda Cloud)
 - Remote Read Replicas (currently in beta for Redpanda Cloud)
 - Kafka API OIDC authentication (however, Redpanda Cloud does support xref:security:cloud-authentication.adoc#single-sign-on[user authentication to an organization with SSO])
@@ -223,7 +226,7 @@ Redpanda Cloud does not support the following self-hosted functionality:
 - Redpanda Console topic documentation
 - Setting `auto_create_topics_enabled=true`
 - Admin API
-- The following `rpk` commands, which use the Admin API:
+- The following `rpk` commands:
 
 ** `rpk connect` commands
 ** `rpk redpanda` commands
