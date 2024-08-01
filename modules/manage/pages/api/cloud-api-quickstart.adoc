@@ -13,7 +13,7 @@ The following steps describe how to authenticate with the Cloud API and create a
 BYOC or Dedicated::
 +
 --
-. xref:manage:api/cloud-api-authentication.adoc[Authenticate to the API].
+. In the Redpanda Cloud UI, create a https://cloud.redpanda.com/clients[service account (client)] and use the client ID and secret to request an API token. Use the token to xref:manage:api/cloud-api-authentication.adoc[authenticate to the API].
 . Create a resource group by making a xref:api:ROOT:cloud-api.adoc#post-/v1beta2/resource-groups[`POST /v1beta2/resource-groups`] request.
 . Create a network by making a xref:api:ROOT:cloud-api.adoc#post-/v1beta2/networks[`POST /v1beta2/networks`] request. Note that this operation may be long-running.
 . Create a cluster by making a xref:api:ROOT:cloud-api.adoc#post-/v1beta2/clusters[`POST /v1beta2/clusters`] request.
@@ -35,8 +35,31 @@ rpk cloud byoc aws apply --redpanda-id=<metadata.cluster_id>
 Serverless::
 +
 --
-. xref:manage:api/cloud-api-authentication.adoc[Authenticate to the API].
-. Create a cluster by making a `POST /v1beta2/serverless/clusters` request.
+. In the Redpanda Cloud UI, create a https://cloud.redpanda.com/clients[service account (client)] and use the client ID and secret to request an API token. Use the token to xref:manage:api/cloud-api-authentication.adoc[authenticate to the API].
+. Make a GET request to the `/v1beta2/resource-groups` endpoint to retrieve the default resource group ID.
++
+[,bash]
+----
+curl -H "Authorization: Bearer <token>" https://api.redpanda.com/v1beta2/resource-groups
+----
+. Make a GET request to the `/v1beta2/serverless/regions` endpoint to see available regions.
++
+[,bash]
+----
+curl -H "Authorization: Bearer <token>" 'https://api.redpanda.com/v1beta2/serverless/regions?cloud_provider=CLOUD_PROVIDER_AWS'
+----
+. Create a cluster by making a POST request to the `/v1beta2/serverless/clusters` endpoint.
++
+[,bash]
+----
+curl -H 'Content-Type: application/json' \
+-H "Authorization: Bearer <token>" \
+-d '{
+  "name": <serverless-cluster-name>,
+  "resource_group_id": <resource-group-id>,
+  "serverless_region": "pro-us-east-1" 
+}' -X POST https://api.redpanda.com/v1beta2/serverless/clusters
+----
 --
 ======
 
@@ -65,7 +88,7 @@ For requests to the Control Plane API endpoints:
 
 For requests to the Data Plane API endpoints: 
 
-. Make a Get Cluster request for your target cluster.
+. Make a Get Cluster (BYOC, Dedicated) or Get Serverless Cluster (Serverless) request for your target cluster.
 . The Get Cluster response contains the Data Plane API URL. Copy the value of `dataplane_api.url` from the response body. 
 . Click *API Servers* in the sidebar and select “\{dataplane_api_url} - Data Plane API”.
 . Paste the URL into the `dataplane_api_url` input field.
