@@ -27,12 +27,9 @@ TIP: Make sure to replace the variable values in the code examples on this page 
 
 == Get a Cloud API access token
 
-. Specify the base URL of the Redpanda Cloud API:
-+
-[,bash]
-----
-PUBLIC_API_ENDPOINT="https://api.cloud.redpanda.com"
-----
+include::networking:partial$private-links-api-access-token.adoc[]
+
+== Create new cluster with PrivateLink endpoint service enabled
 
 . In the https://cloud.redpanda.com/[Redpanda Cloud UI^], go to **Resource groups** and select the resource group in which you want to create a cluster.
 +
@@ -40,35 +37,8 @@ Copy and store the resource group ID (UUID) from the URL in the browser.
 +
 [,bash]
 ----
-RESOURCE_GROUP_ID=<uuid>
+export RESOURCE_GROUP_ID=<uuid>
 ----
-
-. Go to the organization (org) level **Home** in the UI, and navigate to **Clients**. If you don't have an existing client, you can create a new one by clicking **Add client**.
-+
-Copy and store the client ID and secret.
-+
-[,bash]
-----
-CLOUD_CLIENT_ID=<client-id>
-CLOUD_CLIENT_SECRET=<client-secret>
-----
-
-. Get an API token using the client ID and secret. You can click the **Request an API token** link to see code examples to generate the token.
-+
-[,bash]
-----
-AUTH_TOKEN=`curl -s --request POST \
-    --url 'https://auth.prd.cloud.redpanda.com/oauth/token' \
-    --header 'content-type: application/x-www-form-urlencoded' \
-    --data grant_type=client_credentials \
-    --data client_id=$CLOUD_CLIENT_ID \
-    --data client_secret=$CLOUD_CLIENT_SECRET \
-    --data audience=cloudv2-production.redpanda.cloud | jq .access_token | sed 's/"//g'`
-----
-
-You must send the API token in the `Authorization` header when making requests to the Cloud API.
-
-== Create new cluster with PrivateLink endpoint service enabled
 
 . Call xref:api:ROOT:cloud-api.adoc#post-/v1beta2/networks[`POST /v1beta2/networks`] to create a network.
 +
