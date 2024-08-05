@@ -13,8 +13,8 @@ After <<get-a-cloud-api-access-token,getting an access token>>, you can <<create
 
 == Requirements
 
-* In this guide, you use the xref:deploy:deployment-option/cloud/api/cloud-api-overview.adoc[Redpanda Cloud API] to enable the Redpanda endpoint service for your clusters. Follow the steps on this page to <<get-a-cloud-api-access-token, get an access token>>.
-* Use the Azure CLI to authenticate with Azure and retrieve the Private Link service credentials.
+* In this guide, you use the xref:deploy:deployment-option/cloud/api/cloud-api-overview.adoc[Redpanda Cloud API] to enable the Redpanda Private Link service for your clusters. Follow the steps on this page to <<get-a-cloud-api-access-token, get an access token>>.
+* Use the https://learn.microsoft.com/en-us/cli/azure/[Azure CLI^] to authenticate with Azure and retrieve the Private Link service credentials.
 
 == Get a Cloud API access token
 
@@ -32,7 +32,7 @@ export AZURE_PRIVATE_LINK_SUBSCRIPTION_ID=<subscription-id-2>
 ----
 
 
-== Create new cluster with Private Link endpoint service enabled
+== Create new cluster with Private Link service enabled
 
 . In the https://cloud.redpanda.com/[Redpanda Cloud UI], go to **Resource groups** and select the resource group in which you want to create a cluster.
 +
@@ -78,7 +78,7 @@ echo $NETWORK_ID
 +
 Wait for the network to be ready before creating the cluster in the next step. You can check the state of the network creation by calling xref:api:ROOT:cloud-api.adoc#get-/v1beta2/networks/-id-[`GET /v1beta2/networks/\{id}`]. You can create the cluster when the state is `STATE_READY`.
 
-. Create a new cluster with the endpoint service enabled by calling xref:api:ROOT:cloud-api.adoc#post-/v1beta2/clusters[`POST /v1beta2/clusters`].
+. Create a new cluster with the Private Link service enabled by calling xref:api:ROOT:cloud-api.adoc#post-/v1beta2/clusters[`POST /v1beta2/clusters`].
 +
 In the example below, make sure to set your own values for the following fields:
 +
@@ -145,7 +145,7 @@ export PASS=$password
 ----
 
 
-== Enable Private Link endpoint service for existing clusters
+== Enable Private Link service for existing clusters
 
 . In the Redpanda Cloud UI, go to the cluster overview and copy the cluster ID from the **Details** section.
 +
@@ -154,7 +154,7 @@ export PASS=$password
 CLUSTER_ID=<cluster_id>
 ----
 
-. Make a xref:api:ROOT:cloud-api.adoc#patch-/v1beta2/clusters/-cluster.id-[`PATCH /v1beta2/clusters/{cluster.id}`] request to update the cluster with the Redpanda Private Link Endpoint Service enabled.
+. Make a xref:api:ROOT:cloud-api.adoc#patch-/v1beta2/clusters/-cluster.id-[`PATCH /v1beta2/clusters/{cluster.id}`] request to update the cluster with the service enabled.
 +
 [,bash]
 ----
