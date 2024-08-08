@@ -2,44 +2,74 @@
 :description: Use the Redpanda Cloud UI to create a BYOC cluster on Azure.
 :page-aliases: deploy:deployment-option/cloud/create-byoc-cluster-azure.adoc
 
+Before you deploy a BYOC cluster on Azure, follow the prerequisites to ensure that your Azure subscription meets requirements.
+
 == Prerequisites
 
-* A minimum version of `rpk` v24.1
-* A dedicated Azure subscription with the following: 
+=== Verify rpk version
+
+Confirm you have a minimum version of Redpanda `rpk` v24.1. See xref:reference:rpk/rpk-version.adoc[`rpk version`] or xref:manage:rpk/intro-to-rpk.adoc[].
+
+=== Check your Azure subscription
+
+In the https://login.microsoftonline.com/[Azure Portal^], confirm that the dedicated subscription you intend to use with Redpanda includes the following: 
+
+* Role: The Azure user must have the _Owner_ role in the subscription.
+
+* Resources: The subscription must be registered for the following resource providers. See the https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/resource-providers-and-types[Microsoft documentation^]. 
+
+** Microsoft.Compute
+** Microsoft.ManagedIdentity
+** Microsoft.Storage
+** Microsoft.KeyVault
+** Microsoft.Network
 +
-** Role: The Azure user must have the _Owner_ role in the subscription.
+TIP: To check if an Azure resource provider is registered, run the following command using the Azure CLI or in the Azure Cloud Shell. For example, to check for Microsoft.Compute:
 +
-** Resources: The Azure subscription must be registered for the following resource providers. For more information, see the https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/resource-providers-and-types[Microsoft documentation].
-+
-*** Microsoft.Compute
-*** Microsoft.ManagedIdentity
-*** Microsoft.Storage
-*** Microsoft.KeyVault
-*** Microsoft.Network
-+
-** Features: The Azure subscription must be registered for the following feature. For more information, see the https://learn.microsoft.com/en-us/azure/virtual-machines/linux/disks-enable-host-based-encryption-cli#prerequisites[Microsoft documentation^].
-+
-*** Microsoft.Compute/EncryptionAtHost
-+
-** Quotas: For more information, see the https://learn.microsoft.com/en-us/azure/quotas/view-quotas[Microsoft documentation^].
-+
-*** Standard Lasv3-series vCPUs: 24
-*** Standard Dadsv5-series vCPUs: 8
+``` 
+az provider show -n Microsoft.Compute
+```
+
+* Feature: The subscription must be registered for Microsoft.Compute/EncryptionAtHost. See the https://learn.microsoft.com/en-us/azure/virtual-machines/linux/disks-enable-host-based-encryption-cli#prerequisites[Microsoft documentation^].
+
+* Quota: The subscription must have the following quota in the region where you will use Redpanda. See the https://learn.microsoft.com/en-us/azure/quotas/view-quotas[Microsoft documentation^].
+
+** Standard Lasv3-series vCPUs: 24
+** Standard Dadsv5-series vCPUs: 8
+
+=== Check Azure SKU restrictions
+
+Check to ensure that the Azure subscription does not have any SKU restrictions for the VM sizes in the region where you intend to use Redpanda. Using the Azure CLI or in the Azure Cloud Shell, run:
+
+----
+az vm list-skus -l eastus2 --zone --size Standard_L8s_v3
+az vm list-skus -l eastus2 --zone --size Standard_D2s_v3
+az vm list-skus -l eastus2 --zone --size Standard_D2ads_v5
+----
+
+If you see restrictions, https://learn.microsoft.com/en-us/troubleshoot/azure/general/region-access-request-process[open a Microsoft support request^] to remove the restrictions. For example, checking the Standard_L8s_v3 VM SKU restriction in the eastus2 region for all zones could show:
+
+[%nowrap,bash]
+----
+ResourceType     Locations    Name              Zones    Restrictions
+---------------  -----------  ---------------   -------  ------------
+virtualMachines  eastus2      Standard_L8s_v3   1,2,3    NotAvailableForSubscription, type: Zone, locations: eastus2, zones: 2,3
+----
 
 == Create a BYOC cluster
 
-To create a Redpanda cluster in your Azure Virtual Network, log in to https://cloud.redpanda.com[Redpanda Cloud^]. 
+After following the <<prerequisites,prerequisites>>, log in to https://cloud.redpanda.com[Redpanda Cloud^] to create a Redpanda cluster in your Azure Virtual Network. 
 
 . On the Clusters page, click *Create cluster*, then click *Create BYOC cluster*.
-. Enter a cluster name, then select the resource group, provider (Azure), xref:reference:tiers/byoc-tiers.adoc[region, availability zones, tier], and Redpanda version. 
+. Enter a cluster name, then select the resource group, provider (Azure), xref:reference:tiers/byoc-tiers.adoc[region, tier], availability zones, and Redpanda version. 
 +
 [NOTE]
 ==== 
 * If you plan to create a private network in your own virtual network, select the region where your Azure Virtual Network is located.
-* Three availability zones provide two backups in case one availability zone goes down.
+* Multi-AZ is the default configuration. Three AZs provide two backups in case one availability zone goes down.
 ====
 + 
-Optionally, click *Advanced settings* to specify up to five key-value custom tags. After the cluster is created, the tags are applied to all Azure resources associated with this cluster. For more information, see the https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/tag-resources[Azure documentation^].
+Optionally, click *Advanced settings* to specify up to five key-value custom tags. After the cluster is created, the tags are applied to all Azure resources associated with this cluster. For details, see the https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/tag-resources[Microsoft documentation^].
 
 . Click *Next*.
 . On the Network page, enter the connection type: either *Public* or *Private*. For BYOC clusters, *Private* using Azure Private Link is best-practice. 
