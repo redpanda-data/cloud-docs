@@ -4,37 +4,49 @@
 
 == Prerequisites
 
-. Confirm you have a minimum version of Redpanda `rpk` v24.1. See xref:manage:rpk/rpk-install.adoc[].
+=== Check rpk
 
-. Confirm you have a dedicated Azure subscription with the following: 
-+
+Confirm you have a minimum version of Redpanda `rpk` v24.1. See xref:manage:rpk/rpk-install.adoc[].
+
+=== Check your Azure subscription
+
+In the https://login.microsoftonline.com/[Azure Portal^], confirm that the dedicated subscription you will use with Redpanda has with the following: 
+
 * Role: The Azure user must have the _Owner_ role in the subscription.
-+
-* Feature: The subscription must be registered for Microsoft.Compute/EncryptionAtHost. See the https://learn.microsoft.com/en-us/azure/virtual-machines/linux/disks-enable-host-based-encryption-cli#prerequisites[Microsoft documentation^].
-+
-* Resources: The subscription must be registered for the following resource providers. See the https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/resource-providers-and-types[Microsoft documentation^].
-+
+
+* Resources: The subscription must be registered for the following resource providers. See the https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/resource-providers-and-types[Microsoft documentation^]. 
+
 ** Microsoft.Compute
 ** Microsoft.ManagedIdentity
 ** Microsoft.Storage
 ** Microsoft.KeyVault
 ** Microsoft.Network
 +
-* Quotas: The subscription must have the following quotas. See the https://learn.microsoft.com/en-us/azure/quotas/view-quotas[Microsoft documentation^].
+TIP: To check if an Azure resource provider is registered, run the following command in the Azure Cloud Shell:
 +
+``` 
+az provider show -n Microsoft.Compute
+```
+
+* Feature: The subscription must be registered for Microsoft.Compute/EncryptionAtHost. See the https://learn.microsoft.com/en-us/azure/virtual-machines/linux/disks-enable-host-based-encryption-cli#prerequisites[Microsoft documentation^].
+
+* Quotas: The subscription must have the following quotas. See the https://learn.microsoft.com/en-us/azure/quotas/view-quotas[Microsoft documentation^].
+
 ** Standard Lasv3-series vCPUs: 24
 ** Standard Dadsv5-series vCPUs: 8
 
-. Check if the Azure subscription has SKU restrictions for the VM size using the Azure Cloud Shell:
-+
+=== Check Azure SKU restrictions
+
+Check if the Azure subscription has SKU restrictions for the VM size in the Azure Cloud Shell:
+
 ----
 az vm list-skus -l eastus2 --zone --size Standard_L8s_v3
 az vm list-skus -l eastus2 --zone --size Standard_D2s_v3
 az vm list-skus -l eastus2 --zone --size Standard_D2ads_v5
 ----
-+
+
 If you see restrictions, https://learn.microsoft.com/en-us/troubleshoot/azure/general/region-access-request-process[open a Microsoft support request^] to remove the restrictions. For example, checking the Standard_L8s_v3 VM SKU restriction in the eastus2 region for all zones could show:
-+
+
 [%nowrap,bash]
 ----
 ResourceType     Locations    Name              Zones    Restrictions
