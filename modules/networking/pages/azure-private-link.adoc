@@ -13,8 +13,8 @@ After <<get-a-cloud-api-access-token,getting an access token>>, you can <<create
 
 == Requirements
 
-* In this guide, you use the xref:deploy:deployment-option/cloud/api/cloud-api-overview.adoc[Redpanda Cloud API] to enable the Redpanda Private Link service for your clusters. Follow the steps on this page to <<get-a-cloud-api-access-token, get an access token>>.
-* Use the https://learn.microsoft.com/en-us/cli/azure/[Azure CLI^] to authenticate with Azure and retrieve the Private Link service credentials.
+* You will use the xref:deploy:deployment-option/cloud/api/cloud-api-overview.adoc[Redpanda Cloud API] to enable the Redpanda Private Link service for your clusters. Follow the steps on this page to <<get-a-cloud-api-access-token, get an access token>>.
+* You will use the https://learn.microsoft.com/en-us/cli/azure/[Azure CLI^] to authenticate with Azure and retrieve the Private Link service credentials.
 
 == Get a Cloud API access token
 
@@ -36,7 +36,7 @@ export AZURE_PRIVATE_LINK_SUBSCRIPTION_ID=<source-connection-to-redpanda>
 
 == Create new cluster with Private Link service enabled
 
-. In the https://cloud.redpanda.com/[Redpanda Cloud UI], go to **Resource groups** and select the Redpanda Cloud resource group in which you want to create a cluster.
+. In the https://cloud.redpanda.com/[Redpanda Cloud UI^], go to **Resource groups** and select the Redpanda Cloud resource group in which you want to create a cluster.
 +
 NOTE: Redpanda Cloud resource groups exist in your Redpanda Cloud account only. They do not correspond to Azure resource groups and do not appear in your Azure tenant.
 +
@@ -49,7 +49,7 @@ export RESOURCE_GROUP_ID=<uuid>
 
 . Call xref:api:ROOT:cloud-api.adoc#post-/v1beta2/networks[`POST /v1beta2/networks`] to create a network.
 +
-Make sure to supply your own values in the example request below. Store the network ID (`network_id`) after the network is created in order to check whether you can proceed to cluster creation.
+Make sure to supply your own values in the following example request. Store the network ID (`network_id`) after the network is created to check whether you can proceed to cluster creation.
 +
 --
 - `name`
@@ -84,7 +84,7 @@ Wait for the network to be ready before creating the cluster in the next step. Y
 
 . Create a new cluster with the Private Link service enabled by calling xref:api:ROOT:cloud-api.adoc#post-/v1beta2/clusters[`POST /v1beta2/clusters`].
 +
-In the example below, make sure to set your own values for the following fields:
+In the following example, make sure to set your own values for the following fields:
 +
 --
 - `name`
@@ -177,7 +177,7 @@ curl -vv -X PATCH \
   -d "$CLUSTER_PATCH_BODY" $PUBLIC_API_ENDPOINT/v1beta2/clusters/$CLUSTER_ID
 ----
 
-. Before proceeding, check the state of the Update Cluster operation by calling xref:api:ROOT:cloud-api.adoc#get-/v1beta2/operations/-id-[`GET /v1beta2/operations/\{id}`], and passing the operation ID returned from Update Cluster call. When the state is `STATE_READY`, proceed to the next step.
+. Before proceeding, check the state of the Update Cluster operation by calling xref:api:ROOT:cloud-api.adoc#get-/v1beta2/operations/-id-[`GET /v1beta2/operations/\{id}`], and passing the operation ID returned from the Update Cluster call. When the state is `STATE_READY`, proceed to the next step.
 
 == Configure Private Link connection to Redpanda Cloud
 
@@ -206,7 +206,7 @@ echo $CONSOLE_URL
 
 ----
 
-. Ensure you have logged into Azure and set the subscription ID to the value you set for `AZURE_PRIVATE_LINK_SUBSCRIPTION_ID`:
+. Check that you have logged into Azure and set the subscription ID to the value you set for `AZURE_PRIVATE_LINK_SUBSCRIPTION_ID`:
 +
 [,bash]
 ----
@@ -215,7 +215,7 @@ az account set --subscription $AZURE_PRIVATE_LINK_SUBSCRIPTION_ID
 ----
 
 // https://github.com/redpanda-data/cloud-examples/pull/12/ needs to be merged
-. Run Terraform to create a virtual machine (VM) inside the Private Link subscription. You may clone the Redpanda Cloud examples https://github.com/redpanda-data/cloud-examples[repository^] and run the following code, or modify the example and write your own module if you like:
+. Run Terraform to create a virtual machine (VM) inside the Private Link subscription. You can clone the Redpanda Cloud examples https://github.com/redpanda-data/cloud-examples[repository^] and run the following code, or modify the example and write your own module:
 +
 [,bash]
 ----
@@ -291,7 +291,3 @@ Optional: When you have completed testing, you can tear down the Terraform-manag
 ----
 terraform destroy -var-file="terraform.tfvars"
 ----
-
-include::shared:partial$suggested-reading.adoc[]
-
-* xref:networking:dedicated/vpc-peering.adoc[]
