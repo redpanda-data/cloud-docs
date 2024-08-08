@@ -7,7 +7,7 @@ Consider using Private Link if you have multiple virtual networks and require mo
 
 * Private Link allows overlapping xref:networking:cidr-ranges.adoc[CIDR ranges] in virtual networks.
 * Private Link does not limit the number of connections.
-After <<get-a-cloud-api-access-token,getting an access token>>, you can <<create-new-byoc-cluster-with-private-link-enabled,enable Private Link when creating a new BYOC cluster>>, or you can <<enable-private-link-on-an-existing-byoc-cluster,enable Private Link for existing BYOC clusters>>.
+After <<get-a-cloud-api-access-token,getting an access token>>, you can <<create-new-cluster-with-private-link-service-enabled,enable Private Link when creating a new BYOC cluster>>, or you can <<enable-private-link-service-for-existing-cluster,enable Private Link for existing BYOC clusters>>.
 
 == Requirements
 
@@ -26,8 +26,8 @@ include::networking:partial$private-links-api-access-token.adoc[]
 Set the Azure subscriptions you want to use for the Private Link connection.
 
 Replace these placeholder variables:
-- `<azure-subscription-id>`: Use the ID of the subscription where the Redpanda cluster will be provisioned.
-- `<azure-private-link-subscription-id>`: Use the ID of the subscription from where you will initiate connections to the Private Link service.
+- `<azure-subscription-id>`: The ID of the subscription where the Redpanda cluster will be provisioned.
+- `<azure-private-link-subscription-id>`: The ID of the subscription from where you will initiate connections to the Private Link service.
 
 [,bash]
 ----
@@ -134,7 +134,7 @@ rpk cloud byoc azure apply --redpanda-id=$CLUSTER_ID --subscription-id=$REDPANDA
 
 . See next steps to <<configure-private-link-connection-to-redpanda-cloud,configure the Private Link connection to Redpanda>>.
 
-== Enable Private Link service for existing clusters
+== Enable Private Link service for existing cluster
 
 . In the Redpanda Cloud UI, go to the cluster overview and copy the cluster ID from the **Details** section.
 +
