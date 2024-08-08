@@ -22,7 +22,7 @@ In the https://login.microsoftonline.com/[Azure Portal^], confirm that the dedic
 ** Microsoft.KeyVault
 ** Microsoft.Network
 +
-TIP: To check if an Azure resource provider is registered, run the following command in the Azure Cloud Shell:
+TIP: To check if an Azure resource provider is registered, run the following command using the Azure CLI or in the Azure Cloud Shell:
 +
 ``` 
 az provider show -n Microsoft.Compute
@@ -30,14 +30,14 @@ az provider show -n Microsoft.Compute
 
 * Feature: The subscription must be registered for Microsoft.Compute/EncryptionAtHost. See the https://learn.microsoft.com/en-us/azure/virtual-machines/linux/disks-enable-host-based-encryption-cli#prerequisites[Microsoft documentation^].
 
-* Quotas: The subscription must have the following quotas. See the https://learn.microsoft.com/en-us/azure/quotas/view-quotas[Microsoft documentation^].
+* Quotas: The subscription must have the following quotas in the region where you will use Redpanda. See the https://learn.microsoft.com/en-us/azure/quotas/view-quotas[Microsoft documentation^].
 
 ** Standard Lasv3-series vCPUs: 24
 ** Standard Dadsv5-series vCPUs: 8
 
 === Check Azure SKU restrictions
 
-Check if the Azure subscription has SKU restrictions for the VM size in the Azure Cloud Shell:
+Check if the Azure subscription has SKU restrictions for the VM sizes in the region where you will use Redpanda.Using the Azure CLI or in the Azure Cloud Shell, run:
 
 ----
 az vm list-skus -l eastus2 --zone --size Standard_L8s_v3
