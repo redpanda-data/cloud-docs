@@ -42,9 +42,9 @@ az provider show -n Microsoft.Compute
 Check to ensure that the Azure subscription does not have any SKU restrictions for the VM sizes in the region where you intend to use Redpanda. Using the Azure CLI or in the Azure Cloud Shell, run:
 
 ----
-az vm list-skus -l eastus2 --zone --size Standard_L8s_v3
-az vm list-skus -l eastus2 --zone --size Standard_D2s_v3
-az vm list-skus -l eastus2 --zone --size Standard_D2ads_v5
+az vm list-skus -l eastus2 --zone --size Standard_L8s_v3 --output table
+az vm list-skus -l eastus2 --zone --size Standard_D2s_v3 --output table
+az vm list-skus -l eastus2 --zone --size Standard_D2ads_v5 --output table
 ----
 
 If you see restrictions, https://learn.microsoft.com/en-us/troubleshoot/azure/general/region-access-request-process[open a Microsoft support request^] to remove the restrictions. For example, checking the Standard_L8s_v3 VM SKU restriction in the eastus2 region for all zones could show:
