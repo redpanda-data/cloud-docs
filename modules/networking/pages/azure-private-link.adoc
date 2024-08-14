@@ -7,7 +7,8 @@ Consider using Private Link if you have multiple virtual networks and require mo
 
 * Private Link allows overlapping xref:networking:cidr-ranges.adoc[CIDR ranges] in virtual networks.
 * Private Link does not limit the number of connections.
-After <<get-a-cloud-api-access-token,getting an access token>>, you can <<create-new-cluster-with-private-link-service-enabled,enable Private Link when creating a new BYOC cluster>>, or you can <<enable-private-link-service-for-existing-cluster,enable Private Link for existing BYOC clusters>>.
+
+After <<get-a-cloud-api-access-token,getting an access token>>, you can <<create-new-cluster-with-private-link-service-enabled,enable Private Link when creating a new cluster>>, or you can <<enable-private-link-service-for-existing-cluster,enable Private Link for existing clusters>>.
 
 TIP: Make sure to replace the variable values in the code examples on this page with your own values, before running the commands in the terminal or in a script.
 
@@ -19,11 +20,13 @@ TIP: Make sure to replace the variable values in the code examples on this page 
 
 Learn more about Azure Private Link in the https://learn.microsoft.com/en-us/azure/private-link/private-link-service-overview[official Azure documentation].
 
-== Get a Cloud API access token
+== Set up Redpanda Private Link Service
+
+=== Get a Cloud API access token
 
 include::networking:partial$private-links-api-access-token.adoc[]
 
-== Specify Azure subscriptions
+=== Specify Azure subscriptions
 
 Set the Azure subscriptions you want to use for the Private Link connection.
 
@@ -37,7 +40,9 @@ export REDPANDA_CLUSTER_SUBSCRIPTION_ID=<azure-subscription-id>
 export SOURCE_CONNECTION_SUBSCRIPTION_ID=<azure-private-link-subscription-id>
 ----
 
-== Create new cluster with Private Link service enabled
+If you have not yet created a cluster in Redpanda Cloud, go to the <<create-new-cluster-with-private-link-service-enabled,next section>> to create a Private Link-enabled cluster. If you already have a cluster, see the steps to <<enable-private-link-service-for-existing-clusters,enable Private Link>>.
+
+=== Create new cluster with Private Link service enabled
 
 . In the Redpanda Cloud UI, go to https://cloud.redpanda.com/resource-groups[**Resource groups**^] and select the Redpanda Cloud resource group in which you want to create a cluster.
 +
@@ -133,9 +138,9 @@ When the Create Cluster operation is completed (`STATE_COMPLETED`), run the foll
 rpk cloud byoc azure apply --redpanda-id=$CLUSTER_ID --subscription-id=$REDPANDA_CLUSTER_SUBSCRIPTION_ID
 ----
 
-. See next steps to <<configure-private-link-connection-to-redpanda-cloud,configure the Private Link connection to Redpanda>>.
+. See next steps to <<configure-azure-private-link-connection-to-redpanda-cloud,configure the Private Link connection to Redpanda>>.
 
-== Enable Private Link service for existing cluster
+=== Enable Private Link service for existing clusters
 
 . In the Redpanda Cloud UI, go to the cluster overview and copy the cluster ID from the **Details** section.
 +
@@ -164,13 +169,13 @@ curl -vv -X PATCH \
   -d "$CLUSTER_PATCH_BODY" $PUBLIC_API_ENDPOINT/v1beta2/clusters/$CLUSTER_ID
 ----
 
-. Before proceeding, check the state of the Update Cluster operation by calling xref:api:ROOT:cloud-api.adoc#get-/v1beta2/operations/-id-[`GET /v1beta2/operations/\{id}`], and passing the operation ID returned from Update Cluster call. When the state is `STATE_READY`, proceed to the next step to <<configure-private-link-connection-to-redpanda-cloud,configure the Private Link connection to Redpanda>>.
+. Before proceeding, check the state of the Update Cluster operation by calling xref:api:ROOT:cloud-api.adoc#get-/v1beta2/operations/-id-[`GET /v1beta2/operations/\{id}`], and passing the operation ID returned from the Update Cluster call. When the state is `STATE_READY`, proceed to the next step to <<configure-azure-private-link-connection-to-redpanda-cloud,configure the Private Link connection to Redpanda>>.
 
-== Configure Private Link connection to Redpanda Cloud
+== Configure Azure Private Link connection to Redpanda Cloud
 
-. In the Cloud UI, go to https://cloud.redpanda.com/users?tab=users[**Users**^] and create a new user to authenticate the Private Link endpoint connections with the service. You will need the username and password to <<access-redpanda-services-through-private-link-endpoint,access Redpanda services>> or <<test-the-connection,test the connection>> using `rpk` or cURL.
+. In the Cloud UI, go to https://cloud.redpanda.com/users?tab=users[**Users**^] and create a new user to authenticate the Private Link endpoint connections with the service. You will need the username and password to <<connect-to-redpanda-services-through-private-link-endpoint,access Redpanda services>> or <<test-the-connection,test the connection>> using `rpk` or cURL.
 
-. Call the xref:api:ROOT:cloud-api.adoc#get-/v1beta2/clusters/-id-[`GET /v1beta2/clusters/\{id}`] endpoint to check the service status and retrieve the connection ID, DNS name, and Redpanda Console URL to use.
+. Call the xref:api:ROOT:cloud-api.adoc#get-/v1beta2/clusters/-id-[`GET /v1beta2/clusters/\{id}`] endpoint to check the service status and retrieve the service ID, DNS name, and Redpanda Console URL to use.
 +
 [,bash]
 ----
@@ -203,80 +208,89 @@ az login
 az account set --subscription $SOURCE_CONNECTION_SUBSCRIPTION_ID
 ----
 
-// https://github.com/redpanda-data/cloud-examples/pull/12/ needs to be merged
-. Run Terraform to create a virtual machine (VM) inside the Private Link subscription. You can clone the Redpanda Cloud examples https://github.com/redpanda-data/cloud-examples[repository^] and run the following code, or modify the example and write your own module:
+=== Set up Azure Private Link endpoint in your virtual network
+
+. If you have not already done so, create the Azure resource group and virtual network for your Private Link source connections.
 +
-[,bash]
-----
-cd customer-managed/azure/private-link/terraform
+```
+az group create --name <azure-resource-group-name> --location $REGION
+```
++
+```
+az network vnet create \
+    --resource-group <azure-resource-group-name> \
+    --location $REGION \
+    --name <azure-virtual-network-name> \
+    --address-prefixes 10.0.0.0/16 \
+    --subnet-name <subnet-name> \
+    --subnet-prefixes 10.0.0.0/24
+```
 
-# Write Terraform variables out to a file
+. Create the private endpoint.
++
+```
+az network private-endpoint create \
+    --location $REGION
+    --connection-name <private-link-service-name> \
+    --name <private-endpoint-name> \
+    --manual-request no \
+    --private-connection-resource-id $PRIVATE_SERVICE_ID \
+    --resource-group <azure-resource-group-name> \
+    --subnet <subnet-name> \
+    --vnet-name <azure-virtual-network-name>
+``` 
 
-export MYGROUP=<rg-group>
+. Create a private DNS zone.
++
+```
+az network private-dns zone create \
+    --resource-group <azure-resource-group-name> \
+    --name "cki01qgth38kk81ard3g.fmc.dev.cloud.redpanda.com"
+``` 
 
-terraform init
-cat << EOF > terraform.tfvars
-region = "$REGION"
-resource_group_name = "$MYGROUP"
-rp_endpoint_service_id = "$PRIVATE_SERVICE_ID"
-rp_id = "$CLUSTER_ID"
-rp_domain = "$DNS_RECORD"
-rp_node_count = 3
-EOF
+. Link the private DNS zone to the virtual network you created earlier, so virtual machines (VMs) and containers can resolve the Redpanda cluster domain.
++
+```
+az network private-dns link vnet create \
+    --resource-group <azure-resource-group-name> \
+    --zone-name "cki01qgth38kk81ard3g.fmc.dev.cloud.redpanda.com" \
+    --name redpanda-cki01qgth38kk81ard3g-dns-zone-link \
+    --virtual-network <azure-vnet-name> \
+    --registration-enabled false
+```
 
-cd terraform
-terraform init
-terraform apply -var-file="terraform.tfvars"
+. Create a DNS zone group, or create a wildcard record in the private DNS zone.
++
+```
+# Create DNS zone group
+az network private-endpoint dns-zone-group create \
+    --resource-group <azure-resource-group-name> \
+    --endpoint-name redpanda-cki01qgth38kk81ard3g \
+    --name redpanda-cloud-dns-group \
+    --private-dns-zone "cki01qgth38kk81ard3g.fmc.dev.cloud.redpanda.com" \
+    --zone-name redpanda-cki01qgth38kk81ard3g
+```
++
+```
+# Create wildcard record
+az network dns record-set a add-record \
+    --resource-group <azure-resource-group-name> \
+    --zone-name redpanda-cki01qgth38kk81ard3g \
+    --ttl 60 \
+    --record-set-name "*" \
+    --ipv4-address "$PRIVATE_ENDPOINT_IP"
+```
 
-# When Terraform completes execution, export values to variables
 
-VM_IP=$(terraform output -raw instance_public_ip)
-KEY_PATH=$(terraform output -raw private_key_file_path)
-----
+== Connect to Redpanda services through Private Link endpoints
 
-
-== Access Redpanda services through Private Link endpoints
-
-After you have enabled Private Link for your cluster, your connection URLs are available in the *How to Connect* section of the cluster overview in the Redpanda Cloud UI.
-
-If you followed the previous step to run Terraform, you can also run the following to retrieve Private Link connection details, and then SSH into the VM that was created. From there, run the `rpk` commands provided in the <<test-the-connection,next section>> to test the connection:
-
-[,bash]
-----
-echo $USER
-echo $PASS
-echo "brokers.${DNS_RECORD}:30292"
-echo $VM_IP
-echo $DNS_RECORD
-echo $PRIVATE_SERVICE_ID
-echo $CONSOLE_URL
-
-cat << EOF 
-Copy and paste this after sshing in:
-
-export RPK_USER=$USER
-export RPK_PASS=$PASS
-export CONSOLE_URL=$CONSOLE_URL
-export RPK_BROKERS=brokers.${DNS_RECORD}:30292
-
-EOF
-
-ssh -i $KEY_PATH redpanda@$VM_IP
-# When prompted, paste and enter the output from the previous command
-----
-
+After you enable Private Link for your cluster, your connection URLs are available in the *How to Connect* section of the cluster overview in the Redpanda Cloud UI.
 
 include::networking:partial$private-links-access-rp-services-through-vpc.adoc[]
 
-== Test the connection
+=== Test the connection
 
 You can test the Private Link connection from any VM or container in the subscription where the endpoint is created. If configuring a Kafka client isn't possible right away, you can do these checks using xref:ROOT:get-started:rpk-install.adoc[`rpk`] or cURL:
 
 include::networking:partial$private-links-test-connection.adoc[]
 
-Optional: When you have completed testing, you can tear down the Terraform-managed resources by running:
-
-[,bash]
-----
-terraform destroy -var-file="terraform.tfvars"
-----
