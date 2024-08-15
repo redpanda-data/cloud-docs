@@ -303,6 +303,12 @@ aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
     --group-id $SECURITY_GROUP_ID --protocol "tcp" \
     --port 30282 \
     --cidr 0.0.0.0/0
+# Allow Redpanda Console connection
+aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
+    --group-id $SECURITY_GROUP_ID \
+    --protocol "tcp" \
+    --port 443-443 \
+    --cidr 0.0.0.0/0
 # Adjust the port 32094 if the Redpanda broker count is not 3.
 aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
     --group-id $SECURITY_GROUP_ID \
