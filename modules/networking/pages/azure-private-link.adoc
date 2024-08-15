@@ -1,0 +1,300 @@
+= Configure Azure Private Link with the Cloud API
+:description: Learn how to configure private networking for BYOC clusters on Azure.
+
+The Redpanda Azure Private Link service provides secure access to Redpanda Cloud from your own virtual network. Traffic over Azure Private Link does not go through the public internet, but instead through Microsoft's backbone network. While clients can initiate connections against the Redpanda Cloud cluster endpoints, Redpanda Cloud services cannot access your virtual networks directly.
+
+Consider using Private Link if you have multiple virtual networks and require more secure network management.
+
+[NOTE]
+====
+* Private Link allows overlapping xref:networking:cidr-ranges.adoc[CIDR ranges] in virtual networks.
+* Private Link does not limit the number of connections.
+====
+
+After <<get-a-cloud-api-access-token,getting an access token>>, you can <<create-new-cluster-with-private-link-service-enabled,enable Private Link when creating a new cluster>>, or you can <<enable-private-link-service-for-existing-clusters,enable Private Link for existing clusters>>.
+
+TIP: Make sure to replace the variable values in the code examples on this page with your own values before running the commands in the terminal or in a script.
+
+== Requirements
+
+* Install xref:manage:rpk/rpk-install.adoc[`rpk`].
+* You will use the https://learn.microsoft.com/en-us/cli/azure/[Azure CLI^] to authenticate with Azure and configure resources in your Azure account.
+* You will use the xref:deploy:deployment-option/cloud/api/cloud-api-overview.adoc[Redpanda Cloud API] to enable the Redpanda Private Link service for your clusters. Follow the steps on this page to <<get-a-cloud-api-access-token, get an access token>>.
+
+To learn more about Azure Private Link, see the https://learn.microsoft.com/en-us/azure/private-link/private-link-service-overview[Azure documentation].
+
+== Set up Redpanda Private Link Service
+
+=== Get a Cloud API access token
+
+include::networking:partial$private-links-api-access-token.adoc[]
+
+=== Specify Azure subscriptions
+
+Set the Azure subscriptions you want to use for the Private Link connection.
+
+Replace these placeholder variables:
+
+* `<azure-subscription-id>`: The ID of the subscription where the Redpanda cluster will be provisioned.
+* `<azure-private-link-subscription-id>`: The ID of the subscription from where you will initiate connections to the Private Link service.
+
+[,bash]
+----
+export REDPANDA_CLUSTER_SUBSCRIPTION_ID=<azure-subscription-id>
+export SOURCE_CONNECTION_SUBSCRIPTION_ID=<azure-private-link-subscription-id>
+----
+
+If you have not yet created a cluster in Redpanda Cloud, <<create-new-cluster-with-private-link-service-enabled,create a Private Link-enabled cluster>>. If you already have a cluster, <<enable-private-link-service-for-existing-clusters,enable Private Link>>.
+
+=== Create new cluster with Private Link service enabled
+
+. In the Redpanda Cloud UI, go to https://cloud.redpanda.com/resource-groups[**Resource groups**^] and select the Redpanda Cloud resource group in which you want to create a cluster.
++
+NOTE: Redpanda Cloud resource groups exist in your Redpanda Cloud account only. They do not correspond to Azure resource groups and do not appear in your Azure tenant.
++
+Copy and store the resource group ID (UUID) from the URL in the browser.
++
+[,bash]
+----
+export RESOURCE_GROUP_ID=<uuid>
+----    
+
+. Call xref:api:ROOT:cloud-api.adoc#post-/v1beta2/networks[`POST /v1beta2/networks`] to create a Redpanda Cloud network for the cluster.
++
+Make sure to supply your own values in the following example request. Store the network ID (`network_id`) after the network is created to check whether you can proceed to cluster creation.
++
+--
+- `network-name`
+- `cidr_block`
+- `azure-region`
+--
++
+[,bash]
+----
+REGION=<azure-region>
+
+NETWORK_POST_BODY=`cat << EOF
+{
+    "cloud_provider": "CLOUD_PROVIDER_AZURE",
+    "cluster_type": "TYPE_BYOC",
+    "name": "<network-name>",
+    "cidr_block": "<10.0.0.0/20>",
+    "resource_group_id": "$RESOURCE_GROUP_ID",
+    "region": "$REGION"
+}
+EOF`
+
+NETWORK_ID=`curl -vv -X POST \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $AUTH_TOKEN" \
+    -d "$NETWORK_POST_BODY" $PUBLIC_API_ENDPOINT/v1beta2/networks | jq .metadata.network_id`
+
+echo $NETWORK_ID
+----
++
+Wait for the network to be ready before creating the cluster in the next step. Check the state of the network creation by calling xref:api:ROOT:cloud-api.adoc#get-/v1beta2/networks/-id-[`GET /v1beta2/networks/\{id}`]. You can create the cluster when the state is `STATE_READY`.
+
+. Create a new cluster with the Private Link service enabled by calling xref:api:ROOT:cloud-api.adoc#post-/v1beta2/clusters[`POST /v1beta2/clusters`].
++
+In the following example, make sure to set your own values for the following fields:
++
+--
+- `name`
+- `tier`: For example, `tier-1-azure`. See available Azure tiers in the xref:api:ROOT:cloud-api.adoc#api-description[Cloud API reference]. To learn more about tiers, see xref:reference:tiers/byoc-tiers.adoc[BYOC Tiers and Regions]. 
+- `zones`: For example, `"uksouth-az1",  "uksouth-az2", "uksouth-az3"`
+--
++
+[,bash]
+----
+CLUSTER_POST_BODY=`cat << EOF
+{
+  "cloud_provider": "CLOUD_PROVIDER_AZURE",
+  "connection_type": "CONNECTION_TYPE_PRIVATE",
+  "name": "<name>",
+  "resource_group_id": "$RESOURCE_GROUP_ID",
+  "network_id": "$NETWORK_ID",
+  "region": "$REGION",
+  "throughput_tier": "<tier>",
+  "type": "TYPE_BYOC",
+  "zones": [ <zones> ],
+  "azure_private_link": { 
+      "allowed_subscriptions": ["$SOURCE_CONNECTION_SUBSCRIPTION_ID"],
+      "enabled": true,
+      "connect_console": true
+  }
+}
+EOF`
+
+CLUSTER_ID=`curl -vv -X POST \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $AUTH_TOKEN" \
+    -d "$CLUSTER_POST_BODY" $PUBLIC_API_ENDPOINT/v1beta2/clusters | jq .operation.metadata.cluster_id | sed 's/"//g'`
+
+echo $CLUSTER_ID
+----
+
+. Check that the cluster operation is completed by calling xref:api:ROOT:cloud-api.adoc#get-/v1beta2/operations/-id-[`GET /v1beta2/operations/\{id}`], and passing the operation ID returned from the Create Cluster call.
++
+When the Create Cluster operation is completed (`STATE_COMPLETED`), run the following `rpk cloud` command to finish setting up your BYOC cluster with Private Link enabled:
++
+[,bash]
+----
+rpk cloud byoc azure apply --redpanda-id=$CLUSTER_ID --subscription-id=$REDPANDA_CLUSTER_SUBSCRIPTION_ID
+----
+
+. Continue to <<configure-azure-private-link-connection-to-redpanda-cloud,configure the Private Link connection to Redpanda>>.
+
+=== Enable Private Link service for existing clusters
+
+. In the Redpanda Cloud UI, go to the cluster overview and copy the cluster ID from the **Details** section.
++
+[,bash]
+----
+CLUSTER_ID=<cluster_id>
+----
+
+. Make a xref:api:ROOT:cloud-api.adoc#patch-/v1beta2/clusters/-cluster.id-[`PATCH /v1beta2/clusters/{cluster.id}`] request to update the cluster with the service enabled.
++
+[,bash]
+----
+CLUSTER_PATCH_BODY=`cat << EOF
+{
+  "azure_private_link": { 
+      "allowed_subscriptions": ["$SOURCE_CONNECTION_SUBSCRIPTION_ID"],
+      "enabled": true,
+      "connect_console": true
+  }
+}
+EOF`
+
+curl -vv -X PATCH \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $AUTH_TOKEN" \
+  -d "$CLUSTER_PATCH_BODY" $PUBLIC_API_ENDPOINT/v1beta2/clusters/$CLUSTER_ID
+----
+
+. Before proceeding, check the state of the Update Cluster operation by calling xref:api:ROOT:cloud-api.adoc#get-/v1beta2/operations/-id-[`GET /v1beta2/operations/\{id}`], and passing the operation ID returned from the Update Cluster call. When the state is `STATE_READY`, continue to <<configure-azure-private-link-connection-to-redpanda-cloud,configure the Private Link connection to Redpanda>>.
+
+== Configure Azure Private Link connection to Redpanda Cloud
+
+. In the Redpanda Cloud UI, go to https://cloud.redpanda.com/users?tab=users[**Users**^] and create a new user to authenticate the Private Link endpoint connections with the service. You will need the username and password to <<connect-to-redpanda-services-through-private-link-endpoints,access Redpanda services>> or <<test-the-connection,test the connection>> using `rpk` or cURL.
+
+. Call the xref:api:ROOT:cloud-api.adoc#get-/v1beta2/clusters/-id-[`GET /v1beta2/clusters/\{id}`] endpoint to check the service status and retrieve the service ID, DNS name, and Redpanda Console URL to use.
++
+[,bash]
+----
+DNS_RECORD=`curl -s -X GET \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $AUTH_TOKEN" \
+  $PUBLIC_API_ENDPOINT/v1beta2/clusters/$CLUSTER_ID | jq -r ".cluster.azure_private_link.status.dns_a_record"`
+
+PRIVATE_SERVICE_ID=`curl -s -X GET \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $AUTH_TOKEN" \
+  $PUBLIC_API_ENDPOINT/v1beta2/clusters/$CLUSTER_ID | jq -r ".cluster.azure_private_link.status.service_id"`
+
+CONSOLE_URL=`curl -s -X GET \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $AUTH_TOKEN" \
+  $PUBLIC_API_ENDPOINT/v1beta2/clusters/$CLUSTER_ID | jq -r ".cluster.redpanda_console.url"`
+
+echo $DNS_RECORD
+echo $PRIVATE_SERVICE_ID
+echo $CONSOLE_URL
+
+----
+
+. Log in to Azure and set the subscription ID to the value you set for `SOURCE_CONNECTION_SUBSCRIPTION_ID`:
++
+[,bash]
+----
+az login
+az account set --subscription $SOURCE_CONNECTION_SUBSCRIPTION_ID
+----
+
+=== Set up Azure Private Link endpoint in your virtual network
+
+. If you have not already done so, create the Azure resource group and virtual network for your Private Link source connections.
++
+```
+az group create --name <azure-resource-group-name> --location $REGION
+```
++
+```
+az network vnet create \
+    --resource-group <azure-resource-group-name> \
+    --location $REGION \
+    --name <azure-virtual-network-name> \
+    --address-prefixes 10.0.0.0/16 \
+    --subnet-name <subnet-name> \
+    --subnet-prefixes 10.0.0.0/24
+```
+
+. Create the private endpoint.
++
+```
+az network private-endpoint create \
+    --location $REGION
+    --connection-name <private-link-service-name> \
+    --name redpanda-$CLUSTER_ID \
+    --manual-request no \
+    --private-connection-resource-id $PRIVATE_SERVICE_ID \
+    --resource-group <azure-resource-group-name> \
+    --subnet <subnet-name> \
+    --vnet-name <azure-virtual-network-name>
+``` 
+
+. Create a private DNS zone.
++
+```
+az network private-dns zone create \
+    --resource-group <azure-resource-group-name> \
+    --name "$CLUSTER_ID.byoc.prd.cloud.redpanda.com"
+``` 
+
+. Link the private DNS zone to the virtual network you created earlier, so virtual machines (VMs) and containers can resolve the Redpanda cluster domain.
++
+```
+az network private-dns link vnet create \
+    --resource-group <azure-resource-group-name> \
+    --zone-name "$CLUSTER_ID.byoc.prd.cloud.redpanda.com" \
+    --name redpanda-$CLUSTER_ID-dns-zone-link \
+    --virtual-network <azure-vnet-name> \
+    --registration-enabled false
+```
+
+. Create a DNS zone group, or create a wildcard record in the private DNS zone.
++
+```
+# Create DNS zone group
+az network private-endpoint dns-zone-group create \
+    --resource-group <azure-resource-group-name> \
+    --endpoint-name redpanda-$CLUSTER_ID \
+    --name redpanda-cloud-dns-group \
+    --private-dns-zone "$CLUSTER_ID.byoc.prd.cloud.redpanda.com" \
+    --zone-name redpanda-$CLUSTER_ID
+```
++
+```
+# Create wildcard record
+az network dns record-set a add-record \
+    --resource-group <azure-resource-group-name> \
+    --zone-name redpanda-$CLUSTER_ID \
+    --ttl 60 \
+    --record-set-name "*" \
+    --ipv4-address "$PRIVATE_ENDPOINT_IP"
+```
+
+
+== Connect to Redpanda services through Private Link endpoints
+
+After you enable Private Link for your cluster, your connection URLs are available in the *How to Connect* section of the cluster overview in the Redpanda Cloud UI.
+
+include::networking:partial$private-links-access-rp-services-through-vpc.adoc[]
+
+=== Test the connection
+
+You can test the Private Link connection from any VM or container in the subscription where the endpoint is created. If configuring a Kafka client isn't possible right away, you can do these checks using xref:ROOT:get-started:rpk-install.adoc[`rpk`] or cURL:
+
+include::networking:partial$private-links-test-connection.adoc[]
+

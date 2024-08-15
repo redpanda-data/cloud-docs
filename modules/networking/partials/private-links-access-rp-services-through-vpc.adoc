@@ -1,4 +1,4 @@
-You can access Redpanda services such as Schema Registry and HTTP Proxy from the client VPC, for example, from a compute instance in the VPC.
+You can access Redpanda services such as Schema Registry and HTTP Proxy from the client VPC or virtual network; for example, from a compute instance in the VPC or network.
 
 The bootstrap server hostname is unique to each cluster. The service attachment exposes a set of bootstrap ports for access to Redpanda services. These ports load balance requests among brokers. Make sure you use the following ports for initiating a connection from a consumer:
 
@@ -42,7 +42,7 @@ Use port `30081` to access the Schema Registry seed service.
 
 [,bash]
 ----
-curl -vv -u <username>:<password> -H "Content-Type: application/vnd.schemaregistry.v1+json" --sslv2 --http2 <schema-registry-bootstrap-server-hostname>:30081/subjects
+curl -vv -u <user>:<password> -H "Content-Type: application/vnd.schemaregistry.v1+json" --sslv2 --http2 <schema-registry-bootstrap-server-hostname>:30081/subjects
 ----
 
 === Access HTTP Proxy seed service
@@ -51,5 +51,5 @@ Use port `30282` to access the Redpanda HTTP Proxy seed service.
 
 [,bash]
 ----
-curl -vv -u <username>:<password> -H "Content-Type: application/vnd.kafka.json.v2+json" --sslv2 --http2 <http-proxy-bootstrap-server-hostname>:30282/topics
+curl -vv -u <user>:<password> -H "Content-Type: application/vnd.kafka.json.v2+json" --sslv2 --http2 <http-proxy-bootstrap-server-hostname>:30282/topics
 ----

@@ -34,26 +34,26 @@ az provider show -n Microsoft.Compute
 
 * Quota: The subscription must have the following quota in the region where you will use Redpanda. See the https://learn.microsoft.com/en-us/azure/quotas/view-quotas[Microsoft documentation^].
 
-** Standard Lasv3-series vCPUs: 24
-** Standard Dadsv5-series vCPUs: 8
+** Standard LASv3-series vCPUs: 24
+** Standard DADSv5-series vCPUs: 8
 
 === Check Azure SKU restrictions
 
 Check to ensure that the Azure subscription does not have any SKU restrictions for the VM sizes in the region where you intend to use Redpanda. Using the Azure CLI or in the Azure Cloud Shell, run:
 
 ----
-az vm list-skus -l eastus2 --zone --size Standard_L8s_v3 --output table
+az vm list-skus -l eastus2 --zone --size Standard_L8as_v3 --output table
 az vm list-skus -l eastus2 --zone --size Standard_D2s_v3 --output table
 az vm list-skus -l eastus2 --zone --size Standard_D2ads_v5 --output table
 ----
 
-If you see restrictions, https://learn.microsoft.com/en-us/troubleshoot/azure/general/region-access-request-process[open a Microsoft support request^] to remove the restrictions. For example, checking the Standard_L8s_v3 VM SKU restriction in the eastus2 region for all zones could show:
+If you see restrictions, https://learn.microsoft.com/en-us/troubleshoot/azure/general/region-access-request-process[open a Microsoft support request^] to remove the restrictions. For example, checking the Standard_L8as_v3 VM SKU restriction in the eastus2 region for all zones could show:
 
 [%nowrap,bash]
 ----
 ResourceType     Locations    Name              Zones    Restrictions
 ---------------  -----------  ---------------   -------  ------------
-virtualMachines  eastus2      Standard_L8s_v3   1,2,3    NotAvailableForSubscription, type: Zone, locations: eastus2, zones: 2,3
+virtualMachines  eastus2      Standard_L8as_v3   1,2,3    NotAvailableForSubscription, type: Zone, locations: eastus2, zones: 2,3
 ----
 
 == Create a BYOC cluster
@@ -80,3 +80,6 @@ Optionally, click *Advanced settings* to specify up to five key-value custom tag
 +
 As part of agent deployment, Redpanda assigns the permissions required to run the agent. For details about these permissions, see xref:security:authorization/cloud-iam-policies-azure.adoc[Azure IAM policies].
 
+== Next steps
+
+- xref:networking:azure-private-link.adoc[]
