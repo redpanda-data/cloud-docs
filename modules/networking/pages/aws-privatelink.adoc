@@ -87,6 +87,7 @@ In the example below, make sure to set your own values for the following fields:
 - `type`: `TYPE_DEDICATED` for Dedicated Cloud clusters, or `TYPE_BYOC` for BYOC clusters
 - `tier`: for example, `tier-1-aws-v2-arm`
 - `name`
+- `connect_console`: Whether to enable connections to Redpanda Console (boolean)
 - `allowed_principals`: Amazon Resource Names (ARNs) for the AWS principals allowed to access the endpoint service. For example, for all principals in an account, use `arn:aws:iam::account_id:root`. See https://docs.aws.amazon.com/vpc/latest/privatelink/configure-endpoint-service.html#add-remove-permission[Configure an endpoint service^] for details.
 --
 +
@@ -105,6 +106,7 @@ CLUSTER_POST_BODY=`cat << EOF
     "type": "<type>",
     "aws_private_link": {
         "enabled": true,
+        "connect_console": true,
         "allowed_principals": ["<principal_1>","<principal_2>"]
     }
 }
@@ -141,6 +143,7 @@ CLUSTER_ID=<cluster_id>
 In the example below, make sure to set your own value for the following field:
 +
 --
+- `connect_console`: Whether to enable connections to Redpanda Console (boolean)
 - `allowed_principals`: Amazon Resource Names (ARNs) for the AWS principals allowed to access the endpoint service. For example, for all principals in an account, use `arn:aws:iam::account_id:root`. See https://docs.aws.amazon.com/vpc/latest/privatelink/configure-endpoint-service.html#add-remove-permission[Configure an endpoint service^] for details.
 --
 +
@@ -150,6 +153,7 @@ CLUSTER_PATCH_BODY=`cat << EOF
 {
   "aws_private_link": {
     "enabled": true,
+    "connect_console": true,
     "allowed_principals": ["<principal_1>","<principal_2>"]
   }
 }
