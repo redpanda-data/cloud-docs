@@ -7,7 +7,7 @@ Redpanda Cloud is a complete data streaming platform delivered as a fully-manage
 
 TIP: For more detailed information about the Redpanda platform, see xref:get-started:intro-to-events.adoc[] and xref:get-started:architecture.adoc[].
 
-== Cluster types
+== Redpanda Cloud cluster types
 
 Redpanda offers three types of fully-managed cloud clusters: Serverless, Dedicated, and BYOC.
 
@@ -49,46 +49,7 @@ Consider Dedicated or BYOC if you need more control over the deployment or if yo
 * Kafka connectors.
 * Higher limits and quotas. See xref:reference:tiers/dedicated-tiers.adoc[Dedicated usage tiers] and xref:reference:tiers/byoc-tiers.adoc[BYOC usage tiers] compared to xref:get-started:cluster-types/serverless.adoc#limits[Serverless limits].
 
-== Redpanda Cloud architecture
-
-When you sign up for a Redpanda account, Redpanda creates an organization for you. Your organization contains all your Redpanda resources, including your clusters and networks. Within your organization, Redpanda creates a default resource group to contain your resources. You can rename this resource group, and you can create more resource groups. For example, you may want different resource groups for production and testing. 
-
-For high availability, Redpanda Cloud uses a control plane and data plane architecture. 
-
-* *Control plane*: This is where most cluster management, operations, and maintenance takes place. The control plane enforces rules in the data plane.
-
-* *Data plane*: This is where your cluster lives. The term _data plane_ is used interchangeably with _cluster_. 
-
-* *Agent*: Redpanda uses an agent to manage the data plane from the control plane.
-
-Clusters are configured and maintained in the control plane, but they remain available even if the network connection to the control plane is lost.
-
-NOTE: In the user interface, when you're at the organization (org) level or the resource group level, but you haven't yet selected a cluster, you're in the control plane. This is where you can select, create, and delete clusters, resource groups, and networks. When you're at the cluster level working with topics, consumer groups, and connectors, you're in the data plane.
-
-=== BYOC architecture
-
-The following diagram shows a BYOC architecture, where you deploy the data plane in your own VPC. All network connections into the data plane take place through
-either a public endpoint or a VPC peering network connection. Sensitive data and credentials never leave the data plane. 
-
-image::shared:d_c_plane.png[Data plane and control plane]
-
-A BYOC cluster is initially set up from the control plane. This is a two-step process performed by `rpk cloud byoc apply`:
-
-. You bootstrap a virtual machine (VM) in your VPC. 
-+
-This VM spins up the agent and the required infrastructure. Redpanda assigns the necessary IAM policies required to run the agent and configures workload identity. That is, it configures independent IAM roles for each workload, with only the permissions each workload requires. 
-
-. The agent communicates with the control plane to pull the cluster specifications. 
-+
-After the agent is up and running, it connects to the control plane and starts dequeuing and applying cluster specifications that provision, configure, and maintain clusters. The agent is in constant communication with the control plane,
-receiving and applying cluster specifications and exchanging cluster metadata. Agents are authenticated and authorized through opaque and ephemeral tokens, and
-they have dedicated job queues in the control plane. 
-+
-Agents also manage VPC peering networks. One agent manages each network resource at a time.
-+
-image::shared:byoc_apply.png[cloud_byoc_apply]
-
-== Get started with Redpanda Cloud
+=== Get started with Redpanda Cloud
 
 [tabs]
 =====
@@ -132,6 +93,49 @@ See xref:get-started:cluster-types/byoc/index.adoc[Create a BYOC Cluster].
 
 --
 =====
+
+== Redpanda Cloud architecture
+
+When you sign up for a Redpanda account, Redpanda creates an organization for you. Your organization contains all your Redpanda resources, including your clusters and networks. Within your organization, Redpanda creates a default resource group to contain your resources. You can rename this resource group, and you can create more resource groups. For example, you may want different resource groups for production and testing. 
+
+For high availability, Redpanda Cloud uses a control plane and data plane architecture. 
+
+* *Control plane*: This is where most cluster management, operations, and maintenance takes place. The control plane enforces rules in the data plane.
+
+* *Data plane*: This is where your cluster lives. The term _data plane_ is used interchangeably with _cluster_. 
+
+* *Agent*: Redpanda uses an agent to manage the data plane from the control plane.
+
+Clusters are configured and maintained in the control plane, but they remain available even if the network connection to the control plane is lost.
+
+NOTE: In the user interface, when you're at the organization (org) level or the resource group level, but you haven't yet selected a cluster, you're in the control plane. This is where you can select, create, and delete clusters, resource groups, and networks. When you're at the cluster level working with topics, consumer groups, and connectors, you're in the data plane.
+
+=== BYOC architecture
+
+The following diagram shows a BYOC architecture, where you deploy the data plane in your own VPC. All network connections into the data plane take place through
+either a public endpoint or a VPC peering network connection. Sensitive data and credentials never leave the data plane. 
+
+image::shared:d_c_plane.png[Data plane and control plane]
+
+A BYOC cluster is initially set up from the control plane. This is a two-step process performed by `rpk cloud byoc apply`:
+
+. You bootstrap a virtual machine (VM) in your VPC. 
++
+This VM spins up the agent and the required infrastructure. Redpanda assigns the necessary IAM policies required to run the agent and configures workload identity. That is, it configures independent IAM roles for each workload, with only the permissions each workload requires. 
+
+. The agent communicates with the control plane to pull the cluster specifications. 
++
+After the agent is up and running, it connects to the control plane and starts dequeuing and applying cluster specifications that provision, configure, and maintain clusters. The agent is in constant communication with the control plane,
+receiving and applying cluster specifications and exchanging cluster metadata. Agents are authenticated and authorized through opaque and ephemeral tokens, and
+they have dedicated job queues in the control plane. 
++
+Agents also manage VPC peering networks. One agent manages each network resource at a time.
++
+image::shared:byoc_apply.png[cloud_byoc_apply]
+
+== Maintenance windows
+
+By default, Redpanda Cloud upgrades take place on Tuesdays. Optionally, on the **Cluster settings** page, you can select a window of specific off-hours for your business for Redpanda to apply updates. All times are in Coordinated Universal Time (UTC). Updates may start at any time during that window. 
 
 == Shared responsibility model
 
@@ -237,10 +241,6 @@ BYOC with customer-managed VPC::
 --
 =====
 
-== Maintenance windows
-
-By default, Redpanda Cloud upgrades take place on Tuesdays. Optionally, on the **Cluster settings** page, you can select a window of specific off-hours for your business for Redpanda to apply updates. All times are in Coordinated Universal Time (UTC). Updates may start at any time during that window. 
-
 == Redpanda Cloud vs Self-Managed feature compatibility
 
 Redpanda Cloud deployments do not support the following functionality available in Redpanda Self-Managed deployments:
@@ -266,10 +266,10 @@ Redpanda Cloud deployments do not support the following functionality available 
 ** `rpk cluster storage`
 ** `rpk generate app` (supported in Serverless clusters)
 ** `rpk security user` (supported in Serverless clusters)
-** `rpk topic describe-storage` (all other `rpk topic` commands are supported on both Redpanda Cloud and self-managed)
+** `rpk topic describe-storage` (all other `rpk topic` commands are supported on both Redpanda Cloud and Self-Managed)
 ** `rpk transform` commands (currently in beta for Redpanda Cloud)
 
-NOTE: The `rpk cloud` commands are not supported in self-managed deployments.
+NOTE: The `rpk cloud` commands are not supported in Self-Managed deployments.
 
 == Next steps
 * xref:get-started:cluster-types/serverless.adoc[Create a Serverless Cluster]
