@@ -35,13 +35,15 @@ Set the Azure subscriptions you want to use for the Private Link connection.
 
 Replace these placeholder variables:
 
-* `<azure-subscription-id>`: The ID of the subscription where the Redpanda cluster will be provisioned.
-* `<azure-private-link-subscription-id>`: The ID of the subscription from where you will initiate connections to the Private Link service.
+* `<redpanda-cluster-subscription-id>`: The ID of the subscription where the Redpanda cluster will be provisioned.
+* `<source-connection-subscription-id>`: The ID of the subscription from where you will initiate connections to the Private Link service.
+
+In most cases, you should use two distinct subscription IDs.
 
 [,bash]
 ----
-export REDPANDA_CLUSTER_SUBSCRIPTION_ID=<azure-subscription-id>
-export SOURCE_CONNECTION_SUBSCRIPTION_ID=<azure-private-link-subscription-id>
+export REDPANDA_CLUSTER_SUBSCRIPTION_ID=<redpanda-cluster-subscription-id>
+export SOURCE_CONNECTION_SUBSCRIPTION_ID=<source-connection-subscription-id>
 ----
 
 If you have not yet created a cluster in Redpanda Cloud, <<create-new-cluster-with-private-link-service-enabled,create a Private Link-enabled cluster>>. If you already have a cluster, <<enable-private-link-service-for-existing-clusters,enable Private Link>>.
@@ -263,7 +265,7 @@ az network private-dns link vnet create \
     --registration-enabled false
 ```
 
-. Create a DNS zone group, or create a wildcard record in the private DNS zone.
+. Create a DNS zone group, then create a wildcard record in the private DNS zone.
 +
 ```
 # Create DNS zone group
@@ -280,7 +282,6 @@ az network private-endpoint dns-zone-group create \
 az network dns record-set a add-record \
     --resource-group <azure-resource-group-name> \
     --zone-name redpanda-$CLUSTER_ID \
-    --ttl 60 \
     --record-set-name "*" \
     --ipv4-address "$PRIVATE_ENDPOINT_IP"
 ```
