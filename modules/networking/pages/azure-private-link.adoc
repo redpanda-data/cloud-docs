@@ -38,7 +38,7 @@ Replace these placeholder variables:
 * `<redpanda-cluster-subscription-id>`: The ID of the subscription where the Redpanda cluster will be provisioned.
 * `<source-connection-subscription-id>`: The ID of the subscription from where you will initiate connections to the Private Link service.
 
-In most cases, you should use two distinct subscription IDs.
+You may use the same subscription for both.
 
 [,bash]
 ----
@@ -46,7 +46,7 @@ export REDPANDA_CLUSTER_SUBSCRIPTION_ID=<redpanda-cluster-subscription-id>
 export SOURCE_CONNECTION_SUBSCRIPTION_ID=<source-connection-subscription-id>
 ----
 
-If you have not yet created a cluster in Redpanda Cloud, <<create-new-cluster-with-private-link-service-enabled,create a Private Link-enabled cluster>>. If you already have a cluster, <<enable-private-link-service-for-existing-clusters,enable Private Link>>.
+If you have not yet created a cluster in Redpanda Cloud, <<create-new-cluster-with-private-link-service-enabled,create a Private Link-enabled cluster>>. If you already have a cluster where you want to use Private Link, see the steps to <<enable-private-link-service-for-existing-clusters,enable Private Link for existing clusters>>.
 
 === Create new cluster with Private Link service enabled
 
@@ -216,17 +216,17 @@ az account set --subscription $SOURCE_CONNECTION_SUBSCRIPTION_ID
 
 === Set up Azure Private Link endpoint in your virtual network
 
-. If you have not already done so, create the Azure resource group and virtual network for your Private Link source connections.
+. If you have not already done so, create the Azure resource group and virtual network for your Private Link source connections. This virtual network for the Private Link endpoint cannot be the same as the virtual network for the Redpanda cluster.
 +
 ```
-az group create --name <azure-resource-group-name> --location $REGION
+az group create --name <azure-pl-endpoint-resource-group-name> --location $REGION
 ```
 +
 ```
 az network vnet create \
-    --resource-group <azure-resource-group-name> \
+    --resource-group <azure-pl-endpoint-resource-group-name> \
     --location $REGION \
-    --name <azure-virtual-network-name> \
+    --name <azure-pl-endpoint-vnet-name> \
     --address-prefixes 10.0.0.0/16 \
     --subnet-name <subnet-name> \
     --subnet-prefixes 10.0.0.0/24
@@ -241,16 +241,16 @@ az network private-endpoint create \
     --name redpanda-$CLUSTER_ID \
     --manual-request no \
     --private-connection-resource-id $PRIVATE_SERVICE_ID \
-    --resource-group <azure-resource-group-name> \
+    --resource-group <azure-pl-endpoint-resource-group-name> \
     --subnet <subnet-name> \
-    --vnet-name <azure-virtual-network-name>
+    --vnet-name <azure-pl-endpoint-vnet-name>
 ``` 
 
 . Create a private DNS zone.
 +
 ```
 az network private-dns zone create \
-    --resource-group <azure-resource-group-name> \
+    --resource-group <azure-pl-endpoint-resource-group-name> \
     --name "$CLUSTER_ID.byoc.prd.cloud.redpanda.com"
 ``` 
 
@@ -258,29 +258,18 @@ az network private-dns zone create \
 +
 ```
 az network private-dns link vnet create \
-    --resource-group <azure-resource-group-name> \
+    --resource-group <azure-pl-endpoint-resource-group-name> \
     --zone-name "$CLUSTER_ID.byoc.prd.cloud.redpanda.com" \
     --name redpanda-$CLUSTER_ID-dns-zone-link \
-    --virtual-network <azure-vnet-name> \
+    --virtual-network <azure-pl-endpoint-vnet-name> \
     --registration-enabled false
 ```
 
-. Create a DNS zone group, then create a wildcard record in the private DNS zone.
+. Create a wildcard record in the private DNS zone.
 +
 ```
-# Create DNS zone group
-az network private-endpoint dns-zone-group create \
-    --resource-group <azure-resource-group-name> \
-    --endpoint-name redpanda-$CLUSTER_ID \
-    --name redpanda-cloud-dns-group \
-    --private-dns-zone "$CLUSTER_ID.byoc.prd.cloud.redpanda.com" \
-    --zone-name redpanda-$CLUSTER_ID
-```
-+
-```
-# Create wildcard record
 az network dns record-set a add-record \
-    --resource-group <azure-resource-group-name> \
+    --resource-group <azure-pl-endpoint-resource-group-name> \
     --zone-name redpanda-$CLUSTER_ID \
     --record-set-name "*" \
     --ipv4-address "$PRIVATE_ENDPOINT_IP"
