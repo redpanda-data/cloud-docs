@@ -5,7 +5,7 @@
 export PUBLIC_API_ENDPOINT="https://api.cloud.redpanda.com"
 ----
 
-. Go to the organization (org) level **Home** in the Redpanda Cloud UI, and navigate to **Clients**. If you don't have an existing client (also known as service account), you can create a new one by clicking **Add client**.
+. In your organization in the Redpanda Cloud UI, go https://cloud.redpanda.com/clients[**Clients**^]. If you don't have an existing client (also known as service account), you can create a new one by clicking **Add client**.
 +
 Copy and store the client ID and secret.
 +
@@ -23,8 +23,8 @@ export AUTH_TOKEN=`curl -s --request POST \
     --url 'https://auth.prd.cloud.redpanda.com/oauth/token' \
     --header 'content-type: application/x-www-form-urlencoded' \
     --data grant_type=client_credentials \
-    --data client_id=$CLOUD_CLIENT_ID \
-    --data client_secret=$CLOUD_CLIENT_SECRET \
+    --data client_id="$CLOUD_CLIENT_ID" \
+    --data client_secret="$CLOUD_CLIENT_SECRET" \
     --data audience=cloudv2-production.redpanda.cloud | jq .access_token | sed 's/"//g'`
 ----
 
