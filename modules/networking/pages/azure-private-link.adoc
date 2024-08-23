@@ -79,7 +79,7 @@ REGION=<azure-region>
 NETWORK_POST_BODY=`cat << EOF
 {
     "cloud_provider": "CLOUD_PROVIDER_AZURE",
-    "cluster_type": "TYPE_BYOC",
+    "cluster_type": "<cluster-type>",
     "name": "<network-name>",
     "cidr_block": "<10.0.0.0/20>",
     "resource_group_id": "$RESOURCE_GROUP_ID",
@@ -103,6 +103,7 @@ In the following example, make sure to set your own values for the following fie
 +
 --
 - `name`
+- `type`: `TYPE_BYOC` or `TYPE_DEDICATED`
 - `tier`: For example, `tier-1-azure`. See available Azure tiers in the xref:api:ROOT:cloud-api.adoc#api-description[Cloud API reference]. To learn more about tiers, see xref:reference:tiers/byoc-tiers.adoc[BYOC Tiers and Regions] or xref:reference:tiers/dedicated-tiers.adoc[Dedicated Tiers and Regions]. 
 - `zones`: For example, `"uksouth-az1",  "uksouth-az2", "uksouth-az3"`
 --
@@ -118,7 +119,7 @@ CLUSTER_POST_BODY=`cat << EOF
   "network_id": "$NETWORK_ID",
   "region": "$REGION",
   "throughput_tier": "<tier>",
-  "type": "TYPE_BYOC",
+  "type": "<type>",
   "zones": [ <zones> ],
   "azure_private_link": { 
       "allowed_subscriptions": ["$SOURCE_CONNECTION_SUBSCRIPTION_ID"],
