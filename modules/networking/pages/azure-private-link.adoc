@@ -66,6 +66,7 @@ export RESOURCE_GROUP_ID=<uuid>
 Make sure to supply your own values in the following example request. Store the network ID (`network_id`) after the network is created to check whether you can proceed to cluster creation.
 +
 --
+- `cluster-type`: `TYPE_BYOC` or `TYPE_DEDICATED`
 - `network-name`
 - `cidr_block`
 - `azure-region`
@@ -102,7 +103,7 @@ In the following example, make sure to set your own values for the following fie
 +
 --
 - `name`
-- `tier`: For example, `tier-1-azure`. See available Azure tiers in the xref:api:ROOT:cloud-api.adoc#api-description[Cloud API reference]. To learn more about tiers, see xref:reference:tiers/byoc-tiers.adoc[BYOC Tiers and Regions]. 
+- `tier`: For example, `tier-1-azure`. See available Azure tiers in the xref:api:ROOT:cloud-api.adoc#api-description[Cloud API reference]. To learn more about tiers, see xref:reference:tiers/byoc-tiers.adoc[BYOC Tiers and Regions] or xref:reference:tiers/dedicated-tiers.adoc[Dedicated Tiers and Regions]. 
 - `zones`: For example, `"uksouth-az1",  "uksouth-az2", "uksouth-az3"`
 --
 +
@@ -135,7 +136,7 @@ CLUSTER_ID=`curl -vv -X POST \
 echo $CLUSTER_ID
 ----
 
-. Check that the cluster operation is completed by calling xref:api:ROOT:cloud-api.adoc#get-/v1beta2/operations/-id-[`GET /v1beta2/operations/\{id}`], and passing the operation ID returned from the Create Cluster call.
+. **BYOC clusters:** Check that the cluster operation is completed by calling xref:api:ROOT:cloud-api.adoc#get-/v1beta2/operations/-id-[`GET /v1beta2/operations/\{id}`], and passing the operation ID returned from the Create Cluster call.
 +
 When the Create Cluster operation is completed (`STATE_COMPLETED`), run the following `rpk cloud` command to finish setting up your BYOC cluster with Private Link enabled:
 +
