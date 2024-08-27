@@ -25,7 +25,7 @@ export AUTH_TOKEN=`curl -s --request POST \
     --data grant_type=client_credentials \
     --data client_id="$CLOUD_CLIENT_ID" \
     --data client_secret="$CLOUD_CLIENT_SECRET" \
-    --data audience=cloudv2-production.redpanda.cloud | jq .access_token | sed 's/"//g'`
+    --data audience=cloudv2-production.redpanda.cloud | jq -r .access_token`
 ----
 
 You must send the API token in the `Authorization` header when making requests to the Cloud API.
