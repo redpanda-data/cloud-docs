@@ -3,7 +3,7 @@
 
 Learn how to build, run, and update a data pipeline on a Redpanda Cloud cluster using Redpanda Connect.
 
-This quickstart introduces you to Redpanda Connect for Redpanda Cloud. Using a single YAML configuration file, Redpanda Connect lets you quickly build, run, and seamlessly update streaming data pipelines. No third-party connectors are required. 
+This quickstart introduces you to Redpanda Connect for Redpanda Cloud. Using a single YAML configuration file, you can quickly build streaming data pipelines from scratch. No third-party connectors are required. 
 
 NOTE: Redpanda Connect is currently in a limited availability (LA) release for  
 BYOC AWS and GCP clusters. It is also available as a beta feature for Serverless clusters, which is not suitable for production deployments.
@@ -16,22 +16,33 @@ A Redpanda Cloud account for BYOC or Serverless. If you haven't got an account a
 
 Create the cluster, topic, and user you need to build and run your data pipeline.
 
-. Log in to Redpanda Cloud.
-. On the **Clusters** page, click **Create cluster**, and select a BYOC or Serverless cluster.
+[tabs]
+=====
+Serverless::
++
+--
+. Log in to https://cloud.redpanda.com[Redpanda Cloud^].
+. On the **Clusters** page, click **Create cluster**, then click **Create Serverless cluster**.
 . For cluster settings, enter **connect-quickstart** for the cluster name.
+. Use the default values for the remaining properties, then click **Create**.
+
+--
+BYOC::
 +
-* For Serverless clusters, use default values for the remaining properties and click **Next**.
-* For BYOC clusters, select the correct provider and then click **Next**.
-
-
-. On the **Networking** page: 
-+
-* For Serverless clusters, use the default **Public** connection type, and click **Create**.
-* For BYOC clusters, select a **Private** connection type and choose a xref:networking:cidr-ranges.adoc[CIDR range], which does not overlap with your existing VPCs or your Redpanda network. Then, click **Create**. 
-
-
+--
+. Log in to https://cloud.redpanda.com[Redpanda Cloud^].
+. On the **Clusters** page, click **Create cluster**, then click **Create BYOC cluster**.
+. On the **Cluster settings** page, enter **connect-quickstart** for the cluster name.
+. Select your cloud provider, then click **Next**.
+. On the **Networking** page, select a **Private** connection type and choose a xref:networking:cidr-ranges.adoc[CIDR range], which does not overlap with your existing VPCs or your Redpanda network.
+. Click **Next**.
 +
 Wait while your cluster is created.
+--
+=====
+
+To complete your setup:
+
 . Go to the **Topics** page, click **Create topic** and enter **processed-emails** for the topic name. Use default values for the remaining properties and click **Create** and then **Close**.
 . Go to the **Security** page, and click **Create user**. Enter the username **connect**. Use the default values for the remaining properties. Remember to take a note of your password.
 . Click **Create** and **Done**. 
@@ -131,7 +142,7 @@ To see the pipeline output:
 
 To view the logs:
 
-. Go back to the **Connectors** page on your cluster and select the ****emailprocessor-pipeline****.
+. Go back to the **Connectors** page on your cluster and select the **emailprocessor-pipeline**.
 . Click the **Logs** tab and select the most recent (final) log message. You can see when your pipeline started to write data to the topic:
 
 +
@@ -210,7 +221,6 @@ When you've finished experimenting with your data pipeline, you can delete it an
 
 == Suggested reading
 
-* Learn more about Redpanda Connect
-* Choose connectors for your use case
-* Learn how to configure and run a data pipeline locally
-* Try out one of our Redpanda Connect guides 
+* Try one of our xref:cookbooks:index.adoc[Redpanda Connect cookbooks]. 
+* Choose xref:components:catalog.adoc[connectors for your use case].
+* Learn how to xref:redpanda-connect:guides:getting_started.adoc[configure, test, and run a data pipeline locally].
