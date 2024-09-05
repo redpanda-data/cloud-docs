@@ -30,34 +30,34 @@ The ARNs output by this Terraform code are necessary in later steps.
 
 After xref:deploy:deployment-option/cloud/api/cloud-api-authentication.adoc[authenticating] to the Cloud API, issue a create network request using the Terraform outputs.
 
-```bash
+> For more information about the fields in the Create Network request of the Cloud API see:
+https://redpanda-api-documentation.netlify.app/#post-/v1beta2/networks
+
+```
 curl -X POST "https://api.redpanda.com/v1beta2/networks" \
  -H "accept: application/json"\
  -H "content-type: application/json" \
- -H "authorization: Bearer $PUBLIC_API_TOKEN" \
+ -H "authorization: Bearer $YOUR_TOKEN" \
 -d @- << EOF
 {
 	 "name":"<name you choose for your network resource>",
-	 "resource_group_id": "<Resource group ID of the network>",
+	 "resource_group_id": "<resource group id of the network>",
 	 "cloud_provider":"CLOUD_PROVIDER_AWS",
 	 "region":"<region>",
 	 "cluster_type":"TYPE_BYOC",
 	 "customer_managed_resources": {
 	   "aws": {
 	     "management_bucket": {
-	       "arn": "<management_bucket_arn from outputs>"
+	       "arn": "<management_bucket_arn from terraform outputs>"
 	     },
 	     "dynamodb_table": {
-	       "arn": "<dynamodb_table_arn from outputs>"
+	       "arn": "<dynamodb_table_arn from terraform outputs>"
 	     },
 	     "private_subnets": {
-	       "arns": [<private_subnet_ids from outputs>]
-	     },
-	     "public_subnets": {
-	       "arns": [<public_subnet_ids from outputs>]
+	       "arns": [<private_subnet_ids from terraform outputs>]
 	     },
 	     "vpc": {
-	       "arn": "<vpc_arn from outputs>"
+	       "arn": "<vpc_arn from terraform outputs>"
 	     }
 	   }
 	 }
@@ -87,81 +87,66 @@ The create network request returns a `resource_id`. For example:
 
 To create a cluster, issue a create cluster request using the Terraform outputs. For example:
 
+> For more information about the fields in the Create Cluster request of the Cloud API see:
+https://redpanda-api-documentation.netlify.app/#post-/v1beta2/clusters
+
 ```
 curl -X POST "https://api.redpanda.com/v1beta2/clusters" \
  -H "accept: application/json"\
  -H "content-type: application/json" \
- -H "authorization: Bearer $PUBLIC_API_TOKEN" \
+ -H "authorization: Bearer $YOUR_TOKEN" \
 -d @- << EOF
 {
   "cloud_provider":"CLOUD_PROVIDER_AWS",
   "connection_type":"CONNECTION_TYPE_PRIVATE",
   "name":"<name of cluster>",
-  "resource_group_id":"<Resource group ID of the network>",
+  "resource_group_id":"<resource group id of the network>",
   "network_id":"<resource_id of network from previous step>",
   "region":"<region>",
   "throughput_tier":"<throughput tier>",
   "type":"TYPE_BYOC",
-  "zones":["use2-az1","use2-az2","use2-az3"],
+  "zones":["<zone 1>", "<zone 2>", "<zone 3>"],
   "redpanda_version": "<redpanda version>",
   "customer_managed_resources": {
     "aws": {
       "agent_instance_profile": {
-        "arn": "<agent_instance_profile_arn from outputs>"
+        "arn": "<agent_instance_profile_arn from terraform outputs>"
       },
       "connectors_node_group_instance_profile": {
-        "<connectors_node_group_instance_profile_arn from outputs>"
+        "<connectors_node_group_instance_profile_arn from terraform outputs>"
       },
       "redpanda_node_group_instance_profile": {
-        "arn": "<redpanda_node_group_instance_profile_arn from outputs>"
+        "arn": "<redpanda_node_group_instance_profile_arn from terraform outputs>"
       },
       "redpanda_cloud_storage_manager_policy": {
-        "arn": "<redpanda_cloud_storage_manager_policy_arn from outputs>"
-      },
-      "connectors_node_group_role": {
-        "arn": "<connectors_node_group_role_arn from outputs>"
+        "arn": "<redpanda_cloud_storage_manager_policy_arn from terraform outputs>"
       },
       "utility_node_group_instance_profile": {
-        "arn": "<utility_node_group_instance_profile_arn from outputs>"
-      },
-      "console_secrets_manager_role": {
-        "arn": "<console_secrets_manager_role_arn from outputs>"
+        "arn": "<utility_node_group_instance_profile_arn from terraform outputs>"
       },
       "connectors_security_group": {
-        "arn": "<connectors_security_group_arn from outputs>"
-      },
-      "utility_node_group_role": {
-        "arn": "<utility_node_group_role_arn from outputs>"
-      },
-      "redpanda_node_group_role": {
-        "arn": "<redpanda_node_group_role_arn from outputs>"
-      },
-      "redpanda_cloud_storage_manager_role": {
-        "arn": "<redpanda_cloud_storage_manager_role_arn from outputs>"
-      },
-      "connectors_secrets_manager_role": {
-        "arn": "<connectors_secrets_manager_role_arn from outputs>"
+        "arn": "<connectors_security_group_arn from terraform outputs>"
       },
       "node_security_group": {
-        "arn": "<node_security_group_arn from outputs>"
+        "arn": "<node_security_group_arn from terraform outputs>"
       },
       "utility_security_group": {
-        "arn": "<utility_security_group_arn from outputs>"
+        "arn": "<utility_security_group_arn from terraform outputs>"
       },
       "redpanda_agent_security_group": {
-        "arn": "<redpanda_agent_security_group_arn from outputs>"
+        "arn": "<redpanda_agent_security_group_arn from terraform outputs>"
       },
       "redpanda_node_group_security_group": {
-        "arn": "<redpanda_node_group_security_group_arn from outputs>"
+        "arn": "<redpanda_node_group_security_group_arn from terraform outputs>"
       },
       "cluster_security_group": {
-        "arn": "<cluster_security_group_arn from outputs>"
+        "arn": "<cluster_security_group_arn from terraform outputs>"
       },
       "k8s_cluster_role": {
-        "arn": "<k8s_cluster_role_arn from outputs>"
+        "arn": "<k8s_cluster_role_arn from terraform outputs>"
       },
       "cloud_storage_bucket": {
-        "arn": "<cloud_storage_bucket_arn from outputs>"
+        "arn": "<cloud_storage_bucket_arn from terraform outputs>"
       }
     }
   },
