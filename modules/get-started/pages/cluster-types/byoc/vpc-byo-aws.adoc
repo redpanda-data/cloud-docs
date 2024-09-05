@@ -21,34 +21,10 @@ With a standard BYOC cluster, Redpanda manages the VPC lifecycle. For additional
 * You cannot move existing clusters to a customer-managed VPC.
 * You cannot change to a different VPC after creating a cluster with a customer-managed VPC.
 
-== Configure your VPC
+== Create your managed resources
 
-Terraform modules contain the specifications for the required resources. Terraform creates the following resources and outputs ARN values necessary in later steps:
-
-* IAM roles
-* IAM instance profiles
-* IAM role policy attachments
-* IAM policies
-* Elastic IP
-* Internet gateway
-* Route
-* VPC
-* Subnets
-* VPC endpoint
-* Route tables
-* Route table associations
-* VPC endpoint route table associations
-* Security groups
-* Security group rules
-* S3 buckets
-* S3 bucket server-side encryption configurations
-* S3 bucket versioning
-* S3 bucket ownership controls
-* DynamoDB table
-
-If any of these resources already exists in your AWS project, you can update Terraform to remove that item and modify references to use a data block instead of the resource.
-
-In particular, the resources in the `iam_rpk_user.tf` file are not intended to be created. They are only provided to show the minimum viable permissions for the user who will run `rpk cloud byoc aws apply`.
+Terraform code containing the specifications for the required resources can be found in https://github.com/redpanda-data/cloud-examples/tree/main/customer-managed/aws.
+The ARNs output by this Terraform code are necessary in later steps.
 
 == Create network with the Cloud API
 
