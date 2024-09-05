@@ -116,7 +116,7 @@ AUTH_TOKEN=`curl -s --request POST \
     --data grant_type=client_credentials \
     --data client_id=<client-id> \
     --data client_secret=<client-secret> \
-    --data audience=cloudv2-production.redpanda.cloud | jq .access_token | sed 's/"//g'`
+    --data audience=cloudv2-production.redpanda.cloud | jq -r .access_token`
 
 CLUSTER_PATCH_BODY=`cat << EOF
 {
