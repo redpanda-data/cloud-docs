@@ -202,17 +202,43 @@ rpk cloud byoc aws apply \
 Output:
 
 ```bash
-2024-05-28T20:38:34.020Z	INFO	.rpk.managed-byoc	aws/apply.go:112	Reconciling agent infrastructure...
-2024-05-28T20:38:34.200Z	INFO	.rpk.managed-byoc	cli/cli.go:194	Running apply	{"provisioner": "redpanda-bootstrap"}
-2024-05-28T20:39:09.104Z	INFO	.rpk.managed-byoc	cli/cli.go:204	Finished apply	{"provisioner": "redpanda-bootstrap"}
-2024-05-28T20:39:09.104Z	INFO	.rpk.managed-byoc	cli/cli.go:194	Running apply	{"provisioner": "redpanda-network"}
-2024-05-28T20:41:41.962Z	INFO	.rpk.managed-byoc	cli/cli.go:204	Finished apply	{"provisioner": "redpanda-network"}
-2024-05-28T20:41:41.962Z	INFO	.rpk.managed-byoc	cli/cli.go:194	Running apply	{"provisioner": "redpanda-agent"}
-2024-05-28T20:42:40.767Z	INFO	.rpk.managed-byoc	cli/cli.go:204	Finished apply	{"provisioner": "redpanda-agent"}
-2024-05-28T20:42:40.768Z	INFO	.rpk.managed-byoc	aws/apply.go:158	The Redpanda cluster is deploying. This can take up to 45 minutes. View status at https://cloud.redpanda.com/clusters/cpb4074p81130pqt8gjg/overview.
+Checking RPK User... PASSED
+Checking IAM Instance Profiles... PASSED
+Checking Storage... PASSED
+Checking Network... PASSED
+Reconciling agent infrastructure...
+Running apply	{"provisioner": "redpanda-bootstrap"}
+Finished apply	{"provisioner": "redpanda-bootstrap"}
+Running apply	{"provisioner": "redpanda-network"}
+Finished apply	{"provisioner": "redpanda-network"}
+Running apply	{"provisioner": "redpanda-agent"}
+Finished apply	{"provisioner": "redpanda-agent"}
+The Redpanda cluster is deploying. This can take up to 45 minutes. View status at https://cloud.redpanda.com/clusters/<resource_id of cluster from previous step>/overview.
 ```
 
 The agent VM now is running and handles the remaining provisioning steps. This can take up to 45 minutes. When provisioning completes, the cluster status updates to `Running`. If the cluster remains in `Creating` status after 45 minutes, contact Redpanda support.
+
+=== Validation
+
+The `rpk cloud byoc aws apply` performs some validation checks before proceeding with provisioning.
+
+RPK User: Checks if the user running the command has sufficient privileges for the provisioning of the agent. If any
+permissions are found to be missing they will be displayed in the output.
+
+IAM Instance Profile: Checks that the `connectors_node_group_instance_profile`, `redpanda_node_group_instance_profile`,
+`utility_node_group_instance_profile`, and `k8s_cluster_role` have the minimum required permissions.  If any permissions
+are found to be missing they will be displayed in the output.
+
+Storage: Checks that the `management_bucket` exists and is versioned. Checks that the `cloud_storage_bucket` exists and
+is not versioned. Checks that the `dynamodb_table` exists.
+
+Network: Checks that the VPC exists. Checks that the subnets exist and have the expected tags. Checks that the security
+groups exist and have the desired ingress and egress rules.
+
+If there are validation errors that are believed to be erroneous you can rerun the command with the `--no-validate` tag
+to skip validation.
+
+== Checking cluster status
 
 You can check the cluster status with the API or the Redpanda Cloud UI.
 
