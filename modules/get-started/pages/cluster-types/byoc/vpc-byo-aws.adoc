@@ -14,24 +14,24 @@ With a standard BYOC cluster, Redpanda manages the VPC lifecycle. For additional
 
 * Familiarity with the xref:api:ROOT:cloud-api.adoc[Redpanda Cloud API]. For example, you use the Cloud API to authenticate and create a cluster.
 * Access to an AWS project in which you create your cluster.
-* Minimum permissions in that AWS project. The actions required for the user who will create the cluster with `rpk cloud byoc aws apply` can be found in https://github.com/redpanda-data/cloud-examples/blob/main/customer-managed/aws/terraform/iam_rpk_user.tf
+* Minimum permissions in that AWS project. For the actions required by the user who will create the cluster with `rpk cloud byoc aws apply`, see https://github.com/redpanda-data/cloud-examples/blob/main/customer-managed/aws/terraform/iam_rpk_user.tf[`iam_rpk_user.tf`^].
 
 == Limitations
 
 * You cannot move existing clusters to a customer-managed VPC.
 * You cannot change to a different VPC after creating a cluster with a customer-managed VPC.
 
-== Create your managed resources
+== Create managed resources
 
-Terraform code containing the specifications for the required resources can be found in https://github.com/redpanda-data/cloud-examples/tree/main/customer-managed/aws.
+For information about the Terraform code containing the specifications for the required resources, see the https://github.com/redpanda-data/cloud-examples/tree/main/customer-managed/aws[customer-managed VPC on AWS README^].
 The ARNs output by this Terraform code are necessary in later steps.
 
-== Create network with the Cloud API
+== Create a network with the Cloud API
 
 After xref:deploy:deployment-option/cloud/api/cloud-api-authentication.adoc[authenticating] to the Cloud API, issue a create network request using the Terraform outputs.
 
-> For more information about the fields in the Create Network request of the Cloud API see:
-https://redpanda-api-documentation.netlify.app/#post-/v1beta2/networks
+For information about the fields, see
+https://redpanda-api-documentation.netlify.app/#post-/v1beta2/networks[Create Network].
 
 ```
 curl -X POST "https://api.redpanda.com/v1beta2/networks" \
@@ -85,10 +85,10 @@ The create network request returns a `resource_id`. For example:
 
 == Create a cluster with the Cloud API
 
-To create a cluster, issue a create cluster request using the Terraform outputs. For example:
+To create a cluster, issue a create cluster request using the Terraform outputs.
 
-> For more information about the fields in the Create Cluster request of the Cloud API see:
-https://redpanda-api-documentation.netlify.app/#post-/v1beta2/clusters
+For information about the fields, see
+https://redpanda-api-documentation.netlify.app/#post-/v1beta2/clusters[Create Cluster].
 
 ```
 curl -X POST "https://api.redpanda.com/v1beta2/clusters" \
@@ -216,31 +216,28 @@ Finished apply	{"provisioner": "redpanda-agent"}
 The Redpanda cluster is deploying. This can take up to 45 minutes. View status at https://cloud.redpanda.com/clusters/<resource_id of cluster from previous step>/overview.
 ```
 
-The agent VM now is running and handles the remaining provisioning steps. This can take up to 45 minutes. When provisioning completes, the cluster status updates to `Running`. If the cluster remains in `Creating` status after 45 minutes, contact Redpanda support.
+The agent VM now is running and handles the remaining provisioning steps. This can take up to 45 minutes. When provisioning completes, the cluster status updates to `Running`. If the cluster remains in `Creating` status after 45 minutes, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda support^].
 
-=== Validation
+=== Validatation checks
 
-The `rpk cloud byoc aws apply` performs some validation checks before proceeding with provisioning.
+The `rpk cloud byoc aws apply` command performs validation checks before proceeding with provisioning:
 
-RPK User: Checks if the user running the command has sufficient privileges for the provisioning of the agent. If any
-permissions are found to be missing they will be displayed in the output.
+* RPK user: Checks if the user running the command has sufficient privileges to provision the agent. Any
+missing permissions are displayed in the output.
 
-IAM Instance Profile: Checks that the `connectors_node_group_instance_profile`, `redpanda_node_group_instance_profile`,
-`utility_node_group_instance_profile`, and `k8s_cluster_role` have the minimum required permissions.  If any permissions
-are found to be missing they will be displayed in the output.
+* IAM instance profile: Checks that `connectors_node_group_instance_profile`, `redpanda_node_group_instance_profile`,
+`utility_node_group_instance_profile`, and `k8s_cluster_role` have the minimum required permissions. Any missing permissions are displayed in the output.
 
-Storage: Checks that the `management_bucket` exists and is versioned. Checks that the `cloud_storage_bucket` exists and
-is not versioned. Checks that the `dynamodb_table` exists.
+* Storage: Checks that the `management_bucket` exists and is versioned, checks that the `cloud_storage_bucket` exists and is not versioned, and checks that the `dynamodb_table` exists.
 
-Network: Checks that the VPC exists. Checks that the subnets exist and have the expected tags. Checks that the security
-groups exist and have the desired ingress and egress rules.
+* Network: Checks that the VPC exists, checks that the subnets exist and have the expected tags, and checks that the security groups exist and have the desired ingress and egress rules.
 
-If there are validation errors that are believed to be erroneous you can rerun the command with the `--no-validate` tag
+If you think validation errors are erroneous, you can rerun the command with the `--no-validate` tag
 to skip validation.
 
-== Checking cluster status
+== Check cluster status
 
-You can check the cluster status with the API or the Redpanda Cloud UI.
+You can check the cluster status with the Cloud API or the Redpanda Cloud UI.
 
 Example using the returned `operation_id`:
 
