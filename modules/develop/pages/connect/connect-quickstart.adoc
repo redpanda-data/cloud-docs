@@ -1,0 +1,230 @@
+= Redpanda Connect Quickstart
+:description: Learn how to quickly start building data pipelines with Redpanda Connect in Redpanda Cloud.
+
+Learn how to build, run, and update a data pipeline on a Redpanda Cloud cluster using Redpanda Connect.
+
+This quickstart introduces you to Redpanda Connect for Redpanda Cloud. Using a single YAML configuration file, you can quickly build streaming data pipelines from scratch. No third-party connectors are required. 
+
+include::develop:partial$availability-message.adoc[]
+
+== Prerequisites
+
+A Redpanda Cloud account for BYOC or Serverless. If you don't already have an account, https://redpanda.com/try-redpanda/cloud-trial[sign up for a free trial^].
+
+== Before you start
+
+Create the cluster, topic, and user you need to build and run your data pipeline.
+
+[tabs]
+=====
+Serverless::
++
+--
+. Log in to https://cloud.redpanda.com[Redpanda Cloud^].
+. On the **Clusters** page, click **Create cluster**, then click **Create Serverless cluster**.
+. For cluster settings, enter **connect-quickstart** for the cluster name.
+. Use the default values for the remaining properties, then click **Create**.
+
+--
+BYOC::
++
+--
+. Log in to https://cloud.redpanda.com[Redpanda Cloud^].
+. On the **Clusters** page, click **Create cluster**, then click **Create BYOC cluster**.
+. On the **Cluster settings** page, enter **connect-quickstart** for the cluster name.
+. Select your cloud provider, then click **Next**.
+. On the **Networking** page, select a **Private** connection type and choose a xref:networking:cidr-ranges.adoc[CIDR range], which does not overlap with your existing VPCs or your Redpanda network.
+. Click **Next**.
++
+Wait while your cluster is created.
+--
+=====
+
+To complete your setup:
+
+. Go to the **Topics** page, click **Create topic** and enter **processed-emails** for the topic name. Use default values for the remaining properties and click **Create** and then **Close**.
+. Go to the **Security** page, and click **Create user**. Enter the username **connect**. Use the default values for the remaining properties. Remember to take a note of your password.
+. Click **Create** and **Done**. 
+. Stay on the **Access control** page and click the **ACLs** tab.
+. Select the **connect** user you have just created. Click **Allow all operations** and then scroll down to click **OK**. 
+. Finally, go to the **Overview** page and click the **Kafka API** tab. 
+. Copy the bootstrap server URL into a text file. You will need it for the next steps.
+
+== Build your data pipeline
+
+Configure your first data pipeline on the **connect-quickstart** cluster. 
+
+All Redpanda Connect configurations use a YAML file split into three sections:
+
+|===
+| Section | In this data pipeline
+
+| The `input` or data source
+| A xref:develop:connect/guides/bloblang/functions.adoc#fake-data-generation[fake data source] that generates a batch of email messages every second, populated with an ID, paragraph, email address, and a user name.
+
+| The `pipeline` with one or more `processors`
+| A xref:components:processors/mutation.adoc[`mutation` processor] to add a title to every email message it processes.
+
+| The `output` or data sink
+| A xref:components:outputs/kafka_franz.adoc[`kafka_franz` output] that writes messages to the **connect-output** topic on your cluster.
+|===
+
+. Go to the **Connectors** page on your cluster and click the **Redpanda Connect** tab.
+. Click **Create pipeline**.
+. In **Pipeline name**, enter **emailprocessor-pipeline** and add a short description. For example, **Transforms email data using a mutation processor**.
+. In the **Configuration** box, paste the following configuration.
+
++
+[source,yaml]
+----
+input:
+ generate:
+   interval: 1s
+   mapping: |
+     root.id = uuid_v4()
+     root.user.name = fake("name")
+     root.user.email = fake("email")
+     root.content = fake("paragraph")
+
+pipeline:
+ processors:
+   - mutation: |
+       root.title = "PRIVATE AND CONFIDENTIAL"
+
+output:
+ kafka_franz:
+   seed_brokers:
+     - <bootstrap-server-url>
+   sasl:
+     - mechanism: SCRAM-SHA-256
+       password: <cluster-password>
+       username: connect
+   topic: processed-emails
+   tls:
+     enabled: true
+----
+
+
++
+Replace the following placeholders:
+
+* `<bootstrap-server-url>`: The bootstrap server address you copied in <<before-you-start,Before you start>>.
+* `<cluster-password>`: The password of the connect user you set up in <<before-you-start,Before you start>>. 
+
++
+NOTE: The Brave browser does not fully support code snippets. 
+
+. Click **Create**. Your pipeline details are displayed and the pipeline state changes from **Starting** to **Running**, which may take a few minutes. If you don’t see this state change, refresh your page.
++
+Redpanda Connect starts to ingest, process, and write transformed email messages to the **processed-emails** topic.
+. After a few seconds, select the pipeline and click **Stop**.
+
+== Explore the processed data and logs
+
+Take a look at the data your pipeline has already processed, and the logs that are available for troubleshooting.
+
+To see the pipeline output:
+
+. Go to the **Topics** page and select the **processed-emails** topic.
+. Select any message to see the email message fields generated by the pipeline `input`, along with a `title` field added by the `mutation` processor. All messages have the following structure:
+
++
+[source,json]
+----
+{
+    "content": "Aliquam quidem tempore expedita debitis ab. Officiis optio eveniet ab magni commodi...",
+    "id": "35522c66-6fcd-47da-b97b-857b983477d1",
+    "title": "PRIVATE AND CONFIDENTIAL",
+    "user": {
+        "email": "oCcXPTh@RrKHZRQ.info",
+        "name": "King Francis Torphy"
+    }
+}
+----
+
+To view the logs:
+
+. Return to the **Connectors** page on your cluster and select the **emailprocessor-pipeline**.
+. Click the **Logs** tab and select each of the four log messages. You can see the sequence of events that start the data pipeline. For example, you can see when Redpanda Connect starts to write data to the topic:
+
++
+[source,json]
+----
+{
+    "instance_id": "cr3j2rab2tks83v3gbh0",
+    "label": "",
+    "level": "INFO",
+    "message": "Output type kafka_franz is now active",
+    "path": "root.output",
+    "pipeline_id": "cr3j2r6hqokqcph9p4b0",
+    "time": "2024-08-22T12:39:09.729899336Z"
+}
+----
+
+== Update your pipeline
+
+Now try adding custom logging and an extra data transformation step to your configuration. You can make the updates while your data pipeline is running.
+
+. Select the **Configuration** tab of your data pipeline.
+. Click **Start** and wait for your pipeline to start running.
+. Click **Edit** and overwrite the `processors` section of your configuration with the following snippet. 
+
++
+[source,yaml]
+----
+  processors:
+    - mutation: |
+        root.title = "PRIVATE AND CONFIDENTIAL"
+        root.user.name = root.user.name.uppercase()
+    - log:
+       level: INFO
+       message: 'Processed email for ${!this.user.name}'
+       fields_mapping: |
+         root.reason = "SUCCESS"
+         root.id = this.id
+----
+
+
++
+The snippet includes new configuration to:
+
+** Transform the name of each email sender to uppercase.
+** Change the logging level
+** Write a summary message and the reason for every email message processed, using the xref:components:processors/log.adoc[`log` processor].
+
+
+. Click **Update**.
+. After a few seconds, click **Stop**.
+. Click the **Logs** tab and select the most recent (final) log message. You can see the custom logging fields along with the uppercase user's name. 
+
++
+[source,json]
+----
+{
+    "id": "f64d1f1a-2d76-47ad-a215-52410ab4e22f",
+    "instance_id": "cr3ncrvom8ofl3bn3rk0",
+    "label": "",
+    "level": "INFO",
+    "message": "Processed email for MISS IMELDA REICHERT",
+    "path": "root.pipeline.processors.1",
+    "pipeline_id": "cr3me2uhqokqcph9p4bg",
+    "reason": "SUCCESS",
+    "time": "2024-08-22T17:33:46.676903284Z"
+}
+----
+
+== Clean up
+
+When you've finished experimenting with your data pipeline, you can delete the pipeline, topic, and cluster you created for this quickstart.
+
+. On the **Connectors** page, select your pipeline.
+. Click **Delete** and confirm your deletion to remove the data pipeline and associated logs.
+. On the **Topics** page, delete the **processed-emails** topic.
+. Go back to the **Clusters** page and delete the **connect-quickstart** cluster. 
+
+== Suggested reading
+
+* Try one of our xref:cookbooks:index.adoc[Redpanda Connect cookbooks]. 
+* Choose xref:develop:connect/components/catalog.adoc[connectors for your use case].
+* Learn how to xref:develop:connect/configuration/monitor-connect.adoc[monitor a data pipeline on a BYOC cluster].
+* Learn how to xref:redpanda-connect:guides:getting_started.adoc[configure, test, and run a data pipeline locally].
