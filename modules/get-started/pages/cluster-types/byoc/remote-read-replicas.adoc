@@ -5,16 +5,60 @@
 
 A remote read replica topic is a read-only topic that mirrors a topic on a different cluster. You can create a separate remote cluster just for consumers of this topic and populate its topics from object storage. A read-only topic on a remote cluster can serve any consumer, without increasing the load on the source cluster. Because these read-only topics access data directly from object storage, there's no impact to the performance of the cluster.
 
-Redpanda Cloud supports remote read replicas with ephemeral BYOC clusters (not with a customer-managed VPC). Ephemeral clusters are temporary clusters created to handle specific, transient workloads or tasks. After processing, the cluster is terminated to free up resources and reduce costs. 
+Redpanda Cloud supports remote read replicas with ephemeral BYOC clusters. Ephemeral clusters are temporary clusters created to handle specific, transient workloads or tasks. After processing, the cluster is terminated to free up resources and reduce costs.
 
 == Prerequisites
 
 * A BYOC source cluster in Ready state.
 * A BYOC reader cluster in Ready state. This separate reader cluster must exist in the same Redpanda organization and the same cloud provider account and region as the source cluster.
 
-== Configure remote read replicas
+== Grant storage permissions (customer-managed VPC only)
 
-You can add or remove reader clusters to a source cluster in Redpanda Cloud with the xref:api:ROOT:cloud-api.adoc[Cloud API]. For information on accessing the Cloud API, see xref:manage:api/cloud-api-authentication.adoc[]. 
+[NOTE]
+====
+Skip this step if you are enabling remote read replicas on standard BYOC clusters.
+
+====
+
+[tabs]
+======
+GCP::
++
+--
+
+```bash
+gcloud storage buckets add-iam-policy-binding \
+    gs://<source cluster tiered storage bucket name> \
+    --member="serviceAccount:<redpanda_cluster_service_account_email>" \
+    --role="roles/storage.objectViewer"
+```
+
+--
+AWS::
++
+--
+
+. Grant additional permissions to the cloud storage manager of the reader cluster by setting the `source_cluster_bucket_names`
+and `reader_cluster_id` variables in [cloud-examples](https://github.com/redpanda-data/cloud-examples/blob/main/customer-managed/aws/terraform/variables.tf)
+
+--
+======
+
+[WARNING]
+====
+When using remote read replicas with customer-managed VPC Redpanda cannot guarantee deletion prevention. You are responsible for ensuring the source cluster is not deleted.
+
+====
+
+== Configure remote read replicas (standard BYOC only)
+
+[NOTE]
+====
+Skip this step if you are enabling remote read replicas on customer-managed VPC clusters.
+
+====
+
+You can add or remove reader clusters to a source cluster in Redpanda Cloud with the xref:api:ROOT:cloud-api.adoc[Cloud API]. For information on accessing the Cloud API, see xref:manage:api/cloud-api-authentication.adoc[].
 
 . To update your source cluster to add one or more reader cluster IDs, make a xref:api:ROOT:cloud-api.adoc#patch-/v1beta2/clusters/-cluster.id-[`PATCH /v1beta2/clusters/\{cluster.id}`] request. The full list of clusters is expected on every call. If an ID is removed from the list, it will be removed as a reader cluster.
 +
@@ -32,12 +76,6 @@ curl -X PATCH $API_HOST/v1beta2/clusters/$SOURCE_CLUSTER_ID \
 EOF
 ```
 
-. To create a remote read replica topic, run:
-+
-```bash
-rpk topic create my-topic -c redpanda.remote.readreplica=redpanda-cloud-storage-${SOURCE_CLUSTER_ID}
-```
-
 . Optional: To see the list of reader clusters on a given source cluster, make a xref:api:ROOT:cloud-api.adoc#get-/v1beta2/clusters/-id-[`GET /v1beta2/clusters/\{id}`] request:
 +
 ```bash
@@ -48,12 +86,20 @@ curl -X GET $API_HOST/v1beta2/clusters/$SOURCE_CLUSTER_ID \
 -H "Authorization: Bearer $API_TOKEN"
 ```
 
-. Optional: For remote read replicas reading from a live topic (that is, a topic that's being actively written to by a source cluster), it may be advantageous to control how often segments are flushed to object storage. By default, this is set to 60 minutes. To tune `cloud_storage_segment_max_upload_interval_sec` on the source cluster, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda support^]. (For cold topics, where segments are closed and older than 60 minutes, this configuration is unnecessary: the data is already uploaded to object storage.)
-
 [NOTE]
 ====
 A source cluster cannot be deleted if it has remote read replica topics. When you delete a reader cluster, that cluster's ID is removed from any existing source cluster `read_replica_cluster_ids` lists.
 
-==== 
+====
 
+== Create the remote read replica topic
 
+. To create a remote read replica topic, run:
++
+```bash
+rpk topic create my-topic -c redpanda.remote.readreplica=redpanda-cloud-storage-${SOURCE_CLUSTER_ID}
+```
+
+== Optional
+
+For remote read replicas reading from a live topic (that is, a topic that's being actively written to by a source cluster), it may be advantageous to control how often segments are flushed to object storage. By default, this is set to 60 minutes. To tune `cloud_storage_segment_max_upload_interval_sec` on the source cluster, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda support^]. (For cold topics, where segments are closed and older than 60 minutes, this configuration is unnecessary: the data is already uploaded to object storage.)
