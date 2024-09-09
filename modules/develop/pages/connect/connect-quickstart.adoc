@@ -71,7 +71,7 @@ All Redpanda Connect configurations use a YAML file split into three sections:
 
 . Go to the **Connectors** page on your cluster and click the **Redpanda Connect** tab.
 . Click **Create pipeline**.
-. Enter **emailprocessor-pipeline** for the pipeline name and add a short description. For example, **Transforms email data using a mutation processor**.
+. In **Pipeline name**, enter **emailprocessor-pipeline** and add a short description. For example, **Transforms email data using a mutation processor**.
 . In the **Configuration** box, paste the following configuration.
 
 +
@@ -111,7 +111,10 @@ Replace the following placeholders:
 * `<bootstrap-server-url>`: The bootstrap server address you copied in <<before-you-start,Before you start>>.
 * `<cluster-password>`: The password of the connect user you set up in <<before-you-start,Before you start>>. 
 
-. Click **Create**. Your pipeline details are displayed and the pipeline state changes from **Starting** to **Running**. If you don’t see this state change, refresh your page.
++
+NOTE: The Brave browser does not fully support code snippets. 
+
+. Click **Create**. Your pipeline details are displayed and the pipeline state changes from **Starting** to **Running**, which may take a few minutes. If you don’t see this state change, refresh your page.
 +
 Redpanda Connect starts to ingest, process, and write transformed email messages to the **processed-emails** topic.
 . After a few seconds, select the pipeline and click **Stop**.
@@ -142,7 +145,7 @@ To see the pipeline output:
 To view the logs:
 
 . Return to the **Connectors** page on your cluster and select the **emailprocessor-pipeline**.
-. Click the **Logs** tab and select the most recent (final) log message. You can see when your pipeline started to write data to the topic:
+. Click the **Logs** tab and select each of the four log messages. You can see the sequence of events that start the data pipeline. For example, you can see when Redpanda Connect starts to write data to the topic:
 
 +
 [source,json]
@@ -164,7 +167,7 @@ Now try adding custom logging and an extra data transformation step to your conf
 
 . Select the **Configuration** tab of your data pipeline.
 . Click **Start** and wait for your pipeline to start running.
-. Overwrite the `processors` section of your configuration with the following snippet. 
+. Click **Edit** and overwrite the `processors` section of your configuration with the following snippet. 
 
 +
 [source,yaml]
@@ -212,11 +215,12 @@ The snippet includes new configuration to:
 
 == Clean up
 
-When you've finished experimenting with your data pipeline, you can delete it and the associated topic.
+When you've finished experimenting with your data pipeline, you can delete the pipeline, topic, and cluster you created for this quickstart.
 
 . On the **Connectors** page, select your pipeline.
 . Click **Delete** and confirm your deletion to remove the data pipeline and associated logs.
 . On the **Topics** page, delete the **processed-emails** topic.
+. Go back to the **Clusters** page and delete the **connect-quickstart** cluster. 
 
 == Suggested reading
 
