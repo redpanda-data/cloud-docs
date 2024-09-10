@@ -37,6 +37,16 @@ az provider show -n Microsoft.Compute
 ** Standard LASv3-series vCPUs: 24
 ** Standard DADSv5-series vCPUs: 8
 
+* Monitoring: Ensure that Azure Network Watcher is enabled in the region where you will use Redpanda. See the https://learn.microsoft.com/en-us/azure/network-watcher/network-watcher-overview[Microsoft documentation^]. To enable it:
++
+```
+# Create the NetworkWatcherRG
+az group create --name 'NetworkWatcherRG' --location '<region_name>'
+
+# Enable Network Watcher in <region_name>
+az network watcher configure --resource-group 'NetworkWatcherRG' --locations '<region_name>' --enabled
+```
+
 === Check Azure SKU restrictions
 
 Check to ensure that the Azure subscription does not have any SKU restrictions for the VM sizes in the region where you intend to use Redpanda. Using the Azure CLI or in the Azure Cloud Shell, run:
