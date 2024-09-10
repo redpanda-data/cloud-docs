@@ -16,7 +16,7 @@ Redpanda Cloud supports remote read replicas with ephemeral BYOC clusters. Ephem
 
 [NOTE]
 ====
-Skip this step if you are enabling remote read replicas on standard BYOC clusters.
+Skip this step if you're enabling remote read replicas on standard BYOC clusters.
 
 ====
 
@@ -38,15 +38,15 @@ AWS::
 +
 --
 
-. Grant additional permissions to the cloud storage manager of the reader cluster by setting the `source_cluster_bucket_names`
-and `reader_cluster_id` variables in [cloud-examples](https://github.com/redpanda-data/cloud-examples/blob/main/customer-managed/aws/terraform/variables.tf)
+Grant additional permissions to the cloud storage manager of the reader cluster by setting the `source_cluster_bucket_names`
+and `reader_cluster_id` variables in https://github.com/redpanda-data/cloud-examples/blob/main/customer-managed/aws/terraform/variables.tf[cloud-examples].
 
 --
 ======
 
 [WARNING]
 ====
-When using remote read replicas with customer-managed VPC Redpanda cannot guarantee deletion prevention. You are responsible for ensuring the source cluster is not deleted.
+When using remote read replicas with a customer-managed VPC, Redpanda cannot guarantee deletion prevention. You must ensure that the source cluster is not deleted.
 
 ====
 
@@ -54,13 +54,13 @@ When using remote read replicas with customer-managed VPC Redpanda cannot guaran
 
 [NOTE]
 ====
-Skip this step if you are enabling remote read replicas on customer-managed VPC clusters.
+Skip this step if you're enabling remote read replicas on customer-managed VPC clusters.
 
 ====
 
-You can add or remove reader clusters to a source cluster in Redpanda Cloud with the xref:api:ROOT:cloud-api.adoc[Cloud API]. For information on accessing the Cloud API, see xref:manage:api/cloud-api-authentication.adoc[].
+Add or remove reader clusters to a source cluster in Redpanda Cloud with the xref:api:ROOT:cloud-api.adoc[Cloud API]. For information on accessing the Cloud API, see xref:manage:api/cloud-api-authentication.adoc[].
 
-. To update your source cluster to add one or more reader cluster IDs, make a xref:api:ROOT:cloud-api.adoc#patch-/v1beta2/clusters/-cluster.id-[`PATCH /v1beta2/clusters/\{cluster.id}`] request. The full list of clusters is expected on every call. If an ID is removed from the list, it will be removed as a reader cluster.
+. To update your source cluster to add one or more reader cluster IDs, make a xref:api:ROOT:cloud-api.adoc#patch-/v1beta2/clusters/-cluster.id-[`PATCH /v1beta2/clusters/\{cluster.id}`] request. The full list of clusters is expected on every call. If an ID is removed from the list, it is removed as a reader cluster.
 +
 ```bash
 export SOURCE_CLUSTER_ID=.......
@@ -100,6 +100,4 @@ A source cluster cannot be deleted if it has remote read replica topics. When yo
 rpk topic create my-topic -c redpanda.remote.readreplica=redpanda-cloud-storage-${SOURCE_CLUSTER_ID}
 ```
 
-== Optional
-
-For remote read replicas reading from a live topic (that is, a topic that's being actively written to by a source cluster), it may be advantageous to control how often segments are flushed to object storage. By default, this is set to 60 minutes. To tune `cloud_storage_segment_max_upload_interval_sec` on the source cluster, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda support^]. (For cold topics, where segments are closed and older than 60 minutes, this configuration is unnecessary: the data is already uploaded to object storage.)
+. Optional: For remote read replicas reading from a live topic (that is, a topic that's being actively written to by a source cluster), it may be advantageous to control how often segments are flushed to object storage. By default, this is set to 60 minutes. To tune `cloud_storage_segment_max_upload_interval_sec` on the source cluster, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda support^]. (For cold topics, where segments are closed and older than 60 minutes, this configuration is unnecessary: the data is already uploaded to object storage.)
