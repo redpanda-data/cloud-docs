@@ -1,4 +1,4 @@
-= Remote Read Replicas
+= Create Remote Read Replicas
 :description: Learn how to create a remote read replica topic, which is a read-only topic that mirrors a topic on a different cluster.
 :page-aliases: deploy:deployment-option/cloud/remote-read-replicas.adoc
 :page-beta: true
@@ -12,7 +12,7 @@ Redpanda Cloud supports remote read replicas with ephemeral BYOC clusters. Ephem
 * A BYOC source cluster in Ready state.
 * A BYOC reader cluster in Ready state. This separate reader cluster must exist in the same Redpanda organization and the same cloud provider account and region as the source cluster.
 
-== Grant storage permissions (customer-managed VPC only)
+== Customer-managed VPC: Grant storage permissions
 
 [NOTE]
 ====
@@ -50,7 +50,7 @@ When using remote read replicas with a customer-managed VPC, Redpanda cannot gua
 
 ====
 
-== Configure remote read replicas (standard BYOC only)
+== Standard BYOC: Configure remote read replica
 
 [NOTE]
 ====
@@ -92,12 +92,14 @@ A source cluster cannot be deleted if it has remote read replica topics. When yo
 
 ====
 
-== Create the remote read replica topic
+== Create remote read replica
 
-. To create a remote read replica topic, run:
-+
+To create a remote read replica topic, run:
+
 ```bash
 rpk topic create my-topic -c redpanda.remote.readreplica=redpanda-cloud-storage-${SOURCE_CLUSTER_ID}
 ```
 
-. Optional: For remote read replicas reading from a live topic (that is, a topic that's being actively written to by a source cluster), it may be advantageous to control how often segments are flushed to object storage. By default, this is set to 60 minutes. To tune `cloud_storage_segment_max_upload_interval_sec` on the source cluster, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda support^]. (For cold topics, where segments are closed and older than 60 minutes, this configuration is unnecessary: the data is already uploaded to object storage.)
+== Optional: Tune for live topics
+
+For remote read replicas reading from a live topic (that is, a topic that's being actively written to by a source cluster), it may be advantageous to control how often segments are flushed to object storage. By default, this is set to 60 minutes. To tune `cloud_storage_segment_max_upload_interval_sec` on the source cluster, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda support^]. (For cold topics, where segments are closed and older than 60 minutes, this configuration is unnecessary: the data is already uploaded to object storage.)
