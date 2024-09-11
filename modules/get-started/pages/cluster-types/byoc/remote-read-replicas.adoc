@@ -12,11 +12,11 @@ Redpanda Cloud supports remote read replicas with ephemeral BYOC clusters. Ephem
 * A BYOC source cluster in Ready state.
 * A BYOC reader cluster in Ready state. This separate reader cluster must exist in the same Redpanda organization and the same cloud provider account and region as the source cluster.
 
-== Customer-managed VPC: Grant storage permissions
+=== Customer-managed VPC: Grant storage permissions
 
 [NOTE]
 ====
-Skip this step if you're enabling remote read replicas on standard BYOC clusters.
+This prerequisite only applies to customer-managed VPC deployments. Skip this step if you're enabling remote read replicas on standard BYOC clusters.
 
 ====
 
@@ -25,6 +25,7 @@ Skip this step if you're enabling remote read replicas on standard BYOC clusters
 GCP::
 +
 --
+To grant additional permissions to the cloud storage manager of the reader cluster, run:
 
 ```bash
 gcloud storage buckets add-iam-policy-binding \
@@ -38,9 +39,9 @@ AWS::
 +
 --
 
-Grant additional permissions to the cloud storage manager of the reader cluster by setting the `source_cluster_bucket_names`
-and `reader_cluster_id` variables in https://github.com/redpanda-data/cloud-examples/blob/main/customer-managed/aws/terraform/variables.tf[cloud-examples].
-This should be done in the terraform of the reader cluster.
+To grant additional permissions to the cloud storage manager of the reader cluster, set the `source_cluster_bucket_names`
+and `reader_cluster_id` variables in https://github.com/redpanda-data/cloud-examples/blob/main/customer-managed/aws/terraform/variables.tf[cloud-examples^].
+This should be done in the Terraform of the reader cluster.
 
 --
 ======
