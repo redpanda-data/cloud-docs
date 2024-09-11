@@ -1,0 +1,31 @@
+= Scale Data Pipeline Resources on BYOC clusters
+:description: Learn how to manually scale resources for data pipelines using the Data Plane API.
+
+By default, every data pipeline created using the Redpanda Cloud UI is allocated 0.1 vCPU and 400 MB of memory. This resource limit should let you experiment with pipelines that create low message volumes of between 1-100 messages per second. 
+
+To allocate more resources to a specific pipeline, you need to use the Data Plane API.
+
+If your pipeline exceeds the CPU quota, contact Redpanda Support.
+
+== Update Resources for a Data Pipeline
+
+If you haven't used the Redpanda Cloud API before, see the xref:manage:api/cloud-api-quickstart.adoc[Cloud API Quickstart] for details of how to authenticate and get the base URL for Data Plane endpoints.
+
+To update the resources for an existing data pipeline, make a request to xref:api:ROOT:cloud-api.adoc#put-/v1alpha2/redpanda-connect/pipelines/-id-[`PUT /v1alpha2/redpanda-connect/pipelines/{id}`]. 
+
+The following example allocates 3 vCPU and 500 MB of memory to data pipeline. The `memory_shares` parameter accepts a range of units. For example, `500M` (500 megabytes), `2G` (2 gigabytes), or `500Mi` (500 mebibytes).    
+
+[,bash]
+----
+curl -X PUT "https://api.redpanda.com/v1alpha2/redpanda-connect/pipelines/<pipeline-id>"  \
+ -H "Authorization: Bearer <token>" \
+ -H "accept: application/json" \
+ -H "content-type: application/json" \
+'{"config_yaml":"string","description":"string","display_name":"string", \
+"resources":{"cpu_shares":"3.0","memory_shares":"500M"}}' \
+----
+
+Replace the following placeholders:
+
+* `<pipeline-id>`: The 20 character ID of the data pipeline.
+* `<token>`: Authentication token from the Cloud API.
