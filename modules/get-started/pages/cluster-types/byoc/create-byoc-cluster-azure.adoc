@@ -24,20 +24,34 @@ In the https://login.microsoftonline.com/[Azure Portal^], confirm that the dedic
 ** Microsoft.KeyVault
 ** Microsoft.Network
 +
-TIP: To check if an Azure resource provider is registered, run the following command using the Azure CLI or in the Azure Cloud Shell. For example, to check for Microsoft.Compute:
+To check if a resource provider is registered, run the following command using the Azure CLI or in the Azure Cloud Shell. For example, to check for Microsoft.Compute:
 +
 ``` 
 az provider show -n Microsoft.Compute
 ```
++ 
+If it is not registered, run: 
++
+```
+az provider register --namespace 'Microsoft.Compute'
+```
 
 * Feature: The subscription must be registered for Microsoft.Compute/EncryptionAtHost. See the https://learn.microsoft.com/en-us/azure/virtual-machines/linux/disks-enable-host-based-encryption-cli#prerequisites[Microsoft documentation^].
++
+To register EncryptionAtHost, run:
++
+```
+az feature register --name EncryptionAtHost  --namespace Microsoft.Compute
+```
 
 * Quota: The subscription must have the following quota in the region where you will use Redpanda. See the https://learn.microsoft.com/en-us/azure/quotas/view-quotas[Microsoft documentation^].
 
 ** Standard LASv3-series vCPUs: 24
 ** Standard DADSv5-series vCPUs: 8
 
-* Monitoring: Azure Network Watcher should be enabled in the NetworkWatcherRG resource group and the region where you will use Redpanda. See the https://learn.microsoft.com/en-us/azure/network-watcher/network-watcher-overview[Microsoft documentation^]. To enable it:
+* Monitoring: The subscription must have Azure Network Watcher enabled in the NetworkWatcherRG resource group and the region where you will use Redpanda. See the https://learn.microsoft.com/en-us/azure/network-watcher/network-watcher-overview[Microsoft documentation^]. To enable it:
++
+To enable Azure Network Watcher:
 +
 ```
 # Create the NetworkWatcherRG resource group
