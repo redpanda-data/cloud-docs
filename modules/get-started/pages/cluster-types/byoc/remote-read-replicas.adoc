@@ -12,13 +12,40 @@ Redpanda Cloud supports remote read replicas with ephemeral BYOC clusters. Ephem
 * A BYOC source cluster in Ready state.
 * A BYOC reader cluster in Ready state. This separate reader cluster must exist in the same Redpanda organization and the same cloud provider account and region as the source cluster.
 
-== Standard BYOC: Configure remote read replica
+== Customer-managed VPC: Grant storage permissions
 
 [NOTE]
 ====
-Skip this step if you're enabling remote read replicas on customer-managed VPC clusters.
+Skip this step if you're enabling remote read replicas on standard BYOC clusters.
 
 ====
+
+[tabs]
+======
+GCP::
++
+--
+
+```bash
+gcloud storage buckets add-iam-policy-binding \
+    gs://<source cluster tiered storage bucket name> \
+    --member="serviceAccount:<reader cluster redpanda_cluster_service_account email>" \
+    --role="roles/storage.objectViewer"
+```
+
+--
+AWS::
++
+--
+
+Grant additional permissions to the cloud storage manager of the reader cluster by setting the `source_cluster_bucket_names`
+and `reader_cluster_id` variables in https://github.com/redpanda-data/cloud-examples/blob/main/customer-managed/aws/terraform/variables.tf[cloud-examples].
+This should be done in the terraform of the reader cluster.
+
+--
+======
+
+== Configure remote read replica
 
 Add or remove reader clusters to a source cluster in Redpanda Cloud with the xref:api:ROOT:cloud-api.adoc[Cloud API]. For information on accessing the Cloud API, see xref:manage:api/cloud-api-authentication.adoc[].
 
@@ -51,44 +78,6 @@ curl -X GET $API_HOST/v1beta2/clusters/$SOURCE_CLUSTER_ID \
 [NOTE]
 ====
 A source cluster cannot be deleted if it has remote read replica topics. When you delete a reader cluster, that cluster's ID is removed from any existing source cluster `read_replica_cluster_ids` lists.
-
-====
-
-== Customer-managed VPC: Grant storage permissions
-
-[NOTE]
-====
-Skip this step if you're enabling remote read replicas on standard BYOC clusters.
-
-====
-
-[tabs]
-======
-GCP::
-+
---
-
-```bash
-gcloud storage buckets add-iam-policy-binding \
-    gs://<source cluster tiered storage bucket name> \
-    --member="serviceAccount:<redpanda_cluster_service_account_email>" \
-    --role="roles/storage.objectViewer"
-```
-
---
-AWS::
-+
---
-
-Grant additional permissions to the cloud storage manager of the reader cluster by setting the `source_cluster_bucket_names`
-and `reader_cluster_id` variables in https://github.com/redpanda-data/cloud-examples/blob/main/customer-managed/aws/terraform/variables.tf[cloud-examples].
-
---
-======
-
-[WARNING]
-====
-When using remote read replicas with a customer-managed VPC, Redpanda cannot guarantee deletion prevention. You must ensure that the source cluster is not deleted.
 
 ====
 
