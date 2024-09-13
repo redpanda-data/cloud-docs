@@ -1,31 +1,57 @@
-= Scaling Data Pipeline Resources on BYOC clusters
+= Scaling Data Pipeline Resources on BYOC Clusters
 :description: Learn how to manually scale resources for data pipelines using the Data Plane API.
 
-By default, every data pipeline created using the Redpanda Cloud UI is allocated 0.1 vCPU and 400 MB of memory. This resource limit should let you experiment with pipelines that create low message volumes of between 1-100 messages per second. 
+When you create a data pipeline through the Cloud UI, Redpanda Connect reserves compute resources for the exclusive use of that pipeline. This initial resource allocation should let you experiment with pipelines that create low message volumes. 
 
-To allocate more resources to a specific pipeline, you need to use the Data Plane API.
-
-If your pipeline exceeds the CPU quota, contact Redpanda Support.
+For pipelines with resource-intensive or higher throughput workloads, you can manually scale resources, using the xref:manage:api/cloud-dataplane-api.adoc[Data Plane API].   
 
 == Update Resources for a Data Pipeline
 
-If you haven't used the Redpanda Cloud API before, see the xref:manage:api/cloud-api-quickstart.adoc[Cloud API Quickstart] for details of how to authenticate and get the base URL for Data Plane endpoints.
+View the compute resources allocated to a data pipeline, and manually scale those resources.
 
-To update the resources for an existing data pipeline, make a request to xref:api:ROOT:cloud-api.adoc#put-/v1alpha2/redpanda-connect/pipelines/-id-[`PUT /v1alpha2/redpanda-connect/pipelines/{id}`]. 
+Use the Cloud UI or Data Plane API to view resources already allocated to a data pipeline:
 
-The following example allocates 3 vCPU and 500 MB of memory to data pipeline. The `memory_shares` parameter accepts a range of units. For example, `500M` (500 megabytes), `2G` (2 gigabytes), or `500Mi` (500 mebibytes).    
+[tabs]
+=====
+Cloud UI::
++
+--
+. Log in to https://cloud.redpanda.com[Redpanda Cloud^].  
+. Go to the cluster where the pipeline is set up.
+. On the **Connectors** page, select your pipeline and look at the value for **Resources**.
++
+* CPU resources are displayed first, in vCPU. For example, `1` is 1.0 vCPU. 
+* Memory is displayed in megabytes. For example, `400M` is 400 MB.
+. Take a note of the pipeline **ID**.
 
+--
+Data Plane API::
++
+--
+. xref:manage:api/cloud-api-quickstart.adoc#try-the-cloud-api[Authenticate and get the base URL] for the Data Plane API. 
+. Make a request to xref:api:ROOT:cloud-api.adoc#get-/v1alpha2/redpanda-connect/pipelines[`GET /v1alpha2/redpanda-connect/pipelines`], which lists details of all pipelines on your cluster by ID. 
++
+* CPU resources (`cpu_shares`) are displayed vCPU. For example, `1` is equivalent to 1.0 vCPU. 
+* Memory (`memory_shares`) is displayed in megabytes. For example, `400M` is 400 MB.
+--
+=====
+
+To scale the resources for a pipeline:
+
+. xref:manage:api/cloud-api-quickstart.adoc#try-the-cloud-api[Authenticate and get the base URL] for Data Plane API, if you haven't done so already. 
+. Make a request to xref:api:ROOT:cloud-api.adoc#put-/v1alpha2/redpanda-connect/pipelines/-id-[`PUT /v1alpha2/redpanda-connect/pipelines/{id}`], including the pipeline ID and the resources you want to allocate.
++
+This example allocates 1.2 vCPU and 500 MB of memory to a data pipeline. For `cpu_shares`, `0.1` vCPU is the minimum allocation. For `memory_shares`, you can also specify fractions of a gigabyte. For example, `0.5G`.
++
 [,bash]
 ----
-curl -X PUT "https://api.redpanda.com/v1alpha2/redpanda-connect/pipelines/<pipeline-id>"  \
+curl -X PUT "https://api-dfb1e463.crhjl9gj1v2u1117r1f0.byoc.prd.cloud.redpanda.com/v1alpha2/redpanda-connect/pipelines/<pipeline-id>"  \
  -H "Authorization: Bearer <token>" \
  -H "accept: application/json" \
  -H "content-type: application/json" \
-'{"config_yaml":"string","description":"string","display_name":"string", \
-"resources":{"cpu_shares":"3.0","memory_shares":"500M"}}' \
+'{"resources":{"cpu_shares":"1.2","memory_shares":"500M"}}' \
 ----
 
-Replace the following placeholders:
+. Make a request to xref:api:ROOT:cloud-api.adoc#get-/v1alpha2/redpanda-connect/pipelines[`GET /v1alpha2/redpanda-connect/pipelines`], to check the pipeline resources have been updated. 
 
-* `<pipeline-id>`: The 20 character ID of the data pipeline.
-* `<token>`: Authentication token from the Cloud API.
+NOTE: If your resource request exceeds the maximum allowed limit, please contact Redpanda Support.
