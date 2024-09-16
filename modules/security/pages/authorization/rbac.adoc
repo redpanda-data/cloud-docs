@@ -60,36 +60,20 @@ Link to Control Plane API?
 
 == Manage access for resource group or cluster
 
-In the Redpanda Cloud UI *Security - Access Control* page, you can see, edit, and delete existing users, service accounts, roles, and ACLs. You can also add users, roles, and ACLs. You can assign a role to existing users, or you can create a new user to apply the role to.  A user can have the viewer role assigned for one cluster and the editor role assigned for another cluster. 
+In the Redpanda Cloud UI *Security - Access Control* page, you can view, create, edit, and delete users, service accounts, roles, and ACLs. You can assign a role to existing users, or you can create a new user to apply the role to. A user can have the viewer role assigned for one cluster and the editor role assigned for another cluster. 
+
+=== Add, edit, delete roles
+
+* When you add a role, you define the permissions (ACLs) for it. You can create ACLs for topics, consumer groups, and transactional IDs. You can also assign one or more principals (user accounts and service accounts) when you create it. 
+* You can add or remove the ACLs associated with a role or change the users associated with a role.
+* When you delete a role, Redpanda removes it from any user or service account it is attached to, and permissions are revoked.
+* When you add a _user_ or a _service account_, you can define the roles and ACLs for it. 
+
+The *Security - Roles* page shows all currently-assigned permissions (ACLs) with associated users and service accounts.
 
 In the Cloud API, the xref:manage:api/cloud-dataplane-api.adoc[Data Plane APIs] enable you to programmatically manage the resources within your clusters, roles, users, and access control lists (ACLs).
 
-=== Create a role
-
-To create a new role:
-
-. On the `Security` - `Roles` page, click *Create Role*.
-
-. Provide a name for the role and an optional origin host for users to connect from.
-
-. Define the permissions (ACLs) for the role. You can create ACLs for topics, consumer groups, and transactional IDs.
-
-. Optional: You can assign one or more principals (user accounts and service accounts) to the role as part of creating it.
-
-. Click *Create*.
-
-=== Create a user
-
-* Click to create
-* Name the user, define a password, and its mechanism 
-* Can create ACLs 
-* Optionally can create a role from the ACLs and name the role. 
-
-=== Create a service account
-
-xxx
-
-=== Assign a role
+=== Assign roles
 
 To add a role to a user:
 
@@ -103,53 +87,4 @@ To add a role to a service account:
 
 xxx
 
-=== Unassign a role
-
-To remove a role from a user or service account:
-
-Option 1, using the `Edit Role` view:
-
-. On the `Security` - `Roles` page, click the role you want to unassign.
-
-. Click *Edit*.
-
-. Below the list of permissions, find the `Principals` section. Click *x* beside the name of any principals you want to remove from the role.
-
-. After you have made all edits, click *Update*.
-
-Option 2, using the `Edit User` view:
-
-. On the `Security` - `Users` page, find the user you want to remove from one or more roles and then click the user's name.
-
-. Click *x* beside the name of any roles you want to remove this user from.
-
-. After you have removed the user from all desired roles, click *Update*.
-
-=== Edit role permissions
-
-You can change the ACLs associated with a role or change the users associated with a role. 
-
-To add or remove the ACLs for an existing role:
-
-. On the `Security` - `Roles` page, find the role you want to assign to one or more users or service accounts, and then click the role name.
-
-. Click *Edit*.
-
-. In the `Edit Role` view, you can update the optional origin host for users to connect from.
-
-. You can add or remove existing (ACLs) for the role. As when creating a new role, you can create or modify ACLs for topics, consumer groups, and transactional IDs.
-
-. After making all desired changes, click *Update*.
-
-=== Delete a role
-
-When a role is deleted, it is removed from any user or service account it is attached to, and permissions are revoked.
-
-To delete an existing role:
-
-. On the `Security` - `Roles` page, click the role you want to delete. This shows all currently assigned permissions (ACLs) with associated users and service accounts.
-
-. Click *Delete*.
-
-. Confirm that you want to delete the role, and click *Delete*.
-
+You can remove a role from a user or service account by editing the role or by editing the user. 
