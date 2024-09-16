@@ -177,7 +177,11 @@ BYOC with customer-managed VPC::
 
 == Maintenance windows
 
-By default, Redpanda Cloud upgrades take place on Tuesdays. Optionally, on the **Cluster settings** page, you can select a window of specific off-hours for your business for Redpanda to apply updates. All times are in Coordinated Universal Time (UTC). Updates may start at any time during that window. 
+Redpanda runs maintenance operations on clusters in a rolling fashion, accompanied by a series of health checks, so there is no disruption to the availability of your service. As part of the Kafka protocol, recycling nodes cause client connections to be restarted. All mainstream client libraries support automatic reconnections for this.
+
+By default, Redpanda Cloud maintenance cycles start on Tuesdays. Optionally, on the **Cluster settings** page, you can schedule a day and window of time for your business for Redpanda to apply updates. All times are in Coordinated Universal Time (UTC), and operations typically take six hours. Maintenance may start at any time during that window, and some operations may complete after the window ends. 
+
+TIP: By default, clusters scheduled on Tuesdays are updated first and clusters scheduled on Mondays are updated last. Keep this in my mind when sequencing updates for multiple clusters.
 
 == Redpanda Cloud architecture
 
