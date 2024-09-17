@@ -3,48 +3,20 @@
 :page-categories: Management, Security
 :page-beta: true
 
-Use role-based access control (RBAC) in Redpanda Cloud to manage and restrict access to specific resource groups and clusters. With RBAC, permissions are attached to roles, instead of individual users, and you assign permissions to users based on their role. For example, you can limit users to only being able to view clusters managed by their team, or you can restrict users from changing clusters in the production environment. Users with multiple roles receive the union of all permissions defined in those roles. 
+Use role-based access control (RBAC) in Redpanda Cloud to manage and restrict access to specific resource groups and clusters within your organization. For example, you can allow all users view access to your development clusters but only allow some users edit access to your production clusters.
 
-When you change the permissions for a given role, all users and service accounts with that role automatically gain the modified permissions. You can assign any number of roles to a given user. When installing a new Redpanda cluster, no roles are provisioned by default.
+With RBAC, permissions are attached to roles, instead of individual users, and you assign permissions to users based on their role. Users with multiple roles receive the union of all permissions defined in those roles. 
 
 You can manage your RBAC configurations with the https://cloud.redpanda.com[Redpanda Cloud UI^] or the xref:api:ROOT:cloud-api.adoc[Cloud API]. 
 
 == Roles
 
+When you change the permissions for a given role, all users and service accounts with that role automatically gain the modified permissions. You can assign any number of roles to a given user. When installing a new Redpanda cluster, no roles are provisioned by default.
+
 Roles are configurable sets of glossterm:ACL[,access control lists (ACLs)]. You can assign a combination of ACLs and roles to any given user account or service account. ACLs allow permissions, deny permissions, or specify a combination of both. As a result, users may at times have role assignments with conflicting policies. If this situation arises, the user is permitted to perform an operation if:
 
 * There does not exist a DENY permission matching the operation.
 * There exists an ALLOW permission matching the operation.
-
-Redpanda Cloud provides the following predefined roles: <<viewer,viewer>>, <<editor,editor>>, and <<admin,admin>>.
-
-=== Viewer
-
-The viewer role grants permissions to view all resources. This includes:
-
-* View all topic aspects (messages, configs, partitions, using search filters)
-* View all cluster aspects (node configs, ACLs, service accounts, quotas)
-* View all consumer group aspects (consumer groups, group offsets and lags)
-* View all schema registry aspects (registered schemas with their contents)
-* View all Kafka Connect aspects (list configured clusters and their connectors, including the status and connector configs)
-* It does not include permissions to view the list of users.
-
-=== Editor
-
-The editor role grants all permissions that come with the viewer role and additionally includes:
-
-* Manage all topic aspects, such as creating topics, editing topic configurations, deleting topics, and publishing and deleting topic records.
-* Manage all cluster configuration aspects, such as editing node or cluster configs.
-* Manage all consumer group aspects, such as editing group offsets or deleting group offsets.
-* Manage all Kafka connect aspects, such as creating/updating/deleting or starting/pausing/stopping connectors.
-* It does not include the permission to create/remove ACLs or to create or remove a service account.
-
-=== Admin
-
-The admin role grants all permissions that come with the editor role and additionally includes:
-
-* Manage all service account aspects (create/remove service accounts)
-* Manage all ACL aspects (create/remove ACLs)
 
 == Role bindings
 
@@ -58,11 +30,7 @@ In the Redpanda Cloud UI, go to the *Organization IAM* page to see a list of you
 
 Link to Control Plane API? 
 
-== Manage access for resource group or cluster
-
 In the Redpanda Cloud UI *Security - Access Control* page, you can view, create, edit, and delete users, service accounts, roles, and ACLs. You can assign a role to existing users, or you can create a new user to apply the role to. A user can have the viewer role assigned for one cluster and the editor role assigned for another cluster. 
-
-In the Cloud API, the xref:manage:api/cloud-dataplane-api.adoc[Data Plane APIs] enable you to programmatically manage the resources within your clusters, roles, users, and access control lists (ACLs).
 
 === Manage roles
 
@@ -76,3 +44,35 @@ The *Security - Roles* page shows all currently-assigned permissions (ACLs) with
 To add a role to a user or service account, go to the *Security - Users* or *Service accounts*. Select the user/service account you want to assign one or more roles to. Using the *Assign Roles* input field, list the roles you want to add, and click *Update*.
 
 You can remove a role from a user or service account by editing the role or by editing the user or service account. 
+
+=== Predefined roles
+
+Redpanda Cloud provides the following predefined roles: <<viewer,viewer>>, <<editor,editor>>, and <<admin,admin>>.
+
+==== Viewer
+
+The viewer role grants permissions to view all resources. This includes:
+
+* View all topic aspects (messages, configs, partitions, using search filters)
+* View all cluster aspects (node configs, ACLs, service accounts, quotas)
+* View all consumer group aspects (consumer groups, group offsets and lags)
+* View all schema registry aspects (registered schemas with their contents)
+* View all Kafka Connect aspects (list configured clusters and their connectors, including the status and connector configs)
+* It does not include permissions to view the list of users.
+
+==== Editor
+
+The editor role grants all permissions that come with the viewer role and additionally includes:
+
+* Manage all topic aspects, such as creating topics, editing topic configurations, deleting topics, and publishing and deleting topic records.
+* Manage all cluster configuration aspects, such as editing node or cluster configs.
+* Manage all consumer group aspects, such as editing group offsets or deleting group offsets.
+* Manage all Kafka connect aspects, such as creating/updating/deleting or starting/pausing/stopping connectors.
+* It does not include the permission to create/remove ACLs or to create or remove a service account.
+
+==== Admin
+
+The admin role grants all permissions that come with the editor role and additionally includes:
+
+* Manage all service account aspects (create/remove service accounts)
+* Manage all ACL aspects (create/remove ACLs)
