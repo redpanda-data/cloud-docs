@@ -49,9 +49,16 @@ curl -X PUT "https://api-dfb1e463.crhjl9gj1v2u1117r1f0.byoc.prd.cloud.redpanda.c
  -H "Authorization: Bearer <token>" \
  -H "accept: application/json" \
  -H "content-type: application/json" \
-'{"resources":{"cpu_shares":"1.2","memory_shares":"500M"}}' \
+ -d '{"config_yaml":"input:\n generate:\n   interval: 1s\n   mapping: |\n     root.id = uuid_v4()\n     root.   user.name = fake(\"name\")\n     root.user.email = fake(\"email\")\n     root.content = fake(\"paragraph\")\n\npipeline:\n processors:\n   - mutation: |\n       root.title = \"PRIVATE AND CONFIDENTIAL\"\n\noutput:\n kafka_franz:\n   seed_brokers:\n     - seed-8b788fee.cr7320vkc43nu6gaj888.byoc.prd.cloud.redpanda.com:9092\n   sasl:\n     - mechanism: SCRAM-SHA-256\n       password: password\n       username: connect\n   topic: processed-emails\n   tls:\n     enabled: true\n", \
+    "description":"Email processor", \ 
+    "display_name":"emailprocessor-pipeline", \
+    "resources":{ \
+        "cpu_shares":"1.2", \
+        "memory_shares":"500M" \
+        } \
+      }' 
 ----
-
-. Make a request to xref:api:ROOT:cloud-api.adoc#get-/v1alpha2/redpanda-connect/pipelines[`GET /v1alpha2/redpanda-connect/pipelines`], to check the pipeline resources have been updated. 
+A successful response shows the updated resource allocations with the `cpu_shares` value returned in millicpu.
+. Make a request to xref:api:ROOT:cloud-api.adoc#get-/v1alpha2/redpanda-connect/pipelines[`GET /v1alpha2/redpanda-connect/pipelines`] to verify your pipeline resource updates. 
 
 NOTE: If your resource request exceeds the maximum allowed limit, please contact Redpanda Support.
