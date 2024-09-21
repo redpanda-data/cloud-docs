@@ -1,27 +1,9 @@
 = Role-Based Access Control
-:description: Role-based access control (RBAC) lets you manage and restrict access to specific resources in your organization.
+:description: Use role-based access control (RBAC) to manage access to resources (like resource groups or clusters) in your organization.
 :page-categories: Management, Security
 :page-beta: true
 
-Use role-based access control (RBAC) in Redpanda Cloud to manage and restrict access to specific resources in your organization. For example, you can allow all users with a certain job reader access to your development clusters but only allow some users writer access to your production clusters.
-
-You can manage your RBAC configurations with the https://cloud.redpanda.com[Redpanda Cloud UI^] or the xref:api:ROOT:cloud-api.adoc[Cloud API]. 
-
-== RBAC terminology
-
-**Role**: A role is a list of permissions. With RBAC, permissions are attached to roles, and you assign permissions to users based on their role. Users with multiple roles receive the union of all permissions defined in those roles. Redpanda Cloud has three predefined roles: 
-
-- Admin
-- Writer
-- Reader
-
-**Account**: An RBAC account is either a user account (human user) or a service account (machine or programmatic user).
-
-**Role binding**: Role binding connects, or _assigns_ a role to an account. 
-
-When a user is associated with more than one role, the user is granted all the permissions defined in each role they are assigned. For example, if a user is assigned both the reader and writer roles, they have all the permissions of a reader as well as the additional permissions of a writer. Duplicate role bindings do not cause errors or conflicts. If a user is assigned the same role multiple times through role bindings, the duplicate role bindings do not affect the user's final set of permissions.
-
-**RBAC resources**: The following resources can be assigned in a role: 
+Use role-based access control (RBAC) in Redpanda Cloud to manage and restrict access to resources in your organization. For example, you can allow all users with a certain job title write access to your development clusters and read access to your production clusters. The following resources can be assigned in a role: 
 
 - Organization 	
 - Resource group
@@ -29,25 +11,31 @@ When a user is associated with more than one role, the user is granted all the p
 - Cluster
 - Network peering
 
+You can manage your RBAC configurations with the https://cloud.redpanda.com[Redpanda Cloud UI^] or the xref:api:ROOT:cloud-api.adoc[Cloud API]. 
+
+== RBAC terminology
+
+**Role**: A role is a list of permissions. With RBAC, permissions are attached to roles, and you assign permissions to users based on their role. Users with multiple roles receive the union of all permissions defined in those roles. Redpanda Cloud has three predefined roles: admin, writer, and reader.
+
+**Account**: An RBAC account is either a user account (human user) or a service account (machine or programmatic user).
+
+**Role binding**: Role binding assigns a role to an account. 
+
 == Manage access for organization
 
-In the Redpanda Cloud UI, go to the *Organization IAM* page to see a list of your organization's existing users and service accounts and their associated roles. You can edit a user's access, invite users, or create service accounts. When you add a user, you define the roles for it. Service accounts are assigned admin permission to all resources in the organization. 
+In the Redpanda Cloud UI, the *Organization IAM* page lists your organization's existing users and service accounts and their associated roles. You can edit a user's access, invite new users, and create service accounts. When you add a user, you define the roles for it. Service accounts are assigned the admin role to all resources in the organization. 
 
-Select a user or service account to see their roles. For example, for a user with admin access on the whole organization, the user's _resource_ is the organization name, the _scope_ is the organization, and the _role_ is admin. 
+Select a user to see the assigned roles. For example, for a user with admin access on the organization, the user's _Resource_ is the organization name, the _Scope_ is organization, and the _Role_ is admin.
 
-You could assign a user the reader role on the organization, the admin role on a specific resource group, and the writer role on a specific cluster.
+To edit a user's access, or or remove a role binding. When a role binding is removed, users may see that resource exists, but they cannot access it. 
 
-When you change the permissions for a given role, all users and service accounts with that role automatically get the modified permissions. You can assign any number of roles to an account. 
+When you change the permissions for a given role, all users and service accounts with that role automatically get the modified permissions.
 
-You can edit by selecting the user (Org IAM - Users) and deleting the role binding. Users may see that resources exist, but they cannot access them without the necessary role. 
-
-When starting with a new Redpanda organization, no roles are provisioned by default. 
+Users can have multiple roles. For example, you could assign a user the reader role on the organization, the admin role on a specific resource group, and the writer role on a specific cluster. When a user is associated with more than one role, the user is granted all the permissions defined in each role. For example, if a user is assigned both the reader and writer roles, they have all the permissions of a reader as well as the additional permissions of a writer. Duplicate role bindings do not cause errors or conflicts. If a user is assigned the same role multiple times through role bindings, the duplicate role bindings do not affect the user's final set of permissions. 
 
 When you delete a role, Redpanda removes it from any user or service account it is attached to, and permissions are revoked.
 
-Link to Control Plane API? 
-
-== Predefined roles
+== Predefined roles (copy from self-managed)
 
 Redpanda Cloud provides the following predefined roles: <<viewer,viewer>>, <<editor,editor>>, and <<admin,admin>>.
 
