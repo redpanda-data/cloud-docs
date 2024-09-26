@@ -1,9 +1,9 @@
 = Role-Based Access Control
-:description: Use role-based access control (RBAC) to manage access to resources (like resource groups or clusters) in your organization.
+:description: Use role-based access control (RBAC) to manage access to resources in your organization, like clusters or resource groups.
 :page-categories: Management, Security
 :page-beta: true
 
-Use role-based access control (RBAC) in Redpanda Cloud to manage and restrict access to resources in your organization. For example, you can allow all users with a certain job title write access to your development clusters and read access to your production clusters. The following resources can be assigned in a role: 
+Use role-based access control (RBAC) in the Redpanda Cloud control plane to manage and restrict access to resources in your organization. For example, you could assign all users with a certain job title read access on the entire organization and write access only on your non-production resource group. The following resources can be assigned in a role: 
 
 - Organization 	
 - Resource group
@@ -15,7 +15,7 @@ You can manage your RBAC configurations with the https://cloud.redpanda.com[Redp
 
 == RBAC terminology
 
-**Role**: A role is a list of permissions. With RBAC, permissions are attached to roles, and you assign permissions to users based on their role. Users with multiple roles receive the union of all permissions defined in those roles. Redpanda Cloud has three predefined roles: admin, writer, and reader.
+**Role**: A role is a list of permissions. With RBAC, permissions are attached to roles. Users assigned multiple roles receive the union of all permissions defined in those roles. Redpanda Cloud has three predefined roles: admin, writer, and reader.
 
 **Account**: An RBAC account is either a user account (human user) or a service account (machine or programmatic user).
 
@@ -23,19 +23,19 @@ You can manage your RBAC configurations with the https://cloud.redpanda.com[Redp
 
 == Manage access for organization
 
-In the Redpanda Cloud UI, the *Organization IAM* page lists your organization's existing users and service accounts and their associated roles. You can edit a user's access, invite new users, and create service accounts. When you add a user, you define the roles for it. Service accounts are assigned the admin role to all resources in the organization. 
+In the Redpanda Cloud UI, the *Organization IAM* page lists your organization's existing users and service accounts and their associated roles. You can edit a user's access, invite new users, and create service accounts. When you add a user, you define their permissions with role binding. Service accounts are assigned the admin role for all resources in the organization. 
 
-Select a user to see the assigned roles. For example, for a user with admin access on the organization, the user's _Resource_ is the organization name, the _Scope_ is organization, and the _Role_ is admin.
+On the *Organization IAM - Users* page, select a user to see their assigned roles. For example, for a user with admin access on the organization, the user's _Resource_ is the organization name, the _Scope_ is organization, and the _Role_ is admin.
 
-To edit a user's access, or or remove a role binding. When a role binding is removed, users may see that resource exists, but they cannot access it. 
+Administrators can add, edit, or remove role bindings for a user. When you change the permissions for a given role, all users and service accounts with that role automatically get the modified permissions. When a role binding is removed, users may see that resource exists, but they cannot access it. 
 
-When you change the permissions for a given role, all users and service accounts with that role automatically get the modified permissions.
-
-Users can have multiple roles. For example, you could assign a user the reader role on the organization, the admin role on a specific resource group, and the writer role on a specific cluster. When a user is associated with more than one role, the user is granted all the permissions defined in each role. For example, if a user is assigned both the reader and writer roles, they have all the permissions of a reader as well as the additional permissions of a writer. Duplicate role bindings do not cause errors or conflicts. If a user is assigned the same role multiple times through role bindings, the duplicate role bindings do not affect the user's final set of permissions. 
+Users can have multiple roles. For example, you could assign a user the reader role on the organization, the admin role on a specific resource group, and the writer role on a specific cluster. When a user is associated with more than one role, the user is granted all the permissions defined in each role. For example, if a user is assigned both the reader and writer roles, they have all the permissions of a reader as well as the additional permissions of a writer. Duplicate role bindings do not cause errors or conflicts. 
 
 When you delete a role, Redpanda removes it from any user or service account it is attached to, and permissions are revoked.
 
-== Predefined roles (copy from self-managed)
+== Predefined roles 
+
+**Note to reviewers: This is copied from self-managed RBAC. Does this all pertain to Cloud RBAC (and we just change viewer to reader and change editor to writer)?**
 
 Redpanda Cloud provides the following predefined roles: <<viewer,viewer>>, <<editor,editor>>, and <<admin,admin>>.
 
@@ -44,7 +44,7 @@ Redpanda Cloud provides the following predefined roles: <<viewer,viewer>>, <<edi
 The viewer role grants permission to view all resources. This includes:
 
 * View all topic aspects (messages, configs, partitions, using search filters)
-* View all cluster aspects (node configs, ACLs, service accounts, quotas)
+* View all cluster aspects (ACLs, service accounts, quotas)
 * View all consumer group aspects (consumer groups, group offsets, and lags)
 * View all schema registry aspects (registered schemas with their contents)
 * View all Kafka Connect aspects (list configured clusters and their connectors, including the status and connector configs)
@@ -55,9 +55,8 @@ The viewer role grants permission to view all resources. This includes:
 The editor role grants all permissions that come with the viewer role and additionally includes:
 
 * Manage all topic aspects, such as creating topics, editing topic configurations, deleting topics, and publishing and deleting topic records.
-* Manage all cluster configuration aspects, such as editing node or cluster configs.
 * Manage all consumer group aspects, such as editing group offsets or deleting group offsets.
-* Manage all Kafka connect aspects, such as creating/updating/deleting or starting/pausing/stopping connectors.
+* Manage all Kafka Connect aspects, such as creating/updating/deleting or starting/pausing/stopping Kafka Connect.
 * It does not include permission to create/remove ACLs or to create or remove a service account.
 
 === Admin
