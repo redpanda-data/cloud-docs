@@ -23,8 +23,8 @@ You can use the Redpanda Terraform provider to create and manage the following r
 
 The following functionality is supported in the Cloud API but not in the Redpanda Terraform provider: 
 
-* Managed connectors
 * Secrets
+* Kafka Connect
 
 == Use the provider
 
@@ -47,7 +47,7 @@ terraform {
 terraform init
 ```
 
-. Add the credentials for the Redpanda Cloud service account you set in the prerequisites. Find the client ID and client secret on the *Organization IAM - Service account* page in Redpanda Cloud. Set them as environment variables, or enter them in your Terraform configuration file:
+. Add the credentials for the Redpanda Cloud service account you set in the prerequisites. In the Redpanda Cloud UI, find the client ID and client secret on the *Organization IAM - Service account* page. Set them as environment variables, or enter them in your Terraform configuration file:
 +
 [tabs]
 ======
@@ -79,7 +79,7 @@ For an example of how to use the provider to create a new cluster, see https://g
 
 === Use the provider to manage an existing cluster
 
-To manage resources in existing Redpanda Cloud clusters, you must reference the existing cluster using the cluster ID (Redpanda ID). The following example creates a topic in a cluster with ID `foo-bar-baz`. The `redpanda_topic` resource contains a field `cluster_api_url` that references the `data.redpanda_cluster.test.cluster_api_url` data resource. 
+To manage resources in existing Redpanda Cloud clusters, you must reference the cluster using the cluster ID (Redpanda ID). The following example creates a topic in a cluster with ID `foo-bar-baz`. The `redpanda_topic` resource contains a field `cluster_api_url` that references the `data.redpanda_cluster.test.cluster_api_url` data resource. 
 
 ```
 data "redpanda_cluster" "test" {
