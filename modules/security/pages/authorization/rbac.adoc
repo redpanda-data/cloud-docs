@@ -6,10 +6,10 @@
 Use role-based access control (RBAC) in the Redpanda Cloud control plane to manage and restrict access to resources in your organization. For example, you could assign all users with a certain job title read access on the entire organization and write access only on your non-production resource group. The following resources can be assigned as the scope of a role: 
 
 - Organization 	
-- Resource group
-- Network
-- Cluster
-- Network peering
+- Resource groups
+- Networks
+- Clusters
+- Network peerings
 
 You can manage your RBAC configurations with the https://cloud.redpanda.com[Redpanda Cloud UI^] or the xref:api:ROOT:cloud-api.adoc[Cloud API]. 
 
@@ -27,21 +27,21 @@ In the Redpanda Cloud UI, the *Organization IAM* page lists your organization's 
 
 On the *Organization IAM - Users* page, select a user to see their assigned roles. For example, for a user with admin access on the organization, the user's _Resource_ is the organization name, the _Scope_ is organization, and the _Role_ is admin.
 
-Administrators can add, edit, or remove role bindings for a user. When you change the permissions for a given role, all users and service accounts with that role automatically get the modified permissions. When a role binding is removed, users may see that resource exists, but they cannot access it. 
+Administrators can add, edit, or remove role bindings for a user. When you change the permissions for a given role, all users and service accounts with that role automatically get the modified permissions. 
 
-Users can have multiple roles. For example, you could assign a user the reader role on the organization, the admin role on a specific resource group, and the writer role on a specific cluster. When a user is associated with more than one role, the user is granted all the permissions defined in each role. For example, if a user is assigned both the reader and writer roles, they have all the permissions of a reader as well as the additional permissions of a writer. Duplicate role bindings do not cause errors or conflicts. 
+Users can have multiple roles, as long as they are each for a different resource and scope. For example, you could assign a user the reader role on the organization, the admin role on a specific resource group, and the writer role on a specific cluster.
 
 When you delete a role, Redpanda removes it from any user or service account it is attached to, and permissions are revoked.
 
 == Predefined roles 
 
-**Note to reviewers: This is copied from self-managed RBAC. Does this all pertain to Cloud RBAC (and we just change viewer to reader and change editor to writer)?**
+**Note to reviewers:** This list of permissions is copied from self-managed RBAC, with just viewer changed to reader and editor changed to writer.
 
-Redpanda Cloud provides the following predefined roles: <<viewer,viewer>>, <<editor,editor>>, and <<admin,admin>>.
+Redpanda Cloud provides the following predefined roles: <<reader,reader>>, <<writer,writer>>, and <<admin,admin>>.
 
-=== Viewer
+=== Reader
 
-The viewer role grants permission to view all resources. This includes:
+The reader role grants permission to view all resources. This includes:
 
 * View all topic aspects (messages, configs, partitions, using search filters)
 * View all cluster aspects (ACLs, service accounts, quotas)
@@ -50,9 +50,9 @@ The viewer role grants permission to view all resources. This includes:
 * View all Kafka Connect aspects (list configured clusters and their connectors, including the status and connector configs)
 * It does not include permission to view the list of users.
 
-=== Editor
+=== Writer
 
-The editor role grants all permissions that come with the viewer role and additionally includes:
+The writer role grants all permissions that come with the reader role and additionally includes:
 
 * Manage all topic aspects, such as creating topics, editing topic configurations, deleting topics, and publishing and deleting topic records.
 * Manage all consumer group aspects, such as editing group offsets or deleting group offsets.
@@ -61,7 +61,7 @@ The editor role grants all permissions that come with the viewer role and additi
 
 === Admin
 
-The admin role grants all permissions that come with the editor role and additionally includes:
+The admin role grants all permissions that come with the writer role and additionally includes:
 
 * Manage all service account aspects (create/remove service accounts)
 * Manage all ACL aspects (create/remove ACLs)
