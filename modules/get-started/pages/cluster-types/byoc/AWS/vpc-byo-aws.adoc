@@ -41,7 +41,7 @@ curl -X POST "https://api.redpanda.com/v1beta2/networks" \
  -H "authorization: Bearer $YOUR_TOKEN" \
 -d @- << EOF
 {
-	 "name":"<name you choose for your network resource>",
+	 "name":"<your network resource name>",
 	 "resource_group_id": "<resource group id of the network>",
 	 "cloud_provider":"CLOUD_PROVIDER_AWS",
 	 "region":"<region>",
@@ -68,7 +68,8 @@ EOF
 
 The create network request returns a `resource_id`. For example:
 
-```
+[,yaml,lines=11]
+----
 {
    "operation":{
       "id":"cpas8k6r4up5li18auh0",
@@ -82,7 +83,7 @@ The create network request returns a `resource_id`. For example:
       "resource_id":"cpb338gekjj5i1cpj3t0"
    }
 }
-```
+----
 
 == Create a cluster with the Cloud API
 
@@ -151,7 +152,7 @@ curl -X POST "https://api.redpanda.com/v1beta2/clusters" \
       }
     }
   },
-  # <This aws_private_link section is optional. See the https://docs.redpanda.com/current/deploy/deployment-option/cloud/aws-privatelink/[AWS documentation] for more information>
+  # <The following aws_private_link section is optional. For more information, see https://docs.redpanda.com/current/deploy/deployment-option/cloud/aws-privatelink/.>
   "aws_private_link": { 
     "enabled": true, 
     "allowed_principals": [<allowed principals>],
