@@ -39,14 +39,16 @@ Data Plane API::
 To scale the resources for a pipeline:
 
 . xref:manage:api/cloud-api-quickstart.adoc#try-the-cloud-api[Authenticate and get the base URL] for Data Plane API, if you haven't done so already. 
-. Make a request to xref:api:ROOT:cloud-api.adoc#put-/v1alpha2/redpanda-connect/pipelines/-id-[`PUT /v1alpha2/redpanda-connect/pipelines/{id}`], including the pipeline ID and the resources you want to allocate.
+. Make a request to xref:api:ROOT:cloud-api.adoc#get-/v1alpha2/redpanda-connect/pipelines/-id-[`GET /v1alpha2/redpanda-connect/pipelines/{id}`], including the ID of the pipeline you want to update.
+. Now make a request to xref:api:ROOT:cloud-api.adoc#put-/v1alpha2/redpanda-connect/pipelines/-id-[`PUT /v1alpha2/redpanda-connect/pipelines/{id}`], including the ID of the pipeline you want to update. You can reuse the values returned by your `GET` request to populate the request body, replacing the `cpu_shares` and `memory_shares` values with the resources you want to allocate. 
+
 +
 This example allocates 1.2 vCPU and 500 MB of memory to a data pipeline. For `cpu_shares`, `0.1` vCPU is the minimum allocation. For `memory_shares`, you can also specify fractions of a gigabyte. For example, `0.5G`.
 +
 [,bash]
 ----
-curl -X PUT "https://api-dfb1e463.crhjl9gj1v2u1117r1f0.byoc.prd.cloud.redpanda.com/v1alpha2/redpanda-connect/pipelines/<pipeline-id>"  \
- -H "Authorization: Bearer <token>" \
+curl -X PUT "https://api-dfb1e463.crhjl9gj1v2u1117r1f0.byoc.prd.cloud.redpanda.com/v1alpha2/redpanda-connect/pipelines/crq59qnqmxxx3bocp50"  \
+ -H "Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI..." \
  -H "accept: application/json" \
  -H "content-type: application/json" \
  -d '{"config_yaml":"input:\n generate:\n   interval: 1s\n   mapping: |\n     root.id = uuid_v4()\n     root.   user.name = fake(\"name\")\n     root.user.email = fake(\"email\")\n     root.content = fake(\"paragraph\")\n\npipeline:\n processors:\n   - mutation: |\n       root.title = \"PRIVATE AND CONFIDENTIAL\"\n\noutput:\n kafka_franz:\n   seed_brokers:\n     - seed-8b788fee.cr7320vkc43nu6gaj888.byoc.prd.cloud.redpanda.com:9092\n   sasl:\n     - mechanism: SCRAM-SHA-256\n       password: password\n       username: connect\n   topic: processed-emails\n   tls:\n     enabled: true\n", \
