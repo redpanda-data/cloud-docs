@@ -47,8 +47,8 @@ This example allocates 1.2 vCPU and 500 MB of memory to a data pipeline. For `cp
 +
 [,bash]
 ----
-curl -X PUT "https://api-dfb1e463.crhjl9gj1v2u1117r1f0.byoc.prd.cloud.redpanda.com/v1alpha2/redpanda-connect/pipelines/crq59qnqmxxx3bocp50"  \
- -H "Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI..." \
+curl -X PUT "https://api-dfb1e463.crhjl9gj1v2u1117r1f0.byoc.prd.cloud.redpanda.com/v1alpha2/redpanda-connect/pipelines/xxx..."  \
+ -H "Authorization: Bearer xxx..." \
  -H "accept: application/json" \
  -H "content-type: application/json" \
  -d '{"config_yaml":"input:\n generate:\n   interval: 1s\n   mapping: |\n     root.id = uuid_v4()\n     root.   user.name = fake(\"name\")\n     root.user.email = fake(\"email\")\n     root.content = fake(\"paragraph\")\n\npipeline:\n processors:\n   - mutation: |\n       root.title = \"PRIVATE AND CONFIDENTIAL\"\n\noutput:\n kafka_franz:\n   seed_brokers:\n     - seed-8b788fee.cr7320vkc43nu6gaj888.byoc.prd.cloud.redpanda.com:9092\n   sasl:\n     - mechanism: SCRAM-SHA-256\n       password: password\n       username: connect\n   topic: processed-emails\n   tls:\n     enabled: true\n", \
