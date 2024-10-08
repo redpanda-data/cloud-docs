@@ -109,6 +109,25 @@ Optionally, click *Advanced settings* to specify up to five key-value custom tag
 +
 As part of agent deployment, Redpanda assigns the permissions required to run the agent. For details about these permissions, see xref:security:authorization/cloud-iam-policies-azure.adoc[Azure IAM policies].
 
+== Enable Kafka Connect
+
+To enable xref:develop:managed-connectors/index.adoc[Kafka Connect] on your BYOC cluster:
+
+. Authenticate to the Redpanda Cloud API by going to xref:api:ROOT:cloud-api.adoc#auth[**Authentication**] in the sidebar, and clicking **Get Token**.
+
+. Update your cluster to enable `kafka_connect` by making a xref:api:ROOT:cloud-api.adoc#patch-/v1beta2/clusters/-cluster.id-[`PATCH /v1beta2/clusters`] request:
+
+.. In `PATH PARAMETERS`, enter your cluster ID. You can find the cluster ID in the Redpanda Cloud UI on the **Clusters - Overview** page. 
+.. In the body of the Update Cluster request, add:
++
+```
+  {
+     "kafka_connect": {
+          "enabled": true
+      }
+   }   
+```
+
 == Next steps
 
 xref:networking:azure-private-link.adoc[]
