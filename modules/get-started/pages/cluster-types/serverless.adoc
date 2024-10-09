@@ -41,7 +41,7 @@ When either the 100 credits expire or the 14 days in the trial expire, the clust
 * To ask questions about the trial, use the *#serverless* https://redpandacommunity.slack.com/[Community Slack^] channel, or contact https://support.redpanda.com/hc/en-us/requests/new[support^].
 * For information about billing after the trial ends, see xref:billing:billing.adoc[].
 
-== Interact with your trial cluster
+== Explore your trial cluster
 
 After you click to start a trial, Redpanda instantly prepares an account for you. Your account includes a `welcome` cluster with a `hello-world` demo topic you can explore. The `hello-world` topic starts as a free read-only topic. It is materialized and becomes billable with your credits if you produce messages to it. 
 
@@ -59,7 +59,13 @@ rpk cloud login
 rpk topic consume hello-world
 ```
 
-In the https://cloud.redpanda.com[Redpanda Cloud UI^], you can navigate to the *Topics* page and open the `hello-world` topic to see the included messages. Under the *Actions* dropdown, you can produce messages to it. Add team members and grant them access with ACLs on the *Security* page. The *Overview* page lists your bootstrap server URL and security settings in the *How to connect - Kafka API* tab. 
+In the https://cloud.redpanda.com[Redpanda Cloud UI^], you can navigate to the *Topics* page and open the `hello-world` topic to see the included messages. Under the *Actions* dropdown, you can produce messages to it. Add team members and grant them access with ACLs on the *Security* page. 
+
+== Connect with your cluster
+
+Create a Kafka client to interact with your cluster. The *Overview* page lists your bootstrap server URL and security settings in the *How to connect - Kafka API* tab. 
+
+Or, Redpanda can generate a sample application to interact with your cluster. Run xref:reference:rpk/rpk-generate/rpk-generate-app.adoc[`rpk generate app`], and select your preferred programming language. Follow the commands in the terminal to run the application, create a demo topic, produce to the topic, and consume the data back.
 
 Here are some helpful `rpk` commands:
 
@@ -70,21 +76,13 @@ Here are some helpful `rpk` commands:
 
 NOTE: Redpanda Serverless is opinionated about Kafka configurations. For example, automatic topic creation is disabled. Some systems expect the Kafka service to automatically create topics when a message is produced to a topic that doesn't exist. Create topics on the *Topics* page or with `rpk topic create`.
 
-=== Create a demo application
-
-Redpanda can generate a sample application to interact with your cluster. Run xref:reference:rpk/rpk-generate/rpk-generate-app.adoc[`rpk generate app`] and select a programming language. Follow the commands in the terminal to run the application, create a demo topic, produce to the topic, and consume the data back.
-
-Or, you can create your own Kafka client to interact with your cluster. 
-
 == Create a new Serverless cluster
 
 To create additional Serverless clusters: 
 
-. Log in to https://cloud.redpanda.com[Redpanda Cloud^].
+. In Redpanda Cloud UI, on the **Clusters** page, click **Create cluster**, then click **Create Serverless cluster**. 
 
-. On the **Clusters** page, click **Create cluster**, then click **Create Serverless cluster**. 
-+
-Enter a cluster name, then select the resource group. If you don't have an existing resource group, you can create one. Refresh the page to see newly-created resource groups. 
+. Enter a cluster name, then select the resource group. If you don't have an existing resource group, you can create one. Refresh the page to see newly-created resource groups. 
 +
 Serverless clusters are currently available in certain AWS regions. Redpanda expects your applications to be deployed in the same AWS region. For best performance, select the region closest to your applications. Serverless is not guaranteed to be pinned to a particular availability zone within that region.
 
@@ -100,3 +98,8 @@ Serverless clusters are currently available in certain AWS regions. Redpanda exp
 * Data transforms
 * Redpanda Admin API 
 * HTTP Proxy API
+
+== Next steps
+
+* xref:get-started:cloud-overview.adoc[Learn more about Redpanda Cloud]
+* xref:get-started:config-topics.adoc[Manage topics]
