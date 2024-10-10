@@ -115,20 +115,23 @@ To enable xref:develop:managed-connectors/index.adoc[Kafka Connect] on your BYOC
 
 . Authenticate to the Redpanda Cloud API by going to xref:api:ROOT:cloud-api.adoc#auth[**Authentication**] in the sidebar, and clicking **Get Token**.
 
-. Update your cluster to enable `kafka_connect` by making a xref:api:ROOT:cloud-api.adoc#patch-/v1beta2/clusters/-cluster.id-[`PATCH /v1beta2/clusters`] request:
-
-.. In `PATH PARAMETERS`, enter your cluster ID. You can find the cluster ID in the Redpanda Cloud UI on the **Clusters - Overview** page. 
-.. In the body of the Update Cluster request, add:
+. Enable Kafka Connect by making a xref:api:ROOT:cloud-api.adoc#patch-/v1beta2/clusters/-cluster.id-[`PATCH /v1beta2/clusters`] request:
 +
-```
-  {
-     "kafka_connect": {
-          "enabled": true
-      }
-   }   
-```
+[,bash]
+----
+curl -X PATCH "https://api.redpanda.com/v1beta2/clusters/<cluster-id>" \
+ -H 'accept: application/json' \
+ -H 'authorization: Bearer <token>' \
+ -H 'content-type: application/json' \
+ -d '{"kafka_connect": {"enabled": true}}'
+----
++
+Replace the following placeholders:
++
+- `<cluster-id>`: Your cluster ID. You can find the cluster ID in the Redpanda Cloud UI under the Cluster Overview page in the Details section.
+- `<token>`: The API token you received during authentication. This API token is in the header of the example request in the xref:api:ROOT:cloud-api.adoc#patch-/v1beta2/clusters/-cluster.id-[API reference].
 
-. In your Azure subscription, disable the https://learn.microsoft.com/en-us/azure/key-vault/policy-reference[Key Vault secrets should have an expiration date] policy.
+. In your Azure subscription, disable the https://learn.microsoft.com/en-us/azure/key-vault/policy-reference[Key Vault secrets should have an expiration date^] policy.
 
 == Next steps
 
