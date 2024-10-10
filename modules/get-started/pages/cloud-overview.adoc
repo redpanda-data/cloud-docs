@@ -7,7 +7,7 @@ Redpanda Cloud is a complete data streaming platform delivered as a fully-manage
 
 TIP: For more detailed information about the Redpanda platform, see xref:get-started:intro-to-events.adoc[] and xref:get-started:architecture.adoc[].
 
-== Cluster types
+== Redpanda Cloud cluster types
 
 Redpanda offers three types of fully-managed cloud clusters:
 
@@ -51,27 +51,21 @@ To start using BYOC, contact https://redpanda.com/try-redpanda?section=enterpris
 
 == Serverless vs Dedicated/BYOC
 
-Serverless clusters are a good fit for the following:
+Serverless clusters are a good fit for the following use cases:
 
 * Starter and growing workloads
 * Spiky workloads (that is, development environments, systems that only occasionally get busy, or workloads that come and go)
 * Fast and dynamic cluster creation: you can use a Serverless cluster as an isolated container for topics
 
-With Serverless (or if you sign up for Dedicated through the AWS Marketplace), you only pay for what you consume, without any commitment. A cluster is created instantly, so you can surface it in your applications (for example, for tenant isolation). If your workload increases, you can migrate it to a Dedicated or BYOC cluster.
+With Serverless (and for Dedicated when procured through the AWS Marketplace), you only pay for what you consume, without any commitment. A cluster is created instantly, so you can surface it in your applications (for example, for tenant isolation). If your workload increases, you can migrate it to a Dedicated or BYOC cluster.
 
-Dedicated and BYOC clusters offer the following features:
+Consider Dedicated or BYOC if you need more control over the deployment or if you have workloads with consistently-high throughput. Dedicated and BYOC clusters offer the following features:
 
-* Single-zone or multi-zone availability (a multi-zone cluster provides higher resiliency in the event of a failure in one of the zones)
-* Private networking using VPC peering or a private connectivity service, such as AWS PrivateLink, GCP Private Service Connect, or Azure Private Link. 
-* Ability to export metrics to a 3rd-party monitoring system
-* Managed connectors
-* Higher limits and quotas (see xref:get-started:cluster-types/serverless.adoc#limits[Serverless limits])
-
-Consider Dedicated or BYOC if you need any of the following:
-
-* Control over the deployment
 * Private networking
-* Workloads with consistently-high throughput
+* Single-zone or multi-zone availability. A multi-zone cluster provides higher resiliency in the event of a failure in one of the zones. 
+* Ability to export metrics to a 3rd-party monitoring system
+* Kafka connectors
+* Higher limits and quotas. See xref:reference:tiers/dedicated-tiers.adoc[Dedicated usage tiers] and xref:reference:tiers/byoc-tiers.adoc[BYOC usage tiers] compared to xref:get-started:cluster-types/serverless.adoc#limits[Serverless limits].
 
 == Shared responsibility model
 
@@ -251,10 +245,10 @@ Redpanda Cloud deployments do not support the following functionality available 
 ** `rpk cluster storage`
 ** `rpk generate app` (supported in Serverless clusters)
 ** `rpk security user` (supported in Serverless clusters)
-** `rpk topic describe-storage` (all other `rpk topic` commands are supported on both Redpanda Cloud and self-hosted)
+** `rpk topic describe-storage` (all other `rpk topic` commands are supported on both Redpanda Cloud and self-managed)
 ** `rpk transform` commands (currently in beta for Redpanda Cloud)
 
-NOTE: The `rpk cloud` commands are not supported in self-hosted deployments.
+NOTE: The `rpk cloud` commands are not supported in self-managed deployments.
 
 == Next steps
 * xref:get-started:cluster-types/serverless.adoc[Create a Serverless Cluster]
