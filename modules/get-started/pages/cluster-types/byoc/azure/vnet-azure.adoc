@@ -1,11 +1,19 @@
 = Create a Customer-Managed VNet on Azure
 :description: Connect Redpanda Cloud to your existing VNet for additional security.
 
-This repository contains the code that deploys the resources customers are responsible for creating in association with a Redpanda customer-managed Azure cluster. These resources should be created in advance by the customer and then provided to Redpanda during cluster creation. The code is provided in https://developer.hashicorp.com/terraform[Terraform^] and Azure CLI (TODO).
+include::shared:partial$feature-flag.adoc[]
 
-There may be resources in this repository that already exist within your environment (for example, the VNET) that you don't want to create. Variables are provided for this purpose.
+With a standard BYOC cluster, Redpanda manages the VPC lifecycle. For additional security, you can deploy the Redpanda glossterm:data plane[] into your existing shared virtual network (VNet) and manage the lifecycle yourself. When you create a BYOC cluster, you specify your VNet and service account. The Redpanda Cloud agent doesn't create any new resources or alter any settings in your account. With a *customer-managed* VNet: 
 
-Customer Managed Resources can be broken down into the following groups. You can walk through the code to get the exact list of the resources required to create and deploy Redpanda cluster.
+* You provide your own VNet in your Azure account.
+* You maintain more control over your account, because Redpanda requires fewer permissions than standard BYOC clusters.
+* You control your security resources and policies, including subnets, service accounts, IAM roles, firewall rules, and storage buckets.
+
+The https://github.com/redpanda-data/cloud-examples/tree/main/customer-managed/azure[Redpanda repository] contains the code that deploys the resources you are responsible for creating for a Redpanda customer-managed Azure cluster. These resources should be created in advance and then provided to Redpanda during cluster creation. The code is provided in https://developer.hashicorp.com/terraform[Terraform^] and Azure CLI (TODO).
+
+There may be resources in this repository that already exist within your environment (for example, the Vnet) that you don't want to create. Variables are provided for this purpose.
+
+See the code to get the complete list of resources required to create and deploy Redpanda cluster. Customer-managed resources can be broken down into the following groups:
 
 * Resource group resources
 * User-assigned identities
@@ -19,7 +27,7 @@ Customer Managed Resources can be broken down into the following groups. You can
 === Prerequisites
 
 * Access to an Azure subscription where you want to create your cluster
-* Knowledge of your internal VNET and subnet configuration
+* Knowledge of your internal VNet and subnet configuration
 * Permission to create, modify, and delete the resources described by this Terraform
 * https://developer.hashicorp.com/terraform/install[Terraform version 1.8.5 or later^]
 
@@ -31,15 +39,15 @@ You may want to configure https://developer.hashicorp.com/terraform/language/sta
 
 The variable files contain the variables that allow you to modify to meet your specific needs.
 
-* vars.azure.tf: It contains the variables related to Azure credentials.
-* vars.condition.tf: It contains the conditional variables on whether to e.g. create NAT.
-* vars.customer_input.tf: It contains the variables needed for creating a cluster, which are required when using the Cloud API to create one.
-* vars.iam.tf: It contains the variables related to IAM roles.
-* vars.misc.tf: It contains the variables, region, zones, tags and resource name prefix.
+* `vars.azure.tf`: This contains the variables related to Azure credentials.
+* `vars.condition.tf`: This contains the conditional variables; for example, on whether to create NAT.
+* `vars.customer_input.tf`: This contains the variables needed to create a cluster with the Cloud API.
+* `vars.iam.tf`: This contains the variables related to IAM roles.
+* `vars.misc.tf`: This contains the variables, regions, zones, tags, and resource name prefix.
 
-You can get the description of each variable in https://github.com/redpanda-data/cloud-examples/blob/main/customer-managed/azure/terraform/README.md[here].
+For more information, https://github.com/redpanda-data/cloud-examples/blob/main/customer-managed/azure/terraform/README.md[Terraform Readme].
 
-Create a JSON file called `byovnet.auto.tfvars.json`` inside the Terraform directory.
+Create a JSON file called `byovnet.auto.tfvars.json`` inside the Terraform directory:
 
 ```
 {
@@ -75,7 +83,7 @@ Create a JSON file called `byovnet.auto.tfvars.json`` inside the Terraform direc
 
 === Initialize Terraform
 
-Initialize the working directory containing Terraform configuration files.
+Initialize the working directory containing Terraform configuration files:
 
 ```
 terraform init
@@ -131,9 +139,9 @@ tiered_storage_container_name = "mytieredstorage"
 vnet_name = "my-rp-vnet"
 ```
 
-These values can also be retrieved at any time by running terraform output.
+These values can also be retrieved at any time by running Terraform output.
 
-Note these values. They are needed for the next steps. To continue with cluster creation, see https://github.com/redpanda-data/cloud-examples/tree/main/customer-managed/azure#create-azure-byo-vnet-redpanda-cluster[Create Azure BYO VNET Redpanda Cluster^]
+Note these values. They are needed for the next steps. To continue with cluster creation, see https://github.com/redpanda-data/cloud-examples/tree/main/customer-managed/azure#create-azure-byo-vnet-redpanda-cluster[Create Azure VNet Redpanda Cluster^]
 
 == Deploy customer-managed resource with Azure CLI
 
@@ -149,7 +157,7 @@ TODO
 
 === Create network with Cloud API
 
-You need to create a network with the POST body before creating Redpanda cluster. Replace the variables with the actual values. Follow xref:manage:api/cloud-api-quickstart.adoc#try-the-cloud-api[here] to create a resource group and bearer token.
+Create a network with the POST body before creating Redpanda cluster. Replace the variables with the actual values. Follow xref:manage:api/cloud-api-quickstart.adoc#try-the-cloud-api[here] to create a resource group and bearer token.
 
 ```
 network_post_body=`cat << EOF
@@ -192,7 +200,7 @@ network_post_body=`cat << EOF
 EOF`
 ```
 
-Make Cloud API call to create a Redpanda network and get the network ID from the response in JSON `.operation.metadata.network_id`.
+Make a Cloud API call to create a Redpanda network and get the network ID from the response in JSON `.operation.metadata.network_id`.
 
 ```
 curl -vv -X POST \
@@ -203,7 +211,7 @@ curl -vv -X POST \
 
 === Create cluster
 
-You need a network ID to create a Redpanda cluster. Replace the variables with the actual values. Follow xref:manage:api/cloud-api-quickstart.adoc#try-the-cloud-api[here] to create a resource group and bearer token.
+A network ID is required to create a Redpanda cluster. Replace the variables with the actual values. Follow xref:manage:api/cloud-api-quickstart.adoc#try-the-cloud-api[here] to create a resource group and bearer token.
 
 ```
 cluster_post_body=`cat << EOF
@@ -253,7 +261,7 @@ cluster_post_body=`cat << EOF
 EOF`
 ```
 
-Make Cloud API call to create a Redpanda network and get the network ID from the response in JSON `.operation.metadata.cluster_id`.
+Make a Cloud API call to create a Redpanda network and get the network ID from the response in JSON `.operation.metadata.cluster_id`.
 
 ```
 curl -vv -X POST \
@@ -264,7 +272,7 @@ curl -vv -X POST \
 
 === Deploy cluster
 
-After getting a Redpanda cluster ID in the previous step, deploy the cluster with rpk by replacing `$rp_id` and `$subscription_id` with the actual values.
+After getting a Redpanda cluster ID, deploy the cluster with `rpk` by replacing `$rp_id` and `$subscription_id` with the actual values
 
 ```
 rpk cloud byoc azure apply --redpanda-id='$rp_id' --subscription-id='$subscription_id'
@@ -272,6 +280,6 @@ rpk cloud byoc azure apply --redpanda-id='$rp_id' --subscription-id='$subscripti
 
 === Check cluster status
 
-You can go to the Repanda Cloud UI to check the progress of the cluster deployment.
+Go to the Repanda Cloud UI to check the progress of the cluster deployment.
 
 **or Cloud API?**
