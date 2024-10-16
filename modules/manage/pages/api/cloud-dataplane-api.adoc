@@ -43,11 +43,11 @@ The response includes a `dataplane_api.url` value:
 
 === Create a user
 
-To create a new user in your Redpanda cluster, make a POST request to the xref:api:ROOT:cloud-api.adoc#post-/v1alpha1/users[`/v1alpha1/users`] endpoint, including the SASL mechanism, username, and password in the request body:
+To create a new user in your Redpanda cluster, make a POST request to the xref:api:ROOT:cloud-api.adoc#post-/v1alpha2/users[`/v1alpha2/users`] endpoint, including the SASL mechanism, username, and password in the request body:
 
 [,bash]
 ----
-curl -X POST "https://api-aeb32d9b.cn20bu40d061nvem7sv0.fmc.prd.cloud.redpanda.com/v1alpha1/users" \
+curl -X POST "https://api-aeb32d9b.cn20bu40d061nvem7sv0.fmc.prd.cloud.redpanda.com/v1alpha2/users" \
  -H "Authorization: Bearer <token>" \
  -H "accept: application/json" \
  -H "content-type: application/json" \
@@ -70,11 +70,11 @@ The success response returns the newly-created username and SASL mechanism:
 
 === Create an ACL
 
-To create a new ACL in your Redpanda cluster, make a xref:api:ROOT:cloud-api.adoc#post-/v1alpha1/acls[`POST /v1alpha1/acls`] request. The following example ACL allows all operations on any Redpanda topic for a user with the name `payment-service`.
+To create a new ACL in your Redpanda cluster, make a xref:api:ROOT:cloud-api.adoc#post-/v1alpha2/acls[`POST /v1alpha2/acls`] request. The following example ACL allows all operations on any Redpanda topic for a user with the name `payment-service`.
 
 [,bash]
 ----
-curl -X POST "https://api-aeb32d9b.cn20bu40d061nvem7sv0.fmc.prd.cloud.redpanda.com/v1alpha1/acls" \
+curl -X POST "https://api-aeb32d9b.cn20bu40d061nvem7sv0.fmc.prd.cloud.redpanda.com/v1alpha2/acls" \
  -H "Authorization: Bearer <token>" \
  -H "accept: application/json" \
  -H "content-type: application/json" \
@@ -90,11 +90,11 @@ The success response is empty, with a 201 status code.
 
 === Create a topic
 
-To create a new Redpanda topic without specifying any further parameters, such as the desired topic-level configuration or partition count, make a POST request to xref:api:ROOT:cloud-api.adoc#post-/v1alpha1/topics[`/v1alpha1/topics`] endpoint:
+To create a new Redpanda topic without specifying any further parameters, such as the desired topic-level configuration or partition count, make a POST request to xref:api:ROOT:cloud-api.adoc#post-/v1alpha2/topics[`/v1alpha2/topics`] endpoint:
 
 [,bash]
 ----
-curl -X POST "https://api-aeb32d9b.cn20bu40d061nvem7sv0.fmc.prd.cloud.redpanda.com/v1alpha1/topics" \
+curl -X POST "https://api-aeb32d9b.cn20bu40d061nvem7sv0.fmc.prd.cloud.redpanda.com/v1alpha2/topics" \
  -H "Authorization: Bearer <token>" \
  -H "accept: application/json" \
  -H "content-type: application/json" \
@@ -105,11 +105,11 @@ curl -X POST "https://api-aeb32d9b.cn20bu40d061nvem7sv0.fmc.prd.cloud.redpanda.c
 
 NOTE: Connector management is supported in BYOC and Dedicated clusters only.
 
-To create a managed connector, make a POST request to xref:api:ROOT:cloud-api.adoc#post-/v1alpha1/connect/clusters/-cluster_name-/connectors[`/v1alpha1/connect/clusters/\{cluster_name}/connectors`]. The following example shows how to create an S3 sink connector with the name `my-connector`:
+To create a managed connector, make a POST request to xref:api:ROOT:cloud-api.adoc#post-/v1alpha2/connect/clusters/-cluster_name-/connectors[`/v1alpha2/connect/clusters/\{cluster_name}/connectors`]. The following example shows how to create an S3 sink connector with the name `my-connector`:
 
 [,bash]
 ----
-curl -X POST "https://api-aeb32d9b.cn20bu40d061nvem7sv0.fmc.prd.cloud.redpanda.com/v1alpha1/connect/clusters/redpanda/connectors" \
+curl -X POST "https://api-aeb32d9b.cn20bu40d061nvem7sv0.fmc.prd.cloud.redpanda.com/v1alpha2/connect/clusters/redpanda/connectors" \
  -H "Authorization: Bearer <token>" \
  -H "accept: application/json" \
  -H "content-type: application/json" \
@@ -141,11 +141,11 @@ Example success response:
 
 NOTE: Connector management is supported in BYOC and Dedicated clusters only.
 
-To restart a connector, make a POST request to the xref:api:ROOT:cloud-api.adoc#post-/v1alpha1/connect/clusters/-cluster_name-/connectors/-name-/restart[`/v1alpha1/connect/clusters/\{cluster_name}/connectors/\{name}/restart`] endpoint:
+To restart a connector, make a POST request to the xref:api:ROOT:cloud-api.adoc#post-/v1alpha2/connect/clusters/-cluster_name-/connectors/-name-/restart[`/v1alpha2/connect/clusters/\{cluster_name}/connectors/\{name}/restart`] endpoint:
 
 [,bash]
 ----
-curl -X POST "https://api-aeb32d9b.cn20bu40d061nvem7sv0.fmc.prd.cloud.redpanda.com/v1alpha1/connect/clusters/redpanda/connectors/my-connector/restart" \
+curl -X POST "https://api-aeb32d9b.cn20bu40d061nvem7sv0.fmc.prd.cloud.redpanda.com/v1alpha2/connect/clusters/redpanda/connectors/my-connector/restart" \
  -H "Authorization: Bearer <token>" \
  -H "accept: application/json"\
  -H "content-type: application/json" \
