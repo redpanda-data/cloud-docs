@@ -16,17 +16,20 @@ Confirm you have a minimum version of Redpanda `rpk` v24.1. See xref:reference:r
 
 In the https://login.microsoftonline.com/[Azure Portal^], confirm that the dedicated subscription you intend to use with Redpanda includes the following: 
 
-* Role: The Azure user must have the _Owner_ role in the subscription.
-
-* Resources: The subscription must be registered for the following resource providers. See the https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/resource-providers-and-types[Microsoft documentation^]. 
+[%interactive]
+- [ ] **Role**: The Azure user has the _Owner_ role in the subscription.
+- [ ] **Quota**: The subscription has enough total regional vCPUs and vCPUs per instance family in the region where you will use Redpanda. See the https://learn.microsoft.com/en-us/azure/quotas/view-quotas[Microsoft documentation^].
 +
---
-** Microsoft.Compute
-** Microsoft.ManagedIdentity
-** Microsoft.Storage
-** Microsoft.KeyVault
-** Microsoft.Network
---
+* Standard LASv3-series vCPUs:  24 (3 Redpanda broker nodes)
+* Standard Dadsv5-series vCPUs: 8  (2 Redpanda utility nodes)
+* Standard Dv3-series vCPUs:    2  (1 Redpanda agent node)
+- [ ] **Resources**: The subscription is registered for the following resource providers. See the https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/resource-providers-and-types[Microsoft documentation^]. 
++
+* Microsoft.Compute
+* Microsoft.ManagedIdentity
+* Microsoft.Storage
+* Microsoft.KeyVault
+* Microsoft.Network
 +
 To check if a resource provider is registered, run the following command using the Azure CLI or in the Azure Cloud Shell. For example, to check for Microsoft.Compute, run:
 +
@@ -39,21 +42,16 @@ If it is not registered, run:
 ```
 az provider register --namespace 'Microsoft.Compute'
 ```
-
-* Feature: The subscription must be registered for Microsoft.Compute/EncryptionAtHost. See the https://learn.microsoft.com/en-us/azure/virtual-machines/linux/disks-enable-host-based-encryption-cli#prerequisites[Microsoft documentation^].
+- [ ] **Feature**: The subscription is registered for Microsoft.Compute/EncryptionAtHost. See the https://learn.microsoft.com/en-us/azure/virtual-machines/linux/disks-enable-host-based-encryption-cli#prerequisites[Microsoft documentation^]. 
 +
-To register EncryptionAtHost, run:
+To register it, run:
 +
 ```
 az feature register --name EncryptionAtHost  --namespace Microsoft.Compute
 ```
-
-* Quota: The subscription must have the following quota in the region where you will use Redpanda. See the https://learn.microsoft.com/en-us/azure/quotas/view-quotas[Microsoft documentation^].
-
-** Standard LASv3-series vCPUs: 24
-** Standard DADSv5-series vCPUs: 8
-
-* Monitoring: The subscription must have Azure Network Watcher enabled in the NetworkWatcherRG resource group and the region where you will use Redpanda. Network Watcher lets you monitor and diagnose conditions at a network level. See the https://learn.microsoft.com/en-us/azure/network-watcher/network-watcher-create?tabs=portaly[Microsoft documentation^]. To enable it, run:
+- [ ] **Monitoring**: The subscription has Azure Network Watcher enabled in the NetworkWatcherRG resource group and the region where you will use Redpanda. This lets you monitor and diagnose conditions at a network level. See the https://learn.microsoft.com/en-us/azure/network-watcher/network-watcher-create?tabs=portaly[Microsoft documentation^]. 
++
+To enable it, run:
 +
 ``` 
 # Create the NetworkWatcherRG resource group
