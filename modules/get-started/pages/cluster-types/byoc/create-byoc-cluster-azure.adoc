@@ -6,7 +6,7 @@ include::shared:partial$feature-flag.adoc[]
 
 == Prerequisites
 
-Before you deploy a BYOC cluster on Azure, follow the prerequisites to ensure that your Azure subscription meets requirements.
+Before you deploy a BYOC cluster on Azure, check all prerequisites to ensure that your Azure subscription meets requirements.
 
 === Verify rpk version
 
@@ -16,9 +16,9 @@ Confirm you have a minimum version of Redpanda `rpk` v24.1. See xref:reference:r
 
 In the https://login.microsoftonline.com/[Azure Portal^], confirm that the dedicated subscription you intend to use with Redpanda includes the following: 
 
-* Role: The Azure user must have the _Owner_ role in the subscription.
+* **Role**: The Azure user must have the _Owner_ role in the subscription.
 
-* Resources: The subscription must be registered for the following resource providers. See the https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/resource-providers-and-types[Microsoft documentation^]. 
+* **Resources**: The subscription must be registered for the following resource providers. See the https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/resource-providers-and-types[Microsoft documentation^]. 
 +
 --
 ** Microsoft.Compute
@@ -40,20 +40,17 @@ If it is not registered, run:
 az provider register --namespace 'Microsoft.Compute'
 ```
 
-* Feature: The subscription must be registered for Microsoft.Compute/EncryptionAtHost. See the https://learn.microsoft.com/en-us/azure/virtual-machines/linux/disks-enable-host-based-encryption-cli#prerequisites[Microsoft documentation^].
+* **Feature**: The subscription must be registered for Microsoft.Compute/EncryptionAtHost. See the https://learn.microsoft.com/en-us/azure/virtual-machines/linux/disks-enable-host-based-encryption-cli#prerequisites[Microsoft documentation^].
 +
-To register EncryptionAtHost, run:
+To register it, run:
 +
 ```
-az feature register --name EncryptionAtHost  --namespace Microsoft.Compute
+az feature register --namespace Microsoft.Compute --name EncryptionAtHost  
 ```
 
-* Quota: The subscription must have the following quota in the region where you will use Redpanda. See the https://learn.microsoft.com/en-us/azure/quotas/view-quotas[Microsoft documentation^].
-
-** Standard LASv3-series vCPUs: 24
-** Standard DADSv5-series vCPUs: 8
-
-* Monitoring: The subscription must have Azure Network Watcher enabled in the NetworkWatcherRG resource group and the region where you will use Redpanda. Network Watcher lets you monitor and diagnose conditions at a network level. See the https://learn.microsoft.com/en-us/azure/network-watcher/network-watcher-create?tabs=portaly[Microsoft documentation^]. To enable it, run:
+* **Monitoring**: The subscription must have Azure Network Watcher enabled in the NetworkWatcherRG resource group and the region where you will use Redpanda. Network Watcher lets you monitor and diagnose conditions at a network level. See the https://learn.microsoft.com/en-us/azure/network-watcher/network-watcher-create?tabs=portaly[Microsoft documentation^]. 
++
+To enable it, run:
 +
 ``` 
 # Create the NetworkWatcherRG resource group
@@ -63,9 +60,23 @@ az group create --name 'NetworkWatcherRG' --location '<region_name>'
 az network watcher configure --resource-group 'NetworkWatcherRG' --locations '<region_name>' --enabled
 ```
 
+=== Check Azure quota
+
+Confirm that the Azure subscription has enough vCPUs per instance family and total regional vCPUs in the region where you will use Redpanda:
+
+* Standard LASv3-series vCPUs:  24 (3 Redpanda broker nodes)
+* Standard Dadsv5-series vCPUs: 8  (2 Redpanda utility nodes)
+* Standard Dv3-series vCPUs:    2  (1 Redpanda agent node)
+
+Optional: If you <<enable-kafka-connect,enable Kafka Connect>>, Redpanda also deploys a kafka-connect node pool:
+
+* Standard Fsv2-series vCPUs:   2  (1 Kafka Connect node)
+
+See the https://learn.microsoft.com/en-us/azure/quotas/view-quotas[Microsoft documentation^].
+
 === Check Azure SKU restrictions
 
-Check to ensure that the Azure subscription does not have any SKU restrictions for the VM sizes in the region where you will use Redpanda. Using the Azure CLI or in the Azure Cloud Shell, run:
+Ensure that the Azure subscription does not have any SKU restrictions for the VM sizes in the region where you will use Redpanda. Using the Azure CLI or in the Azure Cloud Shell, run:
 
 ----
 az vm list-skus -l eastus2 --zone --size Standard_L8as_v3 --output table
