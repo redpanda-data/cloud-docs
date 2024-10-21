@@ -88,8 +88,6 @@
 **** xref:develop:connect/components/inputs/inproc.adoc[]
 **** xref:develop:connect/components/inputs/kafka.adoc[]
 **** xref:develop:connect/components/inputs/kafka_franz.adoc[]
-**** xref:develop:connect/components/inputs/kafka_migrator.adoc[]
-**** xref:develop:connect/components/inputs/kafka_migrator_bundle.adoc[]
 **** xref:develop:connect/components/inputs/nats.adoc[]
 **** xref:develop:connect/components/inputs/nats_jetstream.adoc[]
 **** xref:develop:connect/components/inputs/nats_kv.adoc[]
@@ -98,6 +96,8 @@
 **** xref:develop:connect/components/inputs/redis_pubsub.adoc[]
 **** xref:develop:connect/components/inputs/redis_scan.adoc[]
 **** xref:develop:connect/components/inputs/redis_streams.adoc[]
+**** xref:develop:connect/components/inputs/redpanda_migrator.adoc[]
+**** xref:develop:connect/components/inputs/redpanda_migrator_bundle.adoc[]
 **** xref:develop:connect/components/inputs/resource.adoc[]
 **** xref:develop:connect/components/inputs/schema_registry.adoc[]
 **** xref:develop:connect/components/inputs/sequence.adoc[]
@@ -129,9 +129,6 @@
 **** xref:develop:connect/components/outputs/inproc.adoc[]
 **** xref:develop:connect/components/outputs/kafka.adoc[]
 **** xref:develop:connect/components/outputs/kafka_franz.adoc[]
-**** xref:develop:connect/components/outputs/kafka_migrator.adoc[]
-**** xref:develop:connect/components/outputs/kafka_migrator_bundle.adoc[]
-**** xref:develop:connect/components/outputs/kafka_migrator_offsets.adoc[]
 **** xref:develop:connect/components/outputs/nats.adoc[]
 **** xref:develop:connect/components/outputs/nats_jetstream.adoc[]
 **** xref:develop:connect/components/outputs/nats_kv.adoc[]
@@ -142,6 +139,9 @@
 **** xref:develop:connect/components/outputs/redis_list.adoc[]
 **** xref:develop:connect/components/outputs/redis_pubsub.adoc[]
 **** xref:develop:connect/components/outputs/redis_streams.adoc[]
+**** xref:develop:connect/components/outputs/redpanda_migrator.adoc[]
+**** xref:develop:connect/components/outputs/redpanda_migrator_bundle.adoc[]
+**** xref:develop:connect/components/outputs/redpanda_migrator_offsets.adoc[]
 **** xref:develop:connect/components/outputs/reject.adoc[]
 **** xref:develop:connect/components/outputs/reject_errored.adoc[]
 **** xref:develop:connect/components/outputs/resource.adoc[]
@@ -159,6 +159,7 @@
 **** xref:develop:connect/components/processors/archive.adoc[]
 **** xref:develop:connect/components/processors/avro.adoc[]
 **** xref:develop:connect/components/processors/aws_bedrock_chat.adoc[]
+**** xref:develop:connect/components/processors/aws_bedrock_embeddings.adoc[]
 **** xref:develop:connect/components/processors/aws_dynamodb_partiql.adoc[]
 **** xref:develop:connect/components/processors/aws_lambda.adoc[]
 **** xref:develop:connect/components/processors/azure_cosmosdb.adoc[]
@@ -168,12 +169,15 @@
 **** xref:develop:connect/components/processors/cache.adoc[]
 **** xref:develop:connect/components/processors/cached.adoc[]
 **** xref:develop:connect/components/processors/catch.adoc[]
+**** xref:develop:connect/components/processors/cohere_chat.adoc[]
+**** xref:develop:connect/components/processors/cohere_embeddings.adoc[]
 **** xref:develop:connect/components/processors/compress.adoc[]
 **** xref:develop:connect/components/processors/decompress.adoc[]
 **** xref:develop:connect/components/processors/dedupe.adoc[]
 **** xref:develop:connect/components/processors/for_each.adoc[]
 **** xref:develop:connect/components/processors/gcp_bigquery_select.adoc[]
 **** xref:develop:connect/components/processors/gcp_vertex_ai_chat.adoc[]
+**** xref:develop:connect/components/processors/gcp_vertex_ai_embeddings.adoc[]
 **** xref:develop:connect/components/processors/group_by.adoc[]
 **** xref:develop:connect/components/processors/group_by_value.adoc[]
 **** xref:develop:connect/components/processors/insert_part.adoc[]
@@ -282,36 +286,8 @@
 *** xref:develop:connect/cookbooks/enrichments.adoc[]
 *** xref:develop:connect/cookbooks/filtering.adoc[]
 *** xref:develop:connect/cookbooks/joining_streams.adoc[]
-*** xref:develop:connect/cookbooks/kafka_migrator.adoc[]
+*** xref:develop:connect/cookbooks/redpanda_migrator.adoc[]
 *** xref:develop:connect/cookbooks/rag.adoc[]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 * xref:develop:index.adoc[Develop]
 ** xref:develop:kafka-clients.adoc[]
@@ -321,7 +297,6 @@
 ** xref:develop:consume-data/index.adoc[Consume Data]
 *** xref:develop:consume-data/consumer-offsets.adoc[Consumer Offsets]
 *** xref:develop:consume-data/follower-fetching.adoc[Follower Fetching]
-
 ** xref:develop:managed-connectors/index.adoc[Kafka Connect]
 *** xref:develop:managed-connectors/converters-and-serialization.adoc[Converters and serialization]
 *** xref:develop:managed-connectors/monitor-connectors.adoc[Monitor Connectors]
@@ -330,7 +305,6 @@
 *** xref:develop:managed-connectors/create-s3-sink-connector.adoc[AWS S3 Sink Connector]
 *** xref:develop:managed-connectors/create-gcp-bigquery-connector.adoc[Google BigQuery Sink Connector]
 *** xref:develop:managed-connectors/create-gcs-connector.adoc[GCS Sink Connector]
-*** xref:develop:managed-connectors/create-http-source-connector.adoc[HTTP Source Connector]
 *** xref:develop:managed-connectors/create-iceberg-sink-connector.adoc[Iceberg Sink Connector]
 *** xref:develop:managed-connectors/create-jdbc-sink-connector.adoc[JDBC Sink Connector]
 *** xref:develop:managed-connectors/create-jdbc-source-connector.adoc[JDBC Source Connector]
@@ -341,6 +315,7 @@
 *** xref:develop:managed-connectors/create-mongodb-source-connector.adoc[MongoDB Source Connector]
 *** xref:develop:managed-connectors/create-mysql-source-connector.adoc[MySQL (Debezium) Source Connector]
 *** xref:develop:managed-connectors/create-postgresql-connector.adoc[PostgreSQL (Debezium) Source Connector]
+*** xref:develop:managed-connectors/create-sqlserver-connector.adoc[SQL Server (Debezium) Source Connector]
 *** xref:develop:managed-connectors/create-snowflake-connector.adoc[Snowflake Sink Connector]
 ** xref:develop:http-proxy.adoc[]
 ** xref:develop:transactions.adoc[]
@@ -369,6 +344,7 @@
 **** xref:manage:api/cloud-serverless-controlplane-api.adoc[Serverless]
 *** xref:manage:api/cloud-dataplane-api.adoc[Use the Data Plane APIs]
 *** xref:manage:api/cloud-api-errors.adoc[Errors and Status Codes]
+** xref:manage:terraform-provider.adoc[]
 
 * xref:billing:index.adoc[Billing]
 ** xref:billing:billing.adoc[]

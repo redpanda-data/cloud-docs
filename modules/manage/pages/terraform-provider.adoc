@@ -1,0 +1,104 @@
+= Redpanda Terraform Provider
+:description: Use the Redpanda Terraform provider to create and manage Redpanda Cloud resources.
+:page-cloud: true
+:page-beta: true
+
+The https://registry.terraform.io/providers/redpanda-data/redpanda/latest[Redpanda Terraform provider^] is a plugin that interfaces with the Redpanda Cloud API, enabling you to define your Redpanda infrastructure in Terraform configuration files. 
+
+You can use the Redpanda Terraform provider to create and manage the following resources in Redpanda Cloud:
+
+* ACLs
+* Clusters 
+* Networks
+* Resource groups
+* Topics
+* Users
+
+== Prerequisites
+
+* Install Terraform using the https://learn.hashicorp.com/tutorials/terraform/install-cli[Terraform documentation^].
+* Log in to https://cloud.redpanda.com[Redpanda Cloud^], navigate to the *Clients* page, and create a service account. The service account acts as an OAuth 2.0 client, and you will use its credentials (client ID and client secret) to authenticate to the Cloud API. 
+
+== Limitations
+
+The following operations are not supported on BYOC and customer-managed VPC deployments:
+
+* Creation of clusters
+* Destruction of clusters
+
+The following functionality is supported in the Cloud API but not in the Redpanda Terraform provider: 
+
+* Secrets
+* Kafka Connect
+
+== Use the provider
+
+. To install the Redpanda provider, copy and paste the following code into your Terraform configuration file:
++
+```
+terraform {
+  required_providers {
+    redpanda = {
+      source  = "redpanda-data/redpanda"
+      version = "~> 0.9"
+    }
+  }
+}
+```
+
+. Initialize Terraform:
++
+```
+terraform init
+```
+
+. Add the credentials for the Redpanda Cloud service account you set in the prerequisites. In the Redpanda Cloud UI, find the client ID and client secret on the *Clients* page. Set them as environment variables, or enter them in your Terraform configuration file:
++
+[tabs]
+======
+Environment variables::
++
+--
+```
+REDPANDA_CLIENT_ID=<client_id>
+REDPANDA_CLIENT_SECRET=<client_secret>
+```
+--
+Static credentials::
++
+--
+```
+provider "redpanda" {
+  client_id      = "<client_id>"
+  client_secret  = "<client_secret>"
+}
+```
+--
+======
+
+. For sample configurations with Dedicated, BYOC, and Serverless clusters, see the https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs[Redpanda Terraform provider docs^]. 
+
+=== Use the provider to create a new cluster
+
+For an example of how to use the provider to create a new cluster, see https://github.com/redpanda-data/terraform-provider-redpanda/blob/main/examples/cluster/aws/main.tf[this example^].
+
+=== Use the provider to manage an existing cluster
+
+To manage resources in existing Redpanda Cloud clusters, you must reference the cluster using the cluster ID (Redpanda ID). The following example creates a topic in a cluster with ID `foo-bar-baz`. The `redpanda_topic` resource contains a field `cluster_api_url` that references the `data.redpanda_cluster.test.cluster_api_url` data resource. 
+
+```
+data "redpanda_cluster" "test" {
+  id = "foo-bar-baz"
+}
+
+resource "redpanda_topic" "test" {
+  name               = "myTopicName"
+  partition_count    = 3
+  replication_factor = 3
+  cluster_api_url    = data.redpanda_cluster.test.cluster_api_url
+}
+```
+
+=== Additional examples
+
+To view additional ways to use the provider, see the https://github.com/redpanda-data/terraform-provider-redpanda/tree/main/examples[Redpanda Terraform provider examples^].
