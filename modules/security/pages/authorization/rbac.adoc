@@ -15,7 +15,7 @@ You can manage your RBAC configurations with the https://cloud.redpanda.com[Redp
 
 == RBAC terminology
 
-**Role**: A role is a list of permissions. With RBAC, permissions are attached to roles. Users assigned multiple roles receive the union of all permissions defined in those roles. Redpanda Cloud has three predefined roles: admin, writer, and reader.
+**Role**: A role is a list of permissions. With RBAC, permissions are attached to roles. Users assigned multiple roles receive the union of all permissions defined in those roles. Redpanda Cloud has three predefined roles: reader, writer, and admin.
 
 **Account**: An RBAC account is either a user account (human user) or a service account (machine or programmatic user).
 
@@ -35,33 +35,32 @@ When you delete a role, Redpanda removes it from any user or service account it 
 
 == Predefined roles 
 
-
 Redpanda Cloud provides the following predefined roles: <<reader,reader>>, <<writer,writer>>, and <<admin,admin>>.
 
 === Reader
 
 The reader role grants permission to view all resources. This includes:
 
-* View all networks and clusters (Serverless, BYOC, and Dedicated)
-* View all cluster aspects (ACLs, service accounts, quotas)
-* View all topic aspects (messages, configs, partitions, using search filters)
-* View all consumer group aspects (consumer groups, group offsets, and lags)
-* View all schema registry aspects (registered schemas with their contents)
-* View all Kafka Connect aspects (list configured clusters and their connectors, including the status and connector configs)
-* It does not include permission to view the list of users.
+* View all networks and clusters (Serverless, BYOC, and Dedicated).
+* View all cluster aspects (ACLs, service accounts, quotas).
+* View all topic aspects (messages, configs, partitions, using search filters).
+* View all consumer group aspects (consumer groups, group offsets, and lags).
+* View all schema registry aspects (registered schemas with their contents).
+* View all Kafka Connect aspects (list configured clusters and their connectors, including the status and connector configurations).
+* This does not include permission to view the list of users.
 
 === Writer
 
 The writer role grants all permissions that come with the reader role and additionally includes:
 
-* Manage all topic aspects, such as creating topics, editing topic configurations, deleting topics, and publishing and deleting topic records.
-* Manage all consumer group aspects, such as editing group offsets or deleting group offsets.
-* Manage all Kafka Connect aspects, such as creating/updating/deleting or starting/pausing/stopping Kafka Connect.
-* It does not include permission to create/remove ACLs or to create or remove a service account.
+* Manage all topic aspects, such as create topics, edit topic configurations, delete topics, and publish and delete topic records.
+* Manage all consumer group aspects, such as edit group offsets and delete group offsets.
+* Manage all Kafka Connect aspects, such as create/update/delete and start/pause/stop Kafka Connect.
+* This does not include permission to create/remove ACLs and service accounts.
 
 === Admin
 
 The admin role grants all permissions that come with the writer role and additionally includes:
 
-* Manage all service account aspects (create/remove service accounts)
-* Manage all ACL aspects (create/remove ACLs)
+* Manage all service account aspects (create/remove service accounts).
+* Manage all ACL aspects (create/remove ACLs).
