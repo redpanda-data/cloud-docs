@@ -8,17 +8,17 @@ See also: xref:get-started:cloud-overview.adoc#redpanda-cloud-architecture[Redpa
 
 == Prerequisites
 
-With BYOC, Redpanda manages security policies and resources for your VPC, including subnetworks, service accounts, IAM roles, firewall rules, and storage buckets. Before you deploy a BYOC cluster on AWS, check all prerequisites: 
+With BYOC, Redpanda manages security policies and resources for your VPC, including subnetworks, service accounts, IAM roles, firewall rules, and storage buckets. Before you deploy a BYOC cluster on AWS, check that the user creating the cluster has the following prerequisites: 
 
-* You have a minimum version of Redpanda `rpk` v24.1. See xref:manage:rpk/rpk-install.adoc[].
-* You have the xref:security:authorization/cloud-iam-policies.adoc[IAM policies] necessary to launch infrastructure for running Redpanda. 
-* Your environment has the AWS variables necessary to authenticate. Use either:
+* A minimum version of Redpanda `rpk` v24.1. See xref:manage:rpk/rpk-install.adoc[].
+* The permissions necessary to launch infrastructure for running Redpanda. See xref:security:authorization/cloud-iam-policies.adoc[IAM policies]
+* The AWS variables necessary to authenticate. Use either:
 +
 --
 ** `AWS_PROFILE` or
 ** `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
 
-To verify access, you should be able to successfully run `aws sts get-caller-identity` for your region. For more information, see the https://awscli.amazonaws.com/v2/documentation/api/latest/reference/sts/get-caller-identity.html[AWS CLI reference^].
+To verify access, you should be able to successfully run `aws sts get-caller-identity` for your region. See the https://awscli.amazonaws.com/v2/documentation/api/latest/reference/sts/get-caller-identity.html[AWS CLI reference^].
 --
 
 == Create a BYOC cluster
