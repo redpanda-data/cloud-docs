@@ -1,0 +1,147 @@
+= Create a BYOC Cluster on Azure
+:description: Use the Redpanda Cloud UI to create a BYOC cluster on Azure.
+:page-aliases: deploy:deployment-option/cloud/create-byoc-cluster-azure.adoc, get-started:cluster-types/byoc/create-byoc-cluster-azure.adoc
+
+include::shared:partial$feature-flag.adoc[]
+
+== Prerequisites
+
+Before you deploy a BYOC cluster on Azure, check all prerequisites to ensure that your Azure subscription meets requirements.
+
+=== Verify rpk version
+
+Confirm you have a minimum version of Redpanda `rpk` v24.1. See xref:reference:rpk/rpk-version.adoc[`rpk version`] or xref:manage:rpk/intro-to-rpk.adoc[].
+
+=== Prepare your Azure subscription
+
+In the https://login.microsoftonline.com/[Azure Portal^], confirm that the dedicated subscription you intend to use with Redpanda includes the following: 
+
+* **Role**: The Azure user must have the _Owner_ role in the subscription.
+
+* **Resources**: The subscription must be registered for the following resource providers. See the https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/resource-providers-and-types[Microsoft documentation^]. 
++
+--
+** Microsoft.Compute
+** Microsoft.ManagedIdentity
+** Microsoft.Storage
+** Microsoft.KeyVault
+** Microsoft.Network
+--
++
+To check if a resource provider is registered, run the following command using the Azure CLI or in the Azure Cloud Shell. For example, to check for Microsoft.Compute, run:
++
+``` 
+az provider show -n Microsoft.Compute
+```
++ 
+If it is not registered, run: 
++
+```
+az provider register --namespace 'Microsoft.Compute'
+```
+
+* **Feature**: The subscription must be registered for Microsoft.Compute/EncryptionAtHost. See the https://learn.microsoft.com/en-us/azure/virtual-machines/linux/disks-enable-host-based-encryption-cli#prerequisites[Microsoft documentation^].
++
+To register it, run:
++
+```
+az feature register --namespace Microsoft.Compute --name EncryptionAtHost  
+```
+
+* **Monitoring**: The subscription must have Azure Network Watcher enabled in the NetworkWatcherRG resource group and the region where you will use Redpanda. Network Watcher lets you monitor and diagnose conditions at a network level. See the https://learn.microsoft.com/en-us/azure/network-watcher/network-watcher-create?tabs=portaly[Microsoft documentation^]. 
++
+To enable it, run:
++
+``` 
+# Create the NetworkWatcherRG resource group
+az group create --name 'NetworkWatcherRG' --location '<region_name>'
+
+# Enable Network Watcher in <region_name>
+az network watcher configure --resource-group 'NetworkWatcherRG' --locations '<region_name>' --enabled
+```
+
+=== Check Azure quota
+
+Confirm that the Azure subscription has enough vCPUs per instance family and total regional vCPUs in the region where you will use Redpanda:
+
+* Standard LASv3-series vCPUs:  24 (3 Redpanda broker nodes)
+* Standard Dadsv5-series vCPUs: 8  (2 Redpanda utility nodes)
+* Standard Dv3-series vCPUs:    2  (1 Redpanda agent node)
+
+Optional: If you <<enable-kafka-connect,enable Kafka Connect>>, Redpanda also deploys a kafka-connect node pool:
+
+* Standard Fsv2-series vCPUs:   2  (1 Kafka Connect node)
+
+See the https://learn.microsoft.com/en-us/azure/quotas/view-quotas[Microsoft documentation^].
+
+=== Check Azure SKU restrictions
+
+Ensure that the Azure subscription does not have any SKU restrictions for the VM sizes in the region where you will use Redpanda. Using the Azure CLI or in the Azure Cloud Shell, run:
+
+----
+az vm list-skus -l eastus2 --zone --size Standard_L8as_v3 --output table
+az vm list-skus -l eastus2 --zone --size Standard_D2s_v3 --output table
+az vm list-skus -l eastus2 --zone --size Standard_D2ads_v5 --output table
+----
+
+If you see restrictions, https://learn.microsoft.com/en-us/troubleshoot/azure/general/region-access-request-process[open a Microsoft support request^] to remove the restrictions. For example, checking the Standard_L8as_v3 VM SKU restriction in the eastus2 region for all zones could show:
+
+[%nowrap,bash]
+----
+ResourceType     Locations    Name              Zones    Restrictions
+---------------  -----------  ---------------   -------  ------------
+virtualMachines  eastus2      Standard_L8as_v3   1,2,3    NotAvailableForSubscription, type: Zone, locations: eastus2, zones: 2,3
+----
+
+== Create a BYOC cluster
+
+To create a Redpanda cluster in your Azure Virtual Network, follow the <<prerequisites,prerequisites>> then follow the instructions in the Redpanda Cloud UI. The UI contains the parameters necessary to successfully run `rpk cloud byoc apply`.  
+
+See also: xref:get-started:cloud-overview.adoc#redpanda-cloud-architecture[Redpanda Cloud architecture].
+
+. Log in to https://cloud.redpanda.com[Redpanda Cloud^].
+. On the Clusters page, click *Create cluster*, then click *Create BYOC cluster*.
+. Enter a cluster name, then select the resource group, provider (Azure), xref:reference:tiers/byoc-tiers.adoc[region, tier], availability, and Redpanda version. 
++
+[NOTE]
+==== 
+* If you plan to create a private network in your own virtual network, select the region where your Azure Virtual Network is located.
+* Multi-AZ is the default configuration. Three AZs provide two backups in case one availability zone goes down.
+====
++ 
+Optionally, click *Advanced settings* to specify up to five key-value custom tags. After the cluster is created, the tags are applied to all Azure resources associated with this cluster. For details, see the https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/tag-resources[Microsoft documentation^].
+
+. Click *Next*.
+. On the Network page, enter the connection type: either *Public* or *Private*. For BYOC clusters, *Private* using Azure Private Link is best-practice. 
+** Your network name is used to identify this network.
+** For a xref:networking:cidr-ranges.adoc[CIDR range], choose one that does not overlap with your existing VPCs or your Redpanda network.
+. Click *Next*.
+. On the Deploy page, follow the steps to log in to Redpanda Cloud and deploy the agent.
++
+As part of agent deployment, Redpanda assigns the permissions required to run the agent. For details about these permissions, see xref:security:authorization/cloud-iam-policies-azure.adoc[Azure IAM policies].
+
+== Enable Kafka Connect
+
+To enable xref:develop:managed-connectors/index.adoc[Kafka Connect] on your BYOC cluster:
+
+. Authenticate to the Redpanda Cloud API. Follow the steps in xref:manage:api/cloud-api-authentication.adoc[].
+
+. Enable Kafka Connect by making a xref:api:ROOT:cloud-api.adoc#patch-/v1beta2/clusters/-cluster.id-[`PATCH /v1beta2/clusters`] request:
++
+[,bash]
+----
+curl -X PATCH "https://api.redpanda.com/v1beta2/clusters/<cluster-id>" \
+ -H 'Accept: application/json' \
+ -H 'Authorization: Bearer <token>' \
+ -H 'Content-Type: application/json' \
+ -d '{"kafka_connect": {"enabled": true}}'
+----
++
+Replace the following placeholders:
++
+- `<cluster-id>`: Enter the cluster ID listed in the Redpanda Cloud UI. Go to the Cluster Overview page, and look in the Details section.
+- `<token>`: Enter the API token you received in step 1.
+
+== Next steps
+
+xref:networking:azure-private-link.adoc[]
