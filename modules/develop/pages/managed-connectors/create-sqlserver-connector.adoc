@@ -1,0 +1,115 @@
+= Create a SQL Server (Debezium) Source Connector
+:description: Use the Redpanda Cloud UI to create a SQL Server (Debezium) Source Connector.
+:page-aliases: deploy:deployment-option/cloud/managed-connectors/create-sqlserver-connector.adoc
+:page-categories: Deployment, Integration
+
+You can use an SQL Server (Debezium) Source connector to import updates to Redpanda from SQL Server.
+
+== Prerequisites
+
+Before you can create an SQL Server (Debezium) Source connector in the Redpanda Cloud, you
+must:
+
+* Make the SQL Server (Debezium) database accessible from the connector instance.
+* Create a SQL Server (Debezium) user with the necessary permissions.
+
+== Limitations
+
+The SQL Server (Debezium) Source connector has the following limitations:
+
+* Only `JSON`, `CloudEvents` or `AVRO` formats can be used for a Kafka message key and value format.
+* SQL Server (Debezium) connector can work with only a single task at a time per database name.
+
+== Create an SQL Server (Debezium) Source connector
+
+To create the SQL Server (Debezium) Source connector:
+
+. In Redpanda Cloud, click *Connectors* in the navigation menu, and then
+click *Create Connector*.
+. Select *Import from SQL Server (Debezium)*.
+. On the *Create Connector* page, specify the following required connector
+configuration options:
++
+|===
+| Property name | Property key | Description
+
+| `Topic prefix`
+| `topic.prefix`
+| A topic prefix that identifies and provides a namespace for the particular database server/cluster that is capturing changes. The topic prefix should be unique across all other connectors because it is used as a prefix for all Kafka topic names that receive events emitted by this connector. Only alphanumeric characters, hyphens, dots, and underscores are accepted.
+
+| `Hostname`
+| `database.hostname`
+| A resolvable hostname or IP address of the SQL Server database server.
+
+| `Port`
+| `database.port`
+| Integer port number of the SQL Server database server.
+
+| `User`
+| `database.user`
+| Name of the SQL Server user to be used when connecting to the SQL Server database.
+
+| `Password`
+| `database.password`
+| The password of the SQL Server database user who will be connecting to the SQL Server database.
+
+| `Database instance`
+| `database.instance`
+| Specifies the instance name of the SQL Server named instance. If both database.port and database.instance are specified, database.instance is ignored.
+
+| `Databases`
+| `database.names`
+| The comma-separated list of the SQL Server database names from which to stream the changes.
+
+| `Kafka message key format`
+| `key.converter`
+| Format of the key in the Redpanda topic.
+
+| `Message key JSON contains schema`
+| `key.converter.schemas.enable`
+| Enable to specify that the message key contains schema in the schema field.
+
+| `Kafka message value format`
+| `value.converter`
+| Format of the value in the Redpanda topic.
+
+| `Message value JSON contains schema`
+| `value.converter.schemas.enable`
+| Enable to specify that the message value contains schema in the schema field.
+
+
+| `Max tasks`
+| `tasks.max`
+| The maximum number of tasks that the connector can use to capture data from the database instance. If the `Databases` list contains more than one element, you can increase the value of this property to a number less than or equal to the number of elements in the list. Default: 1
+
+| `Connector name`
+| `name`
+| Globally-unique name to use for this connector.
+|===
+
+. Click *Next*. Review the connector properties specified, then click *Create*.
+
+== Map data
+
+Use the appropriate key or value converter (input data format) for your data as follows:
+
+* Use the `Include Schemas`, `Include Tables`, and `Include Columns` properties to define
+lists of columns, tables, and schemas to read from. Alternatively, use `Exclude Schemas`,
+`Exclude Tables`, and `Exclude Columns` to define lists of columns, tables, and
+schemas to exclude from sources list.
+* Use only `JSON` (`org.apache.kafka.connect.json.JsonConverter`), `AVRO` (`io.confluent.connect.avro.AvroConverter`),
+and `CloudEvents` (`io.debezium.converters.CloudEventsConverter`) formats for the Kafka message key and value format.
+
+== Test the connection
+
+After the connector is created:
+
+. Open Redpanda Console, click the *Topics* tab, and select a topic.
+Check to confirm that it contains data migrated from SQL Server.
+Alternatively, run `rpk consume` to check the topic.
+. Click the *Connectors* tab to confirm that no issues have been reported for the
+connector.
+
+include::shared:partial$suggested-reading.adoc[]
+
+* https://debezium.io/documentation/reference/stable/connectors/sqlserver.html[Debezium connector for SQL Server^]
