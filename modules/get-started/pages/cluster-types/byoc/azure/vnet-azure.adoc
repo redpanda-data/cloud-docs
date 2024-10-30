@@ -266,3 +266,21 @@ rpk cloud byoc azure apply --redpanda-id='$rp_id' --subscription-id='$subscripti
 == Check cluster status
 
 You can check the cluster status with the Cloud API or the Redpanda Cloud UI.
+
+Example using the returned `operation_id`:
+
+```bash
+curl -X GET "https://api.redpanda.com/v1beta2/operations/<operation_id of operation from previous step>" \
+ -H "accept: application/json"\
+ -H "content-type: application/json" \
+ -H "authorization: Bearer $YOUR_TOKEN"
+```
+
+Example retrieving cluster:
+
+```bash
+curl -X GET "https://api.redpanda.com/v1beta2/clusters/<resource_id of cluster from previous step>" \
+ -H "accept: application/json"\
+ -H "content-type: application/json" \
+ -H "authorization: Bearer $YOUR_TOKEN"
+```
