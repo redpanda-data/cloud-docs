@@ -105,7 +105,7 @@ curl -X POST "<dataplane-api-url>/v1alpha2/topics" \
 
 NOTE: Kafka Connect is supported in BYOC and Dedicated clusters only.
 
-To create a managed connector, make a POST request to xref:api:ROOT:cloud-api.adoc#post-/v1alpha2/kafka-connect/clusters/-cluster_name-/connectors[`/v1alpha2/kafka-connect/clusters/\{cluster_name}/connectors`]. 
+To create a Kafka Connect connector, make a POST request to xref:api:ROOT:cloud-api.adoc#post-/v1alpha2/kafka-connect/clusters/-cluster_name-/connectors[`/v1alpha2/kafka-connect/clusters/\{cluster_name}/connectors`]. 
 
 The following example shows how to create an S3 sink connector with the name `my-connector`:
 
@@ -120,7 +120,7 @@ curl -X POST "<dataplane-api-url>/v1alpha2/kafka-connect/clusters/redpanda/conne
 
 [CAUTION]
 ====
-The field `aws.secret.access.key` in the above example contains sensitive information that usually shouldn't be added to a configuration directly. Use the xref:api:ROOT:cloud-api.adoc#post-/v1alpha2/kafka-connect/clusters/-cluster_name-/secrets[Secrets API] to create a secret that stores the value of the key. You can then use the secret ID to inject the value of the secret in your request.
+The field `aws.secret.access.key` in the example contains sensitive information that usually shouldn't be added to a configuration directly. Use the xref:api:ROOT:cloud-api.adoc#post-/v1alpha2/kafka-connect/clusters/-cluster_name-/secrets[Secrets API] to create a secret that stores the value of the key. You can then use the secret ID to inject the value of the secret in your request.
 
 To create a secret that you can reference in the connector configuration request:
 
@@ -132,7 +132,7 @@ curl -X POST "https://<dataplane-api-url>/v1alpha2/kafka-connect/clusters/redpan
  -d '{"name":"<connector-name>","secret_data":"<secret-value>"}' 
 ----
 
-Use the `id` returned in the Create Secret response to replace the placeholder `<secret-id>` in the Create Connector example above. The syntax `${secretsManager:<secret-id>}` tells the Kafka Connect cluser to load `<secret-id>`. 
+Use the `id` returned in the Create Secret response to replace the placeholder `<secret-id>` in the previous Create Connector example. The syntax `${secretsManager:<secret-id>}` tells the Kafka Connect cluster to load `<secret-id>`. 
 ====
 
 Example success response:
