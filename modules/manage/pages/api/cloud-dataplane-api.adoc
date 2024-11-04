@@ -105,7 +105,9 @@ curl -X POST "https://api-aeb32d9b.cn20bu40d061nvem7sv0.fmc.prd.cloud.redpanda.c
 
 NOTE: Connector management is supported in BYOC and Dedicated clusters only.
 
-To create a managed connector, make a POST request to xref:api:ROOT:cloud-api.adoc#post-/v1alpha1/connect/clusters/-cluster_name-/connectors[`/v1alpha1/connect/clusters/\{cluster_name}/connectors`]. The following example shows how to create an S3 sink connector with the name `my-connector`:
+To create a managed connector, make a POST request to xref:api:ROOT:cloud-api.adoc#post-/v1alpha1/connect/clusters/-cluster_name-/connectors[`/v1alpha1/connect/clusters/\{cluster_name}/connectors`]. 
+
+The following example shows how to create an S3 sink connector with the name `my-connector`:
 
 [,bash]
 ----
@@ -113,8 +115,25 @@ curl -X POST "https://api-aeb32d9b.cn20bu40d061nvem7sv0.fmc.prd.cloud.redpanda.c
  -H "Authorization: Bearer <token>" \
  -H "accept: application/json" \
  -H "content-type: application/json" \
- -d '{"config":{"connector.class":"com.redpanda.kafka.connect.s3.S3SinkConnector","topics":"test-topic","aws.secret.access.key":"secret-key","aws.s3.bucket.name":"bucket-name","aws.access.key.id":"access-key","aws.s3.bucket.check":"false","region":"us-east-1"},"name":"my-sample-connector"}'
+ -d '{"config":{"connector.class":"com.redpanda.kafka.connect.s3.S3SinkConnector","topics":"test-topic","aws.secret.access.key":"secret-key","${secretsManager:<secret-id>}":"bucket-name","aws.access.key.id":"access-key","aws.s3.bucket.check":"false","region":"us-east-1"},"name":"my-sample-connector"}'
 ----
+
+[CAUTION]
+====
+The field `aws.secret.access.key` contains sensitive information that usually shouldn't be added to a configuration directly. Use the xref:api:ROOT:cloud-api.adoc#post-/v1alpha2/kafka-connect/clusters/-cluster_name-/secrets[Secrets API] to create a secret that stores the value of the key. You can then use the secret ID to inject the value of the secret in your request.
+
+To create a secret that you can reference in the connector configuration request:
+
+[,bash]
+----
+curl -X POST "https://api.redpanda.com/v1alpha2/kafka-connect/clusters/<cluster-name>/secrets" \
+ -H 'accept: application/json'\
+ -H 'content-type: application/json' \
+ -d '{"name":"<>","secret_data":"<secret-value>"}' 
+----
+
+Use the `id` returned in the response to replace the placeholder `<secret-id>` in the above example.
+====
 
 Example success response:
 
