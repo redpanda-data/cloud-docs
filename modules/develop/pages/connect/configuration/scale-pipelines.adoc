@@ -1,0 +1,66 @@
+= Scale Data Pipeline Resources on BYOC Clusters
+:description: Learn how to manually scale resources for data pipelines using the Data Plane API.
+
+When you create a data pipeline through the Cloud UI, Redpanda Connect reserves compute resources for the exclusive use of that pipeline. This initial resource allocation is enough to experiment with pipelines that create low message volumes. 
+
+For pipelines with resource-intensive or higher throughput workloads, you can manually scale resources, using the xref:manage:api/cloud-dataplane-api.adoc[Data Plane API].   
+
+== Update resources for a data pipeline
+
+View the compute resources allocated to a data pipeline, and manually scale those resources.
+
+Use the Cloud UI or Data Plane API to view resources already allocated to a data pipeline:
+
+[tabs]
+=====
+Cloud UI::
++
+--
+. Log in to https://cloud.redpanda.com[Redpanda Cloud^].  
+. Go to the cluster where the pipeline is set up.
+. On the **Connectors** page, select your pipeline and look at the value for **Resources**.
++
+* CPU resources are displayed first, in vCPU. For example, `1` is 1.0 vCPU. 
+* Memory is displayed in megabytes. For example, `400M` is 400 MB.
+. Take a note of the pipeline **ID**.
+
+--
+Data Plane API::
++
+--
+. xref:manage:api/cloud-api-quickstart.adoc#try-the-cloud-api[Authenticate and get the base URL] for the Data Plane API. 
+. Make a request to xref:api:ROOT:cloud-api.adoc#get-/v1alpha2/redpanda-connect/pipelines[`GET /v1alpha2/redpanda-connect/pipelines`], which lists details of all pipelines on your cluster by ID. 
++
+* CPU resources (`cpu_shares`) are displayed vCPU. For example, `1` is equivalent to 1.0 vCPU. 
+* Memory (`memory_shares`) is displayed in megabytes. For example, `400M` is 400 MB.
+--
+=====
+
+To scale the resources for a pipeline:
+
+. xref:manage:api/cloud-api-quickstart.adoc#try-the-cloud-api[Authenticate and get the base URL] for Data Plane API, if you haven't done so already. 
+. Make a request to xref:api:ROOT:cloud-api.adoc#get-/v1alpha2/redpanda-connect/pipelines/-id-[`GET /v1alpha2/redpanda-connect/pipelines/\{id}`], including the ID of the pipeline you want to update.
+. Now make a request to xref:api:ROOT:cloud-api.adoc#put-/v1alpha2/redpanda-connect/pipelines/-id-[`PUT /v1alpha2/redpanda-connect/pipelines/\{id}`], including the ID of the pipeline you want to update. You can reuse the values returned by your `GET` request to populate the request body, replacing the `cpu_shares` and `memory_shares` values with the resources you want to allocate. 
+
++
+This example allocates 1.2 vCPU and 500 MB of memory to a data pipeline. For `cpu_shares`, `0.1` vCPU is the minimum allocation. For `memory_shares`, you can also specify fractions of a gigabyte. For example, `0.5G`.
++
+[,bash]
+----
+curl -X PUT "https://api-dfb1e463.crhjl9gj1v2u1117r1f0.byoc.prd.cloud.redpanda.com/v1alpha2/redpanda-connect/pipelines/xxx..."  \
+ -H "Authorization: Bearer xxx..." \
+ -H "accept: application/json" \
+ -H "content-type: application/json" \
+ -d '{"config_yaml":"input:\n generate:\n   interval: 1s\n   mapping: |\n     root.id = uuid_v4()\n     root.   user.name = fake(\"name\")\n     root.user.email = fake(\"email\")\n     root.content = fake(\"paragraph\")\n\npipeline:\n processors:\n   - mutation: |\n       root.title = \"PRIVATE AND CONFIDENTIAL\"\n\noutput:\n kafka_franz:\n   seed_brokers:\n     - seed-8b788fee.cr7320vkc43nu6gaj888.byoc.prd.cloud.redpanda.com:9092\n   sasl:\n     - mechanism: SCRAM-SHA-256\n       password: password\n       username: connect\n   topic: processed-emails\n   tls:\n     enabled: true\n", \
+    "description":"Email processor", \ 
+    "display_name":"emailprocessor-pipeline", \
+    "resources":{ \
+        "cpu_shares":"1.2", \
+        "memory_shares":"500M" \
+        } \
+      }' 
+----
+A successful response shows the updated resource allocations with the `cpu_shares` value returned in millicpu.
+. Make a request to xref:api:ROOT:cloud-api.adoc#get-/v1alpha2/redpanda-connect/pipelines[`GET /v1alpha2/redpanda-connect/pipelines`] to verify your pipeline resource updates. 
+
+NOTE: If your resource request exceeds the maximum allowed limit, contact Redpanda Support.
