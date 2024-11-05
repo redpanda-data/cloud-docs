@@ -101,11 +101,60 @@ curl -X POST "<dataplane-api-url>/v1alpha2/topics" \
  -d '{"name":"<topic-name>"}'
 ----
 
-=== Create a connector
+=== Use Redpanda Connect
+
+Use the API to manage xref:develop:connect/about.adoc[Redpanda Connect pipelines] in Redpanda Cloud.
+
+NOTE: The Pipeline APIs for Redpanda Connect are supported in BYOC and Serverless clusters only.
+
+==== Get Redpanda Connect pipeline
+
+To get details of a specific pipeline, make a xref:api:ROOT:cloud-api.adoc#get-/v1alpha2/redpanda-connect/pipelines/-id-[`GET /v1alpha2/redpanda-connect/pipelines/\{id}]` request.
+
+[,bash]
+----
+curl "https://<dataplane-url>/v1alpha2/redpanda-connect/pipelines/<pipeline-id>"
+----
+
+==== Stop a Redpanda Connect pipeline
+
+To stop a running pipeline, make a xref:api:ROOT:cloud-api.adoc#put-/v1alpha2/redpanda-connect/pipelines/-id-/stop[`PUT /v1alpha2/redpanda-connect/pipelines/\{id}/stop`] request.
+
+[,bash]
+----
+curl -X PUT "https://<dataplane-url>/v1alpha2/redpanda-connect/pipelines/<pipeline-id>/stop"
+----
+
+==== Start a Redpanda Connect pipeline
+
+To start a previously stopped pipeline, make a xref:api:ROOT:cloud-api.adoc#put-/v1alpha2/redpanda-connect/pipelines/-id-/start[`PUT /v1alpha2/redpanda-connect/pipelines/\{id}/start`] request.
+
+[,bash]
+----
+curl -X PUT "https://<dataplane-url>/v1alpha2/redpanda-connect/pipelines/<pipeline-id>/start"
+----
+
+==== Update a Redpanda Connect pipeline
+
+To update a pipeline, make a xref:api:ROOT:cloud-api.adoc#put-/v1alpha2/redpanda-connect/pipelines/-id-[`PUT /v1alpha2/redpanda-connect/pipelines/\{id}`] request. You update a pipeline configuration to scale resources, for example the number of CPU cores and amount of memory allocated.
+
+[,bash]
+----
+curl -X PUT "https://api.redpanda.com/v1alpha2/redpanda-connect/pipelines/" \
+ -H 'accept: application/json'\
+ -H 'content-type: application/json' \
+ -d '{"resources":{"cpu_shares":"8","memory_shares":"8G"}}' 
+----
+
+=== Manage Kafka Connect
+
+Use the API to configure your xref:develop:managed-connectors/index.adoc[Kafka Connect] clusters.
 
 NOTE: Kafka Connect is supported in BYOC and Dedicated clusters only.
 
-To create a Kafka Connect connector, make a POST request to xref:api:ROOT:cloud-api.adoc#post-/v1alpha2/kafka-connect/clusters/-cluster_name-/connectors[`/v1alpha2/kafka-connect/clusters/\{cluster_name}/connectors`]. 
+==== Create a Kafka Connect connector
+
+To create a connector, make a POST request to xref:api:ROOT:cloud-api.adoc#post-/v1alpha2/kafka-connect/clusters/-cluster_name-/connectors[`/v1alpha2/kafka-connect/clusters/\{cluster_name}/connectors`]. 
 
 The following example shows how to create an S3 sink connector with the name `my-connector`:
 
@@ -156,9 +205,7 @@ Example success response:
 }
 ----
 
-=== Restart a connector
-
-NOTE: Kafka Connect is supported in BYOC and Dedicated clusters only.
+==== Restart a Kafka Connect connector
 
 To restart a connector, make a POST request to the xref:api:ROOT:cloud-api.adoc#post-/v1alpha2/kafka-connect/clusters/-cluster_name-/connectors/-name-/restart[`/v1alpha2/kafka-connect/clusters/\{cluster_name}/connectors/\{name}/restart`] endpoint:
 
