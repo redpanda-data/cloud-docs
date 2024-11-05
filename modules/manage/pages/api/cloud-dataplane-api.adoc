@@ -169,7 +169,7 @@ curl -X POST "<dataplane-api-url>/v1alpha2/kafka-connect/clusters/redpanda/conne
 
 [CAUTION]
 ====
-The field `aws.secret.access.key` in the example contains sensitive information that usually shouldn't be added to a configuration directly. Use the xref:api:ROOT:cloud-api.adoc#post-/v1alpha2/kafka-connect/clusters/-cluster_name-/secrets[Secrets API] to create a secret that stores the value of the key. You can then use the secret ID to inject the value of the secret in your request.
+The field `aws.secret.access.key` in the example contains sensitive information that usually shouldn't be added to a configuration directly. Use the xref:api:ROOT:cloud-api.adoc#post-/v1alpha2/kafka-connect/clusters/-cluster_name-/secrets[Secrets API] to create a secret that stores the Base64-encoded value of the key. You can then use the secret ID to inject the value of the secret in your request.
 
 To create a secret that you can reference in the connector configuration request:
 
@@ -178,7 +178,7 @@ To create a secret that you can reference in the connector configuration request
 curl -X POST "https://<dataplane-api-url>/v1alpha2/kafka-connect/clusters/redpanda/secrets" \
  -H 'accept: application/json'\
  -H 'content-type: application/json' \
- -d '{"name":"<connector-name>","secret_data":"<secret-value>"}' 
+ -d '{"name":"<connector-name>","secret_data":"<secret-value-base64-encoded>"}' 
 ----
 
 Use the `id` returned in the Create Secret response to replace the placeholder `<secret-id>` in the previous Create Connector example. The syntax `${secretsManager:<secret-id>}` tells the Kafka Connect cluster to load `<secret-id>`. 
