@@ -7,7 +7,7 @@ The Redpanda Cloud API is a collection of REST APIs that allow you to interact w
 
 For the full Cloud API reference documentation, see xref:api:ROOT:cloud-api.adoc[Redpanda Cloud API Reference].
 
-The xref:manage:api/cloud-api-overview.adoc#cloud-api-architecture[data plane] contains the actual Redpanda clusters. Every cluster is its own data plane, and so it has its own distinct Data Plane API URL.
+The xref:manage:api/cloud-api-overview.adoc#cloud-api-architecture[data plane] contains the actual Redpanda clusters. Every cluster is its own data plane, and so it has its own distinct xref:manage:api/cloud-api-overview.adoc#data-plane-apis-url[Data Plane API URL].
 
 == Get Data Plane API URL
 
@@ -43,11 +43,11 @@ The response includes a `dataplane_api.url` value:
 
 === Create a user
 
-To create a new user in your Redpanda cluster, make a POST request to the xref:api:ROOT:cloud-api.adoc#post-/v1alpha1/users[`/v1alpha1/users`] endpoint, including the SASL mechanism, username, and password in the request body:
+To create a new user in your Redpanda cluster, make a POST request to the xref:api:ROOT:cloud-api.adoc#post-/v1alpha2/users[`/v1alpha2/users`] endpoint, including the SASL mechanism, username, and password in the request body:
 
 [,bash]
 ----
-curl -X POST "https://api-aeb32d9b.cn20bu40d061nvem7sv0.fmc.prd.cloud.redpanda.com/v1alpha1/users" \
+curl -X POST "https://<dataplane-api-url>/v1alpha2/users" \
  -H "Authorization: Bearer <token>" \
  -H "accept: application/json" \
  -H "content-type: application/json" \
@@ -70,11 +70,11 @@ The success response returns the newly-created username and SASL mechanism:
 
 === Create an ACL
 
-To create a new ACL in your Redpanda cluster, make a xref:api:ROOT:cloud-api.adoc#post-/v1alpha1/acls[`POST /v1alpha1/acls`] request. The following example ACL allows all operations on any Redpanda topic for a user with the name `payment-service`.
+To create a new ACL in your Redpanda cluster, make a xref:api:ROOT:cloud-api.adoc#post-/v1alpha2/acls[`POST /v1alpha2/acls`] request. The following example ACL allows all operations on any Redpanda topic for a user with the name `payment-service`.
 
 [,bash]
 ----
-curl -X POST "https://api-aeb32d9b.cn20bu40d061nvem7sv0.fmc.prd.cloud.redpanda.com/v1alpha1/acls" \
+curl -X POST "https://<dataplane-api-url>/v1alpha2/acls" \
  -H "Authorization: Bearer <token>" \
  -H "accept: application/json" \
  -H "content-type: application/json" \
@@ -90,45 +90,113 @@ The success response is empty, with a 201 status code.
 
 === Create a topic
 
-To create a new Redpanda topic without specifying any further parameters, such as the desired topic-level configuration or partition count, make a POST request to xref:api:ROOT:cloud-api.adoc#post-/v1alpha1/topics[`/v1alpha1/topics`] endpoint:
+To create a new Redpanda topic without specifying any further parameters, such as the desired topic-level configuration or partition count, make a POST request to xref:api:ROOT:cloud-api.adoc#post-/v1alpha2/topics[`/v1alpha2/topics`] endpoint:
 
 [,bash]
 ----
-curl -X POST "https://api-aeb32d9b.cn20bu40d061nvem7sv0.fmc.prd.cloud.redpanda.com/v1alpha1/topics" \
+curl -X POST "<dataplane-api-url>/v1alpha2/topics" \
  -H "Authorization: Bearer <token>" \
  -H "accept: application/json" \
  -H "content-type: application/json" \
- -d '{"name":"my-simple-test-topic"}'
+ -d '{"name":"<topic-name>"}'
 ----
 
-=== Create a connector
+=== Use Redpanda Connect
 
-NOTE: Connector management is supported in BYOC and Dedicated clusters only.
+Use the API to manage xref:develop:connect/about.adoc[Redpanda Connect pipelines] in Redpanda Cloud.
 
-To create a managed connector, make a POST request to xref:api:ROOT:cloud-api.adoc#post-/v1alpha1/connect/clusters/-cluster_name-/connectors[`/v1alpha1/connect/clusters/\{cluster_name}/connectors`]. The following example shows how to create an S3 sink connector with the name `my-connector`:
+NOTE: The Pipeline APIs for Redpanda Connect are supported in BYOC and Serverless clusters only.
+
+==== Get Redpanda Connect pipeline
+
+To get details of a specific pipeline, make a xref:api:ROOT:cloud-api.adoc#get-/v1alpha2/redpanda-connect/pipelines/-id-[`GET /v1alpha2/redpanda-connect/pipelines/\{id}]` request.
 
 [,bash]
 ----
-curl -X POST "https://api-aeb32d9b.cn20bu40d061nvem7sv0.fmc.prd.cloud.redpanda.com/v1alpha1/connect/clusters/redpanda/connectors" \
+curl "https://<dataplane-url>/v1alpha2/redpanda-connect/pipelines/<pipeline-id>"
+----
+
+==== Stop a Redpanda Connect pipeline
+
+To stop a running pipeline, make a xref:api:ROOT:cloud-api.adoc#put-/v1alpha2/redpanda-connect/pipelines/-id-/stop[`PUT /v1alpha2/redpanda-connect/pipelines/\{id}/stop`] request.
+
+[,bash]
+----
+curl -X PUT "https://<dataplane-url>/v1alpha2/redpanda-connect/pipelines/<pipeline-id>/stop"
+----
+
+==== Start a Redpanda Connect pipeline
+
+To start a previously stopped pipeline, make a xref:api:ROOT:cloud-api.adoc#put-/v1alpha2/redpanda-connect/pipelines/-id-/start[`PUT /v1alpha2/redpanda-connect/pipelines/\{id}/start`] request.
+
+[,bash]
+----
+curl -X PUT "https://<dataplane-url>/v1alpha2/redpanda-connect/pipelines/<pipeline-id>/start"
+----
+
+==== Update a Redpanda Connect pipeline
+
+To update a pipeline, make a xref:api:ROOT:cloud-api.adoc#put-/v1alpha2/redpanda-connect/pipelines/-id-[`PUT /v1alpha2/redpanda-connect/pipelines/\{id}`] request. You update a pipeline configuration to scale resources, for example the number of CPU cores and amount of memory allocated.
+
+[,bash]
+----
+curl -X PUT "https://api.redpanda.com/v1alpha2/redpanda-connect/pipelines/" \
+ -H 'accept: application/json'\
+ -H 'content-type: application/json' \
+ -d '{"resources":{"cpu_shares":"8","memory_shares":"8G"}}' 
+----
+
+=== Manage Kafka Connect
+
+Use the API to configure your xref:develop:managed-connectors/index.adoc[Kafka Connect] clusters.
+
+NOTE: Kafka Connect is supported in BYOC and Dedicated clusters only.
+
+==== Create a Kafka Connect connector
+
+To create a connector, make a POST request to xref:api:ROOT:cloud-api.adoc#post-/v1alpha2/kafka-connect/clusters/-cluster_name-/connectors[`/v1alpha2/kafka-connect/clusters/\{cluster_name}/connectors`]. 
+
+The following example shows how to create an S3 sink connector with the name `my-connector`:
+
+[,bash]
+----
+curl -X POST "<dataplane-api-url>/v1alpha2/kafka-connect/clusters/redpanda/connectors" \
  -H "Authorization: Bearer <token>" \
  -H "accept: application/json" \
  -H "content-type: application/json" \
- -d '{"config":{"connector.class":"com.redpanda.kafka.connect.s3.S3SinkConnector","topics":"test-topic","aws.secret.access.key":"secret-key","aws.s3.bucket.name":"bucket-name","aws.access.key.id":"access-key","aws.s3.bucket.check":"false","region":"us-east-1"},"name":"my-sample-connector"}'
+ -d '{"config":{"connector.class":"com.redpanda.kafka.connect.s3.S3SinkConnector","topics":"test-topic","aws.secret.access.key":"${secretsManager:<secret-id>}","aws.s3.bucket.name":"bucket-name","aws.access.key.id":"access-key","aws.s3.bucket.check":"false","region":"us-east-1"},"name":"my-connector"}'
 ----
+
+[CAUTION]
+====
+The field `aws.secret.access.key` in the example contains sensitive information that usually shouldn't be added to a configuration directly. Use the xref:api:ROOT:cloud-api.adoc#post-/v1alpha2/kafka-connect/clusters/-cluster_name-/secrets[Secrets API] to create a secret that stores the value of the key. You can then use the secret ID to inject the value of the secret in your request.
+
+To create a secret that you can reference in the connector configuration request:
+
+[,bash]
+----
+curl -X POST "https://<dataplane-api-url>/v1alpha2/kafka-connect/clusters/redpanda/secrets" \
+ -H 'accept: application/json'\
+ -H 'content-type: application/json' \
+ -d '{"name":"<connector-name>","secret_data":"<secret-value>"}' 
+----
+
+Use the `id` returned in the Create Secret response to replace the placeholder `<secret-id>` in the previous Create Connector example. The syntax `${secretsManager:<secret-id>}` tells the Kafka Connect cluster to load `<secret-id>`. 
+====
 
 Example success response:
 
 [.no-copy]
 ----
 {
-  "name": "my-sample-connector",
+  "name": "my-connector",
   "config": {
     "aws.access.key.id": "access-key",
     "aws.s3.bucket.check": "false",
     "aws.s3.bucket.name": "bucket-name",
     "aws.secret.access.key": "secret-key",
     "connector.class": "com.redpanda.kafka.connect.s3.S3SinkConnector",
-    "name": "my-sample-connector",
+    "name": "my-connector",
     "region": "us-east-1",
     "topics": "test-topic"
   },
@@ -137,15 +205,13 @@ Example success response:
 }
 ----
 
-=== Restart a connector
+==== Restart a Kafka Connect connector
 
-NOTE: Connector management is supported in BYOC and Dedicated clusters only.
-
-To restart a connector, make a POST request to the xref:api:ROOT:cloud-api.adoc#post-/v1alpha1/connect/clusters/-cluster_name-/connectors/-name-/restart[`/v1alpha1/connect/clusters/\{cluster_name}/connectors/\{name}/restart`] endpoint:
+To restart a connector, make a POST request to the xref:api:ROOT:cloud-api.adoc#post-/v1alpha2/kafka-connect/clusters/-cluster_name-/connectors/-name-/restart[`/v1alpha2/kafka-connect/clusters/\{cluster_name}/connectors/\{name}/restart`] endpoint:
 
 [,bash]
 ----
-curl -X POST "https://api-aeb32d9b.cn20bu40d061nvem7sv0.fmc.prd.cloud.redpanda.com/v1alpha1/connect/clusters/redpanda/connectors/my-connector/restart" \
+curl -X POST "<dataplane-api-url>/v1alpha2/kafka-connect/clusters/redpanda/connectors/my-connector/restart" \
  -H "Authorization: Bearer <token>" \
  -H "accept: application/json"\
  -H "content-type: application/json" \
