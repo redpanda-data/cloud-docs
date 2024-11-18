@@ -473,9 +473,9 @@ gcloud iam service-accounts add-iam-policy-binding <gke-service-account-name>@<s
 
 Log in to the https://cloud.redpanda.com[Redpanda Cloud UI^], and follow the steps to xref:get-started:cluster-types/byoc/gcp/create-byoc-cluster-gcp.adoc[create a BYOC cluster], with the following exceptions:
 
-. On the *Network* page, select the *Customer-managed* network connection type, and enter the network, service account, and storage bucket information you created. 
+. On the *Network* page, select the *Customer-managed* connection type, and enter the network, service account, and storage bucket information you created. 
 
-. With *customer-managed* networks, you must grant yourself (the user deploying the cluster with `rpk`) the following permissions. 
+. With *customer-managed* networks, you must grant yourself (the user deploying the cluster with `rpk`) the following permissions: 
 +
 .Expand permissions
 [%collapsible]
@@ -515,15 +515,15 @@ Log in to the https://cloud.redpanda.com[Redpanda Cloud UI^], and follow the ste
 +
 This can be done through a Google account, a service account, or any principal identity supported by GCP.
 +
-- If running `rpk` from a Google account, the user should first acquire new user credentials to use for https://cloud.google.com/sdk/gcloud/reference/auth/application-default/login[Application Default Credentials^].
-- If running `rpk` from a service account, the user should create a https://cloud.google.com/iam/docs/keys-create-delete#creating[service account key^], then https://cloud.google.com/docs/authentication/application-default-credentials#GAC[export GOOGLE_APPLICATION_CREDENTIALS^] and https://cloud.google.com/sdk/gcloud/reference/config/set[set the account as the default in gcloud^]:
+- If running `rpk` from a Google account, the user must acquire new user credentials to use for https://cloud.google.com/sdk/gcloud/reference/auth/application-default/login[Application Default Credentials^].
+- If running `rpk` from a service account, the user must create a https://cloud.google.com/iam/docs/keys-create-delete#creating[service account key^], then https://cloud.google.com/docs/authentication/application-default-credentials#GAC[export GOOGLE_APPLICATION_CREDENTIALS^] and https://cloud.google.com/sdk/gcloud/reference/config/set[set the account as the default in gcloud^]:
 +
 ```bash
 export GOOGLE_APPLICATION_CREDENTIALS=<keyfile for service account>
 gcloud config set account $SERVICE_ACCOUNT@$PROJECT_ID.iam.gserviceaccount.com
 ```
 
-. Run the `rpk` command to validate your configuration: 
+. Run the following `rpk` command to validate your configuration: 
 +
 ```bash
 rpk cloud byoc gcp apply --redpanda-id='<redpanda-id>' --project-id='<service-project-id>' --validate-only
