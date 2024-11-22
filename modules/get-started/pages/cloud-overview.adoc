@@ -177,7 +177,7 @@ Redpanda runs maintenance and upgrade operations on clusters in a rolling fashio
 
 By default, Redpanda Cloud may run maintenance operations on any day at any time. You can override this default and schedule a specific maintenance window on the *Cluster settings* page. A *Scheduled* maintenance window requires Redpanda Cloud to run operations on the day and time specified. Maintenance windows typically take six hours. All operations begin during the maintenance window, but some operations may complete after the window ends. All times are in Coordinated Universal Time (UTC).
 
-TIP: Redpanda Cloud maintenance cycles always start on Tuesdays. Clusters scheduled on Tuesdays are updated first, and clusters scheduled on Mondays are updated last. Keep this in my mind when sequencing updates for multiple clusters.
+TIP: Redpanda Cloud maintenance cycles always start on Tuesdays. Clusters scheduled on Tuesdays are updated first, and clusters scheduled on Mondays are updated last. Keep this in mind when sequencing updates for multiple clusters.
 
 == Redpanda Cloud architecture
 
@@ -212,9 +212,7 @@ This VM spins up the agent and the required infrastructure. Redpanda assigns the
 +
 After the agent is up and running, it connects to the control plane and starts dequeuing and applying cluster specifications that provision, configure, and maintain clusters. The agent is in constant communication with the control plane,
 receiving and applying cluster specifications and exchanging cluster metadata. Agents are authenticated and authorized through opaque and ephemeral tokens, and
-they have dedicated job queues in the control plane. 
-+
-Agents also manage VPC peering networks. One agent manages each network resource at a time.
+they have dedicated job queues in the control plane. Agents also manage VPC peering networks. 
 +
 image::shared:byoc_apply.png[cloud_byoc_apply]
 
