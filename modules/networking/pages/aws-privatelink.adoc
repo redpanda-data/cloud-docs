@@ -262,20 +262,23 @@ SECURITY_GROUP_ID=<security_group_id>
 
 The example below to add security group rules is based on the assumption that the Redpanda broker count is three. If you are not using three brokers, modify the example:
 
-* Replace `32094` with `32092 + <broker_count-1>`.
-* Replace `35084` with `35082 + <broker_count-1>`.
+* Replace `32094`,`32194`,`32294` with `32092 + <broker_count-1>`, `32192 + <broker_count-1>`, `32292 + <broker_count-1>`.
+* Replace `35084`,`35184`,`35284` with `35082 + <broker_count-1>`, `35182 + <broker_count-1>`, `35282 + <broker_count-1>`.
 
 [,bash]
 ----
+# Allow Redpanda Kafka seed port
 aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
     --group-id $SECURITY_GROUP_ID \
     --protocol "tcp" \
     --port 30292 \
     --cidr 0.0.0.0/0
+# Allow Schema Registry port
 aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
     --group-id $SECURITY_GROUP_ID --protocol "tcp" \
     --port 30081 \
     --cidr 0.0.0.0/0
+# Allow Panda Proxy port
 aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
     --group-id $SECURITY_GROUP_ID --protocol "tcp" \
     --port 30282 \
@@ -286,17 +289,45 @@ aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
     --protocol "tcp" \
     --port 443-443 \
     --cidr 0.0.0.0/0
-# Adjust the port 32094 if the Redpanda broker count is not 3.
+# Redpanda Kafka broker port ranges
+#   There are 3 ranges that alternate during normal system maintenance and all 3 must be open
+#
+#   Adjust the end port number if the Redpanda broker count is not 3.
+#
 aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
     --group-id $SECURITY_GROUP_ID \
     --protocol "tcp" \
     --port 32092-32094 \
     --cidr 0.0.0.0/0
-# Adjust the port 35084 if the Redpanda broker count is not 3.
+aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
+    --group-id $SECURITY_GROUP_ID \
+    --protocol "tcp" \
+    --port 32192-32194 \
+    --cidr 0.0.0.0/0
+aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
+    --group-id $SECURITY_GROUP_ID \
+    --protocol "tcp" \
+    --port 32292-32294 \
+    --cidr 0.0.0.0/0
+# Redpanda Panda Proxy port ranges
+#   There are 3 ranges that alternate during normal system maintenance and all 3 must be open
+#
+#   Adjust the end port number if the Redpanda broker count is not 3.
+#
 aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
     --group-id $SECURITY_GROUP_ID \
     --protocol "tcp" \
     --port 35082-35084 \
+    --cidr 0.0.0.0/0
+aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
+    --group-id $SECURITY_GROUP_ID \
+    --protocol "tcp" \
+    --port 35182-35184 \
+    --cidr 0.0.0.0/0
+aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
+    --group-id $SECURITY_GROUP_ID \
+    --protocol "tcp" \
+    --port 35282-35284 \
     --cidr 0.0.0.0/0
 ----
 
