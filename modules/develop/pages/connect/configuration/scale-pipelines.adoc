@@ -1,4 +1,4 @@
-= Scale Data Pipeline Resources on BYOC Clusters
+= Scale Data Pipeline Resources on BYOC and Dedicated Clusters
 :description: Learn how to manually scale resources for data pipelines using the Data Plane API.
 
 When you create a data pipeline through the Cloud UI, Redpanda Connect reserves compute resources for the exclusive use of that pipeline. This initial resource allocation is enough to experiment with pipelines that create low message volumes. 
@@ -16,7 +16,7 @@ Use the Cloud UI or Data Plane API to view resources already allocated to a data
 Cloud UI::
 +
 --
-. Log in to https://cloud.redpanda.com[Redpanda Cloud^].  
+. Log in to https://cloud.redpanda.com[Redpanda Cloud^].
 . Go to the cluster where the pipeline is set up.
 . On the **Connectors** page, select your pipeline and look at the value for **Resources**.
 +
@@ -47,7 +47,7 @@ This example allocates 1.2 vCPU and 500 MB of memory to a data pipeline. For `cp
 +
 [,bash]
 ----
-curl -X PUT "https://api-dfb1e463.crhjl9gj1v2u1117r1f0.byoc.prd.cloud.redpanda.com/v1alpha2/redpanda-connect/pipelines/xxx..."  \
+curl -X PUT "https://<data-plane-api-url>/v1alpha2/redpanda-connect/pipelines/xxx..."  \
  -H "Authorization: Bearer xxx..." \
  -H "accept: application/json" \
  -H "content-type: application/json" \
