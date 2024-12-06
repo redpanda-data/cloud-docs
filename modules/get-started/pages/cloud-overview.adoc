@@ -220,17 +220,23 @@ NOTE: To create a Redpanda cluster in your virtual private cloud (VPC), follow t
 
 == Redpanda Cloud vs Self-Managed feature compatibility
 
+Because Redpanda Cloud is a fully-managed service that provides maintenance, data and partition balancing, upgrades, and recovery, much of the cluster maintenance required for Self-Managed users is not necessary for Redpanda Cloud users. Also, Redpanda Cloud is opinionated about Kafka configurations. For example, automatic topic creation is disabled. Some systems expect the Kafka service to automatically create topics when a message is produced to a topic that doesn't exist. (You can create topics in Redpanda Cloud on the *Topics* page or with `rpk topic create`.)
+
+New clusters in Redpanda Cloud generally include functionality added in Self-Managed versions immediately. Existing clusters include new functionality when they get upgraded to the latest version. 
+
 Redpanda Cloud deployments do not support the following functionality available in Redpanda Self-Managed deployments:
 
-- FIPS-compliance mode
-- Data transforms (currently in beta for Redpanda Cloud)
-- Remote Read Replicas (currently in beta for Redpanda Cloud)
-- Kafka API OIDC authentication (however, Redpanda Cloud does support xref:security:cloud-authentication.adoc#single-sign-on[user authentication to an organization with SSO])
-- Kerberos authentication
-- Redpanda debug bundles
-- Redpanda Console topic documentation
-- Setting `auto_create_topics_enabled=true`
-- Admin API
+- Integration with Apache Iceberg. For private beta access on BYOC, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda Support^].
+- Data transforms. For private beta access, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda Support^].
+- Remote Read Replicas. This is in beta for Redpanda Cloud.
+- Kafka API OIDC authentication. However, Redpanda Cloud does support xref:security:cloud-authentication.adoc#single-sign-on[SSO to the Redpanda Cloud UI].
+- Admin API.
+- FIPS-compliance mode.
+- Kerberos authentication.
+- Redpanda debug bundles.
+- Redpanda Console topic documentation.
+- Configuring access to object storage with customer-managed encryption key.
+- Kubernetes Helm chart and Redpanda Operator functionality.
 - The following `rpk` commands:
  
 ** `rpk cluster config`
@@ -245,12 +251,12 @@ Redpanda Cloud deployments do not support the following functionality available 
 ** `rpk debug` 
 ** `rpk iotune`
 ** `rpk redpanda`
-** `rpk topic describe-storage` (all other `rpk topic` commands are supported on both Redpanda Cloud and self-managed)
-** `rpk transform`  (currently in beta for Redpanda Cloud)
-** `rpk generate app` (supported in Serverless clusters only)
-** `rpk security user` (supported in Serverless clusters only)
-
-NOTE: The `rpk cloud` commands are not supported in self-managed deployments.
+** `rpk topic describe-storage` (All other `rpk topic` commands are supported on both Redpanda Cloud and Self Managed.)
+** `rpk transform` (This is in beta for Redpanda Cloud.)
+** `rpk generate app` (This is supported in Serverless clusters only.)
+** `rpk security user` (This is supported in Serverless clusters only.)
++
+NOTE: The `rpk cloud` commands are not supported in Self-Managed deployments.
 
 == Next steps
 * xref:get-started:cluster-types/serverless.adoc[Create a Serverless Cluster]
