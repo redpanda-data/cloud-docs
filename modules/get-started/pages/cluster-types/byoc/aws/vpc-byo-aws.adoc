@@ -8,7 +8,7 @@ include::shared:partial$feature-flag.adoc[]
 
 With a standard BYOC cluster, Redpanda manages the VPC lifecycle. For additional security, you can deploy the Redpanda glossterm:data plane[] into your existing shared VPC and manage the VPC lifecycle yourself. 
 
-When you create a BYOC cluster, you specify your VPC and service account. The Redpanda Cloud agent doesn't create any new resources or alter any settings in your account. With BYOVPC: 
+When you create a BYOCVPC cluster, you specify your VPC and service account. The Redpanda Cloud agent doesn't create any new resources or alter any settings in your account. With BYOVPC: 
 
 * You provide your own VPC in your AWS account.
 * You maintain more control over your account, because Redpanda requires fewer permissions than standard BYOC clusters.
@@ -30,8 +30,6 @@ The https://github.com/redpanda-data/cloud-examples/tree/main/customer-managed/a
 
 == Set environment variables
 
-The https://github.com/redpanda-data/cloud-examples/blob/main/customer-managed/aws/terraform/variables.tf[`variables.tf`] file contains a number of variables that allow you to modify the Terraform code to meet your specific needs. In some cases, it lets you skip creation of certain resources (for example, the VPC) or modify the configuration of a resource.
-
 The following example creates variables for the AWS account ID, region, VPC name, and a prefix for resources. It then creates a new VPC in AWS with a CIDR block (10.0.0.0/16) and captures the VPC ID.
 
 ```bash
@@ -43,7 +41,9 @@ export REDPANDA_COMMON_PREFIX=sample-
 export AWS_VPC_ID=$(aws ec2 create-vpc --cidr-block 10.0.0.0/16 --query Vpc.VpcId --region ${AWS_REGION} --tag-specification ResourceType=vpc,Tags='[{Key=Name,Value="${AWS_VPC_NAME}"}]' --output text --profile AWSAdministratorAccess-605419575229)
 ```
 
-== Generate Terraform configuration
+The https://github.com/redpanda-data/cloud-examples/blob/main/customer-managed/aws/terraform/variables.tf[`variables.tf`] file contains a number of variables that allow you to modify the Terraform code to meet your specific needs. In some cases, it lets you skip creation of certain resources (for example, the VPC) or modify the configuration of a resource.
+
+== Configure Terraform
 
 NOTE: You may want to configure https://developer.hashicorp.com/terraform/language/state/remote[remote state^] for this Terraform. For simplicity, these instructions assume local state.
 
@@ -96,7 +96,12 @@ export REDPANDA_CLIENT_ID=
 export REDPANDA_CLIENT_SECRET=
 ```
 
-For example Terraform code of the expected provisioned resources, see the https://github.com/redpanda-data/cloud-examples/tree/main/customer-managed/aws[BYOVPC on AWS README^].
+[TIP]
+====
+
+* To get the Redpanda authentication credentials and resource group, follow the xref:manage:api/cloud-api-quickstart.adoc[].
+* For example Terraform code of the expected provisioned resources, see the https://github.com/redpanda-data/cloud-examples/tree/main/customer-managed/aws[BYOVPC on AWS README^].
+====
 
 == Authenticate with Redpanda Cloud
 
@@ -112,7 +117,9 @@ export BEARER_TOKEN=$(curl --request POST \
 --data audience=cloudv2-production.redpanda.cloud | jq -r '.access_token')
 ```
 
-== Create a Redpanda network
+== Create network
+
+To create the Redpanda network: 
 
 . Define a JSON file called `redpanda-network.json` that includes the AWS VPC and region, as well as AWS-specific resources like S3, DynamoDB, and subnets. For example: 
 +
@@ -173,7 +180,9 @@ The Create Network request returns a `resource_id`. For example:
 }
 ----
 
-== Create a Redpanda cluster
+== Create cluster
+
+To create the Redpanda cluster: 
 
 . Create environment variables for cluster information, like the version, tier, and availability zones. 
 +
@@ -311,21 +320,19 @@ curl -X GET "https://api.redpanda.com/v1beta2/clusters/<resource_id of cluster f
  -H "authorization: Bearer $YOUR_TOKEN"
 ```
 
-== Tear down resources
+== Delete cluster
 
 To delete the Redpanda cluster with the Cloud API, run:
 
-```bash
+----
 export REDPANDA_ID=$(curl -X DELETE "https://api.redpanda.com/v1beta2/clusters/${REDPANDA_ID}" \
  -H "accept: application/json"\
  -H "content-type: application/json" \
  -H "authorization: Bearer ${BEARER_TOKEN}" | jq -r '.operation.resource_id')
- 
+----
+
+After that completes, run: 
+
+----
 rpk cloud byoc aws destroy --redpanda-id ${REDPANDA_ID}
-```
-
-To destroy the AWS VPC and associated resources with the the AWS CLI, run:
-
-```bash
-aws ec2 delete-vpc --vpc-id ${AWS_VPC_ID} --profile AWSAdministratorAccess-605419575229
-```
+----
