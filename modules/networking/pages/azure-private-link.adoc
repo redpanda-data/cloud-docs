@@ -250,12 +250,12 @@ az network private-endpoint create \
     --vnet-name <azure-pl-endpoint-vnet-name>
 ``` 
 
-. Create a private DNS zone.
+. Create a private DNS zone using the outputted DNS record above (`echo $DNS_RECORD`) 
 +
 ```
 az network private-dns zone create \
     --resource-group <azure-pl-endpoint-resource-group-name> \
-    --name "$CLUSTER_ID.byoc.prd.cloud.redpanda.com"
+    --name "$DNS_RECORD"
 ``` 
 
 . Link the private DNS zone to the virtual network you created earlier, so virtual machines (VMs) and containers can resolve the Redpanda cluster domain.
