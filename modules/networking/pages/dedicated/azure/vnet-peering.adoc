@@ -11,7 +11,7 @@ Creating a VNet peering involves the following steps:
 
 . Create a peering connection in the Redpanda Cloud UI.
 . Create a service principal with the provided application ID in Azure Cloud Shell.
-. Assign a set of roles to the the service principal in Azure Cloud Shell.
+. Assign a set of roles to the service principal in Azure Cloud Shell.
 
 == Prerequisites
 
@@ -48,18 +48,33 @@ Redpanda creates the service principal with a role assignment that allows it Net
 +
 Example for Network Contributor role:
 +
-```
+```bash
+# Set environment variables
+export RP_RESOURCE_GROUP_ID=<Retrieve resource group ID from Redpanda Cloud URL>
+export AZURE_VNET_ID=<Retrieve Azure VNET ID from Azure VNET UI>
+
+# Create service principal and get its ID
 > spid=$(az ad sp create –id <application-id> --query "id" -o tsv
+
+# Assign the role to the service principal using the environment variables
+# The assignee is the ID created above.
 > az role assignment create \
         –-assignee $spid \
 	    --role "Network Contributor"
-        --scope /subscriptions/<subscription-id>/resourceGroups/<resourcegroup-id>/providers/Microsoft.Network/virtualNetworks/<vnet id>
+        --scope /subscriptions/<subscription-id>/resourceGroups/$RP_RESOURCE_GROUP_ID/providers/Microsoft.Network/virtualNetworks/$AZURE_VNET_ID
 ```
 +
 Example for custom role with scoped permissions for peering:
 +
-```
+```bash
+# Set environment variables
+export RP_RESOURCE_GROUP_ID=<Retrieve resource group ID from Redpanda Cloud URL>
+export AZURE_VNET_ID=<Retrieve Azure VNET ID from Azure VNET UI>
+
+# Create service principal and get its ID
 > spid=$(az ad sp create –id <application-id> --query "id" -o tsv)
+
+# Create custom role definition for Redpanda peering role and get its ID
 > rdid=$(az role definition create --role-definition '{
     "Name": "Redpanda Peering Role",
     "Description": "Peers networks to Redpanda networks.",
@@ -72,15 +87,13 @@ Example for custom role with scoped permissions for peering:
     ],
     "AssignableScopes": ["/subscriptions/<subscription-id>/..."]
 }' --query "name" -o tsv)
-```
-+
-```
+
+# Assign the role to the service principal using the environment variables
+# The assignee is the ID created above.
 > az role assignment create \
         --assignee $spid \
         --role $rdid  \
-        --scope /subscriptions/<subscription-id>/resourceGroups/<resourcegroup-id>/providers/Microsoft.Network/virtualNetworks/<vnet id>
+        --scope /subscriptions/<subscription-id>/resourceGroups/$RP_RESOURCE_GROUP_ID/providers/Microsoft.Network/virtualNetworks/$AZURE_VNET_ID
 ```
-+
-The `assignee` is the ID created in the first command.
 
 Redpanda polls with the application to try to access the customer tenant. When access is available, it initiates the peering API calls. After you create the service principal, the API calls use the application to create the peering on the Redpanda network and then the peering on the Azure network. 
