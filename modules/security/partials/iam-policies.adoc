@@ -1,12 +1,12 @@
-Redpanda automatically assigns IAM policies to the Redpanda Cloud agent when it is deployed. The permissions grant the agent access to the BYOC cluster. IAM policies
-_do not_ grant user access to a cluster; rather, they grant the deployed Redpanda
-agent access, so that brokers can communicate with the BYOC clusters. 
+Redpanda automatically assigns IAM policies to the Redpanda Cloud agent when it is deployed. The permissions grant the agent access to the BYOC cluster. 
 
-See also: xref:get-started:cloud-overview.adoc#byoc-architecture[BYOC architecture]
+ifdef::env-aws[] 
+[NOTE]
+====
+* This page lists the IAM permissions Redpanda needs to create xref:get-started:cluster-types/byoc/aws/create-byoc-cluster-aws.adoc[BYOC clusters]. This _does not_ pertain to xref:get-started:cluster-types/byoc/aws/vpc-byo-aws.adoc[BYOVPC clusters]. 
+* No IAM permissions are required for Redpanda Cloud users. IAM policies do not grant user access to a cluster; rather, they grant the deployed Redpanda agent access, so that brokers can communicate with the BYOC clusters. 
+====
 
-NOTE: This page lists the IAM permissions Redpanda needs to create a BYOC cluster. No IAM permissions are required for Redpanda Cloud users. 
-
-ifdef::env-aws[]
 == AWS IAM policies
 
 IAM policies are assigned to deployed Redpanda agents for BYOC AWS
@@ -504,6 +504,12 @@ statement {
 endif::[]
 
 ifdef::env-gcp[]
+[NOTE]
+====
+* This page lists the IAM permissions Redpanda needs to create xref:get-started:cluster-types/byoc/gcp/create-byoc-cluster-gcp.adoc[BYOC clusters]. This _does not_ pertain to xref:get-started:cluster-types/byoc/gcp/vpc-byo-gcp.adoc[BYOVPC clusters]. 
+* No IAM permissions are required for Redpanda Cloud users. IAM policies do not grant user access to a cluster; rather, they grant the deployed Redpanda agent access, so that brokers can communicate with the BYOC clusters. 
+====
+
 == GCP IAM policies
 
 The Redpanda agent service account for GCP is granted the following roles/permissions to manage
@@ -748,6 +754,12 @@ endif::[]
 
 
 ifdef::env-azure[]
+[NOTE]
+====
+* This page lists the IAM permissions Redpanda needs to create xref:get-started:cluster-types/byoc/azure/create-byoc-cluster-azure.adoc[BYOC clusters]. This _does not_ pertain to xref:get-started:cluster-types/byoc/azure/vnet-azure.adoc[BYOVPC clusters]. 
+* No IAM permissions are required for Redpanda Cloud users. IAM policies do not grant user access to a cluster; rather, they grant the deployed Redpanda agent access, so that brokers can communicate with the BYOC clusters.
+====
+
 Azure RBAC (role-based access control) is scoped to resource groups. For example:
 
 ```
