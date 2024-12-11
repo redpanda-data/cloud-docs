@@ -276,7 +276,7 @@ Running apply	{"provisioner": "redpanda-network"}
 Finished apply	{"provisioner": "redpanda-network"}
 Running apply	{"provisioner": "redpanda-agent"}
 Finished apply	{"provisioner": "redpanda-agent"}
-The Redpanda cluster is deploying. This can take up to 45 minutes. View status at https://cloud.redpanda.com/clusters/{REDPANDA_ID}/overview.
+The Redpanda cluster is deploying. This can take up to 45 minutes. View status at https://cloud.redpanda.com/clusters/${REDPANDA_ID}/overview.
 ```
 
 The agent VM now is running and handles the remaining provisioning steps. This can take up to 45 minutes. When provisioning completes, the cluster status updates to `Running`. If the cluster remains in `Creating` status after 45 minutes, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda support^].
@@ -300,12 +300,12 @@ to skip validation.
 
 == Check cluster status
 
-You can check the cluster status with the Cloud API or the Redpanda Cloud UI.
+Cluster creation is an example of an operation that can take a longer period of time to complete. You can check the operation state with the Cloud API or check the Redpanda Cloud UI for cluster status.
 
-Example using the returned `operation_id`:
+Example using the operation ID returned from your create cluster command:
 
 ```bash
-curl -X GET "https://api.redpanda.com/v1beta2/operations/<operation_id of operation from previous step>" \
+curl -X GET "https://api.redpanda.com/v1beta2/operations/<operation_id from cluster creation>" \
  -H "accept: application/json"\
  -H "content-type: application/json" \
  -H "authorization: Bearer $YOUR_TOKEN"
