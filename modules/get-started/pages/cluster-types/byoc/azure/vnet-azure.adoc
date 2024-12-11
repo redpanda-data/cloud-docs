@@ -1,15 +1,17 @@
-= Create a Customer-Managed VNet on Azure
+= Create a BYOVPC Cluster on Azure
 :description: Connect Redpanda Cloud to your existing VNet for additional security.
 
 include::shared:partial$feature-flag.adoc[]
 
-With a standard BYOC cluster, Redpanda manages the networking lifecycle. For additional security, you can deploy the Redpanda glossterm:data plane[] into your existing virtual network (VNet) and manage the lifecycle yourself. When you create a customer-managed VNet cluster, you specify your VNet and managed identities. The Redpanda Cloud agent doesn't create any new resources or alter any settings in your account. With a *customer-managed* VNet: 
+With a standard BYOC cluster, Redpanda manages the networking lifecycle. For additional security, you can deploy the Redpanda glossterm:data plane[] into your existing virtual network (VNet) and manage the lifecycle yourself. 
+
+When you create a BYOVPC cluster, you specify your VNet and managed identities. The Redpanda Cloud agent doesn't create any new resources or alter any settings in your account. With a customer-managed VNet: 
 
 * You provide your own VNet in your Azure account.
 * You maintain more control over your account, because Redpanda requires fewer permissions than standard BYOC clusters.
 * You control your security resources and policies, including subnets, user-assigned identities, IAM roles and assignments, security groups, storage accounts, and key vaults.
 
-The https://github.com/redpanda-data/cloud-examples/tree/main/customer-managed/azure[Redpanda repository^] contains the code that deploys the resources you must create for a customer-managed Azure cluster. You create these resources in advance and provide them to Redpanda during cluster creation. The code is provided in https://developer.hashicorp.com/terraform[Terraform^]. There may be resources in the repository that already exist in your environment that you don't want to create (for example, the VNet). Variables are provided for this purpose.
+The https://github.com/redpanda-data/cloud-examples/tree/main/customer-managed/azure[Redpanda repository^] contains the code that deploys the resources you must create for a BYOVPC cluster on Azure. You create these resources in advance and provide them to Redpanda during cluster creation. The code is provided in https://developer.hashicorp.com/terraform[Terraform^]. There may be resources in the repository that already exist in your environment that you don't want to create (for example, the VNet). Variables are provided for this purpose.
 
 See the code for the complete list of resources required to create and deploy Redpanda cluster. Customer-managed resources can be broken down into the following groups:
 
@@ -33,11 +35,9 @@ See the code for the complete list of resources required to create and deploy Re
 * You cannot move existing clusters to a customer-managed VNet.
 * You cannot change to a different VNet after creating a cluster with a customer-managed VNet.
 
-== Deploy customer-managed resources With Terraform
-
 You may want to configure https://developer.hashicorp.com/terraform/language/state/remote[remote state^] for this Terraform. For simplicity, these instructions assume local state.
 
-=== Configure the variables
+== Configure Terraform
 
 Create a JSON file called `byovnet.auto.tfvars.json` inside the Terraform directory to configure variables for your specific needs:
 
@@ -82,21 +82,17 @@ The https://github.com/redpanda-data/cloud-examples/blob/main/customer-managed/a
 * `vars.iam.tf`: Contains the variables related to IAM roles.
 * `vars.misc.tf`: Contains the variables, regions, zones, tags, and resource name prefix.
 
-=== Initialize Terraform
+== Deploy Terraform
 
-Initialize the working directory containing Terraform configuration files:
+Initialize, plan, and apply Terraform to set up the Azure infrastructure:
 
 ```
 terraform init
-```
-
-=== Apply Terraform
-
-```
+terraform plan
 terraform apply
 ```
 
-The output of `terraform apply` displays output values. Note these values, because they are needed in subsequent steps. To continue with cluster creation, see https://github.com/redpanda-data/cloud-examples/tree/main/customer-managed/azure#create-azure-byo-vnet-redpanda-cluster[Create Azure VNet Redpanda Cluster^].
+Note the output values that the `terraform apply` command displays. These values are needed in subsequent steps. To continue with cluster creation, see https://github.com/redpanda-data/cloud-examples/tree/main/customer-managed/azure#create-azure-byo-vnet-redpanda-cluster[Create Azure VNet Redpanda Cluster^].
 
 You can also get these values by running `terraform output`. For example:
 
@@ -140,7 +136,9 @@ tiered_storage_container_name = "mytieredstorage"
 vnet_name = "my-rp-vnet"
 ```
 
-== Create a network with the Cloud API
+== Create network
+
+To create the Redpanda network:
 
 . Create a network with the POST body, and replace the variables with your actual values. To create a resource group and bearer token, follow the xref:manage:api/cloud-api-quickstart.adoc#try-the-cloud-api[Cloud API Quickstart].
 +
@@ -194,7 +192,9 @@ curl -vv -X POST \
   -d "$network_post_body" $PUBLIC_API_ENDPOINT/v1beta2/networks
 ```
 
-== Create a cluster with the Cloud API
+== Create cluster
+
+To create the Redpanda cluster:
 
 . A network ID is required to create a Redpanda cluster. Replace the variables with your actual values. To create a resource group and bearer token, follow the xref:manage:api/cloud-api-quickstart.adoc#try-the-cloud-api[Cloud API Quickstart].
 +
@@ -255,7 +255,7 @@ curl -vv -X POST \
   -d "$cluster_post_body" $PUBLIC_API_ENDPOINT/v1beta2/clusters
 ```
 
-== Deploy the cluster
+== Deploy cluster
 
 After getting a Redpanda cluster ID, deploy the cluster with `rpk`, replacing `$rp_id` and `$subscription_id` with your values:
 
@@ -284,3 +284,20 @@ curl -X GET "https://api.redpanda.com/v1beta2/clusters/<resource_id of cluster f
  -H "content-type: application/json" \
  -H "authorization: Bearer $YOUR_TOKEN"
 ```
+
+== Delete cluster
+
+To delete the Redpanda cluster with the Cloud API, run:
+
+----
+export REDPANDA_ID=$(curl -X DELETE "https://api.redpanda.com/v1beta2/clusters/${REDPANDA_ID}" \
+ -H "accept: application/json"\
+ -H "content-type: application/json" \
+ -H "authorization: Bearer ${BEARER_TOKEN}" | jq -r '.operation.resource_id')
+----
+
+After that completes, run: 
+
+----
+rpk cloud byoc aws destroy --redpanda-id ${REDPANDA_ID}
+----
