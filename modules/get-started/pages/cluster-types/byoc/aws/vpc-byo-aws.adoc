@@ -326,15 +326,15 @@ curl -X GET "https://api.redpanda.com/v1beta2/clusters/${REDPANDA_ID}" \
 
 To delete the Redpanda cluster with the Cloud API, run:
 
-----
+```bash
 export REDPANDA_ID=$(curl -X DELETE "https://api.redpanda.com/v1beta2/clusters/${REDPANDA_ID}" \
  -H "accept: application/json"\
  -H "content-type: application/json" \
  -H "authorization: Bearer ${BEARER_TOKEN}" | jq -r '.operation.resource_id')
-----
+```
 
 After that completes, run: 
 
-----
+```bash
 rpk cloud byoc aws destroy --redpanda-id ${REDPANDA_ID}
-----
+```
