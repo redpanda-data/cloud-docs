@@ -1,6 +1,6 @@
 = Add a Dedicated VPC Peering Connection
 :description: Use the Redpanda Cloud UI to set up VPC peering.
-:page-aliases: cloud:vpc-peering.adoc, deploy:deployment-option/cloud/vpc-peering.adoc
+:page-aliases: cloud:vpc-peering.adoc, deploy:deployment-option/cloud/vpc-peering.adoc, networking:dedicated/vpc-peering.adoc
 
 A VPC peering connection is a networking connection between two VPCs. This connection allows the VPCs to communicate with each other as if they were within the same network. A route table routes traffic between the two VPCs using private IPv4 addresses.
 
@@ -10,7 +10,7 @@ When you select a network for deploying your Redpanda Dedicated cluster, you hav
 
 == Prerequisites
 
-* *VPC network*: VPC peering is supported in AWS and GCP. This page describes the steps for AWS. Before you set up a peering connection in the Redpanda Cloud UI, you must have a VPC in your own account for Redpanda's VPC to connect to. If you do not already have a VPC, log in to the AWS VPC Console and create one.
+* *VPC network*: Before you set up a peering connection in the Redpanda Cloud UI, you must have a VPC in your own account for Redpanda's VPC to connect to. If you do not already have a VPC, log in to the AWS VPC Console and create one.
 * *Matching region*: VPC peering connections can only be established between networks created in the *same region*. Redpanda Cloud does not support inter-region VPC peering connections.
 * *Non-overlapping CIDR blocks*: The CIDR block for your VPC network cannot match or overlap with the CIDR block for the Redpanda Cloud VPC.
 
@@ -22,11 +22,8 @@ To create a peering connection between your VPC and Redpanda's VPC:
 
 . In the Redpanda Cloud UI, go to the *Overview* page for your cluster.
 . In the Details section, click the name of the Redpanda network.
-. On the *Network* page, click *+Add peering connection*.
-. In *Connection name*, enter a name for the connection.
-+
-For example, the name might refer to the VPC ID of the VPC you created in AWS.
-
+. On the *Network* page, click *+ Add peering connection*.
+. In *Connection name*, enter a name. For example, the name might refer to the VPC ID of the VPC you created in AWS.
 . In *AWS account number*, enter the account number associated with the VPC you want to connect to.
 . In *AWS VPC ID*, enter the VPC ID by copying it from the AWS VPC Console.
 . Click *Create peering connection*.
