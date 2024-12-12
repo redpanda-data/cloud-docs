@@ -15,7 +15,7 @@ Redpanda offers three types of fully-managed cloud clusters:
 * <<Dedicated Cloud>>: Single-tenant clusters hosted in Redpanda Cloud. This provides more control over your deployment. 
 * <<Bring Your Own Cloud (BYOC)>>: Clusters hosted in your private cloud. This provides more control over your deployment and offers full data sovereignty. 
 +
-NOTE: With standard BYOC clusters, Redpanda manages security policies and resources for your VPC, including service accounts, subnetworks, IAM roles, firewall rules, and storage buckets. For the most security, you can manage these resources yourself with a xref:get-started:cluster-types/byoc/gcp/vpc-byo-gcp.adoc[customer-managed VPC].
+NOTE: With standard BYOC clusters, Redpanda manages security policies and resources for your VPC or VNet, including subnetworks, IAM roles, and storage buckets/accounts. For the highest level of security, you can manage these resources yourself with a customer-managed BYOVPC cluster.
 
 === Serverless
 
@@ -84,7 +84,8 @@ Dedicated::
 | Software vulnerability remediation | &#10003; |    
 | Infrastructure vulnerability remediation | &#10003; |   
 | IAM (roles, service accounts, access segmentation) | &#10003; |  
-| Compute | &#10003; |   
+| Compute | &#10003; |  
+| Redpanda agent VM maintenance | &#10003; |  
 | VPC (subnets, routing, firewall) | &#10003; |   
 | VPC peering | &#10003; |  
 | VPC private links (service endpoint) | &#10003; |    
@@ -117,6 +118,7 @@ BYOC::
 | Infrastructure vulnerability remediation | &#10003; |   
 | IAM (roles, service accounts, access segmentation) | &#10003; | &#10003;  
 | Compute | &#10003; |    
+| Redpanda agent VM maintenance | &#10003; |  
 | VPC (subnets, routing, firewall) | &#10003; | &#10003; 
 | VPC peering |  | &#10003;  
 | VPC private links (service endpoint) | &#10003; |  
@@ -137,7 +139,7 @@ BYOC::
 |===
 
 --
-BYOC with customer-managed VPC::
+BYOVPC::
 +
 --
 |===
@@ -149,6 +151,7 @@ BYOC with customer-managed VPC::
 | Infrastructure vulnerability remediation | &#10003; | &#10003;  
 | IAM (roles, service accounts, access segmentation) |  | &#10003;  
 | Compute | &#10003; |   
+| Redpanda agent VM maintenance | &#10003; |  
 | VPC (subnets, routing, firewall) |  | &#10003;  
 | VPC peering |  | &#10003;  
 | VPC private links (service endpoint) | &#10003; |   
@@ -177,7 +180,7 @@ Redpanda runs maintenance and upgrade operations on clusters in a rolling fashio
 
 By default, Redpanda Cloud may run maintenance operations on any day at any time. You can override this default and schedule a specific maintenance window on the *Cluster settings* page. A *Scheduled* maintenance window requires Redpanda Cloud to run operations on the day and time specified. Maintenance windows typically take six hours. All operations begin during the maintenance window, but some operations may complete after the window ends. All times are in Coordinated Universal Time (UTC).
 
-TIP: Redpanda Cloud maintenance cycles always start on Tuesdays. Clusters scheduled on Tuesdays are updated first, and clusters scheduled on Mondays are updated last. Keep this in my mind when sequencing updates for multiple clusters.
+TIP: Redpanda Cloud maintenance cycles always start on Tuesdays. Clusters scheduled on Tuesdays are updated first, and clusters scheduled on Mondays are updated last. Keep this in mind when sequencing updates for multiple clusters.
 
 == Redpanda Cloud architecture
 
@@ -212,9 +215,7 @@ This VM spins up the agent and the required infrastructure. Redpanda assigns the
 +
 After the agent is up and running, it connects to the control plane and starts dequeuing and applying cluster specifications that provision, configure, and maintain clusters. The agent is in constant communication with the control plane,
 receiving and applying cluster specifications and exchanging cluster metadata. Agents are authenticated and authorized through opaque and ephemeral tokens, and
-they have dedicated job queues in the control plane. 
-+
-Agents also manage VPC peering networks. One agent manages each network resource at a time.
+they have dedicated job queues in the control plane. Agents also manage VPC peering networks. 
 +
 image::shared:byoc_apply.png[cloud_byoc_apply]
 
@@ -222,20 +223,25 @@ NOTE: To create a Redpanda cluster in your virtual private cloud (VPC), follow t
 
 == Redpanda Cloud vs Self-Managed feature compatibility
 
+Because Redpanda Cloud is a fully-managed service that provides maintenance, data and partition balancing, upgrades, and recovery, much of the cluster maintenance required for Self-Managed users is not necessary for Redpanda Cloud users. Also, Redpanda Cloud is opinionated about Kafka configurations. For example, automatic topic creation is disabled. Some systems expect the Kafka service to automatically create topics when a message is produced to a topic that doesn't exist. (You can create topics in Redpanda Cloud on the *Topics* page or with `rpk topic create`.)
+
+New clusters in Redpanda Cloud generally include functionality added in Self-Managed versions immediately. Existing clusters include new functionality when they get upgraded to the latest version. 
+
 Redpanda Cloud deployments do not support the following functionality available in Redpanda Self-Managed deployments:
 
-- FIPS-compliance mode
-- Data transforms (currently in beta for Redpanda Cloud)
-- Remote Read Replicas (currently in beta for Redpanda Cloud)
-- Kafka API OIDC authentication (however, Redpanda Cloud does support xref:security:cloud-authentication.adoc#single-sign-on[user authentication to an organization with SSO])
-- Kerberos authentication
-- Redpanda Console topic documentation
-- Setting `auto_create_topics_enabled=true`
-- Admin API
+- Integration with Apache Iceberg. For private beta access on BYOC, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda Support^].
+- Data transforms. For private beta access, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda Support^].
+- Remote Read Replicas. This is in beta for Redpanda Cloud.
+- Kafka API OIDC authentication. However, Redpanda Cloud does support xref:security:cloud-authentication.adoc#single-sign-on[SSO to the Redpanda Cloud UI].
+- Admin API.
+- FIPS-compliance mode.
+- Kerberos authentication.
+- Redpanda debug bundles.
+- Redpanda Console topic documentation.
+- Configuring access to object storage with customer-managed encryption key.
+- Kubernetes Helm chart and Redpanda Operator functionality.
 - The following `rpk` commands:
-
-** `rpk connect` commands
-** `rpk redpanda` commands
+ 
 ** `rpk cluster config`
 ** `rpk cluster health`
 ** `rpk cluster license`
@@ -243,12 +249,17 @@ Redpanda Cloud deployments do not support the following functionality available 
 ** `rpk cluster partitions`
 ** `rpk cluster self-test`
 ** `rpk cluster storage`
-** `rpk generate app` (supported in Serverless clusters)
-** `rpk security user` (supported in Serverless clusters)
-** `rpk topic describe-storage` (all other `rpk topic` commands are supported on both Redpanda Cloud and self-managed)
-** `rpk transform` commands (currently in beta for Redpanda Cloud)
-
-NOTE: The `rpk cloud` commands are not supported in self-managed deployments.
+** `rpk connect` 
+** `rpk container` 
+** `rpk debug` 
+** `rpk iotune`
+** `rpk redpanda`
+** `rpk topic describe-storage` (All other `rpk topic` commands are supported on both Redpanda Cloud and Self Managed.)
+** `rpk transform` (This is in beta for Redpanda Cloud.)
+** `rpk generate app` (This is supported in Serverless clusters only.)
+** `rpk security user` (This is supported in Serverless clusters only.)
++
+NOTE: The `rpk cloud` commands are not supported in Self-Managed deployments.
 
 == Next steps
 * xref:get-started:cluster-types/serverless.adoc[Create a Serverless Cluster]
