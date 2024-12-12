@@ -32,8 +32,6 @@ include::networking:partial$private-links-api-access-token.adoc[]
 
 == Create new cluster with PrivateLink endpoint service enabled
 
-CAUTION: As soon as PrivateLink is available on your VPC, all communication on an existing Redpanda bootstrap server port and on broker ports is interrupted due to the change on the private DNS resolution. Make sure all applications running in your VPC are ready to start using the corresponding private ports.
-
 . In the https://cloud.redpanda.com/[Redpanda Cloud UI^], go to **Resource groups** and select the resource group in which you want to create a cluster.
 +
 Copy and store the resource group ID (UUID) from the URL in the browser.
@@ -130,6 +128,8 @@ rpk cloud byoc aws apply --redpanda-id=$CLUSTER_ID
 ----
 
 == Enable PrivateLink endpoint service for existing clusters
+
+CAUTION: As soon as PrivateLink is available on your VPC, all communication on an existing Redpanda bootstrap server port and on broker ports is interrupted due to the change on the private DNS resolution. Make sure all applications running in your VPC are ready to start using the corresponding private ports.
 
 . In the Redpanda Cloud UI, go to the cluster overview and copy the cluster ID from the **Details** section.
 +

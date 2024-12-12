@@ -50,8 +50,6 @@ If you have not yet created a cluster in Redpanda Cloud, <<create-new-cluster-wi
 
 === Create new cluster with Private Link service enabled
 
-CAUTION: As soon as Private Link is available on your VPC, all communication on an existing Redpanda bootstrap server port and on broker ports is interrupted due to the change on the private DNS resolution. Make sure all applications running in your VPC are ready to start using the corresponding private ports.
-
 . In the Redpanda Cloud UI, go to https://cloud.redpanda.com/resource-groups[**Resource groups**^] and select the Redpanda Cloud resource group in which you want to create a cluster.
 +
 NOTE: Redpanda Cloud resource groups exist in your Redpanda Cloud account only. They do not correspond to Azure resource groups and do not appear in your Azure tenant.
@@ -151,6 +149,8 @@ rpk cloud byoc azure apply --redpanda-id=$CLUSTER_ID --subscription-id=$REDPANDA
 . Continue to <<configure-azure-private-link-connection-to-redpanda-cloud,configure the Private Link connection to Redpanda>>.
 
 === Enable Private Link service for existing clusters
+
+CAUTION: As soon as Private Link is available on your VPC, all communication on an existing Redpanda bootstrap server port and on broker ports is interrupted due to the change on the private DNS resolution. Make sure all applications running in your VPC are ready to start using the corresponding private ports.
 
 . In the Redpanda Cloud UI, go to the cluster overview and copy the cluster ID from the **Details** section.
 +
