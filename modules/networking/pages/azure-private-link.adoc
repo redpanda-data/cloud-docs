@@ -15,8 +15,6 @@ Consider using Private Link if you have multiple virtual networks and require mo
 
 After <<get-a-cloud-api-access-token,getting an access token>>, you can <<create-new-cluster-with-private-link-service-enabled,enable Private Link when creating a new cluster>>, or you can <<enable-private-link-service-for-existing-clusters,enable Private Link for existing clusters>>.
 
-TIP: Make sure to replace the variable values in the code examples on this page with your own values before running the commands in the terminal or in a script.
-
 == Requirements
 
 * Install xref:manage:rpk/rpk-install.adoc[`rpk`].
@@ -151,6 +149,8 @@ rpk cloud byoc azure apply --redpanda-id=$CLUSTER_ID --subscription-id=$REDPANDA
 . Continue to <<configure-azure-private-link-connection-to-redpanda-cloud,configure the Private Link connection to Redpanda>>.
 
 === Enable Private Link service for existing clusters
+
+CAUTION: As soon as Private Link is available on your virtual network, all communication on existing Redpanda bootstrap server and broker ports is interrupted due to the change on the private DNS resolution. Make sure all applications running in your virtual network are ready to start using the corresponding Private Link ports.
 
 . In the Redpanda Cloud UI, go to the cluster overview and copy the cluster ID from the **Details** section.
 +
