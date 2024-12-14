@@ -1,10 +1,12 @@
-= Create a Customer-Managed VPC on GCP
+= Create a BYOVPC Cluster on GCP
 :description: Connect Redpanda Cloud to your existing VPC for additional security.
 :page-aliases: deploy:deployment-option/cloud/vpc-byo-gcp.adoc, get-started:cluster-types/byoc/vpc-byo-gcp.adoc
 
 include::shared:partial$feature-flag.adoc[]
 
-With a standard BYOC cluster, Redpanda manages the VPC lifecycle. For additional security, you can deploy the Redpanda data plane into your existing shared VPC and manage the VPC lifecycle yourself. When you create a BYOC cluster, you specify your VPC and service account. The Redpanda Cloud agent does not create a VPC or network resources. With a *customer-managed* VPC:
+With a standard BYOC cluster, Redpanda manages the VPC lifecycle. For additional security, you can deploy the Redpanda glossterm:data plane[] into your existing shared VPC and manage the VPC lifecycle yourself. 
+
+When you create a BYOCVPC cluster, you specify your VPC and service account. The Redpanda Cloud agent doesn't create any new resources or alter any settings in your account. With BYOVPC: 
 
 * You provide your own VPC in your Google Cloud account.
 * You maintain more control of your Google Cloud account, because Redpanda requires fewer permissions than standard BYOC clusters.
@@ -18,8 +20,8 @@ With a standard BYOC cluster, Redpanda manages the VPC lifecycle. For additional
 
 == Limitations
 
-* Existing clusters cannot be moved to a customer-managed VPC.
-* After creating a cluster with a customer-managed VPC, you cannot change to a different VPC.
+* Existing clusters cannot be moved to a BYOVPC cluster.
+* After creating a BYOVPC cluster, you cannot change to a different VPC.
 
 == Configure your VPC
 
@@ -152,7 +154,7 @@ gcloud storage buckets update gs://<management-storage-bucket-name> --versioning
 
 . Create service accounts with necessary permissions and roles.
 
-* Redpanda agent service account
+* Redpanda Cloud agent service account
 +
 .Show commands
 [%collapsible]
@@ -469,13 +471,13 @@ gcloud iam service-accounts add-iam-policy-binding <gke-service-account-name>@<s
 ```
 ====
 
-== Create a BYOC cluster with customer-managed VPC
+== Create cluster
 
 Log in to the https://cloud.redpanda.com[Redpanda Cloud UI^], and follow the steps to xref:get-started:cluster-types/byoc/gcp/create-byoc-cluster-gcp.adoc[create a BYOC cluster], with the following exceptions:
 
 . On the *Network* page, select the *Customer-managed* connection type, and enter the network, service account, and storage bucket information you created. 
 
-. With *customer-managed* networks, you must grant yourself (the user deploying the cluster with `rpk`) the following permissions: 
+. With customer-manager networks, you must grant yourself (the user deploying the cluster with `rpk`) the following permissions: 
 +
 .Expand permissions
 [%collapsible]

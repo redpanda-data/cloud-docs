@@ -78,6 +78,9 @@ NOTE: You may want to configure https://developer.hashicorp.com/terraform/langua
 
 Create a JSON file called `byovnet.auto.tfvars.json` inside the Terraform directory to configure variables for your specific needs:
 
+.Show file
+[%collapsible]
+====
 ```json
 cat > byovnet.auto.tfvars.json <<EOF 
 {
@@ -179,6 +182,7 @@ cat > byovnet.auto.tfvars.json <<EOF
 }
 EOF
 ```
+====
 
 == Deploy Terraform
 
@@ -194,6 +198,9 @@ Note the output values that the `terraform apply` command displays. The output v
 
 You can also get these values by running `terraform output`. For example:
 
+.Show output
+[%collapsible]
+====
 ```bash
 agent_private_subnet_name = "my-snet-agent-private"
 agent_user_assigned_identity_name = "my-agent-uai"
@@ -233,6 +240,7 @@ tiered_storage_container_name = "mytieredstorage"
 ......
 vnet_name = "my-rp-vnet"
 ```
+====
 
 The https://github.com/redpanda-data/cloud-examples/blob/main/customer-managed/azure/terraform/README.md[Terraform Readme] has more information about variable files: 
 
@@ -267,6 +275,9 @@ To create the Redpanda network:
 
 . Define a JSON file called `redpanda-network.json` to configure the network for Redpanda with details about VNet, subnets, and storage.
 +
+.Show file
+[%collapsible]
+====
 ```json
 cat > redpanda-network.json <<EOF 
 {
@@ -307,6 +318,7 @@ cat > redpanda-network.json <<EOF
 }
 EOF
 ```
+====
 
 . Use the Cloud API to create the network and retrieve the network ID:
 +
@@ -324,6 +336,9 @@ To create the Redpanda cluster:
 
 . Define a JSON file called `redpanda-cluster.json` that includes cluster information:
 +
+.Show file
+[%collapsible]
+====
 ```json
 cat > redpanda-cluster.json <<EOF 
 {
@@ -371,6 +386,7 @@ cat > redpanda-cluster.json <<EOF
 }
 EOF
 ```
+====
 +
 TIP: See the full list of zones and tiers available with each provider in the xref:api:ROOT:cloud-api.adoc#api-description[API reference].
 
