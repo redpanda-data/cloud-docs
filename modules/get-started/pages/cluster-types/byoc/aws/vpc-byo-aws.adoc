@@ -14,7 +14,7 @@ When you create a BYOCVPC cluster, you specify your VPC and service account. The
 * You maintain more control over your account, because Redpanda requires fewer permissions than standard BYOC clusters.
 * You control your security resources and policies, including subnets, service accounts, IAM roles, firewall rules, and storage buckets.
 
-The https://github.com/redpanda-data/cloud-examples/tree/main/customer-managed/aws[Redpanda repository^] contains the code that deploys the resources you must create for a BYOVPC cluster. You create these resources in advance and provide them to Redpanda during cluster creation. The code is provided in https://developer.hashicorp.com/terraform[Terraform^]. There may be resources in the repository that already exist in your environment that you don't want to create (for example, the VPC). Variables are provided for this purpose.
+The https://github.com/redpanda-data/cloud-examples/tree/main/customer-managed/aws[Redpanda Cloud Examples repository^] contains https://developer.hashicorp.com/terraform[Terraform^] code that deploys the resources required for a BYOVPC cluster on AWS. You'll need to create these resources in advance and give them to Redpanda during cluster creation. Variables are provided in the code so you can exclude resources that already exist in your environment, such as the VPC.
 
 == Prerequisites
 
@@ -310,7 +310,7 @@ Example using the operation ID returned from your create cluster command:
 curl -X GET "https://api.redpanda.com/v1beta2/operations/<operation_id from cluster creation>" \
  -H "accept: application/json"\
  -H "content-type: application/json" \
- -H "authorization: Bearer $YOUR_TOKEN"
+ -H "authorization: Bearer ${BEARER_TOKEN}"
 ```
 
 Example retrieving cluster:
@@ -319,7 +319,7 @@ Example retrieving cluster:
 curl -X GET "https://api.redpanda.com/v1beta2/clusters/${REDPANDA_ID}" \
  -H "accept: application/json"\
  -H "content-type: application/json" \
- -H "authorization: Bearer $YOUR_TOKEN"
+ -H "authorization: Bearer ${BEARER_TOKEN}"
 ```
 
 == Delete cluster
