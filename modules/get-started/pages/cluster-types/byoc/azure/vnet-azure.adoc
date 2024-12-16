@@ -47,10 +47,10 @@ export AZURE_REGION=eastus
 
 == Create Azure resource group and VNet
 
-Create a resource group to contain all resources, and then create a VNet with your address and subnet prefixes.
-
-The following example uses the environment variables to create the `sample-redpanda-rg` resource group and the `sample-vnet` virtual network  with an address space of `10.0.0.0/16` and a subnet named `default` with a smaller range of `10.0.0.0/24`.
-
+. Create a resource group to contain all resources, and then create a VNet with your address and subnet prefixes.
++
+The following example uses the environment variables to create the `sample-redpanda-rg` resource group and the `sample-vnet` virtual network with an address space of `10.0.0.0/16` and a subnet named `default` with a smaller range of `10.0.0.0/24`.
++
 ```bash
 az group create --name ${AZURE_RESOURCE_GROUP_NAME} --location ${AZURE_REGION}
 
@@ -63,8 +63,8 @@ az network vnet create \
     --subnet-prefixes 10.0.0.0/24
 ```
 
-Set additional environment variables for Azure resources. For example:
-
+. Set additional environment variables for Azure resources. For example:
++
 ```bash
 export AZURE_SUBSCRIPTION_ID=
 export AZURE_TENANT_ID=
@@ -252,7 +252,7 @@ The https://github.com/redpanda-data/cloud-examples/blob/main/customer-managed/a
 
 == Authenticate with Redpanda Cloud
 
-Get a Bearer token from the Cloud API authentication endpoint using the Redpanda credentials:
+Get a glossterm:bearer token[] from the Cloud API authentication endpoint using your Redpanda credentials:
 
 ```bash
 export REDPANDA_CLIENT_ID=
@@ -275,7 +275,7 @@ To create the Redpanda network:
 
 . Define a JSON file called `redpanda-network.json` to configure the network for Redpanda with details about VNet, subnets, and storage.
 +
-.Show `redpanda-network.json`
+.Show script
 [%collapsible]
 ====
 ```bash
@@ -440,7 +440,7 @@ curl -X GET "https://api.redpanda.com/v1beta2/clusters/<resource_id of cluster f
 
 == Delete cluster
 
-To delete the Redpanda cluster with the Cloud API, run:
+To delete the cluster, first send a DELETE request to the Cloud API, and retrieve the `resource_id` of the DELETE operation. Then run the `rpk` command to destroy the cluster identified by the `resource_id`.
 
 ```bash
 export REDPANDA_ID=$(curl -X DELETE "https://api.redpanda.com/v1beta2/clusters/${REDPANDA_ID}" \
