@@ -6,7 +6,7 @@
 
 include::shared:partial$feature-flag.adoc[]
 
-With a standard BYOC cluster, Redpanda manages the VPC lifecycle. For additional security, you can deploy the Redpanda glossterm:data plane[] into your existing shared VPC and manage the VPC lifecycle yourself. 
+This topic explains how to create a Bring Your Own Virtual Private Cloud (BYOVPC) cluster. This setup allows you to deploy the Redpanda glossterm:data plane[] into your existing VPC and take full control of managing the networking lifecycle. Compared to a standard Bring Your Own Cluster (BYOC) setup, where Redpanda manages the networking lifecycle for you, this option provides more security.
 
 When you create a BYOCVPC cluster, you specify your VPC and service account. The Redpanda Cloud agent doesn't create any new resources or alter any settings in your account. With BYOVPC: 
 
@@ -14,7 +14,7 @@ When you create a BYOCVPC cluster, you specify your VPC and service account. The
 * You maintain more control over your account, because Redpanda requires fewer permissions than standard BYOC clusters.
 * You control your security resources and policies, including subnets, service accounts, IAM roles, firewall rules, and storage buckets.
 
-The https://github.com/redpanda-data/cloud-examples/tree/main/customer-managed/aws[Redpanda repository^] contains the code that deploys the resources you must create for a BYOVPC cluster. You create these resources in advance and provide them to Redpanda during cluster creation. The code is provided in https://developer.hashicorp.com/terraform[Terraform^]. There may be resources in the repository that already exist in your environment that you don't want to create (for example, the VPC). Variables are provided for this purpose.
+The https://github.com/redpanda-data/cloud-examples/tree/main/customer-managed/aws[Redpanda Cloud Examples repository^] contains https://developer.hashicorp.com/terraform[Terraform^] code that deploys the resources required for a BYOVPC cluster on AWS. You'll need to create these resources in advance and give them to Redpanda during cluster creation. Variables are provided in the code so you can exclude resources that already exist in your environment, such as the VPC.
 
 == Prerequisites
 
@@ -45,7 +45,7 @@ The https://github.com/redpanda-data/cloud-examples/blob/main/customer-managed/a
 
 == Configure Terraform
 
-NOTE: You may want to configure https://developer.hashicorp.com/terraform/language/state/remote[remote state^] for this Terraform. For simplicity, these instructions assume local state.
+NOTE: For simplicity, these instructions assume that Terraform is configured to use local state. You may want to configure https://developer.hashicorp.com/terraform/language/state/remote[remote state^]. 
 
 Define a JSON file called `byovnet.auto.tfvars.json` inside the Terraform directory that contains information about the VPC. Optionally, you can enable PrivateLink. For example: 
 
@@ -105,7 +105,7 @@ export REDPANDA_CLIENT_SECRET=
 
 == Authenticate with Redpanda Cloud
 
-Get a Bearer token from Redpanda's authentication endpoint using the Redpanda credentials:
+Get a glossterm:bearer token[] from the Cloud API authentication endpoint using your Redpanda credentials:
 
 ```bash
 export BEARER_TOKEN=$(curl --request POST \
@@ -281,7 +281,7 @@ Finished apply	{"provisioner": "redpanda-agent"}
 The Redpanda cluster is deploying. This can take up to 45 minutes. View status at https://cloud.redpanda.com/clusters/${REDPANDA_ID}/overview.
 ```
 
-The agent VM now is running and handles the remaining provisioning steps. This can take up to 45 minutes. When provisioning completes, the cluster status updates to `Running`. If the cluster remains in `Creating` status after 45 minutes, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda support^].
+The Redpanda Cloud agent now is running and handles the remaining steps. This can take up to 45 minutes. When provisioning completes, the cluster status updates to `Running`. If the cluster remains in `Creating` status after 45 minutes, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda Support^].
 
 === Validation checks
 
@@ -324,7 +324,7 @@ curl -X GET "https://api.redpanda.com/v1beta2/clusters/${REDPANDA_ID}" \
 
 == Delete cluster
 
-To delete the Redpanda cluster with the Cloud API, run:
+To delete the cluster, first send a DELETE request to the Cloud API, and retrieve the `resource_id` of the DELETE operation. Then run the `rpk` command to destroy the cluster identified by the `resource_id`.
 
 ```bash
 export REDPANDA_ID=$(curl -X DELETE "https://api.redpanda.com/v1beta2/clusters/${REDPANDA_ID}" \
