@@ -1,0 +1,99 @@
+= Add a Dedicated VPC Peering Connection
+:description: Use the Redpanda Cloud UI to set up VNet peering.
+
+When you deploy a Dedicated cluster, you have the option to select private networking. Virtual network (VNet) peering connects your Azure VNet to the Redpanda Cloud VPC, allowing them to communicate with each other as if they were within the same network. 
+
+NOTE: With VNet peering, traffic is _not_ routed over the public internet.
+
+Because Azure does not allow you to initiate a peering against another tenant without having delegated access to that tenant, Redpanda must first create a multi-tenant Entra ID Enterprise application with a service principal attached to that application in Redpanda's tenant. The Redpanda Cloud UI provides this application ID. You must create a service principal on your tenant with that application ID, and attach a role to that service principal. Redpanda can then initiate the peering.
+
+Creating a VNet peering involves the following steps:
+
+. Create a peering connection in the Redpanda Cloud UI.
+. Create a service principal with the provided application ID in Azure Cloud Shell.
+. Assign a set of roles to the service principal in Azure Cloud Shell.
+
+== Prerequisites
+
+* *Azure VNet*: Before setting up a peering connection in the Redpanda Cloud UI, you must have an Azure VNet in your own account for Redpanda's VPC to connect to. 
+* *Matching region*: Peering connections can only be established between networks created in the *same region*. Redpanda Cloud does not support inter-region peering connections.
+* *Non-overlapping CIDR blocks*: The CIDR block (address space) for your VNet cannot match or overlap with the CIDR block for the Redpanda Cloud VPC.
++
+TIP: Consider adding `rp` at the beginning of the VNet name to indicate that this VNet is for deploying a Redpanda cluster.
+
+== Create a peering connection in Redpanda Cloud
+
+To create a peering connection between your Azure VNet and Redpanda VPC:
+
+. In the Redpanda Cloud UI, go to the *Overview* page for your cluster.
+. In the Details section, click the name of the *Redpanda network*.
+. On the *Network* page for your cluster, click *+ Add peering connection*.
+. For *Connection name*, enter a name. For example, the name could refer to your Azure VNet ID.
+. For *Azure account number*, enter the account number associated with the VNet you want to connect to.
+. For *Azure VNet ID*, enter the VNet ID.
+. Click *Create peering connection*.
+
+NOTE: In the Redpanda Cloud UI, Redpanda provides the *application ID* for the multi-tenant application it created with a service principal attached to it in Redpanda's tenant. 
+
+== Create a service principal in Azure Cloud Shell
+
+Create a service principal on your tenant tied to the *application ID*. This is public across tenants.
+
+In the Azure Cloud Shell:
+
+. Create a service principal with the provided application ID.
+. Assign a set of roles to the service principal. 
++
+Redpanda creates the service principal with a role assignment that allows it Network Contributor access to the Redpanda tenant and subscription scoped to the cluster's network, but you may choose a custom role that is less broad, and scoped to your network.
++
+Example for Network Contributor role:
++
+```bash
+# Set environment variables.
+export RP_RESOURCE_GROUP_ID=<Retrieve resource group ID from Redpanda Cloud URL>
+export AZURE_VNET_ID=<Retrieve Azure VNET ID from Azure VNET UI>
+
+# Create service principal and get its ID.
+> spid=$(az ad sp create –id <application-id> --query "id" -o tsv
+
+# Assign the role to the service principal using the environment variables.
+# The assignee is the ID created above.
+> az role assignment create \
+        –-assignee $spid \
+	    --role "Network Contributor"
+        --scope /subscriptions/<subscription-id>/resourceGroups/$RP_RESOURCE_GROUP_ID/providers/Microsoft.Network/virtualNetworks/$AZURE_VNET_ID
+```
++
+Example for custom role with scoped permissions for peering:
++
+```bash
+# Set environment variables.
+export RP_RESOURCE_GROUP_ID=<Retrieve resource group ID from Redpanda Cloud URL>
+export AZURE_VNET_ID=<Retrieve Azure VNET ID from Azure VNET UI>
+
+# Create service principal and get its ID.
+> spid=$(az ad sp create –id <application-id> --query "id" -o tsv)
+
+# Create custom role definition for Redpanda peering role and get its ID.
+> rdid=$(az role definition create --role-definition '{
+    "Name": "Redpanda Peering Role",
+    "Description": "Peers networks to Redpanda networks.",
+    "Actions": [
+"Microsoft.Network/virtualNetworks/peer/action",
+"Microsoft.Network/virtualNetworks/virtualNetworkPeerings/read",
+"Microsoft.Network/virtualNetworks/virtualNetworkPeerings/write",
+"Microsoft.ClassicNetwork/virtualNetworks/peer/action”,
+"Microsoft.Network/virtualNetworks/virtualNetworkPeerings/delete"	
+    ],
+    "AssignableScopes": ["/subscriptions/<subscription-id>/..."]
+}' --query "name" -o tsv)
+
+# Assign the role to the service principal using the environment variables.
+# The assignee is the ID created above.
+> az role assignment create \
+        --assignee $spid \
+        --role $rdid  \
+        --scope /subscriptions/<subscription-id>/resourceGroups/$RP_RESOURCE_GROUP_ID/providers/Microsoft.Network/virtualNetworks/$AZURE_VNET_ID
+```
+
+Redpanda polls with the application to try to access the customer tenant. When access is available, it initiates the peering API calls. After you create the service principal, the API calls use the application to create the peering on the Redpanda network and then the peering on the Azure network. 
