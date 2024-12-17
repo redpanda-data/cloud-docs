@@ -15,7 +15,14 @@ For details about resource allocation for pipelines with Ollama AI components, s
 
 When you create a standard data pipeline, you can allocate a fixed amount of compute resources to it using tasks. By default, one task is allocated, which is equivalent to 0.1 CPU and 400 MB of memory, and provides a message throughput of approximately 1 MB/sec.
 
-NOTE: If your pipeline exceeds the resource limit, it is immmediately paused and you must contact Redpanda Support.
+[NOTE]
+====
+
+If your pipeline hits:
+
+- The CPU limit, it is throttled, which reduces the rate at which data is processed.
+- The memory limit, it is restarted.
+====
 
 To set an initial resource limit:
 
