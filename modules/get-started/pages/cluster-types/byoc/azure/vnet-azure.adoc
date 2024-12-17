@@ -438,4 +438,21 @@ curl -X GET "https://api.redpanda.com/v1beta2/clusters/<resource_id of cluster f
  -H "authorization: Bearer ${BEARER_TOKEN}"
 ```
 
+== Delete cluster
+
+To delete the cluster, first send a DELETE request to the Cloud API, and retrieve the resource_id of the DELETE operation. Then run the rpk command to destroy the cluster identified by the resource_id.
+
+```bash
+export REDPANDA_ID=$(curl -X DELETE "https://api.redpanda.com/v1beta2/clusters/${REDPANDA_ID}" \
+ -H "accept: application/json"\
+ -H "content-type: application/json" \
+ -H "authorization: Bearer ${BEARER_TOKEN}" | jq -r '.operation.resource_id')
+```
+
+After that completes, run:
+
+```bash
+rpk cloud byoc azure destroy --redpanda-id ${REDPANDA_ID}
+```
+
 include::partial$no-access.adoc[]
