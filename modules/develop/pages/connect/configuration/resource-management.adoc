@@ -1,0 +1,193 @@
+= Manage Pipeline Resources on BYOC and Dedicated Clusters
+:description: Learn how to set an initial resource limit for a standard data pipeline (excluding Ollama AI components) and how to manually scale the pipeline’s resources to improve performance.
+:page-aliases: develop:connect/configuration/scale-pipelines.adoc
+
+{description}
+
+== Prerequisites
+
+- A running xref:get-started:cluster-types/byoc/index.adoc[BYOC] or xref:get-started:cluster-types/dedicated/create-dedicated-cloud-cluster.adoc[Dedicated cluster]
+- An estimate of the throughput of your data pipeline. You can get some basic statistics by running your data pipeline locally using the xref:redpanda-connect:components:processors/benchmark.adoc[`benchmark` processor].
+
+=== Understanding tasks
+
+A task is a unit of computation that allocates a specific amount of CPU and memory to a data pipeline to handle message throughput. By default, each pipeline is allocated one task, which includes 0.1 CPU (100 milliCPU or `100m`) and 400 MB (`400M`) of memory, and provides a message throughput of approximately 1 MB/sec. You can allocate up to a maximum of 18 tasks per pipeline.
+
+|===
+| Number of Tasks | CPU | Memory
+
+| 1
+| 0.1 CPU (`100m`)
+| 400 MB (`400M`)
+
+| 2
+| 0.2 CPU (`200m`)
+| 800 MB (`800M`)
+
+| 3
+| 0.3 CPU (`300m`)
+| 1.2 GB (`1200M`)
+
+| 4
+| 0.4 CPU (`400m`)
+| 1.6 GB (`1600M`)
+
+| 5
+| 0.5 CPU (`500m`)
+| 2.0 GB (`2000M`)
+
+| 6
+| 0.6 CPU (`600m`)
+| 2.4 GB (`2400M`)
+
+| 7
+| 0.7 CPU (`700m`)
+| 2.8 GB (`2800M`)
+
+| 8
+| 0.8 CPU (`800m`)
+| 3.2 GB (`3200M`)
+
+| 9
+| 0.9 CPU (`900m`)
+| 3.6 GB (`3600M`)
+
+| 10
+| 1.0 CPU (`1000m`)
+| 4.0 GB (`4000M`)
+
+| 11
+| 1.1 CPU (`1100m`)
+| 4.4 GB (`4400M`)
+
+| 12
+| 1.2 CPU (`1200m`)
+| 4.8 GB (`4800M`)
+
+| 13
+| 1.3 CPU (`1300m`)
+| 5.2 GB (`5200M`)
+
+| 14
+| 1.4 CPU (`1400m`)
+| 5.6 GB (`5600M`)
+
+| 15
+| 1.5 CPU (`1500m`)
+| 6.0 GB (`6000M`)
+
+| 16
+| 1.6 CPU (`1600m`)
+| 6.4 GB (`6400M`)
+
+| 17
+| 1.7 CPU (`1700m`)
+| 6.8 GB (`6800M`)
+
+| 18
+| 1.8 CPU (`1800m`)
+| 7.2 GB (`7200M`)
+
+|===
+
+NOTE: For pipelines with embedded Ollama AI components, one GPU task is automatically allocated to the pipeline, which is equivalent to 30 tasks or 3.0 CPU (`3000m`) and 12 GB of memory (`12000M`).
+
+=== Set an initial resource limit
+
+When you create a data pipeline, you can allocate a fixed amount of compute resources to it using tasks.
+
+[NOTE]
+====
+If your pipeline reaches the CPU limit, it becomes throttled, which reduces the data processing rate. If it reaches the memory limit, the pipeline restarts.
+====
+
+To set an initial resource limit:
+
+. Log in to https://cloud.redpanda.com[Redpanda Cloud].
+. On the **Clusters** page, select the cluster where you want to add a pipeline.
+. Go to the **Connect** page.
+. Select the **Redpanda Connect** tab.
+. Click **Create pipeline**.
+. Enter details for your pipeline, including a short name and description.
+. In the **Tasks** box, leave the default **1** task to experiment with pipelines that create low message volumes. For higher throughputs, you can allocate up to a maximum of 18 tasks.
+. Add your pipeline configuration and click **Create** to run it.
+
+=== Scale resources
+
+View the compute resources allocated to a data pipeline, and manually scale those resources to improve performance or decrease resource consumption.
+
+To view resources already allocated to a data pipeline:
+
+[tabs]
+=====
+Cloud UI::
++
+--
+. Log in to https://cloud.redpanda.com[Redpanda Cloud^].
+. Go to the cluster where the pipeline is set up.
+. On the **Connect** page, select your pipeline and look at the value for **Resources**.
++
+* CPU resources are displayed first, in milliCPU. For example, `1` task is `100m` or 0.1 CPU. 
+* Memory is displayed next in megabytes. For example, `1` task is `400M` is 400 MB.
+
+--
+Data Plane API::
++
+--
+. xref:manage:api/cloud-api-quickstart.adoc#try-the-cloud-api[Authenticate and get the base URL] for the Data Plane API. 
+. Make a request to xref:api:ROOT:cloud-api.adoc#get-/v1alpha2/redpanda-connect/pipelines[`GET /v1alpha2/redpanda-connect/pipelines`], which lists details of all pipelines on your cluster by ID. 
++
+* Memory (`memory_shares`) is displayed in megabytes. For example, `1` task is `400M` is 400 MB.
+* CPU resources (`cpu_shares`) are displayed milliCPU. For example, `1` task is `100m` or 0.1 CPU.
+
+--
+=====
+
+To scale the resources for a pipeline:
+
+[tabs]
+=====
+Cloud UI::
++
+--
+. Log in to https://cloud.redpanda.com[Redpanda Cloud^].
+. Go to the cluster where the pipeline is set up.
+. On the **Connect** page, select your pipeline and click **Edit**.
+. In the **Tasks** box, update the number of tasks. One task provides a message throughput of approximately 1 MB/sec. For higher throughputs, you can allocate up to a maximum of 18 tasks per pipeline.
+. Click **Update** to apply your changes. The specified resources are available immediately.
+
+--
+Data Plane API::
++
+--
+You can only update CPU resources using the Data Plane API. For every 0.1 CPU that you allocate, Redpanda Cloud automatically reserves 400 MB of memory for the exclusive use of the pipeline.
+
+. xref:manage:api/cloud-api-quickstart.adoc#try-the-cloud-api[Authenticate and get the base URL] for the Data Plane API, if you haven't already.
+. Make a request to xref:api:ROOT:cloud-api.adoc#get-/v1alpha2/redpanda-connect/pipelines/-id-[`GET /v1alpha2/redpanda-connect/pipelines/\{id}`], including the ID of the pipeline you want to update. You'll use the returned values in the next step.
+. Now make a request to xref:api:ROOT:cloud-api.adoc#put-/v1alpha2/redpanda-connect/pipelines/-id-[`PUT /v1alpha2/redpanda-connect/pipelines/\{id}`], to update the pipeline resources:
++
+* Reuse the values returned by your `GET` request to populate the request body. 
+* Replace the `cpu_shares` value with the resources you want to allocate, and enter any valid value for `memory_shares`.
++
+This example allocates 0.2 CPU or 200 milliCPU to a data pipeline. For `cpu_shares`, `0.1` CPU is the minimum allocation.
++
+[,bash,role=“no-placeholders”]
+----
+curl -X PUT "https://<data-plane-api-url>/v1alpha2/redpanda-connect/pipelines/xxx..." \
+ -H 'accept: application/json'\
+ -H 'authorization: Bearer xxx...' \
+ -H "content-type: application/json" \
+ -d '{"config_yaml":"input:\n generate:\n   interval: 1s\n   mapping: |\n     root.id = uuid_v4()\n     root.   user.name = fake(\"name\")\n     root.user.email = fake(\"email\")\n     root.content = fake(\"paragraph\")\n\npipeline:\n processors:\n   - mutation: |\n       root.title = \"PRIVATE AND CONFIDENTIAL\"\n\noutput:\n kafka_franz:\n   seed_brokers:\n     - seed-j888.byoc.prd.cloud.redpanda.com:9092\n   sasl:\n     - mechanism: SCRAM-SHA-256\n       password: password\n       username: connect\n   topic: processed-emails\n   tls:\n     enabled: true\n", \
+    "description":"Email processor", \ 
+    "display_name":"emailprocessor-pipeline", \
+    "resources":{ \
+        "memory_shares":"800M" \
+        "cpu_shares":"200m", \
+        } \
+      }' 
+----
++
+A successful response shows the updated resource allocations with the `cpu_shares` value returned in milliCPU.
+. Make a request to xref:api:ROOT:cloud-api.adoc#get-/v1alpha2/redpanda-connect/pipelines[`GET /v1alpha2/redpanda-connect/pipelines`] to verify your pipeline resource updates.
+--
+=====
