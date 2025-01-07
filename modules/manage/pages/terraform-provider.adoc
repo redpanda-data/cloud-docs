@@ -5,13 +5,6 @@
 
 The https://registry.terraform.io/providers/redpanda-data/redpanda/latest[Redpanda Terraform provider^] allows you to manage your Redpanda Cloud infrastructure as code using https://www.terraform.io/[Terraform^]. Terraform is an infrastructure-as-code tool that enables you to define, automate, and version-control your infrastructure configurations.
 
-== Why use Terraform with Redpanda?
-
-* **Simplicity**: Manage all your Redpanda Cloud resources in one place.
-* **Automation**: Create and modify resources without manual intervention.
-* **Version Control**: Track and roll back changes using version control systems such as GitHub.
-* **Scalability**: Scale your infrastructure as your needs grow with minimal effort.
-
 With the Redpanda Terraform provider, you can manage:
 
 * ACLs
@@ -20,6 +13,13 @@ With the Redpanda Terraform provider, you can manage:
 * Resource groups
 * Topics
 * Users
+
+== Why use Terraform with Redpanda?
+
+* **Simplicity**: Manage all your Redpanda Cloud resources in one place.
+* **Automation**: Create and modify resources without manual intervention.
+* **Version Control**: Track and roll back changes using version control systems such as GitHub.
+* **Scalability**: Scale your infrastructure as your needs grow with minimal effort.
 
 == Understand Terraform configurations
 
@@ -92,13 +92,14 @@ output "cluster_api_url" {
 
 The following functionality is supported in the Cloud API but not in the Redpanda Terraform provider:
 
+* Creation or deletion of BYOVPC clusters
 * Secrets
 * Kafka Connect
 * Redpanda Connect
 
 == Prerequisites
 
-. Install Terraform using the https://learn.hashicorp.com/tutorials/terraform/install-cli[official guide^].
+. Install at least version 1.0.0 of Terraform using the https://learn.hashicorp.com/tutorials/terraform/install-cli[official guide^].
 . Create a service account in Redpanda Cloud:
 .. Log in to https://cloud.redpanda.com[Redpanda Cloud^].
 .. Navigate to the *Clients* page and create a service account.
@@ -136,7 +137,7 @@ terraform init
 Environment variables::
 +
 --
-```
+```bash
 REDPANDA_CLIENT_ID=<client_id>
 REDPANDA_CLIENT_SECRET=<client_secret>
 ```
@@ -144,7 +145,7 @@ REDPANDA_CLIENT_SECRET=<client_secret>
 Static credentials::
 +
 --
-```
+```hcl
 provider "redpanda" {
   client_id      = "<client_id>"
   client_secret  = "<client_secret>"
@@ -157,36 +158,98 @@ provider "redpanda" {
 
 This section provides examples of using the Redpanda Terraform provider to create and manage clusters. For descriptions of resources and data sources, see the https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs[Redpanda Terraform Provider documentation^].
 
+TIP: See the full list of zones and tiers available with each provider in the xref:api:ROOT:cloud-api.adoc#api-description[API reference].
+
 === Create a BYOC cluster
 
 A BYOC (Bring Your Own Cloud) cluster allows you to provision a cluster in your own cloud account. This example creates a BYOC cluster on AWS with a custom network, resource group, and cluster configuration.
 
 [source,hcl]
 ----
+terraform {
+  required_providers {
+    redpanda = {
+      source  = "redpanda-data/redpanda"
+      version = "~> 0.10"
+    }
+  }
+}
+
+# Variables to parameterize the configuration
+variable "resource_group_name" {
+  description = "Name of the Redpanda resource group"
+  default     = "testname"
+}
+
+variable "network_name" {
+  description = "Name of the Redpanda network"
+  default     = "testname"
+}
+
+variable "cluster_name" {
+  description = "Name of the Redpanda BYOC cluster"
+  default     = "test-cluster"
+}
+
+variable "region" {
+  description = "Region for the Redpanda network and cluster"
+  default     = "us-east-2"
+}
+
+variable "cloud_provider" {
+  description = "Cloud provider for the Redpanda network"
+  default     = "aws"
+}
+
+variable "zones" {
+  description = "List of availability zones for the cluster"
+  type        = list(string)
+  default     = ["use2-az1", "use2-az2", "use2-az3"]
+}
+
+variable "cidr_block" {
+  description = "CIDR block for the Redpanda network"
+  default     = "10.0.0.0/20"
+}
+
+variable "throughput_tier" {
+  description = "Throughput tier for the cluster"
+  default     = "tier-1-aws-v2-x86"
+}
+
+# Redpanda provider configuration
 provider "redpanda" {}
 
-resource "redpanda_resource_group" "byoc" {
-  name = "byoc-resource-group"
+# Create a Redpanda resource group
+resource "redpanda_resource_group" "test" {
+  name = var.resource_group_name
 }
 
-resource "redpanda_network" "byoc" {
-  name              = "byoc-network"
-  resource_group_id = redpanda_resource_group.byoc.id
-  cloud_provider    = "aws"
-  region            = "us-east-1"
-  cluster_type      = "byoc"
-  cidr_block        = "10.0.0.0/20"
+# Create a Redpanda network
+resource "redpanda_network" "test" {
+  name              = var.network_name
+  resource_group_id = redpanda_resource_group.test.id
+  cloud_provider    = var.cloud_provider
+  region            = var.region
+  cluster_type      = "byoc"  # Specify BYOC cluster type
+  cidr_block        = var.cidr_block
 }
 
-resource "redpanda_cluster" "byoc" {
-  name              = "byoc-cluster"
-  resource_group_id = redpanda_resource_group.byoc.id
-  network_id        = redpanda_network.byoc.id
-  cloud_provider    = "aws"
-  region            = "us-east-1"
+# Create a Redpanda BYOC cluster
+resource "redpanda_cluster" "test" {
+  name              = var.cluster_name
+  resource_group_id = redpanda_resource_group.test.id
+  network_id        = redpanda_network.test.id
+  cloud_provider    = var.cloud_provider
+  region            = var.region
   cluster_type      = "byoc"
-  throughput_tier   = "tier-1-aws-v2-x86"
-  zones             = ["use1-az1", "use1-az2", "use1-az3"]
+  connection_type   = "public"  # Publicly accessible cluster
+  throughput_tier   = var.throughput_tier
+  zones             = var.zones
+  allow_deletion    = true      # Allow the cluster to be deleted
+  tags = {                      # Add metadata tags
+    "environment" = "dev"
+  }
 }
 ----
 
@@ -196,49 +259,142 @@ A Dedicated cluster is fully managed by Redpanda and ensures consistent performa
 
 [source,hcl]
 ----
+terraform {
+  required_providers {
+    redpanda = {
+      source  = "redpanda-data/redpanda"
+      version = "~> 0.10"
+    }
+  }
+}
+
+# Variables for configuration
+variable "resource_group_name" {
+  description = "Name of the Redpanda resource group"
+  default     = "test-dedicated-group"
+}
+
+variable "network_name" {
+  description = "Name of the Redpanda network"
+  default     = "dedicated-network"
+}
+
+variable "cluster_name" {
+  description = "Name of the Redpanda dedicated cluster"
+  default     = "dedicated-cluster"
+}
+
+variable "region" {
+  description = "Region for the Redpanda network and cluster"
+  default     = "us-west-1"
+}
+
+variable "cloud_provider" {
+  description = "Cloud provider for the Redpanda network"
+  default     = "aws"
+}
+
+variable "zones" {
+  description = "List of availability zones for the cluster"
+  type        = list(string)
+  default     = ["usw1-az1", "usw1-az2", "usw1-az3"]
+}
+
+variable "cidr_block" {
+  description = "CIDR block for the Redpanda network"
+  default     = "10.1.0.0/20"
+}
+
+variable "throughput_tier" {
+  description = "Throughput tier for the dedicated cluster"
+  default     = "tier-1-aws-v2-arm"
+}
+
+# Redpanda provider configuration
 provider "redpanda" {}
 
-resource "redpanda_resource_group" "dedicated" {
-  name = "dedicated-resource-group"
+# Create a Redpanda resource group
+resource "redpanda_resource_group" "test" {
+  name = var.resource_group_name
 }
 
-resource "redpanda_network" "dedicated" {
-  name              = "dedicated-network"
-  resource_group_id = redpanda_resource_group.dedicated.id
-  cloud_provider    = "aws"
-  region            = "us-west-1"
-  cluster_type      = "dedicated"
-  cidr_block        = "10.1.0.0/20"
+# Create a Redpanda network
+resource "redpanda_network" "test" {
+  name              = var.network_name
+  resource_group_id = redpanda_resource_group.test.id
+  cloud_provider    = var.cloud_provider
+  region            = var.region
+  cluster_type      = "dedicated"  # Specify Dedicated cluster type
+  cidr_block        = var.cidr_block
 }
 
-resource "redpanda_cluster" "dedicated" {
-  name              = "dedicated-cluster"
-  resource_group_id = redpanda_resource_group.dedicated.id
-  network_id        = redpanda_network.dedicated.id
-  cloud_provider    = "aws"
-  region            = "us-west-1"
+# Create a Redpanda dedicated cluster
+resource "redpanda_cluster" "test" {
+  name              = var.cluster_name
+  resource_group_id = redpanda_resource_group.test.id
+  network_id        = redpanda_network.test.id
+  cloud_provider    = var.cloud_provider
+  region            = var.region
   cluster_type      = "dedicated"
-  throughput_tier   = "tier-1-aws-v2-arm"
-  zones             = ["usw1-az1", "usw1-az2", "usw1-az3"]
+  connection_type   = "public"
+  throughput_tier   = var.throughput_tier
+  zones             = var.zones
+  allow_deletion    = true
+  aws_private_link = {  # Configure AWS PrivateLink for dedicated clusters
+    enabled            = true
+    connect_console    = true
+    allowed_principals = ["arn:aws:iam::123456789024:root"]
+  }
+  tags = {
+    "environment" = "dev"
+  }
 }
 ----
 
 === Create a Serverless cluster
 
-A Serverless cluster is cost-effective and scales automatically based on usage. This example creates a cluster in the pro-us-east-1 region with minimal configuration.
+A Serverless cluster is cost-effective and scales automatically based on usage. This example creates a cluster in the `pro-us-east-1` region with minimal configuration.
 
 [source,hcl]
 ----
-provider "redpanda" {}
-
-resource "redpanda_resource_group" "serverless" {
-  name = "serverless-group"
+terraform {
+  required_providers {
+    redpanda = {
+      source  = "redpanda-data/redpanda"
+      version = "~> 0.10"
+    }
+  }
 }
 
-resource "redpanda_serverless_cluster" "serverless" {
-  name              = "serverless-cluster"
-  resource_group_id = redpanda_resource_group.serverless.id
-  serverless_region = "pro-us-east-1"
+# Redpanda provider configuration
+provider "redpanda" {}
+
+# Define a resource group for the Serverless cluster
+resource "redpanda_resource_group" "test" {
+  name = var.resource_group_name  # Name of the resource group
+}
+
+# Create a Serverless cluster
+resource "redpanda_serverless_cluster" "test" {
+  name              = var.cluster_name                  # Name of the Serverless cluster
+  resource_group_id = redpanda_resource_group.test.id   # Link to the resource group
+  serverless_region = var.region                        # Specify the region for the cluster
+}
+
+# Variables for parameterizing the configuration
+variable "resource_group_name" {
+  description = "Name of the Redpanda resource group"
+  default     = "testgroup"  # Default name for the resource group
+}
+
+variable "cluster_name" {
+  description = "Name of the Redpanda Serverless cluster"
+  default     = "testname"   # Default name for the Serverless cluster
+}
+
+variable "region" {
+  description = "Region for the Serverless cluster"
+  default     = "pro-us-east-1"  # Default region for the cluster
 }
 ----
 
