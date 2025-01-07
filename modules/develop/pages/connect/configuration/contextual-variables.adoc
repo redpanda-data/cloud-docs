@@ -1,0 +1,87 @@
+= Contextual Variables
+:description: Learn about the advantages of using contextual variables, and how to add them to your data pipelines.
+
+{description}
+
+== Understanding contextual variables
+
+Contextual variables provide an easy way to access information about the environment in which a data pipeline is running and the pipeline itself:
+
+|===
+| Contextual variable name | Description
+
+| `$\{REDPANDA_BROKERS}`
+| The bootstrap server address of the cluster on which the data pipeline is running.
+
+| `$\{REDPANDA_ID}`
+| The ID of the cluster on which the data pipeline is running.
+
+| `$\{REDPANDA_REGION}`
+| The cloud region where the data pipeline is deployed.
+
+| `$\{REDPANDA_PIPELINE_ID}`
+| The ID of the data pipeline that is currently running.
+
+| `$\{REDPANDA_PIPELINE_NAME}`
+| The display name of the data pipeline that is currently running.
+
+| `$\{REDPANDA_SCHEMA_REGISTRY_URL}`
+| The URL of the Schema Registry associated with the cluster on which the data pipeline is running.
+
+|===
+
+Unlike environment variables, contextual variables are automatically set at runtime, which means that you can reuse them across multiple pipelines and development environments. For example, if you add the contextual variable `$\{REDPANDA_ID}` to a pipeline configuration, it’s always set to the ID of the cluster on which the data pipeline is running, whether the pipeline is in your development, UAT, or production environment. This increases the portability of pipeline configurations and reduces maintenance overheads.
+
+You can also use contextual variables to improve data traceability, see the <<example-pipeline-configuration,Example pipeline configuration>> for full details.
+
+== Add contextual variable to a data pipeline
+
+You can add a contextual variable to any pipeline configuration using the notation `$\{CONTEXTUAL_VARIABLE_NAME}`, for example:
+
+[,yaml]
+----
+output:
+ kafka_franz:
+   seed_brokers:
+     - ${REDPANDA_BROKERS}
+----
+
+=== Example pipeline configuration
+
+For improved data traceability, the following pipeline configuration adds the data pipeline display name (`$\{REDPANDA_PIPELINE_NAME}`) and ID (`$\{REDPANDA_PIPELINE_ID}`) to all messages that are processed. 
+
+The configuration also uses the `$REDPANDA_BROKERS` contextual variable to automatically populate the bootstrap server address of the cluster on which the pipeline is run, which allows Redpanda Connect to write updated messages to the `data` topic defined in the `kafka_franz` output.
+
+[,yaml]
+----
+input:
+ generate:
+   mapping: |
+     root.data = "test message"
+   interval: 10s
+
+pipeline:
+ processors:
+ - bloblang: |
+     root = this
+     root.source = "${REDPANDA_PIPELINE_NAME}"
+     root.source_id = "${REDPANDA_PIPELINE_ID}"
+
+output:
+ kafka_franz:
+   seed_brokers:
+   - ${REDPANDA_BROKERS}
+   topic: data
+   tls:
+     enabled: true
+   sasl:
+   - mechanism: SCRAM-SHA-256
+     username: cluster-username
+     password: cluster-password
+----
+
+== Suggested reading
+
+* Learn how to xref:develop:connect/configuration/secret-management.adoc[add secrets to your pipeline].
+* Try one of our xref:cookbooks:index.adoc[Redpanda Connect cookbooks].
+* Choose xref:develop:connect/components/catalog.adoc[connectors for your use case].
