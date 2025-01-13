@@ -1,10 +1,10 @@
-Redpanda automatically assigns IAM policies to the Redpanda Cloud agent when it is deployed. The permissions grant the agent access to the BYOC cluster. 
-
 ifdef::env-aws[] 
+When you run `rpk cloud byoc aws apply` to create a BYOC cluster, you grant IAM permissions to the Redpanda Cloud agent. IAM permissions allow the agent to access the AWS API to create and manage cluster resources. The permissions follow the principle of least privilege, limiting access to only what is necessary. IAM permissions are not required by Redpanda Cloud users.
+
 [NOTE]
 ====
-* This page lists the IAM permissions Redpanda needs to create xref:get-started:cluster-types/byoc/aws/create-byoc-cluster-aws.adoc[BYOC clusters]. This _does not_ pertain to xref:get-started:cluster-types/byoc/aws/vpc-byo-aws.adoc[BYOVPC clusters]. 
-* No IAM permissions are required for Redpanda Cloud users. IAM policies do not grant user access to a cluster; rather, they grant the deployed Redpanda agent access, so that brokers can communicate with the BYOC clusters. 
+* This page lists the IAM permissions Redpanda needs to create xref:get-started:cluster-types/byoc/aws/create-byoc-cluster-aws.adoc[BYOC clusters]. This does _not_ pertain to xref:get-started:cluster-types/byoc/aws/vpc-byo-aws.adoc[BYOVPC clusters]. 
+* IAM permissions are not required for Redpanda Cloud users. IAM policies do not grant user access to a cluster; rather, they grant the deployed Redpanda agent access, so that brokers can communicate with the BYOC clusters. 
 ====
 
 == AWS IAM policies
@@ -51,7 +51,9 @@ statement {
      "iam:CreateServiceLinkedRole",
      "ec2:CreatePlacementGroup",
      "ec2:DeletePlacementGroup",
-     "ec2:DescribePlacementGroups"
+     "ec2:DescribePlacementGroups",
+     "eks:DescribeNodegroup",
+     "eks:DeleteNodegroup"
    ]
    resources = [
      "*",
@@ -504,6 +506,8 @@ statement {
 endif::[]
 
 ifdef::env-gcp[]
+When you run `rpk cloud byoc gcp apply` to create a BYOC cluster, you grant IAM permissions to the Redpanda Cloud agent. IAM permissions allow the agent to access the GCP API to create and manage cluster resources. The permissions follow the principle of least privilege, limiting access to only what is necessary. IAM permissions are not required by Redpanda Cloud users.
+
 [NOTE]
 ====
 * This page lists the IAM permissions Redpanda needs to create xref:get-started:cluster-types/byoc/gcp/create-byoc-cluster-gcp.adoc[BYOC clusters]. This _does not_ pertain to xref:get-started:cluster-types/byoc/gcp/vpc-byo-gcp.adoc[BYOVPC clusters]. 
@@ -754,6 +758,8 @@ endif::[]
 
 
 ifdef::env-azure[]
+When you run `rpk cloud byoc azure apply` to create a BYOC cluster, you grant IAM permissions to the Redpanda Cloud agent. IAM permissions allow the agent to access the Azure API to create and manage cluster resources. The permissions follow the principle of least privilege, limiting access to only what is necessary. IAM permissions are not required by Redpanda Cloud users.
+
 [NOTE]
 ====
 * This page lists the IAM permissions Redpanda needs to create xref:get-started:cluster-types/byoc/azure/create-byoc-cluster-azure.adoc[BYOC clusters]. This _does not_ pertain to xref:get-started:cluster-types/byoc/azure/vnet-azure.adoc[BYOVPC clusters]. 

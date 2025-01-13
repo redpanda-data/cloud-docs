@@ -3,64 +3,141 @@
 :page-cloud: true
 :page-beta: true
 
-The https://registry.terraform.io/providers/redpanda-data/redpanda/latest[Redpanda Terraform provider^] is a plugin that interfaces with the Redpanda Cloud API, enabling you to define your Redpanda infrastructure in Terraform configuration files. 
+The https://registry.terraform.io/providers/redpanda-data/redpanda/latest[Redpanda Terraform provider^] allows you to manage your Redpanda Cloud infrastructure as code using https://www.terraform.io/[Terraform^]. Terraform is an infrastructure-as-code tool that enables you to define, automate, and version-control your infrastructure configurations.
 
-You can use the Redpanda Terraform provider to create and manage the following resources in Redpanda Cloud:
+With the Redpanda Terraform provider, you can manage:
 
 * ACLs
-* Clusters 
+* Clusters
 * Networks
 * Resource groups
 * Topics
 * Users
 
-== Prerequisites
+== Why use Terraform with Redpanda?
 
-* Install Terraform using the https://learn.hashicorp.com/tutorials/terraform/install-cli[Terraform documentation^].
-* Log in to https://cloud.redpanda.com[Redpanda Cloud^], navigate to the *Clients* page, and create a service account. The service account acts as an OAuth 2.0 client, and you will use its credentials (client ID and client secret) to authenticate to the Cloud API. 
+* **Simplicity**: Manage all your Redpanda Cloud resources in one place.
+* **Automation**: Create and modify resources without manual intervention.
+* **Version Control**: Track and roll back changes using version control systems such as GitHub.
+* **Scalability**: Scale your infrastructure as your needs grow with minimal effort.
+
+== Understand Terraform configurations
+
+Terraform configurations are written in link:https://developer.hashicorp.com/terraform/language[HCL (HashiCorp Configuration Language)], which is declarative. Here are the main building blocks of a Terraform configuration:
+
+=== Providers
+
+Providers tell Terraform how to communicate with the services you want to manage. For example, the Redpanda provider connects to the xref:api:ROOT:cloud-api.adoc[Redpanda Cloud API] using client credentials.
+
+[source,hcl]
+----
+provider "redpanda" {
+  client_id     = "<your_client_id>"
+  client_secret = "<your_client_secret>"
+}
+----
+
+=== Resources
+
+Resources define the infrastructure components you want to create, such as networks, clusters, or topics. Each resource block specifies the type of resource and its configuration.
+
+[source,hcl]
+----
+resource "redpanda_network" "example" { <1>
+  name           = "example-network" <2>
+  cloud_provider = "aws" <3>
+  region         = "us-east-1" <4>
+  cidr_block     = "10.0.0.0/20" <5>
+}
+----
+
+<1> The resource type and internal name. The first part of this resource block specifies the type of resource being created. In this case, it is a `redpanda_network`, which defines a network for Redpanda Cloud. Different resource types include `redpanda_cluster`, `redpanda_topic`, and others. The second part is the internal name Terraform uses to identify this specific resource within your configuration. In this case, the internal name is `example`. This internal name allows you to reference the resource in other parts of your configuration. For example, redpanda_network.example.id can be used to access the unique ID of the network after it is created. The name does not affect the resource in Redpanda Cloud. It is for Terraform's internal use.
+<2> A user-defined name for the resource as it will appear in Redpanda Cloud. This is the user-facing name visible in the Redpanda UI and API.
+<3> The cloud provider where the network is deployed, such as AWS or GCP.
+<4> The region where the resource will be provisioned.
+<5> The IP address range for the network.
+
+=== Variables
+
+Variables allow you to parameterize your configuration, making it reusable and customizable for different environments. Use `variable` blocks to define reusable values, like `region`, which can be overridden when running Terraform.
+
+[source,hcl]
+----
+variable "region" {
+  default = "us-east-1"
+}
+
+resource "redpanda_network" "example" {
+  name           = "example-network"
+  cloud_provider = "aws"
+  region         = var.region
+  cidr_block     = "10.0.0.0/20"
+}
+----
+
+=== Outputs
+
+Outputs let you extract information about your infrastructure, such as cluster URLs, to use in other configurations or scripts.
+
+This example will display the cluster's API URL after Terraform provisions the resources:
+
+[source,hcl]
+----
+output "cluster_api_url" {
+  value = data.redpanda_cluster.example.cluster_api_url
+}
+----
 
 == Limitations
 
-The following operations are not supported on BYOC and customer-managed VPC deployments:
+The following functionality is supported in the Cloud API but not in the Redpanda Terraform provider:
 
-* Creation of clusters
-* Destruction of clusters
-
-The following functionality is supported in the Cloud API but not in the Redpanda Terraform provider: 
-
+* Creation or deletion of BYOVPC clusters
 * Secrets
 * Kafka Connect
 * Redpanda Connect
 
-== Use the provider
+== Prerequisites
 
-. To install the Redpanda provider, copy and paste the following code into your Terraform configuration file:
+. Install at least version 1.0.0 of Terraform using the https://learn.hashicorp.com/tutorials/terraform/install-cli[official guide^].
+. Create a service account in Redpanda Cloud:
+.. Log in to https://cloud.redpanda.com[Redpanda Cloud^].
+.. Navigate to the *Clients* page and create a service account.
+.. Save the client ID and client secret for authentication.
+
+== Set up the provider
+
+To set up the provider, you need to download the provider and authenticate to the Redpanda Cloud API. You can authenticate to the Redpanda Cloud API using environment variables or static credentials in your configuration file.
+
+. Add the Redpanda provider to your Terraform configuration:
 +
-```
+[source,hcl]
+----
 terraform {
   required_providers {
     redpanda = {
       source  = "redpanda-data/redpanda"
-      version = "~> 0.9"
+      version = "~> 0.10"
     }
   }
 }
-```
+----
 
-. Initialize Terraform:
+. Initialize Terraform to download the provider:
 +
-```
+[source,bash]
+----
 terraform init
-```
+----
 
-. Add the credentials for the Redpanda Cloud service account you set in the prerequisites. In the Redpanda Cloud UI, find the client ID and client secret on the *Clients* page. Set them as environment variables, or enter them in your Terraform configuration file:
+. Add the credentials for the Redpanda Cloud service account you set in <<Prerequisites>>. In the Redpanda Cloud UI, find the client ID and client secret on the *Clients* page. Set them as environment variables, or enter them in your Terraform configuration file:
 +
 [tabs]
 ======
 Environment variables::
 +
 --
-```
+```bash
 REDPANDA_CLIENT_ID=<client_id>
 REDPANDA_CLIENT_SECRET=<client_secret>
 ```
@@ -68,7 +145,7 @@ REDPANDA_CLIENT_SECRET=<client_secret>
 Static credentials::
 +
 --
-```
+```hcl
 provider "redpanda" {
   client_id      = "<client_id>"
   client_secret  = "<client_secret>"
@@ -77,29 +154,301 @@ provider "redpanda" {
 --
 ======
 
-. For sample configurations with Dedicated, BYOC, and Serverless clusters, see the https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs[Redpanda Terraform provider docs^]. 
+== Examples
 
-=== Use the provider to create a new cluster
+This section provides examples of using the Redpanda Terraform provider to create and manage clusters. For descriptions of resources and data sources, see the https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs[Redpanda Terraform Provider documentation^].
 
-For an example of how to use the provider to create a new cluster, see https://github.com/redpanda-data/terraform-provider-redpanda/blob/main/examples/cluster/aws/main.tf[this example^].
+For more information on the different cluster types mentioned in these examples, see xref:redpanda-cloud:get-started:cloud-overview.adoc#redpanda-cloud-cluster-types[Redpanda Cloud cluster types].
 
-=== Use the provider to manage an existing cluster
+TIP: See the full list of zones and tiers available with each cloud provider in the xref:api:ROOT:cloud-api.adoc#api-description[API reference].
 
-To manage resources in existing Redpanda Cloud clusters, you must reference the cluster using the cluster ID (Redpanda ID). The following example creates a topic in a cluster with ID `foo-bar-baz`. The `redpanda_topic` resource contains a field `cluster_api_url` that references the `data.redpanda_cluster.test.cluster_api_url` data resource. 
+=== Create a BYOC cluster
 
-```
-data "redpanda_cluster" "test" {
-  id = "foo-bar-baz"
+A BYOC (Bring Your Own Cloud) cluster allows you to provision a cluster in your own cloud account. This example creates a BYOC cluster on AWS with a custom network, resource group, and cluster configuration.
+
+[source,hcl]
+----
+terraform {
+  required_providers {
+    redpanda = {
+      source  = "redpanda-data/redpanda"
+      version = "~> 0.10"
+    }
+  }
 }
 
-resource "redpanda_topic" "test" {
-  name               = "myTopicName"
+# Variables to parameterize the configuration
+variable "resource_group_name" {
+  description = "Name of the Redpanda resource group"
+  default     = "testname"
+}
+
+variable "network_name" {
+  description = "Name of the Redpanda network"
+  default     = "testname"
+}
+
+variable "cluster_name" {
+  description = "Name of the Redpanda BYOC cluster"
+  default     = "test-cluster"
+}
+
+variable "region" {
+  description = "Region for the Redpanda network and cluster"
+  default     = "us-east-2"
+}
+
+variable "cloud_provider" {
+  description = "Cloud provider for the Redpanda network"
+  default     = "aws"
+}
+
+variable "zones" {
+  description = "List of availability zones for the cluster"
+  type        = list(string)
+  default     = ["use2-az1", "use2-az2", "use2-az3"]
+}
+
+variable "cidr_block" {
+  description = "CIDR block for the Redpanda network"
+  default     = "10.0.0.0/20"
+}
+
+variable "throughput_tier" {
+  description = "Throughput tier for the cluster"
+  default     = "tier-1-aws-v2-x86"
+}
+
+# Redpanda provider configuration
+provider "redpanda" {}
+
+# Create a Redpanda resource group
+resource "redpanda_resource_group" "test" {
+  name = var.resource_group_name
+}
+
+# Create a Redpanda network
+resource "redpanda_network" "test" {
+  name              = var.network_name
+  resource_group_id = redpanda_resource_group.test.id
+  cloud_provider    = var.cloud_provider
+  region            = var.region
+  cluster_type      = "byoc"  # Specify BYOC cluster type
+  cidr_block        = var.cidr_block
+}
+
+# Create a Redpanda BYOC cluster
+resource "redpanda_cluster" "test" {
+  name              = var.cluster_name
+  resource_group_id = redpanda_resource_group.test.id
+  network_id        = redpanda_network.test.id
+  cloud_provider    = var.cloud_provider
+  region            = var.region
+  cluster_type      = "byoc"
+  connection_type   = "public"  # Publicly accessible cluster
+  throughput_tier   = var.throughput_tier
+  zones             = var.zones
+  allow_deletion    = true      # Allow the cluster to be deleted
+  tags = {                      # Add metadata tags
+    "environment" = "dev"
+  }
+}
+----
+
+=== Create a Dedicated cluster
+
+A Dedicated cluster is fully managed by Redpanda and ensures consistent performance. This example provisions a cluster on AWS with specific zones and throughput tiers.
+
+[source,hcl]
+----
+terraform {
+  required_providers {
+    redpanda = {
+      source  = "redpanda-data/redpanda"
+      version = "~> 0.10"
+    }
+  }
+}
+
+# Variables for configuration
+variable "resource_group_name" {
+  description = "Name of the Redpanda resource group"
+  default     = "test-dedicated-group"
+}
+
+variable "network_name" {
+  description = "Name of the Redpanda network"
+  default     = "dedicated-network"
+}
+
+variable "cluster_name" {
+  description = "Name of the Redpanda dedicated cluster"
+  default     = "dedicated-cluster"
+}
+
+variable "region" {
+  description = "Region for the Redpanda network and cluster"
+  default     = "us-west-1"
+}
+
+variable "cloud_provider" {
+  description = "Cloud provider for the Redpanda network"
+  default     = "aws"
+}
+
+variable "zones" {
+  description = "List of availability zones for the cluster"
+  type        = list(string)
+  default     = ["usw1-az1", "usw1-az2", "usw1-az3"]
+}
+
+variable "cidr_block" {
+  description = "CIDR block for the Redpanda network"
+  default     = "10.1.0.0/20"
+}
+
+variable "throughput_tier" {
+  description = "Throughput tier for the dedicated cluster"
+  default     = "tier-1-aws-v2-arm"
+}
+
+# Redpanda provider configuration
+provider "redpanda" {}
+
+# Create a Redpanda resource group
+resource "redpanda_resource_group" "test" {
+  name = var.resource_group_name
+}
+
+# Create a Redpanda network
+resource "redpanda_network" "test" {
+  name              = var.network_name
+  resource_group_id = redpanda_resource_group.test.id
+  cloud_provider    = var.cloud_provider
+  region            = var.region
+  cluster_type      = "dedicated"  # Specify Dedicated cluster type
+  cidr_block        = var.cidr_block
+}
+
+# Create a Redpanda dedicated cluster
+resource "redpanda_cluster" "test" {
+  name              = var.cluster_name
+  resource_group_id = redpanda_resource_group.test.id
+  network_id        = redpanda_network.test.id
+  cloud_provider    = var.cloud_provider
+  region            = var.region
+  cluster_type      = "dedicated"
+  connection_type   = "public"
+  throughput_tier   = var.throughput_tier
+  zones             = var.zones
+  allow_deletion    = true
+  aws_private_link = {  # Configure AWS PrivateLink for dedicated clusters
+    enabled            = true
+    connect_console    = true
+    allowed_principals = ["arn:aws:iam::123456789024:root"]
+  }
+  tags = {
+    "environment" = "dev"
+  }
+}
+----
+
+=== Create a Serverless cluster
+
+A Serverless cluster is cost-effective and scales automatically based on usage. This example creates a cluster in the `pro-us-east-1` region with minimal configuration.
+
+[source,hcl]
+----
+terraform {
+  required_providers {
+    redpanda = {
+      source  = "redpanda-data/redpanda"
+      version = "~> 0.10"
+    }
+  }
+}
+
+# Redpanda provider configuration
+provider "redpanda" {}
+
+# Define a resource group for the Serverless cluster
+resource "redpanda_resource_group" "test" {
+  name = var.resource_group_name  # Name of the resource group
+}
+
+# Create a Serverless cluster
+resource "redpanda_serverless_cluster" "test" {
+  name              = var.cluster_name                  # Name of the Serverless cluster
+  resource_group_id = redpanda_resource_group.test.id   # Link to the resource group
+  serverless_region = var.region                        # Specify the region for the cluster
+}
+
+# Variables for parameterizing the configuration
+variable "resource_group_name" {
+  description = "Name of the Redpanda resource group"
+  default     = "testgroup"  # Default name for the resource group
+}
+
+variable "cluster_name" {
+  description = "Name of the Redpanda Serverless cluster"
+  default     = "testname"   # Default name for the Serverless cluster
+}
+
+variable "region" {
+  description = "Region for the Serverless cluster"
+  default     = "pro-us-east-1"  # Default region for the cluster
+}
+----
+
+=== Manage an existing cluster
+
+To manage resources in existing Redpanda Cloud clusters, you must reference the cluster using the cluster ID (Redpanda ID). The following example creates a topic in a cluster with ID `byoc-cluster-id`. The `redpanda_topic` resource contains a field `cluster_api_url` that references the `data.redpanda_cluster.byoc.cluster_api_url` data resource.
+
+[source,hcl]
+----
+data "redpanda_cluster" "byoc" {
+  id = "byoc-cluster-id"
+}
+
+resource "redpanda_topic" "example" {
+  name               = "example-topic"
   partition_count    = 3
   replication_factor = 3
-  cluster_api_url    = data.redpanda_cluster.test.cluster_api_url
+  cluster_api_url    = data.redpanda_cluster.byoc.cluster_api_url
 }
-```
+----
 
-=== Additional examples
+== Delete resources
 
-To view additional ways to use the provider, see the https://github.com/redpanda-data/terraform-provider-redpanda/tree/main/examples[Redpanda Terraform provider examples^].
+Terraform provides a way to clean up your infrastructure when resources are no longer needed. The `terraform destroy` command deletes all the resources defined in your configuration.
+
+NOTE: Terraform ensures that dependent resources are deleted in the correct order. For example, a cluster dependent on a network will be removed after the network.
+
+=== Delete all resources
+
+. Navigate to the directory containing your Terraform configuration.
+. Run the following command:
++
+[source,bash]
+----
+terraform destroy
+----
+. Review the destruction plan Terraform generates. It will list all the resources to be deleted.
+. Confirm by typing `yes` when prompted.
+. Wait for the process to complete. Terraform will delete the resources and display a summary.
+
+=== Delete specific resources
+
+If you only want to delete a specific resource rather than everything in your configuration, use the `-target` flag with `terraform destroy`. For example:
+
+[source,bash]
+----
+terraform destroy -target=redpanda_network.example
+----
+
+This will delete only the `redpanda_network.example` resource.
+
+== Suggested reading
+
+* https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs[Redpanda Terraform Provider documentation^]
+* https://github.com/redpanda-data/terraform-provider-redpanda/tree/main/examples[Redpanda Terraform Provider Examples^]
