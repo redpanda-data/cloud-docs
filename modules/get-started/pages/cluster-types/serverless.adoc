@@ -1,10 +1,10 @@
-= Serverless
-:description: Learn how to create a Serverless cluster.
+= Serverless Standard
+:description: Learn how to create a Serverless Standard cluster.
 :page-aliases: deploy:deployment-option/cloud/serverless.adoc
 
-Serverless is the fastest and easiest way to start data streaming. A cluster is available instantly, there is no base cost, and you only pay for what you consume. For information about all Redpanda Cloud cluster types, see xref:get-started:cloud-overview.adoc[].
+Serverless Standard is the fastest and easiest way to start data streaming. A cluster is available instantly, there is no base cost, and you only pay for what you consume. For an enterprise-level version of Serverless Standard, with higher usage limits and dedicated support, consider xref:get-started:cluster-types/serverless-pro.adoc[Serverless Pro]. For information about all Redpanda Cloud cluster types, see xref:get-started:cloud-overview.adoc[]. 
 
-NOTE: Serverless is currently in a limited availability (LA) release with xref:get-started:cluster-types/serverless.adoc#limits[usage limits]. During LA, existing clusters can scale to the usage limits, but new clusters may need to wait for availability.
+NOTE: Serverless Standard is currently in a limited availability (LA) release with xref:get-started:cluster-types/serverless.adoc#limits[usage limits]. During LA, existing clusters can scale to the usage limits, but new clusters may need to wait for availability.
 
 == Prerequisites
 
@@ -12,15 +12,16 @@ NOTE: Serverless is currently in a limited availability (LA) release with xref:g
 
 . Make sure you have the latest version of `rpk`. See xref:get-started:rpk-install.adoc[].
 
-== Limits
+== Serverless Standard usage limits
 
 Each Serverless cluster has the following limits:
 
 * Ingress: up to 10 MBps, 0.5 MBps guaranteed
 * Egress: up to 30 MBps, 1.5 MBps guaranteed
-* Partitions: 100 partitions
+* Partitions: 100
+* Topics: 20 
 * Message size: 20 MB
-* Retention: unlimited time
+* Retention: unlimited
 * Storage: unlimited
 * Users: 30
 * ACLs: 120
@@ -28,18 +29,20 @@ Each Serverless cluster has the following limits:
 
 [NOTE]
 ====
-* These baseline limits are subject to change. To increase your limits, contact https://support.redpanda.com/hc/en-us/requests/new[support^]. 
-* Partition counts do not include partition replicas.
+* The partition limit is the number of logical partitions before replication occurs. Redpanda Cloud uses a replication factor of 3.
+* To increase your limits, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda Support^]. 
 ====
 
-== Get started with Serverless trial
+== Get started with Serverless Standard trial
 
 New trials receive $100 (USD) in free credits to spend in the first 14 days. This should be enough to run Redpanda with reasonable throughput. No credit card is required. To continue using Serverless after your trial expires, you can enter a credit card and pay as you go. Any remaining credit balance is used before you are charged. You can view detailed billing activity for each cluster and edit payment methods on the *Billing* page. Each trial supports five Serverless clusters. 
 
 When either the 100 credits expire or the 14 days in the trial expire, the clusters move into a suspended state, and you won't be able to access your data in either the Redpanda Cloud UI or with the Kafka API. There is a 7 day grace period following the end of the trial. After that, the data is permanently deleted. 
 
-* To ask questions about the trial, use the *#serverless* https://redpandacommunity.slack.com/[Community Slack^] channel, or contact https://support.redpanda.com/hc/en-us/requests/new[support^].
+* To ask questions about the trial, use the *#serverless* https://redpandacommunity.slack.com/[Community Slack^] channel, or contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda Support^].
 * For information about billing after the trial ends, see xref:billing:billing.adoc[].
+
+NOTE: A trial is the fastest way to get started, and it comes with a `welcome` cluster. You can also subscribe through xref:billing:aws-pay-as-you-go.adoc[AWS Marketplace] and quickly provision a Serverless cluster. New subscriptions receive $300 (USD) in free credits to spend in the first 30 days. AWS Marketplace charges for anything beyond $300, unless you cancel the subscription. After your free credits have been used, you can continue using your cluster without any commitment, only paying for what you consume and canceling anytime. 
 
 == Explore your trial cluster
 
@@ -76,11 +79,11 @@ Here are some helpful `rpk` commands:
 
 NOTE: Redpanda Serverless is opinionated about Kafka configurations. For example, automatic topic creation is disabled. Some systems expect the Kafka service to automatically create topics when a message is produced to a topic that doesn't exist. Create topics on the *Topics* page or with `rpk topic create`.
 
-== Create a new Serverless cluster
+== Create a new Serverless Standard cluster
 
-To create additional Serverless clusters: 
+To create additional Serverless Standard clusters: 
 
-. In Redpanda Cloud UI, on the **Clusters** page, click **Create cluster**, then click **Create Serverless cluster**. 
+. In Redpanda Cloud UI, on the **Clusters** page, click **Create cluster**, then click **Create Serverless Standard cluster**. 
 
 . Enter a cluster name, then select the resource group. If you don't have an existing resource group, you can create one. Refresh the page to see newly-created resource groups. 
 +
@@ -91,15 +94,17 @@ Serverless clusters are currently available in certain AWS regions. Redpanda exp
 * Redpanda Serverless supports the Kafka API. 
 * Serverless clusters work with all Kafka clients. For more information, see xref:develop:kafka-clients.adoc[].
 * Serverless clusters support all major Apache Kafka messages for managing topics, producing/consuming data (including transactions), managing groups, managing offsets, and managing ACLs. (User management is available in the Redpanda Cloud UI or with `rpk security acl`.) 
+* xref:develop:connect/about.adoc[Redpanda Connect] is integrated with Serverless as a beta feature for testing and feedback. Choose from a range of connectors, processors, and other components to quickly build and deploy streaming data pipelines or AI applications.
 
 === Unsupported features
 
-* Kafka Connect managed connectors
 * Data transforms
 * Redpanda Admin API 
 * HTTP Proxy API
+* Kafka Connect
 
 == Next steps
 
 * xref:get-started:cloud-overview.adoc[Learn more about Redpanda Cloud]
 * xref:get-started:config-topics.adoc[Manage topics]
+* xref:get-started:cluster-types/serverless-pro.adoc[Try Serverless Pro for higher usage limits and dedicated support]
