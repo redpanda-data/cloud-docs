@@ -152,6 +152,34 @@ Use the API to configure your xref:develop:managed-connectors/index.adoc[Kafka C
 
 NOTE: Kafka Connect is supported in BYOC and Dedicated clusters only.
 
+==== Create a Kafka Connect cluster secret
+
+Kafka Connect cluster secret data must first be in JSON format, and then Base64-encoded.
+
+. Prepare the secret data in JSON format:
++
+```
+{"secret.access.key": "<secret-access-key-value>"}
+```
+
+. Encode the secret data in Base64:
++
+```
+echo '{"secret.access.key": "<secret-access-key-value>"}' | base64
+```
+
+. Use the xref:api:ROOT:cloud-api.adoc#post-/v1alpha2/kafka-connect/clusters/-cluster_name-/secrets[Secrets API] to create a secret that stores the Base64-encoded secret data:
++
+[,bash]
+----
+curl -X POST "https://<dataplane-api-url>/v1alpha2/kafka-connect/clusters/redpanda/secrets" \
+ -H 'accept: application/json'\
+ -H 'content-type: application/json' \
+ -d '{"name":"<connector-name>","secret_data":"<secret-data-base64-encoded>"}' 
+----
+
+The response returns an `id` that you can use to <<create-a-kafka-connect-connector,create the Kafka Connect connector>>.
+
 ==== Create a Kafka Connect connector
 
 To create a connector, make a POST request to xref:api:ROOT:cloud-api.adoc#post-/v1alpha2/kafka-connect/clusters/-cluster_name-/connectors[`/v1alpha2/kafka-connect/clusters/\{cluster_name}/connectors`]. 
@@ -164,24 +192,14 @@ curl -X POST "<dataplane-api-url>/v1alpha2/kafka-connect/clusters/redpanda/conne
  -H "Authorization: Bearer <token>" \
  -H "accept: application/json" \
  -H "content-type: application/json" \
- -d '{"config":{"connector.class":"com.redpanda.kafka.connect.s3.S3SinkConnector","topics":"test-topic","aws.secret.access.key":"${secretsManager:<secret-id>}","aws.s3.bucket.name":"bucket-name","aws.access.key.id":"access-key","aws.s3.bucket.check":"false","region":"us-east-1"},"name":"my-connector"}'
+ -d '{"config":{"connector.class":"com.redpanda.kafka.connect.s3.S3SinkConnector","topics":"test-topic","aws.secret.access.key":"${secretsManager:<secret-id>:secret.access.key}","aws.s3.bucket.name":"bucket-name","aws.access.key.id":"access-key","aws.s3.bucket.check":"false","region":"us-east-1"},"name":"my-connector"}'
 ----
 
 [CAUTION]
 ====
-The field `aws.secret.access.key` in the example contains sensitive information that usually shouldn't be added to a configuration directly. Use the xref:api:ROOT:cloud-api.adoc#post-/v1alpha2/kafka-connect/clusters/-cluster_name-/secrets[Secrets API] to create a secret that stores the value of the key. You can then use the secret ID to inject the value of the secret in your request.
+The field `aws.secret.access.key` in this example contains sensitive information that usually shouldn't be added to a configuration directly. Redpanda recommends that you first create a secret and then use the secret ID to inject the secret in your Create Connector request.
 
-To create a secret that you can reference in the connector configuration request:
-
-[,bash]
-----
-curl -X POST "https://<dataplane-api-url>/v1alpha2/kafka-connect/clusters/redpanda/secrets" \
- -H 'accept: application/json'\
- -H 'content-type: application/json' \
- -d '{"name":"<connector-name>","secret_data":"<secret-value>"}' 
-----
-
-Use the `id` returned in the Create Secret response to replace the placeholder `<secret-id>` in the previous Create Connector example. The syntax `${secretsManager:<secret-id>}` tells the Kafka Connect cluster to load `<secret-id>`. 
+If you had created a secret following the example from the previous section <<create-a-kafka-connect-cluster-secret,Create a Kafka Connect cluster secret>>, use the `id` returned in the Create Secret response to replace the placeholder `<secret-id>` in this Create Connector example. The syntax `${secretsManager:<secret-id>:secret.access.key}` tells the Kafka Connect cluster to load `<secret-id>`, specifying the key `secret.access.key` from the secret JSON. 
 ====
 
 Example success response:

@@ -1,0 +1,342 @@
+= Create a BYOVPC Cluster on AWS
+:description: Connect Redpanda Cloud to your existing VPC for additional security.
+:page-aliases: get-started:cluster-types/byoc/vpc-byo-aws.adoc
+:page-cloud: true
+:page-beta: true
+
+include::shared:partial$feature-flag.adoc[]
+
+This topic explains how to create a Bring Your Own Virtual Private Cloud (BYOVPC) cluster. This setup allows you to deploy the Redpanda glossterm:data plane[] into your existing VPC and take full control of managing the networking lifecycle. Compared to a standard Bring Your Own Cluster (BYOC) setup, where Redpanda manages the networking lifecycle for you, this option provides more security.
+
+When you create a BYOCVPC cluster, you specify your VPC and service account. The Redpanda Cloud agent doesn't create any new resources or alter any settings in your account. With BYOVPC: 
+
+* You provide your own VPC in your AWS account.
+* You maintain more control over your account, because Redpanda requires fewer permissions than standard BYOC clusters.
+* You control your security resources and policies, including subnets, service accounts, IAM roles, firewall rules, and storage buckets.
+
+The https://github.com/redpanda-data/cloud-examples/tree/main/customer-managed/aws[Redpanda Cloud Examples repository^] contains https://developer.hashicorp.com/terraform[Terraform^] code that deploys the resources required for a BYOVPC cluster on AWS. You'll need to create these resources in advance and give them to Redpanda during cluster creation. Variables are provided in the code so you can exclude resources that already exist in your environment, such as the VPC.
+
+== Prerequisites
+
+* Access to an AWS project in which you create your cluster.
+* Minimum permissions in that AWS project. For the actions required by the user who will create the cluster with `rpk cloud byoc aws apply`, see https://github.com/redpanda-data/cloud-examples/blob/main/customer-managed/aws/terraform/iam_rpk_user.tf[`iam_rpk_user.tf`^].
+* Familiarity with the xref:api:ROOT:cloud-api.adoc[Redpanda Cloud API]. For example, you should be familiar with how to use the Cloud API to authenticate and create a cluster.
+* https://developer.hashicorp.com/terraform/install[Terraform^] version 1.8.5 or later.
+
+== Limitations
+
+* Existing clusters cannot be moved to a BYOVPC cluster.
+* After creating a BYOVPC cluster, you cannot change to a different VPC.
+
+== Set environment variables
+
+The following example creates variables for the AWS account ID, region, VPC name, and a prefix for resources. It then creates a new VPC in AWS with a CIDR block (10.0.0.0/16) and captures the VPC ID.
+
+```bash
+export AWS_ACCOUNT_ID=
+export AWS_REGION=us-east-2
+export AWS_VPC_NAME=sample-redpanda-vpc
+export REDPANDA_COMMON_PREFIX=sample-
+
+export AWS_VPC_ID=$(aws ec2 create-vpc --cidr-block 10.0.0.0/16 --query Vpc.VpcId --region ${AWS_REGION} --tag-specification ResourceType=vpc,Tags='[{Key=Name,Value="${AWS_VPC_NAME}"}]' --output text --profile AWSAdministratorAccess-605419575229)
+```
+
+The https://github.com/redpanda-data/cloud-examples/blob/main/customer-managed/aws/terraform/variables.tf[`variables.tf`] file contains a number of variables that allow you to modify the Terraform code to meet your specific needs. In some cases, it lets you skip creation of certain resources (for example, the VPC) or modify the configuration of a resource.
+
+== Configure Terraform
+
+NOTE: For simplicity, these instructions assume that Terraform is configured to use local state. You may want to configure https://developer.hashicorp.com/terraform/language/state/remote[remote state^]. 
+
+Define a JSON file called `byovnet.auto.tfvars.json` inside the Terraform directory that contains information about the VPC. Optionally, you can enable PrivateLink. For example: 
+
+```json
+cat > byoc.auto.tfvars.json <<EOF
+{
+  "aws_account_id": "${AWS_ACCOUNT_ID}",
+  "region": "${AWS_REGION}",
+  "common_prefix": "${REDPANDA_COMMON_PREFIX}",
+  "condition_tags": {
+  },
+  "default_tags": {
+  },
+  "ignore_tags": [
+  ],
+  "vpc_id": "${AWS_VPC_ID}",
+  "zones": [],
+  "enable_private_link": true,
+  "create_rpk_user": true,
+  "force_destroy_cloud_storage": true
+}
+EOF
+
+```
+
+== Deploy Terraform
+
+Initialize, plan, and apply Terraform to set up the AWS infrastructure:
+
+```
+terraform init
+terraform plan
+terraform apply
+```
+
+Note the output values that the `terraform apply` command displays. You can also get these values by running `terraform output`. The ARN (Amazon Resource Name) output  values are necessary in later steps.
+
+You can set additional environment variables that extract the output for AWS resources and set your Redpanda credentials. For example:
+
+```bash
+export REDPANDA_RG_ID=<Retrieve the ID from the URL of the resource group when accessing within Redpanda Cloud>
+export AWS_MANAGEMENT_BUCKET="$(terraform output -raw management_bucket_arn)"
+export AWS_DYNAMODB_TABLE="$(terraform output -raw dynamodb_table_arn)"
+export AWS_PRIVATE_SUBNETS="$(terraform output -raw private_subnet_ids)"
+export AWS_VPC="$(terraform output -raw vpc_arn)"
+
+export REDPANDA_CLIENT_ID=
+export REDPANDA_CLIENT_SECRET=
+```
+
+[TIP]
+====
+
+* To get the Redpanda authentication credentials and resource group, follow the xref:manage:api/cloud-api-quickstart.adoc[].
+* For example Terraform code of the expected provisioned resources, see the https://github.com/redpanda-data/cloud-examples/tree/main/customer-managed/aws[BYOVPC on AWS README^].
+====
+
+== Authenticate with Redpanda Cloud
+
+Get a glossterm:bearer token[] from the Cloud API authentication endpoint using your Redpanda credentials:
+
+```bash
+export BEARER_TOKEN=$(curl --request POST \
+--url 'https://auth.prd.cloud.redpanda.com/oauth/token' \
+--header 'content-type: application/x-www-form-urlencoded' \
+--data grant_type=client_credentials \
+--data client_id=${REDPANDA_CLIENT_ID} \
+--data client_secret=${REDPANDA_CLIENT_SECRET} \
+--data audience=cloudv2-production.redpanda.cloud | jq -r '.access_token')
+```
+
+== Create network
+
+To create the Redpanda network: 
+
+. Define a JSON file called `redpanda-network.json` that includes the AWS VPC and region, as well as AWS-specific resources like S3, DynamoDB, and subnets. For example: 
++
+```json
+cat > redpanda-network.json <<EOF
+{
+    "name":"sample-redpanda-network",
+    "resource_group_id": ${REDPANDA_RG_ID},
+    "cloud_provider":"CLOUD_PROVIDER_AWS",
+    "region": ${AWS_REGION},
+    "cluster_type":"TYPE_BYOC",
+    "customer_managed_resources": {
+      "aws": {
+        "management_bucket": {
+          "arn": ${AWS_MANAGEMENT_BUCKET}
+        },
+        "dynamodb_table": {
+          "arn": ${AWS_DYNAMODB_TABLE}
+        },
+        "private_subnets": {
+          "arns": ${AWS_PRIVATE_SUBNETS}
+        },
+        "vpc": {
+          "arn": ${AWS_VPC}
+        }
+      }
+   }
+} 
+EOF
+```
+
+. Use the Cloud API to create the network and retrieve the network ID: 
++
+```bash
+export REDPANDA_NETWORK_ID=$(curl -X POST "https://api.redpanda.com/v1beta2/networks" \
+ -H "accept: application/json" \
+ -H "content-type: application/json" \
+ -H "authorization: Bearer ${BEARER_TOKEN}" \
+ --data-binary @redpanda-network.json | jq -r '.operation.id')
+```
++
+The Create Network request returns a `resource_id`. For example:
++
+[,yaml,lines=11]
+----
+{
+   "operation":{
+      "id":"cpas8k6r4up5li18auh0",
+      "metadata":{
+         "@type":"type.googleapis.com/redpanda.api.controlplane.v1beta2.CreateNetworkMetadata",
+         "network_id":"cpb338gekjj5i1cpj3t0"
+      },
+      "state":"STATE_IN_PROGRESS",
+      "started_at":"2024-05-28T19:33:54.631Z",
+      "type":"TYPE_CREATE_NETWORK",
+      "resource_id":"cpb338gekjj5i1cpj3t0"
+   }
+}
+----
+
+== Create cluster
+
+To create the Redpanda cluster: 
+
+. Create environment variables for cluster information, like the version, tier, and availability zones. 
++
+```bash
+export AWS_ZONES='["use-az1", "use-az2", "use-az3"]'
+export REDPANDA_CLUSTER_NAME=sample-redpanda-cluster
+export REDPANDA_VERSION=24.3
+export REDPANDA_THROUGHPUT_TIER=tier-1-aws-v3-arm
+```
++
+TIP: See the full list of zones and tiers available with each provider in the xref:api:ROOT:cloud-api.adoc#api-description[API reference].
+
+. Define a JSON file called `redpanda-cluster.json` that includes cluster information: 
++
+```json
+cat > redpanda-cluster.json <<EOF
+{
+  "cloud_provider":"CLOUD_PROVIDER_AWS",
+  "connection_type":"CONNECTION_TYPE_PRIVATE",
+  "name": "${REDPANDA_CLUSTER_NAME}",
+  "resource_group_id": "${REDPANDA_RG_ID}",
+  "network_id": "${REDPANDA_NETWORK_ID}",
+  "region": "${AWS_REGION}",
+  "throughput_tier": "${REDPANDA_THROUGHPUT_TIER}",
+  "type": "TYPE_BYOC",
+  "zones": ${AWS_ZONES},
+  "redpanda_version": "${REDPANDA_VERSION}"
+}
+EOF
+```
+
+. Use the Cloud API to deploy the cluster and retrieve its ID:
++
+```bash
+export REDPANDA_ID=$(curl -X POST "https://api.redpanda.com/v1beta2/clusters" \
+ -H "accept: application/json" \
+ -H "content-type: application/json" \
+ -H "authorization: Bearer ${BEARER_TOKEN}" \
+ --data-binary @redpanda-cluster.json | jq -r '.operation.resource_id')
+```
++
+The create cluster request returns a `resource_id`, which is required in the next step. For example:
++
+[,yaml,lines=11]
+```bash
+{
+   "operation":{
+      "id":"cpas8k6r4up5li18auhg",
+      "metadata":{
+         "@type":"type.googleapis.com/redpanda.api.controlplane.v1beta2.CreateClusterMetadata",
+         "cluster_id":"cpb33c8ekjj5i1cpj3v0"
+      },
+      "state":"STATE_IN_PROGRESS",
+      "started_at":"2024-05-28T19:34:09.501Z",
+      "type":"TYPE_CREATE_CLUSTER",
+      "resource_id":"cpb33c8ekjj5i1cpj3v0"
+   }
+}
+```
+
+== Create cluster resources
+
+To create the initial cluster resources, first log in to Redpanda Cloud with `rpk cloud login`, and then run `rpk cloud byoc aws apply`. This creates an autoscaling group, an agent VM, and the following resources:
+
+* S3 objects
+* Launch template
+* Autoscaling group
+
+NOTE: You must have the `iam_rpk_user.tf` permissions described in the prerequisites. 
+
+```bash
+rpk cloud login \
+  --save \
+  --client-id=${REDPANDCA_CLIENT_ID} \
+  --client-secret=${REDPANDA_CLIENT_SECRET} \
+  --no-profile
+
+rpk cloud byoc aws apply \
+  --redpanda-id=${REDPANDA_ID}
+```
+
+Output:
+
+```bash
+Checking RPK User... PASSED
+Checking IAM Instance Profiles... PASSED
+Checking Storage... PASSED
+Checking Network... PASSED
+Reconciling agent infrastructure...
+Running apply	{"provisioner": "redpanda-bootstrap"}
+Finished apply	{"provisioner": "redpanda-bootstrap"}
+Running apply	{"provisioner": "redpanda-network"}
+Finished apply	{"provisioner": "redpanda-network"}
+Running apply	{"provisioner": "redpanda-agent"}
+Finished apply	{"provisioner": "redpanda-agent"}
+The Redpanda cluster is deploying. This can take up to 45 minutes. View status at https://cloud.redpanda.com/clusters/${REDPANDA_ID}/overview.
+```
+
+The Redpanda Cloud agent now is running and handles the remaining steps. This can take up to 45 minutes. When provisioning completes, the cluster status updates to `Running`. If the cluster remains in `Creating` status after 45 minutes, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda Support^].
+
+=== Validation checks
+
+The `rpk cloud byoc aws apply` command performs validation checks before proceeding with provisioning:
+
+* RPK user: Checks if the user running the command has sufficient privileges to provision the agent. Any
+missing permissions are displayed in the output.
+
+* IAM instance profile: Checks that `connectors_node_group_instance_profile`, `redpanda_node_group_instance_profile`,
+`utility_node_group_instance_profile`, and `k8s_cluster_role` have the minimum required permissions. Any missing permissions are displayed in the output.
+
+* Storage: Checks that the `management_bucket` exists and is versioned, checks that the `cloud_storage_bucket` exists and is not versioned, and checks that the `dynamodb_table` exists.
+
+* Network: Checks that the VPC exists, checks that the subnets exist and have the expected tags, and checks that the security groups exist and have the desired ingress and egress rules.
+
+If you think validation errors are erroneous, you can rerun the command with the `--no-validate` tag
+to skip validation.
+
+== Check cluster status
+
+Cluster creation is an example of an operation that can take a longer period of time to complete. You can check the operation state with the Cloud API or check the Redpanda Cloud UI for cluster status.
+
+Example using the operation ID returned from your create cluster command:
+
+```bash
+curl -X GET "https://api.redpanda.com/v1beta2/operations/${REDPANDA_ID}" \
+ -H "accept: application/json"\
+ -H "content-type: application/json" \
+ -H "authorization: Bearer ${BEARER_TOKEN}"
+```
+
+Example retrieving cluster:
+
+```bash
+curl -X GET "https://api.redpanda.com/v1beta2/clusters/${REDPANDA_ID}" \
+ -H "accept: application/json"\
+ -H "content-type: application/json" \
+ -H "authorization: Bearer ${BEARER_TOKEN}"
+```
+
+== Delete cluster
+
+To delete the cluster, first send a DELETE request to the Cloud API, and retrieve the `resource_id` of the DELETE operation. Then run the `rpk` command to destroy the cluster identified by the `resource_id`.
+
+```bash
+export REDPANDA_ID=$(curl -X DELETE "https://api.redpanda.com/v1beta2/clusters/${REDPANDA_ID}" \
+ -H "accept: application/json"\
+ -H "content-type: application/json" \
+ -H "authorization: Bearer ${BEARER_TOKEN}" | jq -r '.operation.resource_id')
+```
+
+After that completes, run: 
+
+```bash
+rpk cloud byoc aws destroy --redpanda-id ${REDPANDA_ID}
+```
+
+include::partial$no-access.adoc[]

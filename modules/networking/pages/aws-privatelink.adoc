@@ -3,9 +3,7 @@
 :page-aliases: deploy:deployment-option/cloud/aws-privatelink.adoc
 
 
-include::shared:partial$feature-flag.adoc[]
-
-NOTE: This guide is for configuring AWS PrivateLink using the Redpanda Cloud API. See xref:networking:configure-privatelink-in-cloud-ui.adoc[Configure PrivateLink in the Cloud UI] if you want to set up the endpoint service using the UI.
+NOTE: This guide is for configuring AWS PrivateLink using the Redpanda Cloud API. To configure and manage PrivateLink on an existing public cluster, you must use the Cloud API. See xref:networking:configure-privatelink-in-cloud-ui.adoc[Configure PrivateLink in the Cloud UI] if you want to set up the endpoint service using the Redpanda Cloud UI.
 
 The Redpanda AWS PrivateLink endpoint service provides secure access to Redpanda Cloud from your own VPC. Traffic over PrivateLink does not go through the public internet because a PrivateLink connection is treated as its own private AWS service. While your VPC has access to the Redpanda VPC, Redpanda cannot access your VPC.
 
@@ -18,8 +16,6 @@ Consider using the PrivateLink endpoint service if you have multiple VPCs and co
 ====
 
 After <<get-a-cloud-api-access-token,getting an access token>>, you can <<create-new-cluster-with-privatelink-endpoint-service-enabled,enable PrivateLink when creating a new cluster>>, or you can <<enable-privatelink-endpoint-service-for-existing-clusters,enable PrivateLink for existing clusters>>.
-
-TIP: Make sure to replace the variable values in the code examples on this page with your own values, before running the commands in the terminal or in a script.
 
 == Requirements
 
@@ -130,6 +126,8 @@ rpk cloud byoc aws apply --redpanda-id=$CLUSTER_ID
 ----
 
 == Enable PrivateLink endpoint service for existing clusters
+
+CAUTION: As soon as PrivateLink is available on your VPC, all communication on existing Redpanda bootstrap server and broker ports is interrupted due to the change on the private DNS resolution. Make sure all applications running in your VPC are ready to start using the corresponding PrivateLink ports.
 
 . In the Redpanda Cloud UI, go to the cluster overview and copy the cluster ID from the **Details** section.
 +
@@ -262,20 +260,23 @@ SECURITY_GROUP_ID=<security_group_id>
 
 The example below to add security group rules is based on the assumption that the Redpanda broker count is three. If you are not using three brokers, modify the example:
 
-* Replace `32094` with `32092 + <broker_count-1>`.
-* Replace `35084` with `35082 + <broker_count-1>`.
+* Replace `32094`,`32194`,`32294` with `32092 + <broker_count-1>`, `32192 + <broker_count-1>`, `32292 + <broker_count-1>`.
+* Replace `35084`,`35184`,`35284` with `35082 + <broker_count-1>`, `35182 + <broker_count-1>`, `35282 + <broker_count-1>`.
 
 [,bash]
 ----
+# Allow Redpanda Kafka seed port
 aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
     --group-id $SECURITY_GROUP_ID \
     --protocol "tcp" \
     --port 30292 \
     --cidr 0.0.0.0/0
+# Allow Schema Registry port
 aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
     --group-id $SECURITY_GROUP_ID --protocol "tcp" \
     --port 30081 \
     --cidr 0.0.0.0/0
+# Allow Panda Proxy port
 aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
     --group-id $SECURITY_GROUP_ID --protocol "tcp" \
     --port 30282 \
@@ -286,17 +287,39 @@ aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
     --protocol "tcp" \
     --port 443-443 \
     --cidr 0.0.0.0/0
-# Adjust the port 32094 if the Redpanda broker count is not 3.
+# Redpanda Kafka broker port ranges
+#   There are three broker port ranges that alternate during normal system maintenance, and all three must be open. Adjust the end port number if the Redpanda broker count is not three.
 aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
     --group-id $SECURITY_GROUP_ID \
     --protocol "tcp" \
     --port 32092-32094 \
     --cidr 0.0.0.0/0
-# Adjust the port 35084 if the Redpanda broker count is not 3.
+aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
+    --group-id $SECURITY_GROUP_ID \
+    --protocol "tcp" \
+    --port 32192-32194 \
+    --cidr 0.0.0.0/0
+aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
+    --group-id $SECURITY_GROUP_ID \
+    --protocol "tcp" \
+    --port 32292-32294 \
+    --cidr 0.0.0.0/0
+# Redpanda Panda Proxy port ranges
+#   There are three port ranges that alternate during normal system maintenance, and all three must be open. Adjust the end port number if the Redpanda broker count is not three.
 aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
     --group-id $SECURITY_GROUP_ID \
     --protocol "tcp" \
     --port 35082-35084 \
+    --cidr 0.0.0.0/0
+aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
+    --group-id $SECURITY_GROUP_ID \
+    --protocol "tcp" \
+    --port 35182-35184 \
+    --cidr 0.0.0.0/0
+aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
+    --group-id $SECURITY_GROUP_ID \
+    --protocol "tcp" \
+    --port 35282-35284 \
     --cidr 0.0.0.0/0
 ----
 

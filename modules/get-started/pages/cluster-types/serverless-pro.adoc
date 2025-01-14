@@ -1,0 +1,101 @@
+= Serverless Pro
+:description: Learn how to create a Serverless Pro cluster.
+
+Redpanda Serverless is the fastest and easiest way to start data streaming. Serverless Pro is an enterprise-level version of xref:get-started:cluster-types/serverless.adoc[Serverless Standard] that comes with higher usage limits and Enterprise support. For information about all Redpanda Cloud cluster types, see the xref:get-started:cloud-overview.adoc#redpanda-cloud-cluster-types[Redpanda Cloud overview].
+
+NOTE: Serverless Pro is currently in a limited availability (LA) release with xref:get-started:cluster-types/serverless-pro.adoc#limits[usage limits]. During LA, existing clusters can scale to the usage limits, but new clusters may need to wait for availability.
+
+== Prerequisites
+
+Make sure you have the latest version of `rpk`. See xref:get-started:rpk-install.adoc[].
+
+== Serverless Pro usage limits
+
+Each Serverless Pro cluster has the following limits:
+
+* Ingress: 10 MBps
+* Egress: 20 MBps
+* Partitions: 500 
+* Topics: 200
+* Message size: 20 MB
+* Retention: unlimited
+* Storage: unlimited
+* Users: 30
+* ACLs: 120
+* Consumer groups: 200
+
+[NOTE]
+====
+* The partition limit is the number of logical partitions before replication occurs. Redpanda Cloud uses a replication factor of 3.
+* To increase your limits, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda Support^]. 
+====
+
+== Get started with Serverless Pro
+
+[tabs]
+=====
+Redpanda Sales::
++
+--
+To start using Serverless Pro, contact https://www.redpanda.com/price-estimator[Redpanda Sales^] to request a private offer. 
+
+When you subscribe to Serverless Pro through Redpanda Sales, you get immediate access to Enterprise support. 
+
+--
+AWS Marketplace::
++
+--
+To start using Serverless Pro, subscribe to Redpanda Cloud through xref:billing:aws-pay-as-you-go.adoc[AWS Marketplace]. New subscriptions receive $300 (USD) in free credits to spend in the first 30 days. AWS Marketplace charges for anything beyond $300, unless you cancel the subscription. After your free credits have been used, you can continue using your cluster without any commitment, only paying for what you consume and canceling anytime. You can view detailed billing activity for each cluster and edit payment methods on the *Billing* page. 
+
+NOTE: When you subscribe to Redpanda through AWS Marketplace, you do not have immediate access to Enterprise support, only the https://redpandacommunity.slack.com/[Community Slack^] channel. To access your Enterprise support, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda Support^].
+--
+=====
+
+Redpanda creates a cloud organization for you and sends you a welcome email. Each organization supports five Serverless clusters.
+
+== Create a Serverless Pro cluster
+
+To create a Serverless Pro cluster: 
+
+. In the https://cloud.redpanda.com[Redpanda Cloud UI^], on the **Clusters** page, click **Create cluster**, then click **Create Serverless Pro cluster**. 
+
+. Enter a cluster name, then select the resource group. If you don't have an existing resource group, you can create one. Refresh the page to see newly-created resource groups. 
++
+Serverless clusters are currently available in certain AWS regions. Redpanda expects your applications to be deployed in the same AWS region. For best performance, select the region closest to your applications. Serverless is not guaranteed to be pinned to a particular availability zone within that region.
+
+. Go to the *Topics* page to create a topic. Under the *Actions* dropdown, you can produce messages to it. Add team members and grant them access with ACLs on the *Security* page. 
+
+== Connect with your cluster
+
+Create a Kafka client to interact with your cluster. The *Overview* page lists your bootstrap server URL and security settings in the *How to connect - Kafka API* tab. 
+
+Or, Redpanda can generate a sample application to interact with your cluster. Run xref:reference:rpk/rpk-generate/rpk-generate-app.adoc[`rpk generate app`], and select your preferred programming language. Follow the commands in the terminal to run the application, create a demo topic, produce to the topic, and consume the data back.
+
+Follow the steps in the UI to use `rpk` to interact with your cluster from the command line. Here are some helpful  commands:
+
+* xref:reference:rpk/rpk-cloud/rpk-cloud-login.adoc[`rpk cloud login`]: Use this to log in to Redpanda Cloud or to refresh the session.
+* xref:reference:rpk/rpk-topic.adoc[`rpk topic`]: Use this to manage topics, produce data, and consume data. 
+* xref:reference:rpk/rpk-profile/rpk-profile-print.adoc[`rpk profile print`]: Use this to view your `rpk` configuration and see the URL for your Serverless cluster.
+* xref:reference:rpk/rpk-security/rpk-security-user.adoc[`rpk security user`]: Use this to manage users and permissions. 
+
+NOTE: Redpanda Serverless is opinionated about Kafka configurations. For example, automatic topic creation is disabled. Some systems expect the Kafka service to automatically create topics when a message is produced to a topic that doesn't exist. Create topics on the *Topics* page or with `rpk topic create`.
+
+== Supported features
+
+* Redpanda Serverless supports the Kafka API. 
+* Serverless clusters work with all Kafka clients. For more information, see xref:develop:kafka-clients.adoc[].
+* Serverless clusters support all major Apache Kafka messages for managing topics, producing/consuming data (including transactions), managing groups, managing offsets, and managing ACLs. (User management is available in the Redpanda Cloud UI or with `rpk security acl`.) 
+* xref:develop:connect/about.adoc[Redpanda Connect] is integrated with Serverless as a beta feature for testing and feedback. Choose from a range of connectors, processors, and other components to quickly build and deploy streaming data pipelines or AI applications.
+
+=== Unsupported features
+
+* Data transforms
+* Redpanda Admin API 
+* HTTP Proxy API
+* Kafka Connect
+
+== Next steps
+
+* xref:get-started:cloud-overview.adoc[Learn more about Redpanda Cloud]
+* xref:get-started:config-topics.adoc[Manage topics]
+* xref:billing:billing.adoc[Learn about billing]

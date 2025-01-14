@@ -10,13 +10,16 @@ Redpanda Cloud supports remote read replicas with ephemeral BYOC clusters. Ephem
 == Prerequisites
 
 * A BYOC source cluster in Ready state.
-* A BYOC reader cluster in Ready state. This separate reader cluster must exist in the same Redpanda organization and the same cloud provider account and region as the source cluster.
+* A BYOC reader cluster in Ready state. This separate reader cluster must exist in the same Redpanda organization and the same cloud provider account as the source cluster.
+** AWS: The reader cluster must be in the same region as the source cluster.
+** GCP: The reader cluster can be in the same or a different region as the source cluster.
+** Azure: Remote read replicas are not supported.
 
-=== Customer-managed VPC: Grant storage permissions
+=== BYOVPC: Grant storage permissions
 
 [NOTE]
 ====
-This prerequisite only applies to customer-managed VPC deployments. Skip this step if you're enabling remote read replicas on standard BYOC clusters.
+This prerequisite only applies to BYOVPC deployments. Skip this step if you're enabling remote read replicas on standard BYOC clusters.
 
 ====
 
@@ -29,7 +32,7 @@ To grant additional permissions to the cloud storage manager of the reader clust
 
 ```bash
 gcloud storage buckets add-iam-policy-binding \
-    gs://<source cluster tiered storage bucket name> \
+    gs://<source-cluster-tiered-storage-bucket-name> \
     --member="serviceAccount:<reader cluster redpanda_cluster_service_account email>" \
     --role="roles/storage.objectViewer"
 ```
@@ -87,10 +90,10 @@ A source cluster cannot be deleted if it has remote read replica topics. When yo
 To create a remote read replica topic, run:
 
 ```bash
-rpk topic create my-topic -c redpanda.remote.readreplica=<source cluster tiered storage bucket name>
+rpk topic create my-topic -c redpanda.remote.readreplica=<source-cluster-tiered-storage-bucket-name> --tls-enabled
 ```
 
-For standard BYOC clusters the source cluster tiered storage bucket name follows the pattern: `redpanda-cloud-storage-$\{SOURCE_CLUSTER_ID}`
+For standard BYOC clusters, the source cluster tiered storage bucket name follows the pattern: `redpanda-cloud-storage-$\{SOURCE_CLUSTER_ID}`
 
 == Optional: Tune for live topics
 

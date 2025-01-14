@@ -4,7 +4,7 @@
 
 include::shared:partial$feature-flag.adoc[]
 
-NOTE: This guide is for configuring GCP Private Service Connect using the Redpanda Cloud API. See xref:networking:configure-private-service-connect-in-cloud-ui.adoc[Configure Private Service Connect in the Cloud UI] if you want to set up the endpoint service using the UI.
+NOTE: This guide is for configuring GCP Private Service Connect using the Redpanda Cloud API. To configure and manage Private Service Connect on an existing public cluster, you must use the Cloud API. See xref:networking:configure-private-service-connect-in-cloud-ui.adoc[Configure Private Service Connect in the Cloud UI] if you want to set up the endpoint service using the Redpanda Cloud UI.
 
 The Redpanda GCP Private Service Connect service provides secure access to Redpanda Cloud from your own VPC. Traffic over Private Service Connect does not go through the public internet because a Private Service Connect connection is treated as its own private GCP service. While your VPC has access to the Redpanda VPC, Redpanda cannot access your VPC.
 
@@ -30,7 +30,7 @@ include::networking:partial$private-links-api-access-token.adoc[]
 
 == Configure BYOC with customer-managed resources
 
-For xref:get-started:cluster-types/byoc/gcp/vpc-byo-gcp.adoc[BYOC clusters with customer-managed VPC], you need a NAT subnet with the *Purpose* set to `PRIVATE_SERVICE_CONNECT`. You can create the subnet using the `gcloud` command-line interface (CLI):
+For xref:get-started:cluster-types/byoc/gcp/vpc-byo-gcp.adoc[BYOVPC clusters], you need a NAT subnet with the *Purpose* set to `PRIVATE_SERVICE_CONNECT`. You can create the subnet using the `gcloud` command-line interface (CLI):
 
 [,bash]
 ----
@@ -193,6 +193,8 @@ Replace the following placeholders for the request body. Variables with a `byovp
 
 == Enable Private Service Connect on an existing BYOC cluster
 
+CAUTION: As soon as Private Service Connect is available on your VPC, all communication on existing Redpanda bootstrap server and  broker ports is interrupted due to the change on the private DNS resolution. Make sure all applications running in your VPC are ready to start using the corresponding Private Service Connect ports.
+
 . In the Redpanda Cloud UI, go to the cluster overview and copy the cluster ID from the **Details** section.
 +
 [,bash]
@@ -200,7 +202,7 @@ Replace the following placeholders for the request body. Variables with a `byovp
 CLUSTER_ID=<cluster-id>
 ----
 
-. Update the Redpanda Cloud Agent IAM role. This step is required only for clusters with xref:get-started:cluster-types/byoc/gcp/vpc-byo-gcp.adoc[customer-managed resources].
+. Update the Redpanda Cloud Agent IAM role. This step is required only for BYOVPC clusters with xref:get-started:cluster-types/byoc/gcp/vpc-byo-gcp.adoc[customer-managed resources].
 +
 To allow the agent to create and manage the service attachment, add the following permissions to its IAM role:
 +
