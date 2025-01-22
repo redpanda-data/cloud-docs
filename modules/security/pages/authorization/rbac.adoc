@@ -3,7 +3,7 @@
 :page-categories: Management, Security
 :page-beta: true
 
-Use role-based access control (RBAC) in the Redpanda Cloud control plane to manage and restrict access to resources in your organization. For example, you could assign all users with a certain job title read access on the entire organization and write access only on your non-production resource group. The following resources can be assigned as the scope of a role: 
+Use Redpanda Cloud role-based access control (RBAC) in the control plane to manage and restrict access to resources in your organization. For example, you could assign all users with a certain job title read access on the entire organization and write access only on your non-production resource group. The following resources can be assigned as the scope of a role: 
 
 - Organization 	
 - Resource groups
@@ -15,7 +15,7 @@ You can manage your RBAC configurations with the https://cloud.redpanda.com[Redp
 
 == RBAC terminology
 
-**Role**: A role is a list of permissions. With RBAC, permissions are attached to roles. Users assigned multiple roles receive the union of all permissions defined in those roles. Redpanda Cloud has three predefined roles: reader, writer, and admin.
+**Role**: A role is a list of permissions. With RBAC, permissions are attached to roles. Users assigned multiple roles receive the union of all permissions defined in those roles. Redpanda Cloud has three predefined roles: Reader, Writer, and Admin.
 
 **Account**: An RBAC account is either a user account (human user) or a service account (machine or programmatic user).
 
@@ -23,23 +23,23 @@ You can manage your RBAC configurations with the https://cloud.redpanda.com[Redp
 
 == Manage access for organization
 
-In the Redpanda Cloud UI, the *Organization IAM* page lists your organization's existing users and service accounts and their associated roles. You can edit a user's access, invite new users, and create service accounts. When you add a user, you define their permissions with role binding. Service accounts are assigned the admin role for all resources in the organization. 
+In the Redpanda Cloud UI, the *Organization IAM* page lists your organization's existing users and service accounts and their associated roles. You can edit a user's access, invite new users, and create service accounts. When you add a user, you define their permissions with role binding. Service accounts are assigned the Admin role for all resources in the organization. 
 
-On the *Organization IAM - Users* page, select a user to see their assigned roles. For example, for a user with admin access on the organization, the user's _Resource_ is the organization name, the _Scope_ is organization, and the _Role_ is admin.
+On the *Organization IAM - Users* page, select a user to see their assigned roles. For example, for a user with Admin access on the organization, the user's _Resource_ is the organization name, the _Scope_ is organization, and the _Role_ is Admin.
 
 Administrators can add, edit, or remove role bindings for a user. When you change the permissions for a given role, all users and service accounts with that role automatically get the modified permissions. 
 
-Users can have multiple roles, as long as they are each for a different resource and scope. For example, you could assign a user the reader role on the organization, the admin role on a specific resource group, and the writer role on a specific cluster.
+Users can have multiple roles, as long as they are each for a different resource and scope. For example, you could assign a user the Reader role on the organization, the Admin role on a specific resource group, and the Writer role on a specific cluster.
 
 When you delete a role, Redpanda removes it from any user or service account it is attached to, and permissions are revoked.
 
 == Predefined roles 
 
-Redpanda Cloud provides the following predefined roles: <<reader,reader>>, <<writer,writer>>, and <<admin,admin>>.
+Redpanda Cloud provides the following predefined roles: <<Reader,Reader>>, <<Writer,Writer>>, and <<Admin,Admin>>.
 
 === Reader
 
-The reader role grants permission to view all resources. This includes:
+The Reader role grants permission to view all resources. This includes:
 
 * View all networks and clusters (Serverless, BYOC, and Dedicated).
 * View all cluster aspects (ACLs, service accounts, quotas).
@@ -51,7 +51,7 @@ The reader role grants permission to view all resources. This includes:
 
 === Writer
 
-The writer role grants all permissions that come with the reader role and additionally includes:
+The Writer role grants all permissions that come with the Reader role and additionally includes:
 
 * Manage all topic aspects, such as create topics, edit topic configurations, delete topics, and publish and delete topic records.
 * Manage all consumer group aspects, such as edit group offsets and delete group offsets.
@@ -60,7 +60,7 @@ The writer role grants all permissions that come with the reader role and additi
 
 === Admin
 
-The admin role grants all permissions that come with the writer role and additionally includes:
+The Admin role grants all permissions that come with the Writer role and additionally includes:
 
 * Manage all service account aspects (create/remove service accounts).
 * Manage all ACL aspects (create/remove ACLs).
