@@ -14,9 +14,9 @@ BYOC or Dedicated::
 +
 --
 . In the Redpanda Cloud UI, create a https://cloud.redpanda.com/clients[service account (client)] and use the client ID and secret to request an API token. Use the token to xref:manage:api/cloud-api-authentication.adoc[authenticate to the API].
-. Create a resource group by making a xref:api:ROOT:cloud-api.adoc#post-/v1beta2/resource-groups[`POST /v1beta2/resource-groups`] request.
-. Create a network by making a xref:api:ROOT:cloud-api.adoc#post-/v1beta2/networks[`POST /v1beta2/networks`] request. Note that this operation may be long-running.
-. Create a cluster by making a xref:api:ROOT:cloud-api.adoc#post-/v1beta2/clusters[`POST /v1beta2/clusters`] request.
+. Create a resource group by making a xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1beta2/resource-groups[`POST /v1beta2/resource-groups`] request.
+. Create a network by making a xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1beta2/networks[`POST /v1beta2/networks`] request. Note that this operation may be long-running.
+. Create a cluster by making a xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1beta2/clusters[`POST /v1beta2/clusters`] request.
 . For BYOC, run `rpk cloud byoc`, passing the `metadata.cluster_id` from the Create Cluster response as a flag:
 +
 AWS:
@@ -71,14 +71,14 @@ curl -H 'Content-Type: application/json' \
 
 == Try the Cloud API
 
-You can issue requests against the Cloud API from your browser when viewing the xref:api:ROOT:cloud-api.adoc[API reference]. 
+You can issue requests against the Cloud API from your browser when viewing the API reference. 
 
-Complete the following steps:
+On the Control Plane API or Data Plane API references, complete the following steps:
 
 . Go to *Authentication* in the sidebar.
 . Click *Get Token*.
 . If successful, the text “1 API key applied” displays under the *Authentication* section of this page. The token is valid for an hour.
-. Choose the correct API server for your request.
+. Choose the correct API server for your <<make-a-request-to-the-control-plane-api,Control Plane API>> or <<make-a-request-to-the-data-plane-apis,Data Plane API>> request.
 
 WARNING: Your API requests are executed against your actual environment and data, not a sandbox. 
 

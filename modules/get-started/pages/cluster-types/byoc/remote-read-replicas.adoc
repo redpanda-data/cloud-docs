@@ -51,9 +51,9 @@ This should be done in the Terraform of the reader cluster.
 
 == Configure remote read replica
 
-Add or remove reader clusters to a source cluster in Redpanda Cloud with the xref:api:ROOT:cloud-api.adoc[Cloud API]. For information on accessing the Cloud API, see xref:manage:api/cloud-api-authentication.adoc[].
+Add or remove reader clusters to a source cluster in Redpanda Cloud with the xref:redpanda-cloud:manage:api/index.adoc[Cloud API]. For information on accessing the Cloud API, see xref:manage:api/cloud-api-authentication.adoc[].
 
-. To update your source cluster to add one or more reader cluster IDs, make a xref:api:ROOT:cloud-api.adoc#patch-/v1beta2/clusters/-cluster.id-[`PATCH /v1beta2/clusters/\{cluster.id}`] request. The full list of clusters is expected on every call. If an ID is removed from the list, it is removed as a reader cluster.
+. To update your source cluster to add one or more reader cluster IDs, make a xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1beta2/clusters/-cluster.id-[`PATCH /v1beta2/clusters/\{cluster.id}`] request. The full list of clusters is expected on every call. If an ID is removed from the list, it is removed as a reader cluster.
 +
 ```bash
 export SOURCE_CLUSTER_ID=.......
@@ -69,7 +69,7 @@ curl -X PATCH $API_HOST/v1beta2/clusters/$SOURCE_CLUSTER_ID \
 EOF
 ```
 
-. Optional: To see the list of reader clusters on a given source cluster, make a xref:api:ROOT:cloud-api.adoc#get-/v1beta2/clusters/-id-[`GET /v1beta2/clusters/\{id}`] request:
+. Optional: To see the list of reader clusters on a given source cluster, make a xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1beta2/clusters/-id-[`GET /v1beta2/clusters/\{id}`] request:
 +
 ```bash
 export SOURCE_CLUSTER_ID=.......
