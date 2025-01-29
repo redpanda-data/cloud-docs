@@ -30,7 +30,7 @@ The https://github.com/redpanda-data/cloud-examples/tree/main/customer-managed/a
 
 == Set environment variables
 
-The following example creates variables for the AWS account ID, region, VPC name, and a prefix for resources. It then creates a new VPC in AWS with a CIDR block (10.0.0.0/16) and captures the VPC ID.
+The following example creates variables for the AWS account ID, region, VPC, and a prefix for resources. Redpanda Data recommends using a VPC in AWS with a CIDR block (10.0.0.0/16) to allow for enough address space.
 
 ```bash
 export AWS_ACCOUNT_ID=
@@ -209,7 +209,50 @@ cat > redpanda-cluster.json <<EOF
   "throughput_tier": "${REDPANDA_THROUGHPUT_TIER}",
   "type": "TYPE_BYOC",
   "zones": ${AWS_ZONES},
-  "redpanda_version": "${REDPANDA_VERSION}"
+  "redpanda_version": "${REDPANDA_VERSION}",
+  "customer_managed_resources": {
+    "aws": {
+      "agent_instance_profile": {
+        "arn": "<agent_instance_profile_arn from terraform outputs>"
+      },
+      "connectors_node_group_instance_profile": {
+        "arn": "<connectors_node_group_instance_profile_arn from terraform outputs>"
+      },
+      "redpanda_node_group_instance_profile": {
+        "arn": "<redpanda_node_group_instance_profile_arn from terraform outputs>"
+      },
+      "utility_node_group_instance_profile": {
+        "arn": "<utility_node_group_instance_profile_arn from terraform outputs>"
+      },
+      "connectors_security_group": {
+        "arn": "<connectors_security_group_arn from terraform outputs>"
+      },
+      "node_security_group": {
+        "arn": "<node_security_group_arn from terraform outputs>"
+      },
+      "utility_security_group": {
+        "arn": "<utility_security_group_arn from terraform outputs>"
+      },
+      "redpanda_agent_security_group": {
+        "arn": "<redpanda_agent_security_group_arn from terraform outputs>"
+      },
+      "redpanda_node_group_security_group": {
+        "arn": "<redpanda_node_group_security_group_arn from terraform outputs>"
+      },
+      "cluster_security_group": {
+        "arn": "<cluster_security_group_arn from terraform outputs>"
+      },
+      "k8s_cluster_role": {
+        "arn": "<k8s_cluster_role_arn from terraform outputs>"
+      },
+      "cloud_storage_bucket": {
+        "arn": "<cloud_storage_bucket_arn from terraform outputs>"
+      },
+      "permissions_boundary_policy": {
+        "arn": "<permissions_boundary_policy_arn from terraform outputs>"
+      }
+    }
+  },
 }
 EOF
 ```
