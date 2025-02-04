@@ -1,0 +1,66 @@
+= Role-Based Access Control
+:description: Use role-based access control (RBAC) to manage access to resources in your organization, like clusters or resource groups.
+:page-categories: Management, Security
+:page-beta: true
+
+Use Redpanda Cloud role-based access control (RBAC) in the control plane to manage and restrict access to resources in your organization. For example, you could assign all users with a certain job title read access on the entire organization and write access only on your non-production resource group. The following resources can be assigned as the scope of a role: 
+
+- Organization 	
+- Resource groups
+- Networks
+- Network peerings
+- Clusters (Note: Serverless clusters have a different set of permissions from BYOC and Dedicated clusters.) 
+
+You can manage your RBAC configurations with the https://cloud.redpanda.com[Redpanda Cloud UI^] or with the xref:api:ROOT:cloud-controlplane-api.adoc[Control Plane API].
+
+== RBAC terminology
+
+**Role**: A role is a list of permissions. With RBAC, permissions are attached to roles. Users assigned multiple roles receive the union of all permissions defined in those roles. Redpanda Cloud has three predefined roles: Reader, Writer, and Admin.
+
+**Account**: An RBAC account is either a user account (human user) or a service account (machine or programmatic user).
+
+**Role binding**: Role binding assigns a role to an account. 
+
+== Manage access for organization
+
+In the Redpanda Cloud UI, the *Organization IAM* page lists your organization's existing users and service accounts and their associated roles. You can edit a user's access, invite new users, and create service accounts. When you add a user, you define their permissions with role binding. Service accounts are assigned the Admin role for all resources in the organization. 
+
+On the *Organization IAM - Users* page, select a user to see their assigned roles. For example, for a user with Admin access on the organization, the user's _Resource_ is the organization name, the _Scope_ is organization, and the _Role_ is Admin.
+
+Administrators can add, edit, or remove role bindings for a user. When you change the permissions for a given role, all users and service accounts with that role automatically get the modified permissions. 
+
+Users can have multiple roles, as long as they are each for a different resource and scope. For example, you could assign a user the Reader role on the organization, the Admin role on a specific resource group, and the Writer role on a specific cluster.
+
+When you delete a role, Redpanda removes it from any user or service account it is attached to, and permissions are revoked.
+
+== Predefined roles 
+
+Redpanda Cloud provides the following predefined roles: <<Reader,Reader>>, <<Writer,Writer>>, and <<Admin,Admin>>.
+
+=== Reader
+
+The Reader role grants permission to view all resources. This includes:
+
+* View all networks and clusters (Serverless, BYOC, and Dedicated).
+* View all cluster aspects (ACLs, service accounts, quotas).
+* View all topic aspects (messages, configs, partitions, using search filters).
+* View all consumer group aspects (consumer groups, group offsets, and lags).
+* View all schema registry aspects (registered schemas with their contents).
+* View all Kafka Connect aspects (list configured clusters and their connectors, including the status and connector configurations).
+* This does not include permission to view the list of users.
+
+=== Writer
+
+The Writer role grants all permissions that come with the Reader role and additionally includes:
+
+* Manage all topic aspects, such as create topics, edit topic configurations, delete topics, and publish and delete topic records.
+* Manage all consumer group aspects, such as edit group offsets and delete group offsets.
+* Manage all Kafka Connect aspects, such as create/update/delete and start/pause/stop Kafka Connect.
+* This does not include permission to create/remove ACLs and service accounts.
+
+=== Admin
+
+The Admin role grants all permissions that come with the Writer role and additionally includes:
+
+* Manage all service account aspects (create/remove service accounts).
+* Manage all ACL aspects (create/remove ACLs).
