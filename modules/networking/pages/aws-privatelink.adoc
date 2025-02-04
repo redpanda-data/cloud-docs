@@ -39,7 +39,7 @@ Copy and store the resource group ID (UUID) from the URL in the browser.
 export RESOURCE_GROUP_ID=<uuid>
 ----
 
-. Call xref:api:ROOT:cloud-api.adoc#post-/v1beta2/networks[`POST /v1beta2/networks`] to create a network.
+. Call xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1beta2/networks[`POST /v1beta2/networks`] to create a network.
 +
 Make sure to supply your own values in the following example request. Store the network ID (`network_id`) after the network is created to check whether you can proceed to cluster creation.
 +
@@ -72,9 +72,9 @@ NETWORK_ID=`curl -vv -X POST \
 echo $NETWORK_ID
 ----
 +
-Wait for the network to be ready before creating the cluster in the next step. You can check the state of the network creation by calling xref:api:ROOT:cloud-api.adoc#get-/v1beta2/networks/-id-[`GET /v1beta2/networks/\{id}`]. You can create the cluster when the state is `STATE_READY`.
+Wait for the network to be ready before creating the cluster in the next step. You can check the state of the network creation by calling xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1beta2/networks/-id-[`GET /v1beta2/networks/\{id}`]. You can create the cluster when the state is `STATE_READY`.
 
-. Create a new cluster with the endpoint service enabled by calling xref:api:ROOT:cloud-api.adoc#post-/v1beta2/clusters[`POST /v1beta2/clusters`].
+. Create a new cluster with the endpoint service enabled by calling xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1beta2/clusters[`POST /v1beta2/clusters`].
 +
 In the example below, make sure to set your own values for the following fields:
 +
@@ -116,7 +116,7 @@ CLUSTER_ID=`curl -vv -X POST \
 echo $CLUSTER_ID
 ----
 +
-**BYOC clusters:** Check that the cluster operation is completed by calling xref:api:ROOT:cloud-api.adoc#get-/v1beta2/operations/-id-[`GET /v1beta2/operations/\{id}`], and passing the operation ID returned from the Create Cluster call.
+**BYOC clusters:** Check that the cluster operation is completed by calling xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1beta2/operations/-id-[`GET /v1beta2/operations/\{id}`], and passing the operation ID returned from the Create Cluster call.
 +
 When the Create Cluster operation is completed (`STATE_COMPLETED`), run the following `rpk cloud` command to finish setting up your BYOC cluster:
 +
@@ -136,7 +136,7 @@ CAUTION: As soon as PrivateLink is available on your VPC, all communication on e
 CLUSTER_ID=<cluster_id>
 ----
 
-. Make a xref:api:ROOT:cloud-api.adoc#patch-/v1beta2/clusters/-cluster.id-[`PATCH /v1beta2/clusters/{cluster.id}`] request to update the cluster with the Redpanda Private Link Endpoint Service enabled.
+. Make a xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1beta2/clusters/-cluster.id-[`PATCH /v1beta2/clusters/{cluster.id}`] request to update the cluster with the Redpanda Private Link Endpoint Service enabled.
 +
 In the example below, make sure to set your own value for the following field:
 +
@@ -163,9 +163,9 @@ curl -vv -X PATCH \
   -d "$CLUSTER_PATCH_BODY" $PUBLIC_API_ENDPOINT/v1beta2/clusters/$CLUSTER_ID
 ----
 
-. Before proceeding, check the state of the Update Cluster operation by calling xref:api:ROOT:cloud-api.adoc#get-/v1beta2/operations/-id-[`GET /v1beta2/operations/\{id}`], and passing the operation ID returned from Update Cluster call. When the state is `STATE_READY`, proceed to the next step.
+. Before proceeding, check the state of the Update Cluster operation by calling xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1beta2/operations/-id-[`GET /v1beta2/operations/\{id}`], and passing the operation ID returned from Update Cluster call. When the state is `STATE_READY`, proceed to the next step.
 
-. Check the service state by calling xref:api:ROOT:cloud-api.adoc#get-/v1beta2/clusters/-id-[`GET /v1beta2/clusters/\{id}`]. The `service_state` in the `aws_private_link.status` response object must be `Available` for you to <<connect-to-privatelink-endpoint-service,connect to the service>>.
+. Check the service state by calling xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1beta2/clusters/-id-[`GET /v1beta2/clusters/\{id}`]. The `service_state` in the `aws_private_link.status` response object must be `Available` for you to <<access-redpanda-services-through-vpc-endpoint,connect to the service>>.
 +
 [,bash]
 ----

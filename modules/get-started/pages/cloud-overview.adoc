@@ -1,7 +1,7 @@
 = Redpanda Cloud Overview
 :description: Learn about Redpanda Serverless Standard, Serverless Pro, Dedicated, and Bring Your Own Cloud (BYOC) clusters.
 :description: Learn about Redpanda Serverless, Dedicated, and Bring Your Own Cloud (BYOC) clusters.
-:tag-pipeline-service: api:ROOT:cloud-api.adoc#tag--PipelineService
+:tag-pipeline-service: api:ROOT:cloud-dataplane-api.adoc#tag--PipelineService
 :page-aliases: cloud:dedicated-byoc.adoc, deploy:deployment-option/cloud/dedicated-byoc.adoc, deploy:deployment-option/cloud/cloud-overview.adoc
 
 
@@ -24,7 +24,7 @@ Redpanda offers four types of fully-managed cloud clusters. All products have ac
 | 99.5% SLA | 99.5% SLA | 99.99% SLA | 99.99% SLA 
 | Public networking | Public networking | Public or private networking | Public or private networking
 | SSO (GitHub, Google), Kafka ACLs | SSO (GitHub, Google), Kafka ACLs | SSO (GitHub, Google, OIDC), RBAC, audit logs  | SSO (GitHub, Google, OIDC), RBAC, audit logs 
-| Community support | Enterprise support | Enterprise support | Enterprise support
+| Community support | Enterprise support with annual contracts| Enterprise support | Enterprise support
 |===
 
 [NOTE]
@@ -44,23 +44,23 @@ To start using Serverless Standard, https://redpanda.com/try-redpanda/cloud-tria
 
 You can also subscribe to Redpanda Cloud through xref:billing:aws-pay-as-you-go.adoc[AWS Marketplace] and quickly provision Serverless clusters. New subscriptions receive $300 (USD) in free credits to spend in the first 30 days. AWS Marketplace charges for anything beyond $300, unless you cancel the subscription. After your free credits have been used, you can continue using your cluster without any commitment, only paying for what you consume and canceling anytime. 
 
-NOTE: Serverless is currently in a limited availability (LA) release with xref:get-started:cluster-types/serverless.adoc#serverless-standard-usage-limits[usage limits]. 
+NOTE: Serverless Standard is currently in a limited availability (LA) release with xref:get-started:cluster-types/serverless.adoc#serverless-standard-usage-limits[usage limits]. 
 
 === Serverless Pro
 
 Serverless Pro is similar to Serverless Standard, but it provides higher usage limits and Enterprise support. 
 
-You host your data in Redpanda's VPC, and Redpanda handles automatic scaling, provisioning, operations, and maintenance. This is a production-ready deployment option with a cluster available instantly. With pay-as-you-go billing, you only pay for what you consume. You can view detailed billing activity for each cluster and edit payment methods on the *Billing* page.
+You host your data in Redpanda's VPC, and Redpanda handles automatic scaling, provisioning, operations, and maintenance. This is a production-ready deployment option with a cluster available instantly. A payment method is required for Serverless Pro. With pay-as-you-go billing, you only pay for what you consume. You can view detailed billing activity for each cluster and edit payment methods on the *Billing* page. 
 
 ==== Sign up for Serverless Pro
 
 To start using Serverless Pro, contact https://redpanda.com/try-redpanda?section=enterprise-trial[Redpanda Sales^]. With this subscription, you get immediate access to Enterprise support. 
 
-You can also subscribe to Redpanda Cloud through xref:billing:aws-pay-as-you-go.adoc[AWS Marketplace] and quickly provision Serverless clusters. New subscriptions receive $300 (USD) in free credits to spend in the first 30 days. AWS Marketplace charges for anything beyond $300, unless you cancel the subscription. After your free credits have been used, you can continue using your cluster without any commitment, only paying for what you consume and canceling anytime. You can view detailed billing activity for each cluster and edit payment methods on the *Billing* page. 
+You can also subscribe to Redpanda Cloud through xref:billing:aws-pay-as-you-go.adoc[AWS Marketplace] and quickly provision Serverless clusters. New subscriptions receive $300 (USD) in free credits to spend in the first 30 days. AWS Marketplace charges for anything beyond $300, unless you cancel the subscription. After your free credits have been used, you can continue using your cluster without any commitment, only paying for what you consume and canceling anytime. 
 
 With AWS Marketplace sign up, you do not have immediate access to Enterprise support, only the https://redpandacommunity.slack.com/[Community Slack^] channel. To access your Enterprise support, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda Support^]. 
 
-NOTE: Serverless is currently in a limited availability (LA) release with xref:get-started:cluster-types/serverless-pro.adoc#serverless-pro-usage-limits[usage limits]. 
+NOTE: Serverless Pro is currently in a limited availability (LA) release with xref:get-started:cluster-types/serverless-pro.adoc#serverless-pro-usage-limits[usage limits]. 
 
 === Dedicated Cloud
 
@@ -76,7 +76,7 @@ Alternatively, you can contact https://redpanda.com/try-redpanda?section=enterpr
 === Bring Your Own Cloud (BYOC)
 
 With BYOC clusters, you deploy Redpanda in your own cloud (AWS, Azure, or GCP), and all data is
-contained in your own environment. (See <<BYOC architecture>>.) This provides an additional layer of security and isolation. When you create a BYOC cluster, you select the supported xref:reference:tiers/byoc-tiers.adoc[tier] that meets your compute and storage needs. Redpanda handles provisioning, operations, and maintenance. 
+contained in your own environment. This provides an additional layer of security and isolation. (See <<BYOC architecture>>.) When you create a BYOC cluster, you select the supported xref:reference:tiers/byoc-tiers.adoc[tier] that meets your compute and storage needs. Redpanda handles provisioning, operations, and maintenance. 
 
 NOTE: With standard BYOC clusters, Redpanda manages security policies and resources for your VPC or VNet, including subnetworks, IAM roles, and storage buckets/accounts. A Bring Your Own Virtual Private Cloud (BYOVPC) cluster allows you to deploy the Redpanda glossterm:data plane[] into your existing VPC/VNet and take full control of managing the networking lifecycle. Compared to standard BYOC, BYOVPC provides more security, but the configuration is more complex. See <<Shared responsibility model>>.
 
@@ -101,7 +101,7 @@ Consider Dedicated or BYOC if you need more control over the deployment or if yo
 * Private networking
 * Single-zone or multi-zone availability. A multi-zone cluster provides higher resiliency in the event of a failure in one of the zones. 
 * Ability to export metrics to a 3rd-party monitoring system
-* Kafka connectors
+* Kafka Connect
 * Higher limits and quotas. See xref:reference:tiers/dedicated-tiers.adoc[Dedicated usage tiers] and xref:reference:tiers/byoc-tiers.adoc[BYOC usage tiers] compared to xref:get-started:cluster-types/serverless.adoc#serverless-standard-usage-limits[Serverless Standard limits] and xref:get-started:cluster-types/serverless-pro.adoc#serverless-pro-usage-limits[Serverless Pro limits].
 
 == Shared responsibility model
@@ -302,7 +302,6 @@ Redpanda Cloud deployments do not support the following functionality available 
 ** `rpk topic describe-storage` (All other `rpk topic` commands are supported on both Redpanda Cloud and Self Managed.)
 ** `rpk transform` (This is in beta for Redpanda Cloud.)
 ** `rpk generate app` (This is supported in Serverless clusters only.)
-** `rpk security user` (This is supported in Serverless clusters only.)
 +
 NOTE: The `rpk cloud` commands are not supported in Self-Managed deployments.
 
@@ -314,7 +313,7 @@ The following features are currently in limited availability in Redpanda Cloud:
 
 * Redpanda Connect for Dedicated and BYOC (not BYOVPC)
 * Serverless Standard and Serverless Pro
-* Dedicated, BYOC, and BYOVPC for Azure
+* Dedicated and BYOC for Azure
 * BYOVPC for GCP
 * GCP Private Service Connect
 * Azure Private Link
@@ -328,7 +327,7 @@ The following features are currently in beta in Redpanda Cloud:
 * Redpanda Connect for Serverless Standard and Serverless Pro
 * Cloud API
 * Redpanda Terraform provider
-* BYOVPC for AWS
+* BYOVPC for AWS and Azure
 * Remote Read Replicas for AWS and GCP
 
 == Next steps

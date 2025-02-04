@@ -20,8 +20,8 @@ The https://github.com/redpanda-data/cloud-examples/tree/main/customer-managed/a
 
 * Access to an AWS project in which you create your cluster.
 * Minimum permissions in that AWS project. For the actions required by the user who will create the cluster with `rpk cloud byoc aws apply`, see https://github.com/redpanda-data/cloud-examples/blob/main/customer-managed/aws/terraform/iam_rpk_user.tf[`iam_rpk_user.tf`^].
-* Familiarity with the xref:api:ROOT:cloud-api.adoc[Redpanda Cloud API]. For example, you should be familiar with how to use the Cloud API to authenticate and create a cluster.
-* https://developer.hashicorp.com/terraform/install[Terraform^] version 1.8.5 or later.
+* Familiarity with the Redpanda Cloud API. For example, you should be familiar with how to use the Cloud API to xref:redpanda-cloud:manage:api/cloud-api-authentication.adoc[authenticate] and xref:redpanda-cloud:manage:api/controlplane/index.adoc[create a cluster.
+* https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli[Terraform^] version 1.8.5 or later.
 
 == Limitations
 
@@ -30,18 +30,18 @@ The https://github.com/redpanda-data/cloud-examples/tree/main/customer-managed/a
 
 == Set environment variables
 
-The following example creates variables for the AWS account ID, region, VPC name, and a prefix for resources. It then creates a new VPC in AWS with a CIDR block (10.0.0.0/16) and captures the VPC ID.
+The following example creates variables for the AWS account ID, region, VPC, and a prefix for resources. 
+
+NOTE: Redpanda Data recommends using a VPC in AWS with a CIDR block (10.0.0.0/16) to allow for enough address space. The subnets must be set to /24.
 
 ```bash
 export AWS_ACCOUNT_ID=
 export AWS_REGION=us-east-2
-export AWS_VPC_NAME=sample-redpanda-vpc
 export REDPANDA_COMMON_PREFIX=sample-
-
-export AWS_VPC_ID=$(aws ec2 create-vpc --cidr-block 10.0.0.0/16 --query Vpc.VpcId --region ${AWS_REGION} --tag-specification ResourceType=vpc,Tags='[{Key=Name,Value="${AWS_VPC_NAME}"}]' --output text --profile AWSAdministratorAccess-605419575229)
+export AWS_VPC_ID=
 ```
 
-The https://github.com/redpanda-data/cloud-examples/blob/main/customer-managed/aws/terraform/variables.tf[`variables.tf`] file contains a number of variables that allow you to modify the Terraform code to meet your specific needs. In some cases, it lets you skip creation of certain resources (for example, the VPC) or modify the configuration of a resource.
+The https://github.com/redpanda-data/cloud-examples/blob/main/customer-managed/aws/terraform/variables.tf[`variables.tf`] file can help you get started. It contains a number of variables that allow you to modify the Terraform code to meet your specific needs. In some cases, it lets you skip creation of certain resources (for example, the VPC) or modify the configuration of a resource.
 
 == Configure Terraform
 
@@ -76,8 +76,8 @@ EOF
 Initialize, plan, and apply Terraform to set up the AWS infrastructure:
 
 ```
-terraform init
-terraform plan
+terraform init &&
+terraform plan &&
 terraform apply
 ```
 
@@ -86,21 +86,20 @@ Note the output values that the `terraform apply` command displays. You can also
 You can set additional environment variables that extract the output for AWS resources and set your Redpanda credentials. For example:
 
 ```bash
-export REDPANDA_RG_ID=<Retrieve the ID from the URL of the resource group when accessing within Redpanda Cloud>
 export AWS_MANAGEMENT_BUCKET="$(terraform output -raw management_bucket_arn)"
 export AWS_DYNAMODB_TABLE="$(terraform output -raw dynamodb_table_arn)"
 export AWS_PRIVATE_SUBNETS="$(terraform output -raw private_subnet_ids)"
 export AWS_VPC="$(terraform output -raw vpc_arn)"
-
 export REDPANDA_CLIENT_ID=
 export REDPANDA_CLIENT_SECRET=
+export REDPANDA_RG_ID= #Retrieve the ID from the URL of the resource group when accessing within Redpanda Cloud
 ```
 
 [TIP]
 ====
 
 * To get the Redpanda authentication credentials and resource group, follow the xref:manage:api/cloud-api-quickstart.adoc[].
-* For example Terraform code of the expected provisioned resources, see the https://github.com/redpanda-data/cloud-examples/tree/main/customer-managed/aws[BYOVPC on AWS README^].
+* To see sample Terraform code of the expected provisioned resources, see the https://github.com/redpanda-data/cloud-examples/tree/main/customer-managed/aws[BYOVPC on AWS README^].
 ====
 
 == Authenticate with Redpanda Cloud
@@ -193,7 +192,7 @@ export REDPANDA_VERSION=24.3
 export REDPANDA_THROUGHPUT_TIER=tier-1-aws-v3-arm
 ```
 +
-TIP: See the full list of zones and tiers available with each provider in the xref:api:ROOT:cloud-api.adoc#api-description[API reference].
+TIP: See the full list of zones and tiers available with each provider in the xref:api:ROOT:cloud-controlplane-api.adoc#api-description[Control Plane API reference].
 
 . Define a JSON file called `redpanda-cluster.json` that includes cluster information: 
 +
@@ -209,7 +208,50 @@ cat > redpanda-cluster.json <<EOF
   "throughput_tier": "${REDPANDA_THROUGHPUT_TIER}",
   "type": "TYPE_BYOC",
   "zones": ${AWS_ZONES},
-  "redpanda_version": "${REDPANDA_VERSION}"
+  "redpanda_version": "${REDPANDA_VERSION}",
+  "customer_managed_resources": {
+    "aws": {
+      "agent_instance_profile": {
+        "arn": "<agent_instance_profile_arn from terraform outputs>"
+      },
+      "connectors_node_group_instance_profile": {
+        "arn": "<connectors_node_group_instance_profile_arn from terraform outputs>"
+      },
+      "redpanda_node_group_instance_profile": {
+        "arn": "<redpanda_node_group_instance_profile_arn from terraform outputs>"
+      },
+      "utility_node_group_instance_profile": {
+        "arn": "<utility_node_group_instance_profile_arn from terraform outputs>"
+      },
+      "connectors_security_group": {
+        "arn": "<connectors_security_group_arn from terraform outputs>"
+      },
+      "node_security_group": {
+        "arn": "<node_security_group_arn from terraform outputs>"
+      },
+      "utility_security_group": {
+        "arn": "<utility_security_group_arn from terraform outputs>"
+      },
+      "redpanda_agent_security_group": {
+        "arn": "<redpanda_agent_security_group_arn from terraform outputs>"
+      },
+      "redpanda_node_group_security_group": {
+        "arn": "<redpanda_node_group_security_group_arn from terraform outputs>"
+      },
+      "cluster_security_group": {
+        "arn": "<cluster_security_group_arn from terraform outputs>"
+      },
+      "k8s_cluster_role": {
+        "arn": "<k8s_cluster_role_arn from terraform outputs>"
+      },
+      "cloud_storage_bucket": {
+        "arn": "<cloud_storage_bucket_arn from terraform outputs>"
+      },
+      "permissions_boundary_policy": {
+        "arn": "<permissions_boundary_policy_arn from terraform outputs>"
+      }
+    }
+  },
 }
 EOF
 ```
@@ -259,14 +301,17 @@ rpk cloud login \
   --client-id=${REDPANDCA_CLIENT_ID} \
   --client-secret=${REDPANDA_CLIENT_SECRET} \
   --no-profile
+```
 
+```bash`
 rpk cloud byoc aws apply \
   --redpanda-id=${REDPANDA_ID}
 ```
 
 Output:
 
-```bash
+[.no-copy]
+----
 Checking RPK User... PASSED
 Checking IAM Instance Profiles... PASSED
 Checking Storage... PASSED
@@ -279,9 +324,11 @@ Finished apply	{"provisioner": "redpanda-network"}
 Running apply	{"provisioner": "redpanda-agent"}
 Finished apply	{"provisioner": "redpanda-agent"}
 The Redpanda cluster is deploying. This can take up to 45 minutes. View status at https://cloud.redpanda.com/clusters/${REDPANDA_ID}/overview.
-```
+----
 
-The Redpanda Cloud agent now is running and handles the remaining steps. This can take up to 45 minutes. When provisioning completes, the cluster status updates to `Running`. If the cluster remains in `Creating` status after 45 minutes, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda Support^].
+The Redpanda Cloud agent now is running and handles the remaining steps. 
+
+This can take up to 45 minutes. When provisioning completes, the cluster status updates to `Running`. If the cluster stays in `Creating` status, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda Support^].
 
 === Validation checks
 
