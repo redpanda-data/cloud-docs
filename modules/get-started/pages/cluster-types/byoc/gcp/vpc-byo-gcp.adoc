@@ -16,6 +16,7 @@ When you create a BYOCVPC cluster, you specify your VPC and service account. The
 
 * A standalone GCP project is recommended. If your host project (where your VPC project is created) and your service project (where your Redpanda cluster is created) are in different projects, you must first provision a shared VPC in Google Cloud. For more information, see the https://cloud.google.com/vpc/docs/provisioning-shared-vpc[Google shared VPC documentation^]. 
 * Redpanda creates a private Google Kubernetes Engine (GKE) cluster in your VPC. The subnet and secondary IP ranges you provide must allow public internet access. The configuration requires you to provide reserved CIDR ranges for the subnet and GKE Pods, Services, and master IP addresses. See the https://cloud.google.com/kubernetes-engine/docs/how-to/service-accounts[GKE service account documentation^] and <<Configure your VPC>>. 
+* Only primary CIDR ranges are supported for the VPC.
 * Redpanda requires access to certain Google APIs, storage buckets, and service accounts. See <<Configure the service project>>.
 
 == Limitations
