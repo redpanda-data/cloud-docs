@@ -23,7 +23,7 @@ Consider using the endpoint services if you have multiple VPCs and could benefit
 
 . In the Redpanda Cloud UI, open your https://cloud.redpanda.com/clusters[cluster^], and click **Cluster settings**.
 . Under Private Service Connect, click **Enable**. 
-. For xref:get-started:cluster-types/byoc/gcp/vpc-byo-gcp.adoc[BYOVPC clusters], you need a NAT subnet with the *Purpose* set to `PRIVATE_SERVICE_CONNECT`. You can create the subnet using the `gcloud` command-line interface (CLI):
+. For xref:get-started:cluster-types/byoc/gcp/vpc-byo-gcp.adoc[BYOVPC clusters], you need a NAT subnet with `purpose` set to `PRIVATE_SERVICE_CONNECT`. You also need to create VPC firewall rules to allow Private Service Connect traffic. The firewall rules support up to 20 Redpanda brokers. If the broker account is larger than 20, connect the support for updated rules. You can use the `gcloud` command-line interface (CLI):
 +
 [,bash]
 ----
@@ -35,6 +35,18 @@ gcloud compute networks subnets create <subnet-name> \
     --purpose=PRIVATE_SERVICE_CONNECT
 ----
 +
+[,bash]
+----
+gcloud compute firewall-rules create redpanda-psc \
+  --description="Allow access to Redpanda PSC endpoints" \
+  --network="<vpc-name>" \
+  --project="<host-project-id>" \
+  --direction="INGRESS" \
+  --target-tags="redpanda-node" \
+  --source-ranges="10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,100.64.0.0/10" \
+  --allow="tcp:30181,tcp:30282,tcp:30292,tcp:31004,tcp:31082-31101,tcp:31182-31201,tcp:31282-31301,tcp:32092-32111,tcp:32192-32211,tcp:32292-32311"
+----
++
 Provide your values for the following placeholders:
 +
 - `<subnet-name>`: The name of the NAT subnet.
@@ -43,9 +55,10 @@ Provide your values for the following placeholders:
 - `<region>`: The region of the Redpanda Cloud cluster.
 - `<subnet-range>`: The CIDR range of the subnet. The mask should be at least `/29`. Each Private Service Connect connection takes up one IP address from the NAT subnet, so the CIDR must be able to accommodate all projects from which connections to the service attachment will be issued.
 +
-See the GCP documentation for https://cloud.google.com/vpc/docs/configure-private-service-connect-producer#add-subnet-psc[creating a subnet for Private Service Connect^].
+See the GCP documentation for https://cloud.google.com/vpc/docs/configure-private-service-connect-producer#add-subnet-psc[creating a subnet for Private Service Connect^]. 
 . For the accepted consumers list, you need the GCP project IDs from which incoming connections will be accepted.
 . It may take several minutes for your cluster to update. When the update is complete, the Private Service Connect status in **Cluster settings** changes from **In progress** to **Enabled**.
+
 
 NOTE: For help with issues when enabling Private Service Connect, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda support^].
 
@@ -86,7 +99,3 @@ include::networking:partial$private-links-test-connection.adoc[]
 == Disable endpoint service
 
 In **Cluster settings**, click **Disable**. Existing connections are closed after GCP Private Service Connect is disabled. To connect using Private Service Connect again, you must re-enable the service.
-
-include::shared:partial$suggested-reading.adoc[]
-
-* xref:networking:gcp-private-service-connect.adoc[]

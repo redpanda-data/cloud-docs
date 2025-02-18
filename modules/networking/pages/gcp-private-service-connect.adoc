@@ -30,7 +30,7 @@ include::networking:partial$private-links-api-access-token.adoc[]
 
 == Configure BYOC with customer-managed resources
 
-For xref:get-started:cluster-types/byoc/gcp/vpc-byo-gcp.adoc[BYOVPC clusters], you need a NAT subnet with the *Purpose* set to `PRIVATE_SERVICE_CONNECT`. You can create the subnet using the `gcloud` command-line interface (CLI):
+For xref:get-started:cluster-types/byoc/gcp/vpc-byo-gcp.adoc[BYOVPC clusters], you need a NAT subnet with `purpose` set to `PRIVATE_SERVICE_CONNECT`. You can create the subnet using the `gcloud` command-line interface (CLI):
 
 [,bash]
 ----
@@ -52,7 +52,7 @@ Provide your values for the following placeholders:
 
 See the GCP documentation for https://cloud.google.com/vpc/docs/configure-private-service-connect-producer#add-subnet-psc[creating a subnet for Private Service Connect^].
 
-== Create new BYOC cluster with Private Service Connect enabled
+== Create a new BYOVPC cluster with Private Service Connect enabled
 
 . In the https://cloud.redpanda.com/[Redpanda Cloud UI], go to **Resource groups** and select the resource group in which you want to create a cluster.
 +
@@ -63,19 +63,19 @@ Copy and store the resource group ID (UUID) from the URL in the browser.
 export RESOURCE_GROUP_ID=<uuid>
 ----
 
-. Update the Redpanda Cloud Agent IAM role.
-+
-To allow the agent to create and manage Private Service Connect resources, add the following permissions to its IAM role:
+. Follow the BYOVPC steps to xref:get-started:cluster-types/byoc/gcp/vpc-byo-gcp.adoc#configure-the-service-project[configure the service project] to configure IAM role, permissions, and firewall rules.
+
+. Create VPC firewall rules to allow Private Service Connect traffic. The firewall rules support up to 20 Redpanda brokers. If the broker account is larger than 20, connect the support for updated rules.
 +
 ```
-compute.forwardingRules.use
-compute.regionOperations.get
-compute.serviceAttachments.create
-compute.serviceAttachments.delete
-compute.serviceAttachments.get
-compute.serviceAttachments.list
-compute.serviceAttachments.update
-compute.subnetworks.use
+gcloud compute firewall-rules create redpanda-psc \
+  --description="Allow access to Redpanda PSC endpoints" \
+  --network="<vpc-name>" \
+  --project="<host-project-id>" \
+  --direction="INGRESS" \
+  --target-tags="redpanda-node" \
+  --source-ranges="10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,100.64.0.0/10" \
+  --allow="tcp:30181,tcp:30282,tcp:30292,tcp:31004,tcp:31082-31101,tcp:31182-31201,tcp:31282-31301,tcp:32092-32111,tcp:32192-32211,tcp:32292-32311"
 ```
 
 . Make a request to the xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1beta2/networks[`POST /v1beta2/networks`] endpoint to create a network.
@@ -202,21 +202,19 @@ CAUTION: As soon as Private Service Connect is available on your VPC, all commun
 CLUSTER_ID=<cluster-id>
 ----
 
-. Update the Redpanda Cloud Agent IAM role. This step is required only for BYOVPC clusters with xref:get-started:cluster-types/byoc/gcp/vpc-byo-gcp.adoc[customer-managed resources].
+. For a *BYOC cluster*, run: 
 +
-To allow the agent to create and manage the service attachment, add the following permissions to its IAM role:
+```bash
+rpk cloud byoc gcp apply --redpanda-id='<redpanda-id>' --project-id='<service-project-id>'
+``` 
 +
-[,bash]
-----
-compute.forwardingRules.use
-compute.regionOperations.get
-compute.serviceAttachments.create
-compute.serviceAttachments.delete
-compute.serviceAttachments.get
-compute.serviceAttachments.list
-compute.serviceAttachments.update
-compute.subnetworks.use
-----
+For a *BYOVPC cluster*, first follow the steps to xref:get-started:cluster-types/byoc/gcp/vpc-byo-gcp.adoc#configure-the-service-project[configure the service project] to configure IAM role, permissions, and firewall rules. Then run:
++
+```bash
+rpk cloud byoc gcp apply --redpanda-id='<redpanda-id>' --project-id='<service-project-id>'
+```
++
+
 
 . Make a request to the xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1beta2/clusters/-cluster.id-[`PATCH /v1beta2/clusters/{cluster.id}`] endpoint to update the cluster to include the newly-created Private Service Connect NAT subnet.
 +
@@ -283,9 +281,3 @@ include::networking:partial$private-links-access-rp-services-through-vpc.adoc[]
 You can test the Private Service Connect connection from any VM or container in the consumer VPC. If configuring a client isn't possible right away, you can do these checks using `rpk` or curl:
 
 include::networking:partial$private-links-test-connection.adoc[]
-
-
-include::shared:partial$suggested-reading.adoc[]
-
-* xref:networking:dedicated/vpc-peering.adoc[]
-* xref:networking:byoc/gcp/vpc-peering-gcp.adoc[]
