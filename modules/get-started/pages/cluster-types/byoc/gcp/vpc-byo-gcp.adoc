@@ -73,7 +73,7 @@ gcloud compute routers nats create <nat-config-name> \
 ```bash
 gcloud compute firewall-rules create redpanda-ingress \
   --description="Allow access to Redpanda cluster" \
-  --network="<vpc-name>" \
+  --network="<shared-vpc-name>" \
   --project="<host-project-id>" \
   --direction="INGRESS" \
   --target-tags="redpanda-node" \
@@ -86,7 +86,7 @@ gcloud compute firewall-rules create redpanda-ingress \
 ```bash
 gcloud compute firewall-rules create gke-redpanda-cluster-webhooks \
   --description="Allow master to hit pods for admission controllers/webhooks" \
-  --network="<vpc-name>" \
+  --network="<shared-vpc-name>" \
   --project="<host-project-id>" \
   --direction="INGRESS" \
   --source-ranges="<gke-master-cidr-range>" \
