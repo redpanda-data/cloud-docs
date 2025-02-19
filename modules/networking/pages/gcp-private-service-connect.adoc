@@ -17,7 +17,7 @@ Consider using Private Service Connect if you have multiple VPCs and could benef
 * You control from which GCP projects connections are allowed.
 ====
 
-After <<get-a-cloud-api-access-token,getting an access token>>, you can <<create-a-new-byoc-cluster-with-private-service-connect,enable Private Service Connect when creating a new BYOC cluster>>, or you can <<enable-private-service-connect-on-an-existing-byoc-or-byovpc-cluster,enable Private Service Connect for an existing BYOC or BYOVPC cluster>>.
+After <<get-a-cloud-api-access-token,getting an access token>>, you can <<create-a-new-byovpc-cluster-with-private-service-connect,create a new BYOVPC cluster with Private Service Connect enabled>>, or you can <<enable-private-service-connect-on-an-existing-byoc-or-byovpc-cluster,enable Private Service Connect for an existing BYOC or BYOVPC cluster>>.
 
 == Requirements
 
@@ -58,8 +58,8 @@ Provide your values for the following placeholders:
 +
 - `<subnet-name>`: The name of the NAT subnet.
 - `<project>`: The **host** GCP project ID.
-- `<network-name>`: The name of the VPC being used for your Redpanda Cloud cluster.
-- `<region>`: The region of the Redpanda Cloud cluster.
+- `<network-name>`: The name of the VPC being used for your Redpanda Cloud cluster. The name is used to identify this network in the Cloud UI.
+- `<region>`: The GCP region of the Redpanda Cloud cluster.
 - `<subnet-range>`: The CIDR range of the subnet. The mask should be at least `/29`. Each Private Service Connect connection takes up one IP address from the NAT subnet, so the CIDR must be able to accommodate all projects from which connections to the service attachment will be issued.
 +
 See the GCP documentation for https://cloud.google.com/vpc/docs/configure-private-service-connect-producer#add-subnet-psc[creating a subnet for Private Service Connect^].
@@ -109,8 +109,8 @@ curl -vv -X POST \
 Replace the following placeholder variables for the request body:
 +
 --
-- `<network-name>`: Provide a name for the network. The name is used to identify this network in the Cloud UI.
-- `<region>`: Choose a GCP region where the network will be created.
+- `<network-name>`: The name for the network. 
+- `<region>`: The GCP region where the network will be created.
 - `<byovpc-network-gcp-project-id>`: The ID of the GCP project where your VPC is created.
 - `<byovpc-network-name>`: The name of your VPC.
 - `<byovpc-management-bucket>`: The name of the Google Storage bucket you created for the cluster.
