@@ -30,8 +30,8 @@ NOTE: The firewall rules support up to 20 Redpanda brokers. If you have more tha
 [,bash]
 ----
 gcloud compute networks subnets create <subnet-name> \
-    --project=<project> \
-    --network=<network-name> \
+    --project=<host-project-id> \
+    --network=<shared-vpc-name> \
     --region=<region> \
     --range=<subnet-range> \
     --purpose=PRIVATE_SERVICE_CONNECT
@@ -41,8 +41,8 @@ gcloud compute networks subnets create <subnet-name> \
 ----
 gcloud compute firewall-rules create redpanda-psc \
   --description="Allow access to Redpanda PSC endpoints" \
-  --network="<network-name>" \
-  --project="<project>" \
+  --network="<shared-vpc-name>" \
+  --project="<host-project-id>" \
   --direction="INGRESS" \
   --target-tags="redpanda-node" \
   --source-ranges="10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,100.64.0.0/10" \
@@ -52,8 +52,8 @@ gcloud compute firewall-rules create redpanda-psc \
 Provide your values for the following placeholders:
 +
 - `<subnet-name>`: The name of the NAT subnet.
-- `<project>`: The **host** GCP project ID.
-- `<network-name>`: The name of the VPC being used for your Redpanda Cloud cluster.
+- `<host-project-id>`: The **host** GCP project ID.
+- `<shared-vpc-name>`: The name of the VPC being used for your Redpanda Cloud cluster.
 - `<region>`: The region of the Redpanda Cloud cluster.
 - `<subnet-range>`: The CIDR range of the subnet. The mask should be at least `/29`. Each Private Service Connect connection takes up one IP address from the NAT subnet, so the CIDR must be able to accommodate all projects from which connections to the service attachment will be issued.
 +
