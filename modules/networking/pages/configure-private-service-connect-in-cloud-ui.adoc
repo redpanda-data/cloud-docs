@@ -16,14 +16,16 @@ Consider using the endpoint services if you have multiple VPCs and could benefit
 
 == Requirements
 
-* Use https://cloud.google.com/sdk/docs/install[gcloud^] to create the consumer-side resources, such as a client VPC and forwarding rule, or modify existing resources to use the Private Service Connect service attachment created for your cluster.
+* Use the https://cloud.google.com/sdk/docs/install[gcloud^] command-line interface (CLI) to create the consumer-side resources, such as a client VPC and forwarding rule, or modify existing resources to use the Private Service Connect service attachment created for your cluster.
 * The client VPC must be in the same region as your Redpanda cluster.
 
 == Enable endpoint service for existing clusters
 
 . In the Redpanda Cloud UI, open your https://cloud.redpanda.com/clusters[cluster^], and click **Cluster settings**.
 . Under Private Service Connect, click **Enable**. 
-. For xref:get-started:cluster-types/byoc/gcp/vpc-byo-gcp.adoc[BYOVPC clusters], you need a NAT subnet with `purpose` set to `PRIVATE_SERVICE_CONNECT`. You also need to create VPC firewall rules to allow Private Service Connect traffic. The firewall rules support up to 20 Redpanda brokers. If the broker account is larger than 20, connect the support for updated rules. You can use the `gcloud` command-line interface (CLI):
+. For xref:get-started:cluster-types/byoc/gcp/vpc-byo-gcp.adoc[BYOVPC clusters], you need a NAT subnet with `purpose` set to `PRIVATE_SERVICE_CONNECT`. You also need to create VPC firewall rules to allow Private Service Connect traffic. You can use the `gcloud` CLI:
++
+NOTE: The firewall rules support up to 20 Redpanda brokers. If you have more than 20 brokers, or for help enabling Private Service Connect, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda support^].
 +
 [,bash]
 ----
@@ -39,8 +41,8 @@ gcloud compute networks subnets create <subnet-name> \
 ----
 gcloud compute firewall-rules create redpanda-psc \
   --description="Allow access to Redpanda PSC endpoints" \
-  --network="<vpc-name>" \
-  --project="<host-project-id>" \
+  --network="<network-name>" \
+  --project="<project>" \
   --direction="INGRESS" \
   --target-tags="redpanda-node" \
   --source-ranges="10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,100.64.0.0/10" \
@@ -59,9 +61,6 @@ See the GCP documentation for https://cloud.google.com/vpc/docs/configure-privat
 . For the accepted consumers list, you need the GCP project IDs from which incoming connections will be accepted.
 . It may take several minutes for your cluster to update. When the update is complete, the Private Service Connect status in **Cluster settings** changes from **In progress** to **Enabled**.
 
-
-NOTE: For help with issues when enabling Private Service Connect, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda support^].
-
 === Deploy consumer-side resources
 
 For each VPC network, you must complete the following steps to successfully connect to the service and use Kafka API and other Redpanda services such as HTTP Proxy.
@@ -72,14 +71,14 @@ For each VPC network, you must complete the following steps to successfully conn
 +
 [,bash]
 ----
-gcloud dns --project=<GCP Project ID> managed-zones create <DNS zone name> --description="<description>" --dns-name="<DNS Zone from the UI>" --visibility="private" --networks="<list of fully-qualified name of networks where the DNS zone will be visible>"
+gcloud dns --project=<gcp-project-id> managed-zones create <dns-zone-name> --description="<description>" --dns-name="<dns-zone-from-the-ui>" --visibility="private" --networks="<list-of-fully-qualified-names-of-networks-where-the-dns-zone-will-be-visible>"
 ----
 
 . In the newly-created DNS zone, create a wildcard DNS record using the cluster **DNS record** value. 
 +
 [,bash]
 ----
-gcloud dns --project=rp-byoc-juan-0e38 record-sets create '*.<DNS Zone from the UI>' --zone="<DNS zone name>" --type="A" --ttl="300" --rrdatas="<PSC endpoint IP>"
+gcloud dns --project=<gcp-project-id> record-sets create '*.<dns-zone-from-the-ui>' --zone="<dns-zone-name>" --type="A" --ttl="300" --rrdatas="<psc-endpoint-ip>"
 ----
 
 . Confirm that your GCP VPC firewall allows traffic to and from the Private Service Connect forwarding rule IP address, on the expected ports.
