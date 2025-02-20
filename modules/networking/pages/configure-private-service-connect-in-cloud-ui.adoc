@@ -16,7 +16,7 @@ Consider using the endpoint services if you have multiple VPCs and could benefit
 
 == Requirements
 
-* Use the https://cloud.google.com/sdk/docs/install[gcloud^] command-line interface (CLI) to create the consumer-side resources, such as a client VPC and forwarding rule, or modify existing resources to use the Private Service Connect service attachment created for your cluster.
+* Use the https://cloud.google.com/sdk/docs/install[gcloud^] command-line interface (CLI) to create the consumer-side resources, such as a client VPC and forwarding rule, or to modify existing resources to use the Private Service Connect service attachment created for your cluster.
 * The client VPC must be in the same region as your Redpanda cluster.
 
 == Enable endpoint service for existing clusters
@@ -52,7 +52,7 @@ gcloud compute firewall-rules create redpanda-psc \
 Provide your values for the following placeholders:
 +
 - `<subnet-name>`: The name of the NAT subnet.
-- `<host-project-id>`: The **host** GCP project ID.
+- `<host-project-id>`: The host GCP project ID.
 - `<shared-vpc-name>`: The name of the VPC being used for your Redpanda Cloud cluster.
 - `<region>`: The region of the Redpanda Cloud cluster.
 - `<subnet-range>`: The CIDR range of the subnet. The mask should be at least `/29`. Each Private Service Connect connection takes up one IP address from the NAT subnet, so the CIDR must be able to accommodate all projects from which connections to the service attachment will be issued.
