@@ -1,4 +1,4 @@
-= Manage Pipeline Resources on BYOC and Dedicated Clusters
+= Manage Pipeline Resources
 :description: Learn how to set an initial resource limit for a standard data pipeline (excluding Ollama AI components) and how to manually scale the pipeline’s resources to improve performance.
 :page-aliases: develop:connect/configuration/scale-pipelines.adoc
 
@@ -6,7 +6,7 @@
 
 == Prerequisites
 
-- A running xref:get-started:cluster-types/byoc/index.adoc[BYOC] (not BYOVPC) or xref:get-started:cluster-types/dedicated/create-dedicated-cloud-cluster.adoc[Dedicated cluster]
+- A running xref:get-started:cluster-types/byoc/index.adoc[BYOC] (not BYOVPC) or xref:get-started:cluster-types/dedicated/create-dedicated-cloud-cluster.adoc[Dedicated], xref:get-started:cluster-types/serverless-pro.adoc[Serverless Pro], or xref:get-started:cluster-types/serverless.adoc[Serverless Standard] cluster
 - An estimate of the throughput of your data pipeline. You can get some basic statistics by running your data pipeline locally using the xref:redpanda-connect:components:processors/benchmark.adoc[`benchmark` processor].
 
 === Understanding compute units
@@ -155,7 +155,7 @@ Cloud UI::
 . Log in to https://cloud.redpanda.com[Redpanda Cloud^].
 . Go to the cluster where the pipeline is set up.
 . On the **Connect** page, select your pipeline and click **Edit**.
-. In the **Compute units** box, update the number of compute units. One task provides a message throughput of approximately 1 MB/sec. For higher throughputs, you can allocate up to a maximum of 18 compute units per pipeline.
+. In the **Compute units** box, update the number of compute units. One compute unit provides a message throughput of approximately 1 MB/sec. For higher throughputs, you can allocate up to a maximum of 18 compute units per pipeline.
 . Click **Update** to apply your changes. The specified resources are available immediately.
 
 --
