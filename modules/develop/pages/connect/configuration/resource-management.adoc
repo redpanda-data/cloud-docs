@@ -6,14 +6,14 @@
 
 == Prerequisites
 
-- A running xref:get-started:cluster-types/byoc/index.adoc[BYOC] (not BYOVPC) or xref:get-started:cluster-types/dedicated/create-dedicated-cloud-cluster.adoc[Dedicated], xref:get-started:cluster-types/serverless-pro.adoc[Serverless Pro], or xref:get-started:cluster-types/serverless.adoc[Serverless Standard] cluster
+- A running xref:get-started:cluster-types/byoc/index.adoc[BYOC] (not BYOVPC) or xref:get-started:cluster-types/dedicated/create-dedicated-cloud-cluster.adoc[Dedicated], xref:get-started:cluster-types/serverless-pro.adoc[Serverless Pro], or xref:get-started:cluster-types/serverless.adoc[Serverless Standard] cluster.
 - An estimate of the throughput of your data pipeline. You can get some basic statistics by running your data pipeline locally using the xref:redpanda-connect:components:processors/benchmark.adoc[`benchmark` processor].
 
 === Understanding compute units
 
-A compute unit allocates a specific amount of server resource (CPU and memory) to a data pipeline to handle message throughput. By default, each pipeline is allocated one compute unit, which includes 0.1 CPU (100 milliCPU or `100m`) and 400 MB (`400M`) of memory, and provides a message throughput of up to 1 MB/sec. You can allocate up to a maximum of 18 compute units per pipeline.
+A compute unit allocates a specific amount of server resources (CPU and memory) to a data pipeline to handle message throughput. By default, each pipeline is allocated one compute unit, which includes 0.1 CPU (100 milliCPU or `100m`) and 400 MB (`400M`) of memory, and provides a message throughput of up to 1 MB/sec. 
 
-Note: Server resources are charged at an hourly rate in compute unit hours.
+Server resources are charged at an hourly rate in compute unit hours and you can allocate up to a maximum of 18 compute units per pipeline.
 
 |===
 | Number of compute units | CPU | Memory
@@ -92,7 +92,7 @@ Note: Server resources are charged at an hourly rate in compute unit hours.
 
 |===
 
-NOTE: For pipelines with embedded Ollama AI components, one GPU is automatically allocated to the pipeline, which is equivalent to 30 compute units or 3.0 CPU (`3000m`) and 12 GB of memory (`12000M`).
+NOTE: For pipelines with embedded Ollama AI components, one GPU is automatically allocated to the pipeline, which is equivalent to 30 compute units, or 3.0 CPU (`3000m`) and 12 GB of memory (`12000M`).
 
 === Set an initial resource limit
 
