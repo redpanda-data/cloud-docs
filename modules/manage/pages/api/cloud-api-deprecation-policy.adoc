@@ -12,8 +12,7 @@ Deprecation is the process of phasing out an API version or specific features wi
 
 The Cloud API availability phases are defined as follows: 
 
-* Limited availability (LA): The API is available to select customers in a subset of regions, providers, or networks. Recommended for production usage.
-* Generally available (GA): The API is stable. Protocol breaking changes are not introduced on short notice. Recommended for production usage. 
+* Generally available (GA): The API version is stable and does not include breaking changes. Recommended for production usage. 
 * Deprecated: The API version or method is no longer under active development. Existing workflows and integrations using the API continue to function, but new use cases should be built against the new version. The deprecated API version or method is retired on the retirement date. 
 * Retired: The API version or method is no longer supported nor available.
 
@@ -53,11 +52,10 @@ In rare cases, the deprecation process may need to be accelerated due to:
 Redpanda communicates deprecation notices through the following:
 
 * A `Sunset` HTTP header in the response 
-* `deprecated: true` field in the API specification
+* A `deprecated: true` field in the operation or parameter in the API specification
 * Updates to xref:manage:api/index.adoc[Cloud API documentation]
 * xref:get-started:whats-new-cloud.adoc[What’s New in Redpanda Cloud]
-* Announcements in internal customer Slack channels
-* #cloudapi Slack channel at redpandacommunity.slack.com
+* Announcements in the #cloudapi https://redpandacommunity.slack.com/[Community Slack^] channel and in individual customer channels
 * Emails to “Sign up for updates” recipients (sign up on the xref:api:ROOT:cloud-controlplane-api.adoc[Control Plane API] and xref:api:ROOT:cloud-dataplane-api.adoc[Data Plane APIs] reference documentation)
 
 == Versioning policy
