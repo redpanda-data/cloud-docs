@@ -351,6 +351,82 @@ The response contains the current state of the operation: `IN_PROGRESS`, `COMPLE
 
 endif::[]
 
+== Manage RBAC
+
+The available endpoints for managing xref:security:authorization/rbac.adoc[RBAC configurations], for example assigning xref:security:authorization/rbac.adoc#predefined-roles[roles] to a users and service accounts in the control plane, contain the version string `v1alpha1` in the path. 
+
+=== List role bindings
+
+To see role assignments for IAM user and service accounts, make a GET request to the xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1alpha1/role-bindings[`/v1alpha1/role-bindings`] endpoint.
+
+[,bash]
+----
+curl "https://api.redpanda.com/v1alpha1/role-bindings?filter.role_name=<role-name>&filter.scope.resource_type=SCOPE_RESOURCE_TYPE_CLUSTER" \
+     -H "Authorization: Bearer <token>" \
+     -H "Content-Type: application/json"
+----
+
+=== Get role binding
+
+To see roles assignments for a specific IAM account, make a GET request to the xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1alpha1/role-bindings/-id-[`/v1alpha1/role-bindings/\{id}`] endpoint.
+
+[,bash]
+----
+curl "https://api.redpanda.com/v1alpha1/role-bindings/<id> \
+     -H "Authorization: Bearer <token>" \
+     -H "Content-Type: application/json"
+----
+
+=== Get user
+
+To see details of an IAM user account, make a GET request to the xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1alpha1/users/-id-[`/v1alpha1/users/\{id}`] endpoint.
+
+[,bash]
+----
+curl "https://api.redpanda.com/v1alpha1/users/<id> \
+     -H "Authorization: Bearer <token>" \
+     -H "Content-Type: application/json"
+----
+
+=== Create role binding
+
+To assign a role to an IAM user or service account, make a POST request to the xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1alpha1/role-bindings[`/v1alpha1/role-bindings`] endpoint. Specify the role and resource scope in the request body.
+
+[,bash]
+----
+curl -X POST "https://api.redpanda.com/v1alpha1/role-bindings" \
+     -H "Authorization: Bearer <token>" \
+     -H "Content-Type: application/json" \
+     -d '{
+           "role_name": "<role-name>",
+           "account_id": "<user-or-service-account-id>",
+           "scope": {
+             "resource_type": "SCOPE_RESOURCE_TYPE_CLUSTER",
+             "resource_id": "<resource-id>"
+           }
+         }'
+----
+
+=== Create service account
+
+NOTE: Service accounts are assigned the Admin role for all resources in the organization.
+
+To create a new service account, make a POST request to the xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1alpha1/service-accounts[`/v1alpha1/service-accounts`] endpoint.
+
+[,bash]
+----
+curl -X POST "https://api.redpanda.com/v1alpha1/service-accounts" \
+     -H "Authorization: Bearer <token>" \
+     -H "Content-Type: application/json" \
+     -d '{
+           "service_account": {
+              "name": "<service-account-name>",
+              "description": "<service-account-description>"
+           }
+         }'
+----
+
+
 == Next steps
 
 - xref:./cloud-dataplane-api.adoc[]
