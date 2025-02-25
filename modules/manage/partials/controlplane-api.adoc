@@ -1,9 +1,12 @@
-:tag-clusters: api:ROOT:cloud-controlplane-api.adoc#tag--ClusterService
-:tag-networks: api:ROOT:cloud-controlplane-api.adoc#tag--NetworkService
-:tag-operations: api:ROOT:cloud-controlplane-api.adoc#tag--OperationService
-:tag-resource-groups: api:ROOT:cloud-controlplane-api.adoc#tag--ResourceGroupService
-:tag-serverless-regions: api:ROOT:cloud-controlplane-api.adoc#tag--ServerlessRegionService
-:tag-serverless-clusters: api:ROOT:cloud-controlplane-api.adoc#tag--ServerlessClusterService
+:tag-clusters: api:ROOT:cloud-controlplane-api.adoc#tag--Clusters
+:tag-networks: api:ROOT:cloud-controlplane-api.adoc#tag--Networks
+:tag-operations: api:ROOT:cloud-controlplane-api.adoc#tag--Operations
+:tag-resource-groups: api:ROOT:cloud-controlplane-api.adoc#tag--Resource-Groups
+:tag-serverless-regions: api:ROOT:cloud-controlplane-api.adoc#tag--Serverless-Regions
+:tag-serverless-clusters: api:ROOT:cloud-controlplane-api.adoc#tag--Serverless-Clusters
+:tag-role-bindings: api:ROOT:cloud-controlplane-api.adoc#tag--Control-Plane-Role-Bindings
+:tag-users: api:ROOT:cloud-controlplane-api.adoc#tag--Control-Plane-Users
+:tag-service-accounts: api:ROOT:cloud-controlplane-api.adoc#tag--Control-Plane-Service-Accounts
 
 The Redpanda Cloud API is a collection of REST APIs that allow you to interact with different parts of Redpanda Cloud. The Control Plane API enables you to programmatically manage your organization's Redpanda infrastructure outside of the Cloud UI. You can call the API endpoints directly, or use tools like Terraform or Python scripts to automate cluster management.
 
@@ -13,18 +16,21 @@ See xref:api:ROOT:cloud-controlplane-api.adoc[Control Plane API] for the full AP
 
 The Control Plane API is one central API that allows you to provision clusters, networks, and resource groups.
 
-The Control Plane API consists of the following endpoints:
+The Control Plane API consists of the following endpoint groups:
 
 ifndef::env-serverless[]
-* pass:a,m[xref:{tag-clusters}[ClusterService\]]
-* pass:a,m[xref:{tag-networks}[NetworkService\]]
+* pass:a,m[xref:{tag-clusters}[Clusters\]]
+* pass:a,m[xref:{tag-networks}[Networks\]]
 endif::[]
-* pass:a,m[xref:{tag-operations}[OperationService\]]
-* pass:a,m[xref:{tag-resource-groups}[ResourceGroupService\]]
+* pass:a,m[xref:{tag-operations}[Operations\]]
+* pass:a,m[xref:{tag-resource-groups}[Resource Groups\]]
 ifdef::env-serverless[]
-* pass:a,m[xref:{tag-serverless-clusters}[ServerlessClusterService\]]
-* pass:a,m[xref:{tag-serverless-regions}[ServerlessRegionService\]]
+* pass:a,m[xref:{tag-serverless-clusters}[Serverless Clusters\]]
+* pass:a,m[xref:{tag-serverless-regions}[Serverless Regions\]]
 endif::[]
+* pass:a,m[xref:{tag-role-bindings}[Control Plane Role Bindings\]]
+* pass:a,m[xref:{tag-users}[Control Plane Users\]]
+* pass:a,m[xref:{tag-service-accounts}[Control Plane Service Accounts\]]
 
 // For serverless, show this section at the end of the doc
 ifndef::env-serverless[]
@@ -353,7 +359,7 @@ endif::[]
 
 == Manage RBAC
 
-The available endpoints for managing xref:security:authorization/rbac.adoc[RBAC configurations], for example assigning xref:security:authorization/rbac.adoc#predefined-roles[roles] to a users and service accounts in the control plane, contain the version string `v1alpha1` in the path. 
+The endpoints for managing xref:security:authorization/rbac.adoc[RBAC configurations], for example assigning xref:security:authorization/rbac.adoc#predefined-roles[roles] to a users and service accounts in the control plane, contain the version string `v1alpha1` in the path. 
 
 === List role bindings
 
@@ -361,14 +367,14 @@ To see role assignments for IAM user and service accounts, make a GET request to
 
 [,bash]
 ----
-curl "https://api.redpanda.com/v1alpha1/role-bindings?filter.role_name=<role-name>&filter.scope.resource_type=SCOPE_RESOURCE_TYPE_CLUSTER" \
+curl https://api.redpanda.com/v1alpha1/role-bindings?filter.role_name=<role-name>&filter.scope.resource_type=SCOPE_RESOURCE_TYPE_CLUSTER \
      -H "Authorization: Bearer <token>" \
      -H "Content-Type: application/json"
 ----
 
 === Get role binding
 
-To see roles assignments for a specific IAM account, make a GET request to the xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1alpha1/role-bindings/-id-[`/v1alpha1/role-bindings/\{id}`] endpoint.
+To see roles assignments for a specific IAM account, make a GET request to the xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1alpha1/role-bindings/-id-[`/v1alpha1/role-bindings/\{id}`] endpoint, passing the role binding ID as a parameter.
 
 [,bash]
 ----
@@ -379,7 +385,7 @@ curl "https://api.redpanda.com/v1alpha1/role-bindings/<role-binding-id> \
 
 === Get user
 
-To see details of an IAM user account, make a GET request to the xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1alpha1/users/-id-[`/v1alpha1/users/\{id}`] endpoint.
+To see details of an IAM user account, make a GET request to the xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1alpha1/users/-id-[`/v1alpha1/users/\{id}`] endpoint, passing the user account ID as a parameter.
 
 [,bash]
 ----
@@ -390,7 +396,7 @@ curl "https://api.redpanda.com/v1alpha1/users/<user-account-id> \
 
 === Create role binding
 
-To assign a role to an IAM user or service account, make a POST request to the xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1alpha1/role-bindings[`/v1alpha1/role-bindings`] endpoint. Specify the role and resource scope in the request body.
+To assign a role to an IAM user or service account, make a POST request to the xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1alpha1/role-bindings[`/v1alpha1/role-bindings`] endpoint. Specify the role and scope, which includes the specific resource ID and an optional resource type, in the request body.
 
 [,bash]
 ----
@@ -411,7 +417,7 @@ curl -X POST "https://api.redpanda.com/v1alpha1/role-bindings" \
 
 NOTE: Service accounts are assigned the Admin role for all resources in the organization.
 
-To create a new service account, make a POST request to the xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1alpha1/service-accounts[`/v1alpha1/service-accounts`] endpoint.
+To create a new service account, make a POST request to the xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1alpha1/service-accounts[`/v1alpha1/service-accounts`] endpoint, with a service account name and optional description in the request body.
 
 [,bash]
 ----
