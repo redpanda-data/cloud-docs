@@ -293,3 +293,22 @@ include::networking:partial$private-links-access-rp-services-through-vpc.adoc[]
 You can test the Private Service Connect connection from any VM or container in the consumer VPC. If configuring a client isn't possible right away, you can do these checks using `rpk` or curl:
 
 include::networking:partial$private-links-test-connection.adoc[]
+
+== Disable Private Service Connect
+
+Make a xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1beta2/clusters/-cluster.id-[`PATCH /v1beta2/clusters/{cluster.id}`] request to update the cluster to disable Private Service Connect.
+
+[,bash]
+----
+CLUSTER_PATCH_BODY=`cat << EOF
+{
+    "gcp_private_service_connect": {
+        "enabled": false,
+    }
+}
+EOF`
+curl -v -X PATCH \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer $AUTH_TOKEN" \
+-d "$CLUSTER_PATCH_BODY" $PUBLIC_API_ENDPOINT/v1beta2/clusters/$CLUSTER_ID
+----
