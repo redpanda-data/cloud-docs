@@ -217,14 +217,6 @@ xref:develop:connect/about.adoc[Redpanda Connect] is integrated into Redpanda Cl
 
 xref:develop:managed-connectors/index.adoc[Kafka Connect] is automatically enabled on AWS and GCP clusters. With this, there is a node running for Kafka Connect even if connectors are not used. To enable Kafka Connect on Azure clusters, see xref:get-started:cluster-types/byoc/azure/create-byoc-cluster-azure.adoc#enable-kafka-connect[Enable Kafka Connect].
 
-== Maintenance windows
-
-Redpanda runs maintenance and upgrade operations on clusters in a rolling fashion, accompanied by a series of health checks, so there is no disruption to the availability of your service. As part of the Kafka protocol, recycling nodes cause client connections to be restarted. All mainstream client libraries support automatic reconnections for this.
-
-By default, Redpanda Cloud may run maintenance operations on any day at any time. You can override this default and schedule a specific maintenance window on the *Cluster settings* page. A *Scheduled* maintenance window requires Redpanda Cloud to run operations on the day and time specified. Maintenance windows typically take six hours. All operations begin during the maintenance window, but some operations may complete after the window ends. All times are in Coordinated Universal Time (UTC).
-
-TIP: Redpanda Cloud maintenance cycles always start on Tuesdays. Clusters scheduled on Tuesdays are updated first, and clusters scheduled on Mondays are updated last. Keep this in mind when sequencing updates for multiple clusters.
-
 == Redpanda Cloud architecture
 
 When you sign up for a Redpanda account, Redpanda creates an organization for you. Your organization contains all your Redpanda resources, including your clusters and networks. Within your organization, Redpanda creates a default resource group to contain your resources. You can rename this resource group, and you can create more resource groups. For example, you may want different resource groups for production and testing. 
@@ -329,6 +321,7 @@ The following features are currently in beta in Redpanda Cloud:
 * Remote Read Replicas for AWS and GCP
 
 == Next steps
+* xref:manage:maintenance.adoc[Learn about upgrades and maintenance]
 * xref:get-started:cluster-types/serverless.adoc[Create a Serverless Standard Cluster]
 * xref:get-started:cluster-types/serverless-pro.adoc[Create a Serverless Pro Cluster]
 * xref:get-started:cluster-types/dedicated/create-dedicated-cloud-cluster-aws.adoc[Create a Dedicated Cloud Cluster]
