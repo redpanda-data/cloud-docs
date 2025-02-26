@@ -206,6 +206,25 @@ statement {
      "arn:aws:iam::${local.aws_account_id}:oidc-provider/oidc.eks.*.amazonaws.com",
    ]
  }
+
+statement {
+    sid    = "RedpandaAgentEKSOIDCProviderCACertThumbprintUpdate"
+    effect = "Allow"
+    actions = [
+      "iam:UpdateOpenIDConnectProviderThumbprint",
+    ]
+    resources = [
+      "arn:aws:iam::${local.aws_account_id}:oidc-provider/oidc.eks.*.amazonaws.com",
+      "arn:aws:iam::${local.aws_account_id}:oidc-provider/oidc.eks.*.amazonaws.com/id/*",
+    ]
+    condition {
+      test     = "StringEquals"
+      variable = "aws:ResourceTag/redpanda-id"
+      values = [
+        var.redpanda_id,
+      ]
+    }
+  }
 ----
 
 === Manage IAM policies
