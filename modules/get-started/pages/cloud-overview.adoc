@@ -237,7 +237,7 @@ image::shared:control_d_plane.png[Control plane and data plane]
 
 * *Data plane*: This is where your cluster lives. The term _data plane_ is sometimes used interchangeably with _cluster_. The data plane is where you manage topics, consumer groups, connectors, and schemas. You can use xref:security:authorization/rbac/rbac_dp.adoc[RBAC in the data plane] to configure cluster-level permissions for provisioned users at scale. 
 
-* *Agent*: Redpanda uses an agent to manage the data plane from the control plane. The agent pulls cluster specifications from the control plane.  
+* *Agent*: Redpanda uses an agent to manage the data plane from the control plane. The agent pulls cluster specifications from the control plane. IAM permissions allow the agent to access the the cloud provider API to create and manage cluster resources. The permissions follow the principle of least privilege, limiting access to only what is necessary.
 
 Clusters are configured and maintained in the control plane, but they remain available even if the network connection to the control plane is lost. 
 
@@ -323,7 +323,7 @@ Features in beta are available for testing and feedback. They are not covered by
 
 The following features are currently in beta in Redpanda Cloud:
 
-* Redpanda Connect for Serverless Standard and Serverless Pro
+* Redpanda Connect for Serverless
 * Cloud API
 * Redpanda Terraform provider
 * BYOVPC for AWS and Azure
