@@ -208,11 +208,18 @@ CAUTION: As soon as Private Service Connect is available on your VPC, all commun
 export CLUSTER_ID=<cluster-id>
 ----
 
-. For a *BYOC cluster*, run `rpk cloud byoc gcp apply`:
-+
+. For a *BYOC cluster*
++ 
+---
+- Issue `rpk cloud byoc gcp apply` to ensure that the PSC subnets are created in your BYOC cluster. 
 ```bash
-rpk cloud byoc gcp apply --redpanda-id='$CLUSTER_ID' --project-id='<service-project-id>'
+rpk cloud byoc gcp apply --redpanda-id="${CLUSTER_ID}" --project-id='<service-project-id>'
 ``` 
+- Issue `gcloud compute networks subnets list` to find the newly created Private Service Connect NAT subnet name. 
+```bash
+gcloud compute networks subnets list --filter psc2-nat --format="value(name)"
+```
+---
 +
 For a *BYOVPC cluster*:
 +
@@ -222,7 +229,7 @@ For a *BYOVPC cluster*:
 - Run `rpk cloud byoc gcp apply`:
 +
 ```bash
-rpk cloud byoc gcp apply --redpanda-id='$CLUSTER_ID' --project-id='<service-project-id>'
+rpk cloud byoc gcp apply --redpanda-id="${CLUSTER_ID}" --project-id='<service-project-id>'
 ``` 
 --
 
@@ -230,13 +237,12 @@ rpk cloud byoc gcp apply --redpanda-id='$CLUSTER_ID' --project-id='<service-proj
 +
 [,bash]
 ----
-export ACCEPT_LIST='[]'
 export PSC_NAT_SUBNET_NAME='<psc-nat-subnet-name>'
 export CLUSTER_PATCH_BODY=`cat << EOF
 {
     "customer_managed_resources": {
         "gcp": {
-            "psc_nat_subnet_name": "$PSC_NAT_SUBNET_NAME"
+            "psc_nat_subnet_name": "${PSC_NAT_SUBNET_NAME}"
         }
     }
 }
