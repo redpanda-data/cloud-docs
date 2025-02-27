@@ -6,14 +6,16 @@
 
 == Prerequisites
 
-- A running xref:get-started:cluster-types/byoc/index.adoc[BYOC] (not BYOVPC) or xref:get-started:cluster-types/dedicated/create-dedicated-cloud-cluster.adoc[Dedicated], xref:get-started:cluster-types/serverless-pro.adoc[Serverless Pro], or xref:get-started:cluster-types/serverless.adoc[Serverless Standard] cluster.
+- A running xref:get-started:cluster-types/byoc/index.adoc[BYOC] (not BYOVPC), xref:get-started:cluster-types/dedicated/create-dedicated-cloud-cluster.adoc[Dedicated], xref:get-started:cluster-types/serverless-pro.adoc[Serverless Pro] or xref:get-started:cluster-types/serverless.adoc[Serverless Standard] cluster.
 - An estimate of the throughput of your data pipeline. You can get some basic statistics by running your data pipeline locally using the xref:redpanda-connect:components:processors/benchmark.adoc[`benchmark` processor].
 
 === Understanding compute units
 
-A compute unit allocates a specific amount of server resources (CPU and memory) to a data pipeline to handle message throughput. By default, each pipeline is allocated one compute unit, which includes 0.1 CPU (100 milliCPU or `100m`) and 400 MB (`400M`) of memory, and provides a message throughput of up to 1 MB/sec. 
+A compute unit allocates a specific amount of server resources (CPU and memory) to a data pipeline to handle message throughput. By default, each pipeline is allocated one compute unit, which includes 0.1 CPU (100 milliCPU or `100m`) and 400 MB (`400M`) of memory. 
 
-Server resources are charged at an hourly rate in compute unit hours and you can allocate up to a maximum of 18 compute units per pipeline.
+For sizing purposes, one compute unit supports an estimated message throughput of 1 MB/sec. However, actual performance depends on the complexity of a pipeline, including the components it contains and processing it does.
+
+Server resources are charged at an hourly rate in compute unit hours, and you can allocate up to a maximum of 15 compute units per pipeline.
 
 |===
 | Number of compute units | CPU | Memory
@@ -78,18 +80,6 @@ Server resources are charged at an hourly rate in compute unit hours and you can
 | 1.5 CPU (`1500m`)
 | 6.0 GB (`6000M`)
 
-| 16
-| 1.6 CPU (`1600m`)
-| 6.4 GB (`6400M`)
-
-| 17
-| 1.7 CPU (`1700m`)
-| 6.8 GB (`6800M`)
-
-| 18
-| 1.8 CPU (`1800m`)
-| 7.2 GB (`7200M`)
-
 |===
 
 NOTE: For pipelines with embedded Ollama AI components, one GPU is automatically allocated to the pipeline, which is equivalent to 30 compute units, or 3.0 CPU (`3000m`) and 12 GB of memory (`12000M`).
@@ -111,7 +101,7 @@ To set an initial resource limit:
 . Select the **Redpanda Connect** tab.
 . Click **Create pipeline**.
 . Enter details for your pipeline, including a short name and description.
-. In the **Compute units** box, leave the default **1** compute unit to experiment with pipelines that create low message volumes. For higher throughputs, you can allocate up to a maximum of 18 compute units.
+. In the **Compute units** box, leave the default **1** compute unit to experiment with pipelines that create low message volumes. For higher throughputs, you can allocate up to a maximum of 15 compute units.
 . Add your pipeline configuration and click **Create** to run it.
 
 === Scale resources
@@ -155,7 +145,7 @@ Cloud UI::
 . Log in to https://cloud.redpanda.com[Redpanda Cloud^].
 . Go to the cluster where the pipeline is set up.
 . On the **Connect** page, select your pipeline and click **Edit**.
-. In the **Compute units** box, update the number of compute units. One compute unit provides a message throughput of approximately 1 MB/sec. For higher throughputs, you can allocate up to a maximum of 18 compute units per pipeline.
+. In the **Compute units** box, update the number of compute units. One compute unit provides a message throughput of approximately 1 MB/sec. For higher throughputs, you can allocate up to a maximum of 15 compute units per pipeline.
 . Click **Update** to apply your changes. The specified resources are available immediately.
 
 --
