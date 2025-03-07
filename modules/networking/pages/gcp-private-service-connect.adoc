@@ -84,7 +84,7 @@ gcloud compute firewall-rules create redpanda-psc \
   --allow="tcp:30181,tcp:30282,tcp:30292,tcp:31004,tcp:31082-31101,tcp:31182-31201,tcp:31282-31301,tcp:32092-32111,tcp:32192-32211,tcp:32292-32311"
 ```
 
-. Make a request to the xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1beta2/networks[`POST /v1beta2/networks`] endpoint to create a network.
+. Make a request to the xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1beta2/networks[`POST /v1/networks`] endpoint to create a network.
 +
 [,bash]
 ----
@@ -108,7 +108,7 @@ EOF`
 curl -vv -X POST \
 -H "Content-Type: application/json" \
 -H "Authorization: Bearer $AUTH_TOKEN" \
--d "$network_post_body" $PUBLIC_API_ENDPOINT/v1beta2/networks
+-d "$network_post_body" $PUBLIC_API_ENDPOINT/v1/networks
 ----
 +
 Replace the following placeholder variables for the request body:
@@ -129,7 +129,7 @@ Replace the following placeholder variables for the request body:
 export NETWORK_ID=<metadata.network_id>
 ----
 
-. Make a request to the xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1beta2/clusters[`POST /v1beta2/clusters`] endpoint to create a Redpanda Cloud cluster with Private Service Connect enabled.
+. Make a request to the xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1beta2/clusters[`POST /v1/clusters`] endpoint to create a Redpanda Cloud cluster with Private Service Connect enabled.
 +
 [,bash]
 ----
@@ -172,7 +172,7 @@ EOF`
 curl -vv -X POST \
 -H "Content-Type: application/json" \
 -H "Authorization: Bearer $AUTH_TOKEN" \
--d "$CLUSTER_POST_BODY" $PUBLIC_API_ENDPOINT/v1beta2/clusters
+-d "$CLUSTER_POST_BODY" $PUBLIC_API_ENDPOINT/v1/clusters
 ----
 +
 Replace the following placeholders for the request body. Variables with a `byovpc_` prefix represent xref:get-started:cluster-types/byoc/gcp/vpc-byo-gcp.adoc[customer-managed resources] that should have been created previously:
@@ -226,7 +226,7 @@ rpk cloud byoc gcp apply --redpanda-id='$CLUSTER_ID' --project-id='<service-proj
 ``` 
 --
 
-. Make a request to the xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1beta2/clusters/-cluster.id-[`PATCH /v1beta2/clusters/{cluster.id}`] endpoint to update the cluster to include the newly-created Private Service Connect NAT subnet.
+. Make a request to the xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1beta2/clusters/-cluster.id-[`PATCH /v1/clusters/{cluster.id}`] endpoint to update the cluster to include the newly-created Private Service Connect NAT subnet.
 +
 [,bash]
 ----
@@ -244,14 +244,14 @@ EOF`
 curl -v -X PATCH \
 -H "Content-Type: application/json" \
 -H "Authorization: Bearer $AUTH_TOKEN" \
--d "$CLUSTER_PATCH_BODY" $PUBLIC_API_ENDPOINT/v1beta2/clusters/$CLUSTER_ID
+-d "$CLUSTER_PATCH_BODY" $PUBLIC_API_ENDPOINT/v1/clusters/$CLUSTER_ID
 ----
 +
 Replace the following placeholder:
 +
 `<psc-nat-subnet-name>`: The name of the Private Service Connect NAT subnet. Use the fully-qualified name, for example `"projects/<host-project-id>/regions/<region>/subnetworks/<subnet-name>"`.
 
-. Make a xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1beta2/clusters/-cluster.id-[`PATCH /v1beta2/clusters/{cluster.id}`] request to update the cluster to enable Private Service Connect.
+. Make a xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1beta2/clusters/-cluster.id-[`PATCH /v1/clusters/{cluster.id}`] request to update the cluster to enable Private Service Connect.
 +
 [,bash]
 ----
@@ -266,7 +266,7 @@ EOF`
 curl -v -X PATCH \
 -H "Content-Type: application/json" \
 -H "Authorization: Bearer $AUTH_TOKEN" \
--d "$CLUSTER_PATCH_BODY" $PUBLIC_API_ENDPOINT/v1beta2/clusters/$CLUSTER_ID
+-d "$CLUSTER_PATCH_BODY" $PUBLIC_API_ENDPOINT/v1/clusters/$CLUSTER_ID
 ----
 +
 Replace the following placeholder:
@@ -294,7 +294,7 @@ include::networking:partial$private-links-test-connection.adoc[]
 
 == Disable Private Service Connect
 
-Make a xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1beta2/clusters/-cluster.id-[`PATCH /v1beta2/clusters/{cluster.id}`] request to update the cluster to disable Private Service Connect.
+Make a xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1beta2/clusters/-cluster.id-[`PATCH /v1/clusters/{cluster.id}`] request to update the cluster to disable Private Service Connect.
 
 [,bash]
 ----
@@ -308,5 +308,5 @@ EOF`
 curl -v -X PATCH \
 -H "Content-Type: application/json" \
 -H "Authorization: Bearer $AUTH_TOKEN" \
--d "$CLUSTER_PATCH_BODY" $PUBLIC_API_ENDPOINT/v1beta2/clusters/$CLUSTER_ID
+-d "$CLUSTER_PATCH_BODY" $PUBLIC_API_ENDPOINT/v1/clusters/$CLUSTER_ID
 ----
