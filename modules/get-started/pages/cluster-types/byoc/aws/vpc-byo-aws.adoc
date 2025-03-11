@@ -6,7 +6,7 @@
 
 include::shared:partial$feature-flag-rpcn.adoc[]
 
-This topic explains how to create a Bring Your Own Virtual Private Cloud (BYOVPC) cluster. This setup allows you to deploy the Redpanda glossterm:data plane[] into your existing VPC and take full control of managing the networking lifecycle. Compared to a standard Bring Your Own Cluster (BYOC) setup, where Redpanda manages the networking lifecycle for you, this option provides more security.
+This topic explains how to create a Bring Your Own Virtual Private Cloud (BYOVPC) cluster. This setup allows you to deploy the Redpanda glossterm:data plane[] into your existing VPC and take full control of managing the networking lifecycle. Compared to a standard Bring Your Own Cloud (BYOC) setup, where Redpanda manages the networking lifecycle for you, this option provides more security.
 
 When you create a BYOCVPC cluster, you specify your VPC and service account. The Redpanda Cloud agent doesn't create any new resources or alter any settings in your account. With BYOVPC: 
 
@@ -22,6 +22,7 @@ The https://github.com/redpanda-data/cloud-examples/tree/main/customer-managed/a
 * Minimum permissions in that AWS project. For the actions required by the user who will create the cluster with `rpk cloud byoc aws apply`, see https://github.com/redpanda-data/cloud-examples/blob/main/customer-managed/aws/terraform/iam_rpk_user.tf[`iam_rpk_user.tf`^].
 * Familiarity with the Redpanda Cloud API. For example, you should be familiar with how to use the Cloud API to xref:redpanda-cloud:manage:api/cloud-api-authentication.adoc[authenticate] and xref:redpanda-cloud:manage:api/cloud-byoc-controlplane-api.adoc[create a cluster].
 * https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli[Terraform^] version 1.8.5 or later.
+* https://jqlang.org/download/[jq^], which is used to parse JSON values from API responses.
 
 == Limitations
 
@@ -387,4 +388,4 @@ After that completes, run:
 rpk cloud byoc aws destroy --redpanda-id ${REDPANDA_ID}
 ```
 
-include::partial$no-access.adoc[]
+include::get-started:partial$no-access.adoc[]

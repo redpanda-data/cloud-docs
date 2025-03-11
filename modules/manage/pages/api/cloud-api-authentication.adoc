@@ -17,12 +17,19 @@ Users with administrative privileges in a Redpanda Cloud organization can create
 
 NOTE: Service accounts have administrative privileges by default. Cloud user roles are not applied for the API.
 
-// UI change not applied
-. On the https://cloud.redpanda.com/clients[Clients^] page in the Redpanda Cloud UI, click *Add client*. Enter a name and description.
+. On the https://cloud.redpanda.com/organization-iam?tab=service-accounts[Service account^] tab in the Organization IAM page of the Redpanda Cloud UI, click *Create service account*. Enter a name and description.
 
-. Retrieve the client ID and secret by clicking *Copy ID* and *Copy Secret*. 
+. Copy and store the Client ID and Client Secret. These credentials cannot be viewed again after you close the dialog. 
 
-. Make a POST request to `\https://auth.prd.cloud.redpanda.com/oauth/token` with the ID and secret in the request body. To see code examples for getting a token, click the *Request an API token* link in the *Clients* page.
+. Make a POST request to `\https://auth.prd.cloud.redpanda.com/oauth/token` with the ID and secret in the request body. 
++
+```bash
+curl -X POST "https://auth.prd.cloud.redpanda.com/oauth/token" \
+    -H "content-type: application/x-www-form-urlencoded" \
+    -d "grant_type=client_credentials" \
+    -d "client_id=<client-id>" \
+    -d "client_secret=<client-secret>"
+```
 +
 The request response provides an access token that remains valid for one hour.
 

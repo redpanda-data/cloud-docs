@@ -66,7 +66,7 @@ az network watcher configure --resource-group 'NetworkWatcherRG' --locations '<r
 
 Confirm that the Azure subscription has enough vCPUs per instance family and total regional vCPUs in the region where you will use Redpanda:
 
-* Standard LASv3-series vCPUs:  24 (3 Redpanda broker nodes)
+* Standard Ddv5-series vCPUs:  12  (3 Redpanda broker nodes + extra capacity for 3 more nodes that could be utilized temporarily during tier 1 maintenance)
 * Standard Dadsv5-series vCPUs: 8  (2 Redpanda utility nodes)
 * Standard Dv3-series vCPUs:    2  (1 Redpanda agent node)
 
@@ -81,18 +81,18 @@ See the https://learn.microsoft.com/en-us/azure/quotas/view-quotas[Microsoft doc
 Ensure that the Azure subscription does not have any SKU restrictions for the VM sizes in the region where you will use Redpanda. Using the Azure CLI or in the Azure Cloud Shell, run:
 
 ----
-az vm list-skus -l eastus2 --zone --size Standard_L8as_v3 --output table
+az vm list-skus -l eastus2 --zone --size Standard_D2d_v5 --output table
 az vm list-skus -l eastus2 --zone --size Standard_D2s_v3 --output table
 az vm list-skus -l eastus2 --zone --size Standard_D2ads_v5 --output table
 ----
 
-If you see restrictions, https://learn.microsoft.com/en-us/troubleshoot/azure/general/region-access-request-process[open a Microsoft support request^] to remove the restrictions. For example, checking the Standard_L8as_v3 VM SKU restriction in the eastus2 region for all zones could show:
+If you see restrictions, https://learn.microsoft.com/en-us/troubleshoot/azure/general/region-access-request-process[open a Microsoft support request^] to remove the restrictions. For example, checking the Standard_D2d_v5 VM SKU restriction in the eastus2 region for all zones could show:
 
 [%nowrap,bash]
 ----
 ResourceType     Locations    Name              Zones    Restrictions
 ---------------  -----------  ---------------   -------  ------------
-virtualMachines  eastus2      Standard_L8as_v3   1,2,3    NotAvailableForSubscription, type: Zone, locations: eastus2, zones: 2,3
+virtualMachines  eastus2      Standard_D2d_v5   1,2,3    NotAvailableForSubscription, type: Zone, locations: eastus2, zones: 2,3
 ----
 
 == Create a BYOC cluster
@@ -144,7 +144,7 @@ Replace the following placeholders:
 - `<cluster-id>`: Enter the cluster ID listed in the Redpanda Cloud UI. Go to the Cluster Overview page, and look in the Details section.
 - `<token>`: Enter the API token you received in step 1.
 
-include::partial$no-access.adoc[]
+include::get-started:partial$no-access.adoc[]
 
 == Next steps
 

@@ -18,9 +18,9 @@ Redpanda offers four types of fully-managed cloud clusters. All products have ac
 
 | For starter projects and applications with low or variable traffic. | For an enterprise-level version of Serverless, supporting moderate, sustained traffic. | For production clusters requiring expert cloud hosting, higher throughput, and extra isolation. | For production clusters requiring data sovereignty, the highest throughput, and added security.
 | Multi-tenant on AWS | Multi-tenant on AWS | Single-tenant on AWS, Azure, or GCP | In your cloud on AWS, Azure, or GCP 
-| 1 MB/s max write throughput | 10 MB/s max write throughput | 400 MB/s max write throughput | 2 GB/s max write throughput
-| 3 MB/s max read throughput | 30 MB/s max read throughput | 800 MB/s max read throughput | 4 GB/s max read throughput 
-| 100 partitions | 500 partitions | 22,800 partitions | 112,500 partitions
+| 1 MB/s max write throughput | 100 MB/s max write throughput | 400 MB/s max write throughput | 2 GB/s max write throughput
+| 3 MB/s max read throughput | 300 MB/s max read throughput | 800 MB/s max read throughput | 4 GB/s max read throughput 
+| 100 partitions | 5000 partitions | 22,800 partitions | 112,500 partitions
 | 99.5% SLA | 99.5% SLA | 99.99% SLA | 99.99% SLA 
 | Public networking | Public networking | Public or private networking | Public or private networking
 | SSO (GitHub, Google), Kafka ACLs | SSO (GitHub, Google), Kafka ACLs | SSO (GitHub, Google, OIDC), RBAC, audit logs  | SSO (GitHub, Google, OIDC), RBAC, audit logs 
@@ -229,26 +229,25 @@ TIP: Redpanda Cloud maintenance cycles always start on Tuesdays. Clusters schedu
 
 When you sign up for a Redpanda account, Redpanda creates an organization for you. Your organization contains all your Redpanda resources, including your clusters and networks. Within your organization, Redpanda creates a default resource group to contain your resources. You can rename this resource group, and you can create more resource groups. For example, you may want different resource groups for production and testing. 
 
-For high availability, Redpanda Cloud uses a control plane and data plane architecture. 
+For high availability, Redpanda Cloud uses the following control plane - data plane architecture:
 
-* *Control plane*: This is where most cluster management, operations, and maintenance takes place. The control plane enforces rules in the data plane.
+image::shared:control_d_plane.png[Control plane and data plane]
 
-* *Data plane*: This is where your cluster lives. The term _data plane_ is used interchangeably with _cluster_. 
+* *Control plane*: This is where most cluster management, operations, and maintenance takes place. The control plane enforces rules in the data plane. You can use role-based access control xref:security:authorization/rbac/rbac.adoc[(RBAC) in the control plane] to manage access to organization-level resources like clusters, resource groups, and networks. 
 
-* *Agent*: Redpanda uses an agent to manage the data plane from the control plane.
+* *Data plane*: This is where your cluster lives. The term _data plane_ is sometimes used interchangeably with _cluster_. The data plane is where you manage topics, consumer groups, connectors, and schemas. You can use xref:security:authorization/rbac/rbac_dp.adoc[RBAC in the data plane] to configure cluster-level permissions for provisioned users at scale. 
 
-Clusters are configured and maintained in the control plane, but they remain available even if the network connection to the control plane is lost.
+* *Agent*: For BYOC, Redpanda uses an agent to manage the data plane from the control plane. The agent pulls cluster specifications from the control plane. IAM permissions allow the agent to access the the cloud provider API to create and manage cluster resources. The permissions follow the principle of least privilege, limiting access to only what is necessary.
 
-NOTE: In the user interface, when you're at the organization (org) level or the resource group level, but you haven't yet selected a cluster, you're in the control plane. This is where you can select, create, and delete clusters, resource groups, and networks. When you're at the cluster level working with topics, consumer groups, and connectors, you're in the data plane.
+Clusters are configured and maintained in the control plane, but they remain available even if the network connection to the control plane is lost. 
+
+TIP: In the Redpanda Cloud UI, you see a different side navigation in the control plane and the data plane. You're in the control plane when you first log in. You're at the organization (org) level, and you haven't yet selected a cluster. This is where you can select, create, and delete clusters, networks, and resource groups. You're in the data plane when you're at the cluster level working with topics, consumer groups, connectors, and schemas.
 
 === BYOC architecture
 
-The following diagram shows a BYOC architecture, where you deploy the data plane in your own VPC. All network connections into the data plane take place through
-either a public endpoint or a VPC peering network connection. Sensitive data and credentials never leave the data plane. 
+In a BYOC architecture, you deploy the data plane in your own VPC. All network connections into the data plane take place through either a public endpoint, or for private clusters, through Redpanda Cloud network connections such as VPC peering, AWS PrivateLink, Azure Private Link, or GCP Private Service Connect. Customer data never leaves the data plane.
 
-image::shared:d_c_plane.png[Data plane and control plane]
-
-include::partial$no-access.adoc[]
+include::get-started:partial$no-access.adoc[]
 
 A BYOC cluster is initially set up from the control plane. This is a two-step process performed by `rpk cloud byoc apply`:
 
@@ -315,7 +314,6 @@ The following features are currently in limited availability in Redpanda Cloud:
 * Serverless Standard and Serverless Pro
 * Dedicated and BYOC for Azure
 * BYOVPC for GCP
-* GCP Private Service Connect
 * Azure Private Link
 
 == Features in beta
@@ -324,8 +322,7 @@ Features in beta are available for testing and feedback. They are not covered by
 
 The following features are currently in beta in Redpanda Cloud:
 
-* Role-based access control (RBAC) in the control plane
-* Redpanda Connect for Serverless Standard and Serverless Pro
+* Redpanda Connect for Serverless
 * Cloud API
 * Redpanda Terraform provider
 * BYOVPC for AWS and Azure
