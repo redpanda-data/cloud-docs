@@ -13,9 +13,9 @@
 
 A compute unit allocates a specific amount of server resources (CPU and memory) to a data pipeline to handle message throughput. By default, each pipeline is allocated one compute unit, which includes 0.1 CPU (100 milliCPU or `100m`) and 400 MB (`400M`) of memory. 
 
-For sizing purposes, one compute unit supports an estimated message throughput of 1 MB/sec. However, actual performance depends on the complexity of a pipeline, including the components it contains and processing it does.
+For sizing purposes, one compute unit supports an estimated message throughput of 1 MB/s. However, actual performance depends on the complexity of a pipeline, including the components it contains and the processing it does.
 
-You can allocate up to a maximum of 72 compute units per pipeline. You can add compute units in increments of one up to 15 compute units. Beyond this, scaling options increase to 33 and then to 72 compute units. This scaling strategy is based on the number of machine cores required to provision resources, which scale from two to four, and then to eight cores.
+You can allocate a maximum of 72 compute units per pipeline. You can add compute units in increments of one up to 15 compute units. Beyond this, scaling options increase to 33 and then to 72 compute units. This scaling strategy is based on the number of machine cores required to provision resources, which scale from two to four, and then to eight cores.
 
 Server resources are charged at an hourly rate in compute unit hours (compute/hour).
 
@@ -111,8 +111,8 @@ To set an initial resource limit:
 . Select the **Redpanda Connect** tab.
 . Click **Create pipeline**.
 . Enter details for your pipeline, including a short name and description.
-. In the **Compute units** box, leave the default **1** compute unit to experiment with pipelines that create low message volumes. For higher throughputs, you can allocate up to a maximum of 72 compute units.
-. Add your pipeline configuration and click **Create** to run it.
+. For **Compute units**, leave the default **1** compute unit to experiment with pipelines that create low message volumes. For higher throughputs, you can allocate a maximum of 72 compute units.
+. For **Configuration**, paste your pipeline configuration and click **Create** to run it.
 
 === Scale resources
 
@@ -155,7 +155,7 @@ Cloud UI::
 . Log in to https://cloud.redpanda.com[Redpanda Cloud^].
 . Go to the cluster where the pipeline is set up.
 . On the **Connect** page, select your pipeline and click **Edit**.
-. In the **Compute units** box, update the number of compute units. One compute unit provides a message throughput of approximately 1 MB/sec. For higher throughputs, you can allocate up to a maximum of 72 compute units per pipeline.
+. For **Compute units**, update the number of compute units. You can allocate a maximum of 72 compute units per pipeline.
 . Click **Update** to apply your changes. The specified resources are available immediately.
 
 --
