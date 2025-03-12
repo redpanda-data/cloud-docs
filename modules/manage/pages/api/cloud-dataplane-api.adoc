@@ -42,11 +42,11 @@ The response includes a `dataplane_api.url` value:
 
 === Create a user
 
-To create a new user in your Redpanda cluster, make a POST request to the xref:api:ROOT:cloud-dataplane-api.adoc#post-/v1alpha2/users[`/v1alpha2/users`] endpoint, including the SASL mechanism, username, and password in the request body:
+To create a new user in your Redpanda cluster, make a POST request to the xref:api:ROOT:cloud-dataplane-api.adoc#post-/v1/users[`/v1/users`] endpoint, including the SASL mechanism, username, and password in the request body:
 
 [,bash]
 ----
-curl -X POST "https://<dataplane-api-url>/v1alpha2/users" \
+curl -X POST "https://<dataplane-api-url>/v1/users" \
  -H "Authorization: Bearer <token>" \
  -H "accept: application/json" \
  -H "content-type: application/json" \
@@ -69,11 +69,11 @@ The success response returns the newly-created username and SASL mechanism:
 
 === Create an ACL
 
-To create a new ACL in your Redpanda cluster, make a xref:api:ROOT:cloud-dataplane-api.adoc#post-/v1alpha2/acls[`POST /v1alpha2/acls`] request. The following example ACL allows all operations on any Redpanda topic for a user with the name `payment-service`.
+To create a new ACL in your Redpanda cluster, make a xref:api:ROOT:cloud-dataplane-api.adoc#post-/v1/acls[`POST /v1/acls`] request. The following example ACL allows all operations on any Redpanda topic for a user with the name `payment-service`.
 
 [,bash]
 ----
-curl -X POST "https://<dataplane-api-url>/v1alpha2/acls" \
+curl -X POST "https://<dataplane-api-url>/v1/acls" \
  -H "Authorization: Bearer <token>" \
  -H "accept: application/json" \
  -H "content-type: application/json" \
@@ -89,11 +89,11 @@ The success response is empty, with a 201 status code.
 
 === Create a topic
 
-To create a new Redpanda topic without specifying any further parameters, such as the desired topic-level configuration or partition count, make a POST request to xref:api:ROOT:cloud-dataplane-api.adoc#post-/v1alpha2/topics[`/v1alpha2/topics`] endpoint:
+To create a new Redpanda topic without specifying any further parameters, such as the desired topic-level configuration or partition count, make a POST request to xref:api:ROOT:cloud-dataplane-api.adoc#post-/v1/topics[`/v1/topics`] endpoint:
 
 [,bash]
 ----
-curl -X POST "<dataplane-api-url>/v1alpha2/topics" \
+curl -X POST "<dataplane-api-url>/v1/topics" \
  -H "Authorization: Bearer <token>" \
  -H "accept: application/json" \
  -H "content-type: application/json" \
@@ -108,38 +108,38 @@ NOTE: The Pipeline APIs for Redpanda Connect are supported in BYOC and Serverles
 
 ==== Get Redpanda Connect pipeline
 
-To get details of a specific pipeline, make a xref:api:ROOT:cloud-dataplane-api.adoc#get-/v1alpha2/redpanda-connect/pipelines/-id-[`GET /v1alpha2/redpanda-connect/pipelines/\{id}]` request.
+To get details of a specific pipeline, make a xref:api:ROOT:cloud-dataplane-api.adoc#get-/v1/redpanda-connect/pipelines/-id-[`GET /v1/redpanda-connect/pipelines/\{id}]` request.
 
 [,bash]
 ----
-curl "https://<dataplane-url>/v1alpha2/redpanda-connect/pipelines/<pipeline-id>"
+curl "https://<dataplane-url>/v1/redpanda-connect/pipelines/<pipeline-id>"
 ----
 
 ==== Stop a Redpanda Connect pipeline
 
-To stop a running pipeline, make a xref:api:ROOT:cloud-dataplane-api.adoc#put-/v1alpha2/redpanda-connect/pipelines/-id-/stop[`PUT /v1alpha2/redpanda-connect/pipelines/\{id}/stop`] request.
+To stop a running pipeline, make a xref:api:ROOT:cloud-dataplane-api.adoc#put-/v1/redpanda-connect/pipelines/-id-/stop[`PUT /v1/redpanda-connect/pipelines/\{id}/stop`] request.
 
 [,bash]
 ----
-curl -X PUT "https://<dataplane-url>/v1alpha2/redpanda-connect/pipelines/<pipeline-id>/stop"
+curl -X PUT "https://<dataplane-url>/v1/redpanda-connect/pipelines/<pipeline-id>/stop"
 ----
 
 ==== Start a Redpanda Connect pipeline
 
-To start a previously stopped pipeline, make a xref:api:ROOT:cloud-dataplane-api.adoc#put-/v1alpha2/redpanda-connect/pipelines/-id-/start[`PUT /v1alpha2/redpanda-connect/pipelines/\{id}/start`] request.
+To start a previously stopped pipeline, make a xref:api:ROOT:cloud-dataplane-api.adoc#put-/v1/redpanda-connect/pipelines/-id-/start[`PUT /v1/redpanda-connect/pipelines/\{id}/start`] request.
 
 [,bash]
 ----
-curl -X PUT "https://<dataplane-url>/v1alpha2/redpanda-connect/pipelines/<pipeline-id>/start"
+curl -X PUT "https://<dataplane-url>/v1/redpanda-connect/pipelines/<pipeline-id>/start"
 ----
 
 ==== Update a Redpanda Connect pipeline
 
-To update a pipeline, make a xref:api:ROOT:cloud-dataplane-api.adoc#put-/v1alpha2/redpanda-connect/pipelines/-id-[`PUT /v1alpha2/redpanda-connect/pipelines/\{id}`] request. You update a pipeline configuration to scale resources, for example the number of CPU cores and amount of memory allocated.
+To update a pipeline, make a xref:api:ROOT:cloud-dataplane-api.adoc#put-/v1/redpanda-connect/pipelines/-id-[`PUT /v1/redpanda-connect/pipelines/\{id}`] request. You update a pipeline configuration to scale resources, for example the number of CPU cores and amount of memory allocated.
 
 [,bash]
 ----
-curl -X PUT "https://api.redpanda.com/v1alpha2/redpanda-connect/pipelines/" \
+curl -X PUT "https://api.redpanda.com/v1/redpanda-connect/pipelines/" \
  -H 'accept: application/json'\
  -H 'content-type: application/json' \
  -d '{"resources":{"cpu_shares":"8","memory_shares":"8G"}}' 
@@ -167,11 +167,11 @@ Kafka Connect cluster secret data must first be in JSON format, and then Base64-
 echo '{"secret.access.key": "<secret-access-key-value>"}' | base64
 ```
 
-. Use the xref:api:ROOT:cloud-dataplane-api.adoc#post-/v1alpha2/kafka-connect/clusters/-cluster_name-/secrets[Secrets API] to create a secret that stores the Base64-encoded secret data:
+. Use the xref:api:ROOT:cloud-dataplane-api.adoc#post-/v1/kafka-connect/clusters/-cluster_name-/secrets[Secrets API] to create a secret that stores the Base64-encoded secret data:
 +
 [,bash]
 ----
-curl -X POST "https://<dataplane-api-url>/v1alpha2/kafka-connect/clusters/redpanda/secrets" \
+curl -X POST "https://<dataplane-api-url>/v1/kafka-connect/clusters/redpanda/secrets" \
  -H 'accept: application/json'\
  -H 'content-type: application/json' \
  -d '{"name":"<connector-name>","secret_data":"<secret-data-base64-encoded>"}' 
@@ -181,13 +181,13 @@ The response returns an `id` that you can use to <<create-a-kafka-connect-connec
 
 ==== Create a Kafka Connect connector
 
-To create a connector, make a POST request to xref:api:ROOT:cloud-dataplane-api.adoc#post-/v1alpha2/kafka-connect/clusters/-cluster_name-/connectors[`/v1alpha2/kafka-connect/clusters/\{cluster_name}/connectors`]. 
+To create a connector, make a POST request to xref:api:ROOT:cloud-dataplane-api.adoc#post-/v1/kafka-connect/clusters/-cluster_name-/connectors[`/v1/kafka-connect/clusters/\{cluster_name}/connectors`]. 
 
 The following example shows how to create an S3 sink connector with the name `my-connector`:
 
 [,bash]
 ----
-curl -X POST "<dataplane-api-url>/v1alpha2/kafka-connect/clusters/redpanda/connectors" \
+curl -X POST "<dataplane-api-url>/v1/kafka-connect/clusters/redpanda/connectors" \
  -H "Authorization: Bearer <token>" \
  -H "accept: application/json" \
  -H "content-type: application/json" \
@@ -224,11 +224,11 @@ Example success response:
 
 ==== Restart a Kafka Connect connector
 
-To restart a connector, make a POST request to the xref:api:ROOT:cloud-dataplane-api.adoc#post-/v1alpha2/kafka-connect/clusters/-cluster_name-/connectors/-name-/restart[`/v1alpha2/kafka-connect/clusters/\{cluster_name}/connectors/\{name}/restart`] endpoint:
+To restart a connector, make a POST request to the xref:api:ROOT:cloud-dataplane-api.adoc#post-/v1/kafka-connect/clusters/-cluster_name-/connectors/-name-/restart[`/v1/kafka-connect/clusters/\{cluster_name}/connectors/\{name}/restart`] endpoint:
 
 [,bash]
 ----
-curl -X POST "<dataplane-api-url>/v1alpha2/kafka-connect/clusters/redpanda/connectors/my-connector/restart" \
+curl -X POST "<dataplane-api-url>/v1/kafka-connect/clusters/redpanda/connectors/my-connector/restart" \
  -H "Authorization: Bearer <token>" \
  -H "accept: application/json"\
  -H "content-type: application/json" \
