@@ -6,15 +6,21 @@
 
 == Prerequisites
 
-- A running xref:get-started:cluster-types/byoc/index.adoc[BYOC] (not BYOVPC) or xref:get-started:cluster-types/dedicated/create-dedicated-cloud-cluster.adoc[Dedicated cluster]
+- A running xref:get-started:cluster-types/byoc/index.adoc[BYOC] (not BYOVPC) or xref:get-started:cluster-types/dedicated/create-dedicated-cloud-cluster.adoc[Dedicated] cluster.
 - An estimate of the throughput of your data pipeline. You can get some basic statistics by running your data pipeline locally using the xref:redpanda-connect:components:processors/benchmark.adoc[`benchmark` processor].
 
-=== Understanding tasks
+=== Understanding compute units
 
-A task is a unit of computation that allocates a specific amount of CPU and memory to a data pipeline to handle message throughput. By default, each pipeline is allocated one task, which includes 0.1 CPU (100 milliCPU or `100m`) and 400 MB (`400M`) of memory, and provides a message throughput of approximately 1 MB/sec. You can allocate up to a maximum of 18 tasks per pipeline.
+A compute unit allocates a specific amount of server resources (CPU and memory) to a data pipeline to handle message throughput. By default, each pipeline is allocated one compute unit, which includes 0.1 CPU (100 milliCPU or `100m`) and 400 MB (`400M`) of memory. 
+
+For sizing purposes, one compute unit supports an estimated message throughput of 1 MB/s. However, actual performance depends on the complexity of a pipeline, including the components it contains and the processing it does.
+
+You can allocate a maximum of 72 compute units per pipeline. You can add compute units in increments of one up to 15 compute units. Beyond this, scaling options increase to 33 and then to 72 compute units. This scaling strategy is based on the number of machine cores required to provision resources, which scale from two to four, and then to eight cores.
+
+Server resources are charged at an xref:billing:billing.adoc#redpanda-connect-pipeline-metrics-dedicated-and-serverless[hourly rate in compute unit hours (compute/hour)].
 
 |===
-| Number of Tasks | CPU | Memory
+| Number of compute units | CPU | Memory
 
 | 1
 | 0.1 CPU (`100m`)
@@ -76,25 +82,21 @@ A task is a unit of computation that allocates a specific amount of CPU and memo
 | 1.5 CPU (`1500m`)
 | 6.0 GB (`6000M`)
 
-| 16
-| 1.6 CPU (`1600m`)
-| 6.4 GB (`6400M`)
+| 33
+| 3.3 CPU (`3300m`)
+| 13.2 GB (`13200M`)
 
-| 17
-| 1.7 CPU (`1700m`)
-| 6.8 GB (`6800M`)
-
-| 18
-| 1.8 CPU (`1800m`)
-| 7.2 GB (`7200M`)
+| 72
+| 7.2 CPU (`7200m`)
+| 28.8 GB (`28800M`)
 
 |===
 
-NOTE: For pipelines with embedded Ollama AI components, one GPU task is automatically allocated to the pipeline, which is equivalent to 30 tasks or 3.0 CPU (`3000m`) and 12 GB of memory (`12000M`).
+NOTE: For pipelines with embedded Ollama AI components, one GPU is automatically allocated to the pipeline, which is equivalent to 30 compute units, or 3.0 CPU (`3000m`) and 12 GB of memory (`12000M`).
 
 === Set an initial resource limit
 
-When you create a data pipeline, you can allocate a fixed amount of compute resources to it using tasks.
+When you create a data pipeline, you can allocate a fixed amount of server resources to it using compute units.
 
 [NOTE]
 ====
@@ -109,12 +111,12 @@ To set an initial resource limit:
 . Select the **Redpanda Connect** tab.
 . Click **Create pipeline**.
 . Enter details for your pipeline, including a short name and description.
-. In the **Tasks** box, leave the default **1** task to experiment with pipelines that create low message volumes. For higher throughputs, you can allocate up to a maximum of 18 tasks.
-. Add your pipeline configuration and click **Create** to run it.
+. For **Compute units**, leave the default **1** compute unit to experiment with pipelines that create low message volumes. For higher throughputs, you can allocate a maximum of 72 compute units.
+. For **Configuration**, paste your pipeline configuration and click **Create** to run it.
 
 === Scale resources
 
-View the compute resources allocated to a data pipeline, and manually scale those resources to improve performance or decrease resource consumption.
+View the server resources allocated to a data pipeline, and manually scale those resources to improve performance or decrease resource consumption.
 
 To view resources already allocated to a data pipeline:
 
@@ -127,8 +129,8 @@ Cloud UI::
 . Go to the cluster where the pipeline is set up.
 . On the **Connect** page, select your pipeline and look at the value for **Resources**.
 +
-* CPU resources are displayed first, in milliCPU. For example, `1` task is `100m` or 0.1 CPU. 
-* Memory is displayed next in megabytes. For example, `1` task is `400M` or 400 MB.
+* CPU resources are displayed first, in milliCPU. For example, `1` compute unit is `100m` or 0.1 CPU. 
+* Memory is displayed next in megabytes. For example, `1` compute unit is `400M` or 400 MB.
 
 --
 Data Plane API::
@@ -137,8 +139,8 @@ Data Plane API::
 . xref:manage:api/cloud-api-quickstart.adoc#try-the-cloud-api[Authenticate and get the base URL] for the Data Plane API. 
 . Make a request to xref:api:ROOT:cloud-dataplane-api.adoc#get-/v1alpha2/redpanda-connect/pipelines[`GET /v1alpha2/redpanda-connect/pipelines`], which lists details of all pipelines on your cluster by ID. 
 +
-* Memory (`memory_shares`) is displayed in megabytes. For example, `1` task is `400M` or 400 MB.
-* CPU resources (`cpu_shares`) are displayed milliCPU. For example, `1` task is `100m` or 0.1 CPU.
+* Memory (`memory_shares`) is displayed in megabytes. For example, `1` compute unit is `400M` or 400 MB.
+* CPU resources (`cpu_shares`) are displayed milliCPU. For example, `1` compute unit is `100m` or 0.1 CPU.
 
 --
 =====
@@ -153,7 +155,7 @@ Cloud UI::
 . Log in to https://cloud.redpanda.com[Redpanda Cloud^].
 . Go to the cluster where the pipeline is set up.
 . On the **Connect** page, select your pipeline and click **Edit**.
-. In the **Tasks** box, update the number of tasks. One task provides a message throughput of approximately 1 MB/sec. For higher throughputs, you can allocate up to a maximum of 18 tasks per pipeline.
+. For **Compute units**, update the number of compute units. You can allocate a maximum of 72 compute units per pipeline.
 . Click **Update** to apply your changes. The specified resources are available immediately.
 
 --
