@@ -155,7 +155,7 @@ EOF
 . Use the Cloud API to create the network and retrieve the network ID: 
 +
 ```bash
-export REDPANDA_NETWORK_ID=$(curl -X POST "https://api.redpanda.com/v1beta2/networks" \
+export REDPANDA_NETWORK_ID=$(curl -X POST "https://api.redpanda.com/v1/networks" \
  -H "accept: application/json" \
  -H "content-type: application/json" \
  -H "authorization: Bearer ${BEARER_TOKEN}" \
@@ -170,7 +170,7 @@ The Create Network request returns a `resource_id`. For example:
    "operation":{
       "id":"cpas8k6r4up5li18auh0",
       "metadata":{
-         "@type":"type.googleapis.com/redpanda.api.controlplane.v1beta2.CreateNetworkMetadata",
+         "@type":"type.googleapis.com/redpanda.api.controlplane.v1.CreateNetworkMetadata",
          "network_id":"cpb338gekjj5i1cpj3t0"
       },
       "state":"STATE_IN_PROGRESS",
@@ -261,7 +261,7 @@ EOF
 . Use the Cloud API to deploy the cluster and retrieve its ID:
 +
 ```bash
-export REDPANDA_ID=$(curl -X POST "https://api.redpanda.com/v1beta2/clusters" \
+export REDPANDA_ID=$(curl -X POST "https://api.redpanda.com/v1/clusters" \
  -H "accept: application/json" \
  -H "content-type: application/json" \
  -H "authorization: Bearer ${BEARER_TOKEN}" \
@@ -276,7 +276,7 @@ The create cluster request returns a `resource_id`, which is required in the nex
    "operation":{
       "id":"cpas8k6r4up5li18auhg",
       "metadata":{
-         "@type":"type.googleapis.com/redpanda.api.controlplane.v1beta2.CreateClusterMetadata",
+         "@type":"type.googleapis.com/redpanda.api.controlplane.v1.CreateClusterMetadata",
          "cluster_id":"cpb33c8ekjj5i1cpj3v0"
       },
       "state":"STATE_IN_PROGRESS",
@@ -356,7 +356,7 @@ Cluster creation is an example of an operation that can take a longer period of 
 Example using the operation ID returned from your create cluster command:
 
 ```bash
-curl -X GET "https://api.redpanda.com/v1beta2/operations/${REDPANDA_ID}" \
+curl -X GET "https://api.redpanda.com/v1/operations/${REDPANDA_ID}" \
  -H "accept: application/json"\
  -H "content-type: application/json" \
  -H "authorization: Bearer ${BEARER_TOKEN}"
@@ -365,7 +365,7 @@ curl -X GET "https://api.redpanda.com/v1beta2/operations/${REDPANDA_ID}" \
 Example retrieving cluster:
 
 ```bash
-curl -X GET "https://api.redpanda.com/v1beta2/clusters/${REDPANDA_ID}" \
+curl -X GET "https://api.redpanda.com/v1/clusters/${REDPANDA_ID}" \
  -H "accept: application/json"\
  -H "content-type: application/json" \
  -H "authorization: Bearer ${BEARER_TOKEN}"
@@ -376,7 +376,7 @@ curl -X GET "https://api.redpanda.com/v1beta2/clusters/${REDPANDA_ID}" \
 To delete the cluster, first send a DELETE request to the Cloud API, and retrieve the `resource_id` of the DELETE operation. Then run the `rpk` command to destroy the cluster identified by the `resource_id`.
 
 ```bash
-export REDPANDA_ID=$(curl -X DELETE "https://api.redpanda.com/v1beta2/clusters/${REDPANDA_ID}" \
+export REDPANDA_ID=$(curl -X DELETE "https://api.redpanda.com/v1/clusters/${REDPANDA_ID}" \
  -H "accept: application/json"\
  -H "content-type: application/json" \
  -H "authorization: Bearer ${BEARER_TOKEN}" | jq -r '.operation.resource_id')
