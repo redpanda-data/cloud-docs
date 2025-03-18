@@ -128,23 +128,23 @@ To create the Redpanda network:
 cat > redpanda-network.json <<EOF
 {
     "name":"sample-redpanda-network",
-    "resource_group_id": ${REDPANDA_RG_ID},
+    "resource_group_id": "${REDPANDA_RG_ID}",
     "cloud_provider":"CLOUD_PROVIDER_AWS",
-    "region": ${AWS_REGION},
+    "region": "${AWS_REGION}",
     "cluster_type":"TYPE_BYOC",
     "customer_managed_resources": {
       "aws": {
         "management_bucket": {
-          "arn": ${AWS_MANAGEMENT_BUCKET}
+          "arn": "${AWS_MANAGEMENT_BUCKET}"
         },
         "dynamodb_table": {
-          "arn": ${AWS_DYNAMODB_TABLE}
+          "arn": "${AWS_DYNAMODB_TABLE}"
         },
         "private_subnets": {
-          "arns": ${AWS_PRIVATE_SUBNETS}
+          "arns": "${AWS_PRIVATE_SUBNETS}"
         },
         "vpc": {
-          "arn": ${AWS_VPC}
+          "arn": "${AWS_VPC}"
         }
       }
    }
@@ -253,7 +253,7 @@ cat > redpanda-cluster.json <<EOF
         "arn": "<permissions_boundary_policy_arn from terraform outputs>"
       }
     }
-  },
+  }
 }
 EOF
 ```
