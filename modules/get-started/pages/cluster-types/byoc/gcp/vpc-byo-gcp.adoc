@@ -322,7 +322,61 @@ gcloud projects add-iam-policy-binding <service-project-id> \
 ```
 ====
 
-* Redpanda Connectors service account
+* Redpanda Connect service accounts
++
+.Show commands
+[%collapsible]
+====
+```bash
+# Used to check for the existence of a Redpanda Connect Service Account with permissions to create pipelines.
+
+gcloud iam service-accounts create redpanda-connect \ 
+  --display-name="Redpanda Connect API Service Account" 
+
+cat << EOT > redpanda-connect-api.role 
+{
+  "name": "redpanda_redpanda_connect_api_role",
+  "title": "Redpanda Connect API Role",  
+  "description": "Redpanda Connect API Role", 
+  "includedPermissions": [
+    "secretmanager.versions.access"
+  ],
+}
+EOT
+
+gcloud iam roles create redpanda_redpanda_connect_api_role --project=<service-project-id> --file redpanda-connect-api.role
+
+gcloud projects add-iam-policy-binding <service-project-id> \
+  --member="serviceAccount:redpanda-connect-api@<service-project-id>.iam.gserviceaccount.com" \
+  --role='projects/<service-project-id>/roles/redpanda_redpanda_connect_api_role'
+```
+```bash
+# Used to create Redpanda Connect pipelines.
+
+gcloud iam service-accounts create redpanda-connect \
+  --display-name="Redpanda Connect Service Account"
+
+cat << EOT > redpanda-connect.role
+{
+  "name": "redpanda_connect_role",
+  "title": "Redpanda Connect Role",
+  "description": "Redpanda Connect Role",
+  "includedPermissions": [
+    "resourcemanager.projects.get",
+    "secretmanager.versions.access"
+  ],
+}
+EOT
+
+gcloud iam roles create redpanda_connect_role --project=<service-project-id> --file redpanda-connect.role
+
+gcloud projects add-iam-policy-binding <service-project-id> \
+  --member="serviceAccount:redpanda-connect@<service-project-id>.iam.gserviceaccount.com" \
+  --role='projects/<service-project-id>/roles/redpanda_connect_role'
+```
+====
+
+* Kafka Connect connectors service account
 +
 .Show commands
 [%collapsible]
@@ -487,7 +541,24 @@ gcloud iam service-accounts add-iam-policy-binding <console-gcp-sa-account-id>@<
 ```
 ====
 
-* Redpanda Connectors service account
+* Redpanda Connect service accounts
++
+.Show command
+[%collapsible]
+====
+```
+gcloud iam service-accounts add-iam-policy-binding <redpanda_connect_api-gcp-sa-account-id>@<service-project-id>.iam.gserviceaccount.com \
+    --role roles/iam.workloadIdentityUser \
+    --member "serviceAccount:<service-project-id>.svc.id.goog[redpanda-connect-api/connectors-<redpanda_connect_api-gcp-sa-account-id>]"
+```
+```
+gcloud iam service-accounts add-iam-policy-binding <redpanda_connect-gcp-sa-account-id>@<service-project-id>.iam.gserviceaccount.com \
+    --role roles/iam.workloadIdentityUser \
+    --member "serviceAccount:<service-project-id>.svc.id.goog[redpanda-connect/connectors-<redpanda_connect-gcp-sa-account-id>]"
+```
+====
+
+* Kafka Connect connectors service account
 +
 .Show command
 [%collapsible]

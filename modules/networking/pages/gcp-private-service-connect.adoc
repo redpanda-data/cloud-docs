@@ -292,6 +292,40 @@ You can test the Private Service Connect connection from any VM or container in 
 
 include::networking:partial$private-links-test-connection.adoc[]
 
+== Enable Redpanda Connect on an existing BYOVPC cluster
+
+After you have enabled Private Service Connect, you can add Redpanda Connect to an existing BYOVPC cluster.
+
+. Make a xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1/clusters/-cluster.id-[`PATCH /v1/clusters/\{cluster-id}`] request to update the cluster.
++
+[,bash]
+----
+export CLUSTER_PATCH_BODY=`cat << EOF
+{
+  "cluster":{
+    "customer_managed_resources": {
+        "gcp": {
+            "redpanda_connect_api_service_account": {
+              "email": "redpanda-connect-api-xxx@my-projectiam.gserviceaccount.com"
+            },
+            "redpanda_connect_service_account": {
+              "email": "redpanda-connect-xxx@my-project.iam.gserviceaccount.com"
+            }
+        }
+    }
+  },
+  "update_mask": "customerManagedResources.gcp.redpandaConnectApiServiceAccount.email,customerManagedResources.gcp.redpandaConnectServiceAccount.email"
+}
+EOF`
+curl -v -X PATCH \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer $AUTH_TOKEN" \
+-d "$CLUSTER_PATCH_BODY" $PUBLIC_API_ENDPOINT/v1beta2/clusters/<cluster-id>
+----
+
+. Confirm Redpanda Connect is available.
+
+
 == Disable Private Service Connect
 
 Make a xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1beta2/clusters/-cluster.id-[`PATCH /v1beta2/clusters/{cluster.id}`] request to update the cluster to disable Private Service Connect.
