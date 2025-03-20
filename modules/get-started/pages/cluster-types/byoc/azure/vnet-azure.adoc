@@ -326,7 +326,7 @@ EOF
 . Use the Cloud API to create the network and retrieve the network ID:
 +
 ```bash
-export REDPANDA_NETWORK_ID=$(curl -X POST "https://api.redpanda.com/v1beta2/networks" \
+export REDPANDA_NETWORK_ID=$(curl -X POST "https://api.redpanda.com/v1/networks" \
  -H "accept: application/json" \
  -H "content-type: application/json" \
  -H "authorization: Bearer ${BEARER_TOKEN}" \
@@ -396,7 +396,7 @@ TIP: See the full list of zones and tiers available with each provider in the xr
 . Make a Cloud API call to create a Redpanda network and get the network ID from the response in JSON `.operation.metadata.network_id`.
 +
 ```bash
-export REDPANDA_ID=$(curl -X POST "https://api.redpanda.com/v1beta2/clusters" \
+export REDPANDA_ID=$(curl -X POST "https://api.redpanda.com/v1/clusters" \
  -H "accept: application/json"\ 
  -H "content-type: application/json" \
  -H "authorization: Bearer ${BEARER_TOKEN}" \
@@ -428,7 +428,7 @@ Cluster creation is an example of an operation that can take a longer period of 
 Example using the returned `operation_id`:
 
 ```bash
-curl -X GET "https://api.redpanda.com/v1beta2/operations/<operation_id of operation from previous step>" \
+curl -X GET "https://api.redpanda.com/v1/operations/<operation-id>" \
  -H "accept: application/json"\
  -H "content-type: application/json" \
  -H "authorization: Bearer ${BEARER_TOKEN}"
@@ -437,7 +437,7 @@ curl -X GET "https://api.redpanda.com/v1beta2/operations/<operation_id of operat
 Example retrieving cluster:
 
 ```bash
-curl -X GET "https://api.redpanda.com/v1beta2/clusters/<resource_id of cluster from previous step>" \
+curl -X GET "https://api.redpanda.com/v1/clusters/<resource-id>" \
  -H "accept: application/json"\
  -H "content-type: application/json" \
  -H "authorization: Bearer ${BEARER_TOKEN}"
@@ -448,7 +448,7 @@ curl -X GET "https://api.redpanda.com/v1beta2/clusters/<resource_id of cluster f
 To delete the cluster, first send a DELETE request to the Cloud API, and retrieve the `resource_id` of the DELETE operation. Then run the `rpk` command to destroy the cluster identified by the `resource_id`.
 
 ```bash
-export REDPANDA_ID=$(curl -X DELETE "https://api.redpanda.com/v1beta2/clusters/${REDPANDA_ID}" \
+export REDPANDA_ID=$(curl -X DELETE "https://api.redpanda.com/v1/clusters/${REDPANDA_ID}" \
  -H "accept: application/json"\
  -H "content-type: application/json" \
  -H "authorization: Bearer ${BEARER_TOKEN}" | jq -r '.operation.resource_id')

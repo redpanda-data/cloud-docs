@@ -1,9 +1,12 @@
-:tag-clusters: api:ROOT:cloud-controlplane-api.adoc#tag--ClusterService
-:tag-networks: api:ROOT:cloud-controlplane-api.adoc#tag--NetworkService
-:tag-operations: api:ROOT:cloud-controlplane-api.adoc#tag--OperationService
-:tag-resource-groups: api:ROOT:cloud-controlplane-api.adoc#tag--ResourceGroupService
-:tag-serverless-regions: api:ROOT:cloud-controlplane-api.adoc#tag--ServerlessRegionService
-:tag-serverless-clusters: api:ROOT:cloud-controlplane-api.adoc#tag--ServerlessClusterService
+:tag-clusters: api:ROOT:cloud-controlplane-api.adoc#tag--Clusters
+:tag-networks: api:ROOT:cloud-controlplane-api.adoc#tag--Networks
+:tag-operations: api:ROOT:cloud-controlplane-api.adoc#tag--Operations
+:tag-resource-groups: api:ROOT:cloud-controlplane-api.adoc#tag--Resource-Groups
+:tag-serverless-regions: api:ROOT:cloud-controlplane-api.adoc#tag--Serverless-Regions
+:tag-serverless-clusters: api:ROOT:cloud-controlplane-api.adoc#tag--Serverless-Clusters
+:tag-role-bindings: api:ROOT:cloud-controlplane-api.adoc#tag--Control-Plane-Role-Bindings
+:tag-users: api:ROOT:cloud-controlplane-api.adoc#tag--Control-Plane-Users
+:tag-service-accounts: api:ROOT:cloud-controlplane-api.adoc#tag--Control-Plane-Service-Accounts
 
 The Redpanda Cloud API is a collection of REST APIs that allow you to interact with different parts of Redpanda Cloud. The Control Plane API enables you to programmatically manage your organization's Redpanda infrastructure outside of the Cloud UI. You can call the API endpoints directly, or use tools like Terraform or Python scripts to automate cluster management.
 
@@ -13,25 +16,28 @@ See xref:api:ROOT:cloud-controlplane-api.adoc[Control Plane API] for the full AP
 
 The Control Plane API is one central API that allows you to provision clusters, networks, and resource groups.
 
-The Control Plane API consists of the following endpoints:
+The Control Plane API consists of the following endpoint groups:
 
 ifndef::env-serverless[]
-* pass:a,m[xref:{tag-clusters}[ClusterService\]]
-* pass:a,m[xref:{tag-networks}[NetworkService\]]
+* pass:a,m[xref:{tag-clusters}[Clusters\]]
+* pass:a,m[xref:{tag-networks}[Networks\]]
 endif::[]
-* pass:a,m[xref:{tag-operations}[OperationService\]]
-* pass:a,m[xref:{tag-resource-groups}[ResourceGroupService\]]
+* pass:a,m[xref:{tag-operations}[Operations\]]
+* pass:a,m[xref:{tag-resource-groups}[Resource Groups\]]
 ifdef::env-serverless[]
-* pass:a,m[xref:{tag-serverless-clusters}[ServerlessClusterService\]]
-* pass:a,m[xref:{tag-serverless-regions}[ServerlessRegionService\]]
+* pass:a,m[xref:{tag-serverless-clusters}[Serverless Clusters\]]
+* pass:a,m[xref:{tag-serverless-regions}[Serverless Regions\]]
 endif::[]
+* pass:a,m[xref:{tag-role-bindings}[Control Plane Role Bindings\]]
+* pass:a,m[xref:{tag-users}[Control Plane Users\]]
+* pass:a,m[xref:{tag-service-accounts}[Control Plane Service Accounts\]]
 
 // For serverless, show this section at the end of the doc
 ifndef::env-serverless[]
 [[lro]]
 == Long-running operations
 
-Some endpoints do not directly return the resource itself, but instead return an operation. The following is an example response of xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1beta2/clusters[`POST /clusters`]:
+Some endpoints do not directly return the resource itself, but instead return an operation. The following is an example response of xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1/clusters[`POST /clusters`]:
 
 [,bash,role=no-copy]
 ----
@@ -39,7 +45,7 @@ Some endpoints do not directly return the resource itself, but instead return an
     "operation": {
         "id": "cqfc6vdmvio001r4vu4",
         "metadata": {
-            "@type": "type.googleapis.com/redpanda.api.controlplane.v1beta2.CreateClusterMetadata",
+            "@type": "type.googleapis.com/redpanda.api.controlplane.v1.CreateClusterMetadata",
             "cluster_id": "cqg168balf4e4pm8ptu"
         },
         "state": "STATE_IN_PROGRESS",
@@ -54,10 +60,10 @@ The response object represents the long-running operation of creating a cluster.
 
 === Check operation state
 
-To check the progress of an operation, make a request to the xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1beta2/operations/-id-[`GET /operations/\{id}`] endpoint using the operation ID as a parameter: 
+To check the progress of an operation, make a request to the xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/operations/-id-[`GET /operations/\{id}`] endpoint using the operation ID as a parameter: 
 
 ```bash
-curl -H "Authorization: Bearer <token>" https://api.redpanda.com/v1beta2/operations/<operation-id>
+curl -H "Authorization: Bearer <token>" https://api.redpanda.com/v1/operations/<operation-id>
 ```
 
 TIP: When using a shell substitution variable for the token, use double quotes to wrap the header value.
@@ -77,7 +83,7 @@ To create a new cluster, first create a resource group and network, if you have 
 
 === Create a resource group 
 
-Create a resource group by making a POST request to the xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1beta2/resource-groups[`/v1beta2/resource-groups`] endpoint. Pass a name for your resource group in the request body.
+Create a resource group by making a POST request to the xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1/resource-groups[`/v1/resource-groups`] endpoint. Pass a name for your resource group in the request body.
 
 [,bash]
 ----
@@ -85,14 +91,14 @@ curl -H 'Content-Type: application/json' \
 -H "Authorization: Bearer <token>" \
 -d '{
   "name": "<resource-group-name>"
-}' -X POST https://api.redpanda.com/v1beta2/resource-groups
+}' -X POST https://api.redpanda.com/v1/resource-groups
 ----
 
 A resource group ID is returned. Pass this ID later when you call the Create Cluster endpoint.
 
 === Create a network
 
-Create a network by making a request to xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1beta2/networks[`POST /v1beta2/networks`].
+Create a network by making a request to xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1/networks[`POST /v1/networks`].
 
 Choose a xref:networking:cidr-ranges.adoc[CIDR range] that does not overlap with your existing VPCs or your Redpanda network.
 
@@ -106,14 +112,14 @@ curl -d \
   "name": "<network-name>",
   "resource_group_id": "<resource-group-id>",
   "region": "us-west1"
-}' -H "Authorization: Bearer <token>" -X POST https://api.redpanda.com/v1beta2/networks 
+}' -H "Authorization: Bearer <token>" -X POST https://api.redpanda.com/v1/networks 
 ----
 
 This endpoint returns a <<lro,long-running operation>>. 
 
 === Create a new cluster
 
-After the network is created, make a request to the xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1beta2/clusters[`POST /v1beta2/clusters`] with the resource group ID and network ID in the request body. 
+After the network is created, make a request to the xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1/clusters[`POST /v1/clusters`] with the resource group ID and network ID in the request body. 
 
 [,bash]
 ----
@@ -132,10 +138,10 @@ curl -d \
     "us-west1-b",
     "us-west1-c"
     ]
-  }' -H "Authorization: Bearer <token>" -X POST https://api.redpanda.com/v1beta2/clusters
+  }' -H "Authorization: Bearer <token>" -X POST https://api.redpanda.com/v1/clusters
 ----
 
-The Create Cluster endpoint returns a <<lro,long-running operation>>. When the operation completes, you can retrieve cluster details by calling xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1beta2/clusters/-id-[`GET /v1beta2/clusters/\{id}`], and passing the cluster ID as a parameter.
+The Create Cluster endpoint returns a <<lro,long-running operation>>. When the operation completes, you can retrieve cluster details by calling xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/clusters/-id-[`GET /v1/clusters/\{id}`], and passing the cluster ID as a parameter.
 
 ifdef::env-byoc[]
 ==== Additional steps to create a BYOC cluster
@@ -177,15 +183,15 @@ To create a new serverless cluster, you can use the default resource group, or c
 
 [NOTE]
 ====
-This step is optional. Serverless includes a default resource group. To retrieve the default resource group ID, make a GET request to the xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1beta2/resource-groups[`/v1beta2/resource-groups`] endpoint:
+This step is optional. Serverless includes a default resource group. To retrieve the default resource group ID, make a GET request to the xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/resource-groups[`/v1/resource-groups`] endpoint:
 
 ```bash
-curl -H "Authorization: Bearer <token>" https://api.redpanda.com/v1beta2/resource-groups
+curl -H "Authorization: Bearer <token>" https://api.redpanda.com/v1/resource-groups
 ```
 
 ====
 
-Create a resource group by making a POST request to the xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1beta2/resource-groups[`/v1beta2/resource-groups`] endpoint. Pass a name for your resource group in the request body.
+Create a resource group by making a POST request to the xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1/resource-groups[`/v1/resource-groups`] endpoint. Pass a name for your resource group in the request body.
 
 [,bash]
 ----
@@ -193,18 +199,18 @@ curl -H 'Content-Type: application/json' \
 -H "Authorization: Bearer <token>" \
 -d '{
   "name": "<serverless-resource-group-name>"
-}' -X POST https://api.redpanda.com/v1beta2/resource-groups
+}' -X POST https://api.redpanda.com/v1/resource-groups
 ----
 
 A resource group ID is returned. Pass this ID later when you call the Create Serverless Cluster endpoint.
 
 === Choose a region
 
-To see the available regions for Redpanda Serverless, make a GET request to the xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1beta2/serverless/regions[`/v1beta2/serverless/regions`] endpoint. You can specify a cloud provider in your request. Serverless currently only supports AWS.
+To see the available regions for Redpanda Serverless, make a GET request to the xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/serverless/regions[`/v1/serverless/regions`] endpoint. You can specify a cloud provider in your request. Serverless currently only supports AWS.
 
 [,bash]
 ----
-curl -H "Authorization: Bearer <token>" 'https://api.redpanda.com/v1beta2/serverless/regions?cloud_provider=CLOUD_PROVIDER_AWS'
+curl -H "Authorization: Bearer <token>" 'https://api.redpanda.com/v1/serverless/regions?cloud_provider=CLOUD_PROVIDER_AWS'
 ----
 
 TIP: When using a shell substitution variable for the token, use double quotes to wrap the header value.
@@ -241,7 +247,7 @@ TIP: When using a shell substitution variable for the token, use double quotes t
 
 === Create a new serverless cluster
 
-Create a Serverless cluster by making a request to xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1beta2/serverless/clusters[`POST /v1beta2/serverless/clusters`] with the resource group ID and serverless region name in the request body. 
+Create a Serverless cluster by making a request to xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1/serverless/clusters[`POST /v1/serverless/clusters`] with the resource group ID and serverless region name in the request body. 
 
 [,bash]
 ----
@@ -251,10 +257,10 @@ curl -H 'Content-Type: application/json' \
   "name": <serverless-cluster-name>,
   "resource_group_id": <resource-group-id>,
   "serverless_region": "pro-us-east-1"
-}' -X POST https://api.redpanda.com/v1beta2/serverless/clusters
+}' -X POST https://api.redpanda.com/v1/serverless/clusters
 ----
 
-The Create Serverless Cluster endpoint returns a <<lro-serverless,long-running operation>>. When the operation completes, you can retrieve cluster details by calling xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1beta2/serverless/clusters/-id-[`GET /v1beta2/serverless/clusters/\{id}`], and passing the cluster ID as a parameter.
+The Create Serverless Cluster endpoint returns a <<lro-serverless,long-running operation>>. When the operation completes, you can retrieve cluster details by calling xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/serverless/clusters/-id-[`GET /v1/serverless/clusters/\{id}`], and passing the cluster ID as a parameter.
 
 endif::[]
 
@@ -262,16 +268,16 @@ endif::[]
 
 ifndef::env-serverless[]
 
-To delete a cluster, make a request to the xref:api:ROOT:cloud-controlplane-api.adoc#delete-/v1beta2/clusters/-id-[`DELETE /v1beta2/clusters/\{id}`] endpoint, passing the cluster ID as a parameter. This is a <<lro,long-running operation>>.
+To delete a cluster, make a request to the xref:api:ROOT:cloud-controlplane-api.adoc#delete-/v1/clusters/-id-[`DELETE /v1/clusters/\{id}`] endpoint, passing the cluster ID as a parameter. This is a <<lro,long-running operation>>.
 
 ```bash
-curl -H "Authorization: Bearer <token>" -X DELETE https://api.redpanda.com/v1beta2/clusters/<cluster_id>
+curl -H "Authorization: Bearer <token>" -X DELETE https://api.redpanda.com/v1/clusters/<cluster_id>
 ```
 
 ifdef::env-byoc[]
 === Additional steps to delete a BYOC cluster
 
-. Make a request to xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1beta2/clusters/-id-[`GET /v1beta2/clusters/\{id}`] to check the state of the cluster. Wait until the state is `STATE_DELETING_AGENT`.
+. Make a request to xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/clusters/-id-[`GET /v1/clusters/\{id}`] to check the state of the cluster. Wait until the state is `STATE_DELETING_AGENT`.
 . After the state changes to `STATE_DELETING_AGENT`, run `rpk cloud byoc` to destroy the agent.
 +
 [tabs]
@@ -299,26 +305,26 @@ rpk cloud byoc gcp destroy --redpanda-id=<cluster-id> --project-id=<gcp-project-
 --
 ====
 
-. When the cluster is deleted, the delete operation’s state changes to `STATE_COMPLETED`. At this point, you may make a DELETE request to the xref:api:ROOT:cloud-controlplane-api.adoc#delete-/v1beta2/networks/-id-[`/v1beta2/networks/\{id}`] endpoint to delete the network. This is a long running operation.
-. Optional: After the network is deleted, make a request to xref:api:ROOT:cloud-controlplane-api.adoc#delete-/v1beta2/resource-groups/-id-[`DELETE /v1beta2/resource-groups/\{id}`] to delete the resource group. 
+. When the cluster is deleted, the delete operation’s state changes to `STATE_COMPLETED`. At this point, you may make a DELETE request to the xref:api:ROOT:cloud-controlplane-api.adoc#delete-/v1/networks/-id-[`/v1/networks/\{id}`] endpoint to delete the network. This is a long running operation.
+. Optional: After the network is deleted, make a request to xref:api:ROOT:cloud-controlplane-api.adoc#delete-/v1/resource-groups/-id-[`DELETE /v1/resource-groups/\{id}`] to delete the resource group. 
 
 endif::[]
 endif::[]
 
 ifdef::env-serverless[]
 
-To delete a cluster, make a request to the xref:api:ROOT:cloud-controlplane-api.adoc#delete-/v1beta2/serverless/clusters/-id-[`DELETE /v1beta2/serverless/clusters/\{id}`] endpoint, passing the cluster ID as a parameter. This is a <<lro-serverless,long-running operation>>.
+To delete a cluster, make a request to the xref:api:ROOT:cloud-controlplane-api.adoc#delete-/v1/serverless/clusters/-id-[`DELETE /v1/serverless/clusters/\{id}`] endpoint, passing the cluster ID as a parameter. This is a <<lro-serverless,long-running operation>>.
 
 ```bash
-curl -H "Authorization: Bearer <token>" -X DELETE https://api.redpanda.com/v1beta2/serverless/clusters/<cluster-id>
+curl -H "Authorization: Bearer <token>" -X DELETE https://api.redpanda.com/v1/serverless/clusters/<cluster-id>
 ```
 
-Optional: When the cluster is deleted, the delete operation’s state changes to `STATE_COMPLETED`. At this point, you may make a DELETE request to the xref:api:ROOT:cloud-controlplane-api.adoc#delete-/v1beta2/resource-groups/-id-[`/v1beta2/resource-groups/\{id}`] endpoint to delete the resource group. 
+Optional: When the cluster is deleted, the delete operation’s state changes to `STATE_COMPLETED`. At this point, you may make a DELETE request to the xref:api:ROOT:cloud-controlplane-api.adoc#delete-/v1/resource-groups/-id-[`/v1/resource-groups/\{id}`] endpoint to delete the resource group. 
 
 [[lro-serverless]]
 == Long-running operations
 
-Some endpoints do not directly return the resource itself, but instead return an operation. The following is an example response of xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1beta2/serverless/clusters[`POST /serverless/clusters`]:
+Some endpoints do not directly return the resource itself, but instead return an operation. The following is an example response of xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1/serverless/clusters[`POST /serverless/clusters`]:
 
 [,bash,role=no-copy]
 ----
@@ -341,15 +347,93 @@ The response object represents the long-running operation of creating a cluster.
 
 === Check operation state
 
-To check the progress of an operation, make a request to the xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1beta2/operations/-id-[`GET /operations/\{id}`] endpoint using the operation ID as a parameter: 
+To check the progress of an operation, make a request to the xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/operations/-id-[`GET /operations/\{id}`] endpoint using the operation ID as a parameter: 
 
 ```bash
-curl -H "Authorization: Bearer <token>" https://api.redpanda.com/v1beta2/operations/<operation-id>
+curl -H "Authorization: Bearer <token>" https://api.redpanda.com/v1/operations/<operation-id>
 ```
 
 The response contains the current state of the operation: `IN_PROGRESS`, `COMPLETED`, or `FAILED`.
 
 endif::[]
+
+== Manage RBAC
+
+You can also use the Control Plane API to manage xref:security:authorization/rbac/rbac.adoc[RBAC configurations].
+
+=== List role bindings
+
+To see role assignments for IAM user and service accounts, make a GET request to the xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/role-bindings[`/v1/role-bindings`] endpoint.
+
+[,bash]
+----
+curl https://api.redpanda.com/v1/role-bindings?filter.role_name=<role-name>&filter.scope.resource_type=SCOPE_RESOURCE_TYPE_CLUSTER \
+     -H "Authorization: Bearer <token>" \
+     -H "Content-Type: application/json"
+----
+
+=== Get role binding
+
+To see roles assignments for a specific IAM account, make a GET request to the xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/role-bindings/-id-[`/v1/role-bindings/\{id}`] endpoint, passing the role binding ID as a parameter.
+
+[,bash]
+----
+curl "https://api.redpanda.com/v1/role-bindings/<role-binding-id> \
+     -H "Authorization: Bearer <token>" \
+     -H "Content-Type: application/json"
+----
+
+=== Get user
+
+To see details of an IAM user account, make a GET request to the xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/users/-id-[`/v1/users/\{id}`] endpoint, passing the user account ID as a parameter.
+
+[,bash]
+----
+curl "https://api.redpanda.com/v1/users/<user-account-id> \
+     -H "Authorization: Bearer <token>" \
+     -H "Content-Type: application/json"
+----
+
+=== Create role binding
+
+To assign a role to an IAM user or service account, make a POST request to the xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1/role-bindings[`/v1/role-bindings`] endpoint. Specify the role and scope, which includes the specific resource ID and an optional resource type, in the request body.
+
+[,bash]
+----
+curl -X POST "https://api.redpanda.com/v1/role-bindings" \
+     -H "Authorization: Bearer <token>" \
+     -H "Content-Type: application/json" \
+     -d '{
+           "role_name": "<role-name>",
+           "account_id": "<user-or-service-account-id>",
+           "scope": {
+             "resource_type": "SCOPE_RESOURCE_TYPE_CLUSTER",
+             "resource_id": "<resource-id>"
+           }
+         }'
+----
+
+For `<role-name>`, use one of roles listed in xref:security:authorization/rbac/rbac.adoc#predefined-roles[Predefined roles] (`Reader`, `Writer`, `Admin`).
+
+=== Create service account
+
+NOTE: Service accounts are assigned the Admin role for all resources in the organization.
+
+To create a new service account, make a POST request to the xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1/service-accounts[`/v1/service-accounts`] endpoint, with a service account name and optional description in the request body.
+
+[,bash]
+----
+curl -X POST "https://api.redpanda.com/v1/service-accounts" \
+     -H "Authorization: Bearer <token>" \
+     -H "Content-Type: application/json" \
+     -d '{
+           "service_account": {
+              "name": "<service-account-name>",
+              "description": "<service-account-description>"
+           }
+         }'
+----
+
 
 == Next steps
 
