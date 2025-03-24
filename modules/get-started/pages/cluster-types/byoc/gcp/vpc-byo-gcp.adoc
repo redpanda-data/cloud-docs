@@ -2,11 +2,11 @@
 :description: Connect Redpanda Cloud to your existing VPC for additional security.
 :page-aliases: deploy:deployment-option/cloud/vpc-byo-gcp.adoc, get-started:cluster-types/byoc/vpc-byo-gcp.adoc
 
-include::shared:partial$feature-flag.adoc[]
+include::shared:partial$feature-flag-rpcn.adoc[]
 
-This topic explains how to create a Bring Your Own Virtual Private Cloud (BYOVPC) cluster. This setup allows you to deploy the Redpanda glossterm:data plane[] into your existing VPC and take full control of managing the networking lifecycle. Compared to a standard Bring Your Own Cluster (BYOC) setup, where Redpanda manages the networking lifecycle for you, this option provides more security.
+This topic explains how to create a Bring Your Own Virtual Private Cloud (BYOVPC) cluster. This setup allows you to deploy the Redpanda glossterm:data plane[] into your existing VPC and take full control of managing the networking lifecycle. Compared to a standard Bring Your Own Cloud (BYOC) setup, where Redpanda manages the networking lifecycle for you, this option provides more security.
 
-When you create a BYOCVPC cluster, you specify your VPC and service account. The Redpanda Cloud agent doesn't create any new resources or alter any settings in your account. With BYOVPC: 
+When you create a BYOVPC cluster, you specify your VPC and service account. The Redpanda Cloud agent doesn't create any new resources or alter any settings in your account. With BYOVPC: 
 
 * You provide your own VPC in your Google Cloud account.
 * You maintain more control of your Google Cloud account, because Redpanda requires fewer permissions than standard BYOC clusters.
@@ -16,6 +16,7 @@ When you create a BYOCVPC cluster, you specify your VPC and service account. The
 
 * A standalone GCP project is recommended. If your host project (where your VPC project is created) and your service project (where your Redpanda cluster is created) are in different projects, you must first provision a shared VPC in Google Cloud. For more information, see the https://cloud.google.com/vpc/docs/provisioning-shared-vpc[Google shared VPC documentation^]. 
 * Redpanda creates a private Google Kubernetes Engine (GKE) cluster in your VPC. The subnet and secondary IP ranges you provide must allow public internet access. The configuration requires you to provide reserved CIDR ranges for the subnet and GKE Pods, Services, and master IP addresses. See the https://cloud.google.com/kubernetes-engine/docs/how-to/service-accounts[GKE service account documentation^] and <<Configure your VPC>>. 
+* Only primary CIDR ranges are supported for the VPC.
 * Redpanda requires access to certain Google APIs, storage buckets, and service accounts. See <<Configure the service project>>.
 
 == Limitations
@@ -72,7 +73,7 @@ gcloud compute routers nats create <nat-config-name> \
 ```bash
 gcloud compute firewall-rules create redpanda-ingress \
   --description="Allow access to Redpanda cluster" \
-  --network="<vpc-name>" \
+  --network="<shared-vpc-name>" \
   --project="<host-project-id>" \
   --direction="INGRESS" \
   --target-tags="redpanda-node" \
@@ -85,7 +86,7 @@ gcloud compute firewall-rules create redpanda-ingress \
 ```bash
 gcloud compute firewall-rules create gke-redpanda-cluster-webhooks \
   --description="Allow master to hit pods for admission controllers/webhooks" \
-  --network="<vpc-name>" \
+  --network="<shared-vpc-name>" \
   --project="<host-project-id>" \
   --direction="INGRESS" \
   --source-ranges="<gke-master-cidr-range>" \
@@ -108,7 +109,6 @@ cat << EOT > redpanda-agent.role
   "description": "A role granting the redpanda agent permissions to view network resources in the project of the vpc.",
   "includedPermissions": [
     "compute.firewalls.get",
-    "compute.networks.get",
     "compute.subnetworks.get",
     "resourcemanager.projects.get",
     "compute.networks.getRegionEffectiveFirewalls",
@@ -149,7 +149,7 @@ gcloud storage buckets create gs://<management-storage-bucket-name> \
 gcloud storage buckets update gs://<management-storage-bucket-name> --versioning
 ``` 
 +
-* Redpanda uses the Tiered Storage bucket for writing log segments. This should not be versioned.
+* Redpanda uses the tiered storage bucket for writing log segments. This should not be versioned.
 * Redpanda uses the management storage bucket to store cluster metadata. This can have versioning enabled.
 
 . Create service accounts with necessary permissions and roles.
@@ -169,14 +169,13 @@ cat << EOT > redpanda-agent.role
   "title": "Redpanda Agent Role",
   "description": "A role comprising general permissions allowing the agent to manage Redpanda cluster resources.",
   "includedPermissions": [
-    "compute.firewalls.get",
+   "compute.firewalls.get",
     "compute.globalOperations.get",
     "compute.instanceGroupManagers.get",
     "compute.instanceGroupManagers.delete",
     "compute.instanceGroups.delete",
     "compute.instances.list",
     "compute.instanceTemplates.delete",
-    "compute.networks.get",
     "compute.networks.getRegionEffectiveFirewalls",
     "compute.networks.getEffectiveFirewalls",
     "compute.projects.get",
@@ -209,6 +208,42 @@ cat << EOT > redpanda-agent.role
     "serviceusage.services.list",
     "storage.buckets.get",
     "storage.buckets.getIamPolicy",
+    "compute.subnetworks.use",
+    "compute.instances.use",
+    "compute.networks.use",
+    "compute.regionOperations.get",
+    "compute.serviceAttachments.create",
+    "compute.serviceAttachments.delete",
+    "compute.serviceAttachments.get",
+    "compute.serviceAttachments.list",
+    "compute.serviceAttachments.update",
+    "compute.forwardingRules.use",
+    "compute.forwardingRules.create",
+    "compute.forwardingRules.delete",
+    "compute.forwardingRules.get",
+    "compute.forwardingRules.setLabels",
+    "compute.forwardingRules.setTarget",
+    "compute.forwardingRules.pscCreate",
+    "compute.forwardingRules.pscDelete",
+    "compute.forwardingRules.pscSetLabels",
+    "compute.forwardingRules.pscSetTarget",
+    "compute.forwardingRules.pscUpdate",
+    "compute.regionBackendServices.create",
+    "compute.regionBackendServices.delete",
+    "compute.regionBackendServices.get",
+    "compute.regionBackendServices.use",
+    "compute.regionNetworkEndpointGroups.create",
+    "compute.regionNetworkEndpointGroups.delete",
+    "compute.regionNetworkEndpointGroups.get",
+    "compute.regionNetworkEndpointGroups.use",
+    "compute.regionNetworkEndpointGroups.attachNetworkEndpoints",
+    "compute.regionNetworkEndpointGroups.detachNetworkEndpoints",
+    "compute.disks.list",
+    "compute.disks.setLabels",
+    "compute.instanceGroupManagers.update",
+    "compute.instances.delete",
+    "compute.instances.get",
+    "compute.instances.setLabels"
   ],
 }
 EOT
@@ -331,7 +366,7 @@ cat << EOT > redpanda-gke.role
   "title": "Redpanda cluster utility node role",
   "description": "Redpanda cluster utility node role",
   "includedPermissions": [
-    "artifactregistry.dockerimages.get",
+   "artifactregistry.dockerimages.get",
     "artifactregistry.dockerimages.list",
     "artifactregistry.files.get",
     "artifactregistry.files.list",
@@ -403,6 +438,14 @@ cat << EOT > redpanda-gke.role
     "stackdriver.resourceMetadata.write",
     "storage.objects.get",
     "storage.objects.list"
+    "compute.instances.use",
+    "iam.serviceAccounts.getAccessToken",
+    "compute.regionNetworkEndpointGroups.create",
+    "compute.regionNetworkEndpointGroups.delete",
+    "compute.regionNetworkEndpointGroups.get",
+    "compute.regionNetworkEndpointGroups.use",
+    "compute.regionNetworkEndpointGroups.attachNetworkEndpoints",
+    "compute.regionNetworkEndpointGroups.detachNetworkEndpoints"
   ],
 }
 EOT
@@ -471,6 +514,18 @@ gcloud iam service-accounts add-iam-policy-binding <gke-service-account-name>@<s
 ```
 ====
 
+* Private Service Connect Controller service account
++
+.Show commands
+[%collapsible]
+====
+```
+gcloud iam service-accounts add-iam-policy-binding <gke-service-account-name>@<service-project-id>.iam.gserviceaccount.com \
+    --role roles/iam.workloadIdentityUser \
+    --member "serviceAccount:<service-project-id>.svc.id.goog[redpanda-psc/psc-controller]"
+```
+====
+
 == Create cluster
 
 Log in to the https://cloud.redpanda.com[Redpanda Cloud UI^], and follow the steps to xref:get-started:cluster-types/byoc/gcp/create-byoc-cluster-gcp.adoc[create a BYOC cluster], with the following exceptions:
@@ -497,7 +552,6 @@ Log in to the https://cloud.redpanda.com[Redpanda Cloud UI^], and follow the ste
 * `compute.instances.setLabels`
 * `compute.instances.setMetadata`
 * `compute.instances.setTags`
-* `compute.networks.get`
 * `compute.subnetworks.get`
 * `compute.subnetworks.use`
 * `compute.zones.list`
@@ -525,7 +579,7 @@ export GOOGLE_APPLICATION_CREDENTIALS=<keyfile for service account>
 gcloud config set account $SERVICE_ACCOUNT@$PROJECT_ID.iam.gserviceaccount.com
 ```
 
-. Run the following `rpk` command to validate your configuration: 
+. To validate your configuration, run: 
 +
 ```bash
 rpk cloud byoc gcp apply --redpanda-id='<redpanda-id>' --project-id='<service-project-id>' --validate-only
@@ -535,4 +589,8 @@ rpk cloud byoc gcp apply --redpanda-id='<redpanda-id>' --project-id='<service-pr
 
 . On the *Deploy* page, similar to standard BYOC clusters, log in to Redpanda Cloud and deploy the agent.
 
-include::partial$no-access.adoc[]
+include::get-started:partial$no-access.adoc[]
+
+== Next steps
+
+xref:networking:byoc/gcp/index.adoc[Configure private networking]

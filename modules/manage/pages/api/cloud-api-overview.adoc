@@ -3,7 +3,6 @@
 :page-aliases: deploy:deployment-option/cloud/api/cloud-api-overview.adoc
 :page-api: cloud
 :page-api-slot: overview
-:page-beta: true
 
 The Redpanda Cloud API is a collection of REST APIs that allow you to interact with different parts of Redpanda Cloud. You can call the API endpoints directly, or use tools like Terraform or Python scripts to automate cluster management and manage Redpanda Cloud resources.
 
@@ -45,10 +44,10 @@ When making requests to the Control Plane API endpoints, the request URL is the 
 
 [,bash]
 ----
-https://api.redpanda.com/v1beta2/clusters
+https://api.redpanda.com/v1/clusters
 ----
 
-The current Control Plane API version is *v1beta2*.
+The current Control Plane API version is *v1*.
 
 === Data Plane APIs URL
 
@@ -56,12 +55,15 @@ The Data Plane API base URL is unique to the individual target cluster. It is di
 
 [,bash]
 ----
-https://api-aeb32d9b.cn20bu40d061nvem7sv0.fmc.prd.cloud.redpanda.com/v1alpha2/users
+https://api-aeb32d9b.cn20bu40d061nvem7sv0.fmc.prd.cloud.redpanda.com/v1/users
 ----
 
-The current Data Plane API version is *v1alpha2*.
+The current Data Plane API version is *v1*.
 
 == Pagination
 
 When an endpoint returns a list containing more items than can be returned in a single response, the response object includes a `next_page_token`. You can pass the token value as a parameter in the next request. When the full list has been returned, `next_page_token` is an empty string.
 
+== Versioning and deprecation
+
+The Cloud API Deprecation Policy outlines the process for phasing out an API version or specific features within an API. See xref:manage:api/cloud-api-deprecation-policy.adoc[Deprecation Policy] for details.

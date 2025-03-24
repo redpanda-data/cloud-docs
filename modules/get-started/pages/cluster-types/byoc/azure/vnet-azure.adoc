@@ -2,9 +2,9 @@
 :description: Connect Redpanda Cloud to your existing VNet for additional security.
 :page-beta: true
 
-include::shared:partial$feature-flag.adoc[]
+include::shared:partial$feature-flag-rpcn.adoc[]
 
-This topic explains how to create a Bring Your Own Virtual Private Cloud (BYOVPC) cluster. This setup allows you to deploy the Redpanda glossterm:data plane[] into your existing virtual network (VNet) and take full control of managing the networking lifecycle. Compared to a standard Bring Your Own Cluster (BYOC) setup, where Redpanda manages the networking lifecycle for you, this option provides more security.
+This topic explains how to create a Bring Your Own Virtual Private Cloud (BYOVPC) cluster. This setup allows you to deploy the Redpanda glossterm:data plane[] into your existing virtual network (VNet) and take full control of managing the networking lifecycle. Compared to a standard Bring Your Own Cloud (BYOC) setup, where Redpanda manages the networking lifecycle for you, this option provides more security.
 
 When you create a BYOVPC cluster, you specify your VNet and managed identities. The Redpanda Cloud agent doesn't create any new resources or alter any settings in your account. With a customer-managed VNet: 
 
@@ -30,11 +30,13 @@ See the code for the complete list of resources required to create and deploy Re
 * Permission to call the xref:manage:api/cloud-api-overview.adoc[Redpanda Cloud API]
 * Permission to create, modify, and delete the resources described by Terraform
 * https://developer.hashicorp.com/terraform/install[Terraform^] version 1.8.5 or later
+* https://jqlang.org/download/[jq^], which is used to parse JSON values from API responses
 
 == Limitations
 
 * Existing clusters cannot be moved to a BYOVPC cluster.
 * After creating a BYOVPC cluster, you cannot change to a different VNet.
+* Only primary CIDR ranges are supported for the VNet.
 
 == Set environment variables
 
@@ -324,7 +326,7 @@ EOF
 . Use the Cloud API to create the network and retrieve the network ID:
 +
 ```bash
-export REDPANDA_NETWORK_ID=$(curl -X POST "https://api.redpanda.com/v1beta2/networks" \
+export REDPANDA_NETWORK_ID=$(curl -X POST "https://api.redpanda.com/v1/networks" \
  -H "accept: application/json" \
  -H "content-type: application/json" \
  -H "authorization: Bearer ${BEARER_TOKEN}" \
@@ -394,7 +396,7 @@ TIP: See the full list of zones and tiers available with each provider in the xr
 . Make a Cloud API call to create a Redpanda network and get the network ID from the response in JSON `.operation.metadata.network_id`.
 +
 ```bash
-export REDPANDA_ID=$(curl -X POST "https://api.redpanda.com/v1beta2/clusters" \
+export REDPANDA_ID=$(curl -X POST "https://api.redpanda.com/v1/clusters" \
  -H "accept: application/json"\ 
  -H "content-type: application/json" \
  -H "authorization: Bearer ${BEARER_TOKEN}" \
@@ -426,7 +428,7 @@ Cluster creation is an example of an operation that can take a longer period of 
 Example using the returned `operation_id`:
 
 ```bash
-curl -X GET "https://api.redpanda.com/v1beta2/operations/<operation_id of operation from previous step>" \
+curl -X GET "https://api.redpanda.com/v1/operations/<operation-id>" \
  -H "accept: application/json"\
  -H "content-type: application/json" \
  -H "authorization: Bearer ${BEARER_TOKEN}"
@@ -435,7 +437,7 @@ curl -X GET "https://api.redpanda.com/v1beta2/operations/<operation_id of operat
 Example retrieving cluster:
 
 ```bash
-curl -X GET "https://api.redpanda.com/v1beta2/clusters/<resource_id of cluster from previous step>" \
+curl -X GET "https://api.redpanda.com/v1/clusters/<resource-id>" \
  -H "accept: application/json"\
  -H "content-type: application/json" \
  -H "authorization: Bearer ${BEARER_TOKEN}"
@@ -446,7 +448,7 @@ curl -X GET "https://api.redpanda.com/v1beta2/clusters/<resource_id of cluster f
 To delete the cluster, first send a DELETE request to the Cloud API, and retrieve the `resource_id` of the DELETE operation. Then run the `rpk` command to destroy the cluster identified by the `resource_id`.
 
 ```bash
-export REDPANDA_ID=$(curl -X DELETE "https://api.redpanda.com/v1beta2/clusters/${REDPANDA_ID}" \
+export REDPANDA_ID=$(curl -X DELETE "https://api.redpanda.com/v1/clusters/${REDPANDA_ID}" \
  -H "accept: application/json"\
  -H "content-type: application/json" \
  -H "authorization: Bearer ${BEARER_TOKEN}" | jq -r '.operation.resource_id')
@@ -458,4 +460,4 @@ After that completes, run:
 rpk cloud byoc azure destroy --redpanda-id ${REDPANDA_ID}
 ```
 
-include::partial$no-access.adoc[]
+include::get-started:partial$no-access.adoc[]

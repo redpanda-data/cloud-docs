@@ -4,9 +4,9 @@
 :page-cloud: true
 :page-beta: true
 
-include::shared:partial$feature-flag.adoc[]
+include::shared:partial$feature-flag-rpcn.adoc[]
 
-This topic explains how to create a Bring Your Own Virtual Private Cloud (BYOVPC) cluster. This setup allows you to deploy the Redpanda glossterm:data plane[] into your existing VPC and take full control of managing the networking lifecycle. Compared to a standard Bring Your Own Cluster (BYOC) setup, where Redpanda manages the networking lifecycle for you, this option provides more security.
+This topic explains how to create a Bring Your Own Virtual Private Cloud (BYOVPC) cluster. This setup allows you to deploy the Redpanda glossterm:data plane[] into your existing VPC and take full control of managing the networking lifecycle. Compared to a standard Bring Your Own Cloud (BYOC) setup, where Redpanda manages the networking lifecycle for you, this option provides more security.
 
 When you create a BYOCVPC cluster, you specify your VPC and service account. The Redpanda Cloud agent doesn't create any new resources or alter any settings in your account. With BYOVPC: 
 
@@ -20,13 +20,15 @@ The https://github.com/redpanda-data/cloud-examples/tree/main/customer-managed/a
 
 * Access to an AWS project in which you create your cluster.
 * Minimum permissions in that AWS project. For the actions required by the user who will create the cluster with `rpk cloud byoc aws apply`, see https://github.com/redpanda-data/cloud-examples/blob/main/customer-managed/aws/terraform/iam_rpk_user.tf[`iam_rpk_user.tf`^].
-* Familiarity with the Redpanda Cloud API. For example, you should be familiar with how to use the Cloud API to xref:redpanda-cloud:manage:api/cloud-api-authentication.adoc[authenticate] and xref:redpanda-cloud:manage:api/controlplane/index.adoc[create a cluster.
+* Familiarity with the Redpanda Cloud API. For example, you should be familiar with how to use the Cloud API to xref:redpanda-cloud:manage:api/cloud-api-authentication.adoc[authenticate] and xref:redpanda-cloud:manage:api/cloud-byoc-controlplane-api.adoc[create a cluster].
 * https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli[Terraform^] version 1.8.5 or later.
+* https://jqlang.org/download/[jq^], which is used to parse JSON values from API responses.
 
 == Limitations
 
 * Existing clusters cannot be moved to a BYOVPC cluster.
 * After creating a BYOVPC cluster, you cannot change to a different VPC.
+* Only primary CIDR ranges are supported for the VPC.
 
 == Set environment variables
 
@@ -126,23 +128,23 @@ To create the Redpanda network:
 cat > redpanda-network.json <<EOF
 {
     "name":"sample-redpanda-network",
-    "resource_group_id": ${REDPANDA_RG_ID},
+    "resource_group_id": "${REDPANDA_RG_ID}",
     "cloud_provider":"CLOUD_PROVIDER_AWS",
-    "region": ${AWS_REGION},
+    "region": "${AWS_REGION}",
     "cluster_type":"TYPE_BYOC",
     "customer_managed_resources": {
       "aws": {
         "management_bucket": {
-          "arn": ${AWS_MANAGEMENT_BUCKET}
+          "arn": "${AWS_MANAGEMENT_BUCKET}"
         },
         "dynamodb_table": {
-          "arn": ${AWS_DYNAMODB_TABLE}
+          "arn": "${AWS_DYNAMODB_TABLE}"
         },
         "private_subnets": {
-          "arns": ${AWS_PRIVATE_SUBNETS}
+          "arns": "${AWS_PRIVATE_SUBNETS}"
         },
         "vpc": {
-          "arn": ${AWS_VPC}
+          "arn": "${AWS_VPC}"
         }
       }
    }
@@ -153,7 +155,7 @@ EOF
 . Use the Cloud API to create the network and retrieve the network ID: 
 +
 ```bash
-export REDPANDA_NETWORK_ID=$(curl -X POST "https://api.redpanda.com/v1beta2/networks" \
+export REDPANDA_NETWORK_ID=$(curl -X POST "https://api.redpanda.com/v1/networks" \
  -H "accept: application/json" \
  -H "content-type: application/json" \
  -H "authorization: Bearer ${BEARER_TOKEN}" \
@@ -168,7 +170,7 @@ The Create Network request returns a `resource_id`. For example:
    "operation":{
       "id":"cpas8k6r4up5li18auh0",
       "metadata":{
-         "@type":"type.googleapis.com/redpanda.api.controlplane.v1beta2.CreateNetworkMetadata",
+         "@type":"type.googleapis.com/redpanda.api.controlplane.v1.CreateNetworkMetadata",
          "network_id":"cpb338gekjj5i1cpj3t0"
       },
       "state":"STATE_IN_PROGRESS",
@@ -251,7 +253,7 @@ cat > redpanda-cluster.json <<EOF
         "arn": "<permissions_boundary_policy_arn from terraform outputs>"
       }
     }
-  },
+  }
 }
 EOF
 ```
@@ -259,7 +261,7 @@ EOF
 . Use the Cloud API to deploy the cluster and retrieve its ID:
 +
 ```bash
-export REDPANDA_ID=$(curl -X POST "https://api.redpanda.com/v1beta2/clusters" \
+export REDPANDA_ID=$(curl -X POST "https://api.redpanda.com/v1/clusters" \
  -H "accept: application/json" \
  -H "content-type: application/json" \
  -H "authorization: Bearer ${BEARER_TOKEN}" \
@@ -274,7 +276,7 @@ The create cluster request returns a `resource_id`, which is required in the nex
    "operation":{
       "id":"cpas8k6r4up5li18auhg",
       "metadata":{
-         "@type":"type.googleapis.com/redpanda.api.controlplane.v1beta2.CreateClusterMetadata",
+         "@type":"type.googleapis.com/redpanda.api.controlplane.v1.CreateClusterMetadata",
          "cluster_id":"cpb33c8ekjj5i1cpj3v0"
       },
       "state":"STATE_IN_PROGRESS",
@@ -354,7 +356,7 @@ Cluster creation is an example of an operation that can take a longer period of 
 Example using the operation ID returned from your create cluster command:
 
 ```bash
-curl -X GET "https://api.redpanda.com/v1beta2/operations/${REDPANDA_ID}" \
+curl -X GET "https://api.redpanda.com/v1/operations/${REDPANDA_ID}" \
  -H "accept: application/json"\
  -H "content-type: application/json" \
  -H "authorization: Bearer ${BEARER_TOKEN}"
@@ -363,7 +365,7 @@ curl -X GET "https://api.redpanda.com/v1beta2/operations/${REDPANDA_ID}" \
 Example retrieving cluster:
 
 ```bash
-curl -X GET "https://api.redpanda.com/v1beta2/clusters/${REDPANDA_ID}" \
+curl -X GET "https://api.redpanda.com/v1/clusters/${REDPANDA_ID}" \
  -H "accept: application/json"\
  -H "content-type: application/json" \
  -H "authorization: Bearer ${BEARER_TOKEN}"
@@ -374,7 +376,7 @@ curl -X GET "https://api.redpanda.com/v1beta2/clusters/${REDPANDA_ID}" \
 To delete the cluster, first send a DELETE request to the Cloud API, and retrieve the `resource_id` of the DELETE operation. Then run the `rpk` command to destroy the cluster identified by the `resource_id`.
 
 ```bash
-export REDPANDA_ID=$(curl -X DELETE "https://api.redpanda.com/v1beta2/clusters/${REDPANDA_ID}" \
+export REDPANDA_ID=$(curl -X DELETE "https://api.redpanda.com/v1/clusters/${REDPANDA_ID}" \
  -H "accept: application/json"\
  -H "content-type: application/json" \
  -H "authorization: Bearer ${BEARER_TOKEN}" | jq -r '.operation.resource_id')
@@ -386,4 +388,4 @@ After that completes, run:
 rpk cloud byoc aws destroy --redpanda-id ${REDPANDA_ID}
 ```
 
-include::partial$no-access.adoc[]
+include::get-started:partial$no-access.adoc[]

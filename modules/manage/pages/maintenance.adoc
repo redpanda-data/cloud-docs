@@ -1,0 +1,16 @@
+= Upgrades and Maintenance
+:description: Learn how Redpanda Cloud manages maintenance operations.
+
+As a fully-managed service, the Redpanda Cloud glossterm:control plane[] handles all maintenance operations, such as upgrades to your software and infrastructure.
+
+Redpanda runs maintenance operations on clusters in a rolling fashion, accompanied by a series of health checks, so there is no disruption to the availability of your service. As part of the Kafka protocol, recycling nodes triggers client connections to be restarted. All mainstream client libraries support automatic reconnections when a restart occurs.
+
+== Maintenance windows
+
+Redpanda Cloud may run maintenance operations on any day at any time. You can override this default and schedule a specific maintenance window on your cluster's *Cluster settings* page. 
+
+If you select a *Scheduled* maintenance window, then Redpanda Cloud runs operations on the day and time specified. Maintenance windows typically take six hours. All operations commence during the maintenance window, but some operations may complete after the window closes. All times are in Coordinated Universal Time (UTC).
+
+TIP: Redpanda Cloud maintenance cycles always start on Tuesdays. Clusters scheduled for maintenance on Tuesdays are updated first, and clusters scheduled on Mondays are updated last. Keep this in mind when sequencing updates for multiple clusters.
+
+See also: xref:manage:api/cloud-api-deprecation-policy.adoc[]
