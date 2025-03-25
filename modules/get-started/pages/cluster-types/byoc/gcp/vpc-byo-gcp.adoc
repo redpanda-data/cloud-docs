@@ -328,7 +328,7 @@ gcloud projects add-iam-policy-binding <service-project-id> \
 [%collapsible]
 ====
 ```bash
-# Account used to check for the existence of secrets, which are required to create Redpanda Connect pipelines.
+# Account used to check for and read secrets, which are required to create Redpanda Connect pipelines.
 
 gcloud iam service-accounts create redpanda-connect-api \ 
   --display-name="Redpanda Connect API Service Account" 
@@ -339,6 +339,8 @@ cat << EOT > redpanda-connect-api.role
   "title": "Redpanda Connect API Role",  
   "description": "Redpanda Connect API Role", 
   "includedPermissions": [
+    "resourcemanager.projects.get",
+    "secretmanager.secrets.get",
     "secretmanager.versions.access"
   ],
 }

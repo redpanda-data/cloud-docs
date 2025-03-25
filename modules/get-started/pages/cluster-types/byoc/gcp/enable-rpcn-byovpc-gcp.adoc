@@ -11,7 +11,7 @@ To enable Redpanda Connect on an existing BYOVPC cluster, you must update your c
 [%collapsible]
 ====
 ```bash
-# Account used to check for the existence of secrets, which are required to create Redpanda Connect pipelines.
+# Account used to check for and read secrets, which are required to create Redpanda Connect pipelines.
 
 gcloud iam service-accounts create redpanda-connect-api \ 
   --display-name="Redpanda Connect API Service Account" 
@@ -22,6 +22,8 @@ cat << EOT > redpanda-connect-api.role
   "title": "Redpanda Connect API Role",  
   "description": "Redpanda Connect API Role", 
   "includedPermissions": [
+    "resourcemanager.projects.get",
+    "secretmanager.secrets.get",
     "secretmanager.versions.access"
   ],
 }
@@ -87,25 +89,22 @@ gcloud iam service-accounts add-iam-policy-binding <redpanda_connect-gcp-sa-acco
 ```bash
 export CLUSTER_PATCH_BODY=`cat << EOF
 {
-  "cluster":{
     "customer_managed_resources": {
         "gcp": {
             "redpanda_connect_api_service_account": {
-              "email": "redpanda-connect-api-xxx@my-projectiam.gserviceaccount.com"
+              "email": "<redpanda_connect-api-gcp-sa-account-id>@<service-project-id>.iam.gserviceaccount.com"
             },
             "redpanda_connect_service_account": {
-              "email": "redpanda-connect-xxx@my-project.iam.gserviceaccount.com"
+              "email": "<redpanda_connect-gcp-sa-account-id>@<service-project-id>.iam.gserviceaccount.com"
             }
         }
     }
-  },
-  "update_mask": "customerManagedResources.gcp.redpandaConnectApiServiceAccount.email,customerManagedResources.gcp.redpandaConnectServiceAccount.email"
 }
 EOF`
 curl -v -X PATCH \
 -H "Content-Type: application/json" \
 -H "Authorization: Bearer $AUTH_TOKEN" \
--d "$CLUSTER_PATCH_BODY" $PUBLIC_API_ENDPOINT/v1beta2/clusters/<cluster-id>
+-d "$CLUSTER_PATCH_BODY" $PUBLIC_API_ENDPOINT/v1/clusters/<cluster-id>
 ```
 ====
 
