@@ -1,5 +1,5 @@
 = Redpanda Cloud Overview
-:description: Learn about Redpanda Serverless Standard, Serverless Pro, Dedicated, and Bring Your Own Cloud (BYOC) clusters.
+:description: Learn about Redpanda Serverless, Dedicated, and Bring Your Own Cloud (BYOC) clusters.
 :description: Learn about Redpanda Serverless, Dedicated, and Bring Your Own Cloud (BYOC) clusters.
 :tag-pipeline-service: api:ROOT:cloud-dataplane-api.adoc#tag--Redpanda-Connect-Pipeline
 :page-aliases: cloud:dedicated-byoc.adoc, deploy:deployment-option/cloud/dedicated-byoc.adoc, deploy:deployment-option/cloud/cloud-overview.adoc
@@ -14,17 +14,17 @@ TIP: For more detailed information about the Redpanda platform, see xref:get-sta
 Redpanda offers four types of fully-managed cloud clusters. All products have access to unlimited storage and 280+ data connectors with xref:develop:connect/about.adoc[Redpanda Connect].
 
 |===
-| <<Serverless Standard>> | <<Serverless Pro>> | <<Dedicated Cloud>> | <<Bring Your Own Cloud (BYOC)>>
+| <<Serverless>> | <<Dedicated Cloud>> | <<Bring Your Own Cloud (BYOC)>>
 
-| For starter projects and applications with low or variable traffic. | For an enterprise-level version of Serverless, supporting moderate, sustained traffic. | For production clusters requiring expert cloud hosting, higher throughput, and extra isolation. | For production clusters requiring data sovereignty, the highest throughput, and added security.
-| Multi-tenant on AWS | Multi-tenant on AWS | Single-tenant on AWS, Azure, or GCP | In your cloud on AWS, Azure, or GCP 
-| 1 MB/s max write throughput | 100 MB/s max write throughput | 400 MB/s max write throughput | 2 GB/s max write throughput
-| 3 MB/s max read throughput | 300 MB/s max read throughput | 800 MB/s max read throughput | 4 GB/s max read throughput 
-| 100 partitions | 5000 partitions | 22,800 partitions | 112,500 partitions
-| 99.5% SLA | 99.5% SLA | 99.99% SLA | 99.99% SLA 
-| Public networking | Public networking | Public or private networking | Public or private networking
-| SSO (GitHub, Google), Kafka ACLs | SSO (GitHub, Google), Kafka ACLs | SSO (GitHub, Google, OIDC), RBAC, audit logs  | SSO (GitHub, Google, OIDC), RBAC, audit logs 
-| Community support | Enterprise support with annual contracts| Enterprise support | Enterprise support
+| For starter projects and applications with low or variable traffic. | For production clusters requiring expert cloud hosting, higher throughput, and extra isolation. | For production clusters requiring data sovereignty, the highest throughput, and added security.
+| Multi-tenant on AWS | Single-tenant on AWS, Azure, or GCP | In your cloud on AWS, Azure, or GCP 
+| 100 MiB/s max write throughput | 400 MiB/s max write throughput | 2 GB/s max write throughput
+| 300 MiB/s max read throughput | 800 MiB/s max read throughput | 4 GB/s max read throughput 
+| 5000 partitions | 22,800 partitions | 112,500 partitions
+| 99.9% SLA | 99.99% SLA | 99.99% SLA 
+| Public networking | Public or private networking | Public or private networking
+| SSO (GitHub, Google), Kafka ACLs | SSO (GitHub, Google, OIDC), RBAC, audit logs  | SSO (GitHub, Google, OIDC), RBAC, audit logs 
+| Enterprise support with annual contracts| Enterprise support | Enterprise support
 |===
 
 [NOTE]
@@ -34,33 +34,21 @@ Redpanda offers four types of fully-managed cloud clusters. All products have ac
 * Enterprise support is staffed by streaming experts around the clock Monday through Friday, plus immediate escalation for production outages 24/7.
 ==== 
 
-=== Serverless Standard
+=== Serverless
 
-Serverless Standard is the fastest and easiest way to start data streaming. With Serverless clusters, you host your data in Redpanda's VPC, and Redpanda handles automatic scaling, provisioning, operations, and maintenance. This is a production-ready deployment option with a cluster available instantly. There is no base cost for Serverless Standard, and with pay-as-you-go billing after the free trial, you only pay for what you consume. You can view detailed billing activity for each cluster and edit payment methods on the *Billing* page. 
+Serverless is the fastest and easiest way to start data streaming. With Serverless clusters, you host your data in Redpanda's VPC, and Redpanda handles automatic scaling, provisioning, operations, and maintenance. This is a production-ready deployment option with a cluster available instantly, and with pay-as-you-go billing after the free trial, you only pay for what you consume. You can view detailed billing activity for each cluster and edit payment methods on the *Billing* page. 
 
-==== Sign up for Serverless Standard
+==== Sign up for Serverless
 
-To start using Serverless Standard, https://redpanda.com/try-redpanda/cloud-trial#serverless[sign up for a free trial^]. New trials receive $100 (USD) in free credits to spend in the first 14 days. This should be enough to run Redpanda with reasonable throughput. No credit card is required for a trial. To continue using your Serverless cluster after the free trial expires, add a credit card and pay as you go. 
+The easiest way to get started with Serverless is with a free trial. New trials receive $100 (USD) in free credits to spend in the first 14 days. This should be enough to run Redpanda with reasonable throughput. No credit card is required. To continue using Serverless after your trial expires, you can enter a credit card and pay as you go. Any remaining credit balance is used before you are charged. 
 
-You can also subscribe to Redpanda Cloud through xref:billing:aws-pay-as-you-go.adoc[AWS Marketplace] and quickly provision Serverless clusters. New subscriptions receive $300 (USD) in free credits to spend in the first 30 days. AWS Marketplace charges for anything beyond $300, unless you cancel the subscription. After your free credits have been used, you can continue using your cluster without any commitment, only paying for what you consume and canceling anytime. 
+You can also subscribe to Redpanda Cloud through https://redpanda.com/try-redpanda?section=enterprise-trial[Redpanda Sales^]. By subscribing through Redpanda Sales, you get immediate access to Enterprise support. 
 
-NOTE: Serverless Standard is currently in a limited availability (LA) release with xref:get-started:cluster-types/serverless.adoc#serverless-standard-usage-limits[usage limits]. 
+Alternatively, you can subscribe to Redpanda Cloud through xref:billing:aws-pay-as-you-go.adoc[AWS Marketplace] and quickly provision Serverless clusters. New subscriptions receive $300 (USD) in free credits to spend in the first 30 days. AWS Marketplace charges for anything beyond $300, unless you cancel the subscription. After your free credits have been used, you can continue using your cluster without any commitment, only paying for what you consume and canceling anytime. 
 
-=== Serverless Pro
+With AWS Marketplace sign up, you do not have immediate access to Enterprise support, only the https://redpandacommunity.slack.com/[Community Slack^] channel. 
 
-Serverless Pro is similar to Serverless Standard, but it provides higher usage limits and Enterprise support. 
-
-You host your data in Redpanda's VPC, and Redpanda handles automatic scaling, provisioning, operations, and maintenance. This is a production-ready deployment option with a cluster available instantly. A payment method is required for Serverless Pro. With pay-as-you-go billing, you only pay for what you consume. You can view detailed billing activity for each cluster and edit payment methods on the *Billing* page. 
-
-==== Sign up for Serverless Pro
-
-To start using Serverless Pro, contact https://redpanda.com/try-redpanda?section=enterprise-trial[Redpanda Sales^]. With this subscription, you get immediate access to Enterprise support. 
-
-You can also subscribe to Redpanda Cloud through xref:billing:aws-pay-as-you-go.adoc[AWS Marketplace] and quickly provision Serverless clusters. New subscriptions receive $300 (USD) in free credits to spend in the first 30 days. AWS Marketplace charges for anything beyond $300, unless you cancel the subscription. After your free credits have been used, you can continue using your cluster without any commitment, only paying for what you consume and canceling anytime. 
-
-With AWS Marketplace sign up, you do not have immediate access to Enterprise support, only the https://redpandacommunity.slack.com/[Community Slack^] channel. To access your Enterprise support, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda Support^]. 
-
-NOTE: Serverless Pro is currently in a limited availability (LA) release with xref:get-started:cluster-types/serverless-pro.adoc#serverless-pro-usage-limits[usage limits]. 
+NOTE: Serverless is currently in a limited availability (LA) release with xref:get-started:cluster-types/serverless.adoc#serverless-usage-limits[usage limits]. 
 
 === Dedicated Cloud
 
@@ -71,7 +59,7 @@ When you create a Dedicated cluster, you select the supported xref:reference:tie
 
 Subscribe to Redpanda Cloud on the xref:billing:aws-pay-as-you-go.adoc[AWS Marketplace] to quickly provision Dedicated clusters. New subscriptions receive $300 (USD) in free credits to spend in the first 30 days. AWS Marketplace charges for anything beyond $300, unless you cancel the subscription. After your free credits have been used, you can continue using your cluster without any commitment, only paying for what you consume and canceling anytime. 
 
-Alternatively, you can contact https://redpanda.com/try-redpanda?section=enterprise-trial[Redpanda sales^] to request a private offer for monthly or annual committed use. With a usage-based billing commitment, you sign up for a monthly or an annual minimum spend amount through xref:billing:aws-commit.adoc[AWS Marketplace], xref:billing:azure-commit.adoc[Azure Marketplace], or xref:billing:gcp-commit.adoc[Google Cloud Marketplace]. You can then provision Dedicated clusters in Redpanda Cloud, and you can view invoices and manage your subscription in the marketplace.
+Alternatively, you can contact https://redpanda.com/try-redpanda?section=enterprise-trial[Redpanda sales^] to request a private offer with possible discounts for monthly or annual committed use. With a usage-based billing commitment, you sign up for a monthly or an annual minimum spend amount through xref:billing:aws-commit.adoc[AWS Marketplace], xref:billing:azure-commit.adoc[Azure Marketplace], or xref:billing:gcp-commit.adoc[Google Cloud Marketplace]. You can then provision Dedicated clusters in Redpanda Cloud, and you can view invoices and manage your subscription in the marketplace.
 
 === Bring Your Own Cloud (BYOC)
 
@@ -84,11 +72,11 @@ The BYOC infrastructure that Redpanda manages should not be used to deploy any o
 
 ==== Sign up for BYOC
 
-To start using BYOC, contact https://redpanda.com/try-redpanda?section=enterprise-trial[Redpanda sales^] to request a private offer. You are billed directly or through Google Cloud Marketplace or AWS Marketplace. 
+To start using BYOC, contact https://redpanda.com/try-redpanda?section=enterprise-trial[Redpanda sales^] to request a private offer with possible discounts. You are billed directly or through Google Cloud Marketplace or AWS Marketplace. 
 
 == Serverless vs Dedicated/BYOC
 
-Serverless clusters (Standard or Pro) are a good fit for the following use cases:
+Serverless clusters are a good fit for the following use cases:
 
 * Starter and growing workloads
 * Spiky workloads (that is, development environments, systems that only occasionally get busy, or workloads that come and go)
@@ -102,7 +90,7 @@ Consider Dedicated or BYOC if you need more control over the deployment or if yo
 * Single-zone or multi-zone availability. A multi-zone cluster provides higher resiliency in the event of a failure in one of the zones. 
 * Ability to export metrics to a 3rd-party monitoring system
 * Kafka Connect
-* Higher limits and quotas. See xref:reference:tiers/dedicated-tiers.adoc[Dedicated usage tiers] and xref:reference:tiers/byoc-tiers.adoc[BYOC usage tiers] compared to xref:get-started:cluster-types/serverless.adoc#serverless-standard-usage-limits[Serverless Standard limits] and xref:get-started:cluster-types/serverless-pro.adoc#serverless-pro-usage-limits[Serverless Pro limits].
+* Higher limits and quotas. See xref:reference:tiers/dedicated-tiers.adoc[Dedicated usage tiers] and xref:reference:tiers/byoc-tiers.adoc[BYOC usage tiers] compared to xref:get-started:cluster-types/serverless.adoc#serverless-usage-limits[Serverless limits].
 
 == Shared responsibility model
 
@@ -303,7 +291,7 @@ Features in limited availability are production-ready and are covered by Redpand
 The following features are currently in limited availability in Redpanda Cloud:
 
 * Redpanda Connect for Dedicated and BYOC (not BYOVPC)
-* Serverless Standard and Serverless Pro
+* Serverless
 * Dedicated and BYOC for Azure
 * BYOVPC for GCP
 * Azure Private Link
@@ -321,8 +309,7 @@ The following features are currently in beta in Redpanda Cloud:
 
 == Next steps
 * xref:manage:maintenance.adoc[Learn about upgrades and maintenance]
-* xref:get-started:cluster-types/serverless.adoc[Create a Serverless Standard Cluster]
-* xref:get-started:cluster-types/serverless-pro.adoc[Create a Serverless Pro Cluster]
+* xref:get-started:cluster-types/serverless.adoc[Create a Serverless Cluster]
 * xref:get-started:cluster-types/dedicated/create-dedicated-cloud-cluster-aws.adoc[Create a Dedicated Cloud Cluster]
 * xref:get-started:cluster-types/byoc/index.adoc[Create a BYOC Cluster]
 
