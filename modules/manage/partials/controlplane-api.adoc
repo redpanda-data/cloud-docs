@@ -264,6 +264,27 @@ The Create Serverless Cluster endpoint returns a <<lro-serverless,long-running o
 
 endif::[]
 
+== Update cluster configuration
+
+To update your cluster configuration properties, make a request to the xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1/clusters/-id-[`PATCH /v1/clusters/\{id}`] endpoint, passing the cluster ID as a parameter. Include the properties to update in the request body.
+
+[,bash]
+----
+curl -H "Authorization: Bearer <token>"  \
+ -H 'accept: application/json'\
+ -H 'content-type: application/json' \
+ -d '{
+      "cluster_configuration": {
+        "custom_properties": {
+          "iceberg_enabled":true,
+          "iceberg_catalog_type":"rest"
+        }
+      }
+    }' -X PATCH "https://api.cloud.redpanda.com/v1/clusters/<cluster-id>"
+----
+
+THe Update Cluster endpoint returns a <<lro,long-running operation>>. Check the operation state to verify that the update is complete.
+
 == Delete a cluster
 
 ifndef::env-serverless[]
@@ -271,7 +292,7 @@ ifndef::env-serverless[]
 To delete a cluster, make a request to the xref:api:ROOT:cloud-controlplane-api.adoc#delete-/v1/clusters/-id-[`DELETE /v1/clusters/\{id}`] endpoint, passing the cluster ID as a parameter. This is a <<lro,long-running operation>>.
 
 ```bash
-curl -H "Authorization: Bearer <token>" -X DELETE https://api.redpanda.com/v1/clusters/<cluster_id>
+curl -H "Authorization: Bearer <token>" -X DELETE https://api.redpanda.com/v1/clusters/<cluster-id>
 ```
 
 ifdef::env-byoc[]
