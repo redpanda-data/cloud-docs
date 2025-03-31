@@ -18,6 +18,7 @@ After <<get-a-cloud-api-access-token,getting an access token>>, you can <<create
 == Requirements
 
 * Install xref:manage:rpk/rpk-install.adoc[`rpk`].
+* Install `jq` [https://jqlang.org/download/], which is used to parse JSON values from API responses. 
 * You will use the https://learn.microsoft.com/en-us/cli/azure/[Azure CLI^] to authenticate with Azure and configure resources in your Azure account.
 * You will use the xref:deploy:deployment-option/cloud/api/cloud-api-overview.adoc[Redpanda Cloud API] to enable the Redpanda Private Link service for your clusters. Follow the steps on this page to <<get-a-cloud-api-access-token, get an access token>>.
 
@@ -61,7 +62,7 @@ Copy and store the resource group ID (UUID) from the URL in the browser.
 export RESOURCE_GROUP_ID=<uuid>
 ----    
 
-. Call xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1beta2/networks[`POST /v1beta2/networks`] to create a Redpanda Cloud network for the cluster.
+. Call xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1/networks[`POST /v1/networks`] to create a Redpanda Cloud network for the cluster.
 +
 Make sure to supply your own values in the following example request. Store the network ID (`network_id`) after the network is created to check whether you can proceed to cluster creation.
 +
@@ -90,14 +91,14 @@ EOF`
 NETWORK_ID=`curl -vv -X POST \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer $AUTH_TOKEN" \
-    -d "$NETWORK_POST_BODY" $PUBLIC_API_ENDPOINT/v1beta2/networks | jq .metadata.network_id`
+    -d "$NETWORK_POST_BODY" $PUBLIC_API_ENDPOINT/v1/networks | jq .metadata.network_id`
 
 echo $NETWORK_ID
 ----
 +
-Wait for the network to be ready before creating the cluster in the next step. Check the state of the network creation by calling xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1beta2/networks/-id-[`GET /v1beta2/networks/\{id}`]. You can create the cluster when the state is `STATE_READY`.
+Wait for the network to be ready before creating the cluster in the next step. Check the state of the network creation by calling xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/networks/-id-[`GET /v1/networks/\{id}`]. You can create the cluster when the state is `STATE_READY`.
 
-. Create a new cluster with the Private Link service enabled by calling xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1beta2/clusters[`POST /v1beta2/clusters`].
+. Create a new cluster with the Private Link service enabled by calling xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1/clusters[`POST /v1/clusters`].
 +
 In the following example, make sure to set your own values for the following fields:
 +
@@ -132,12 +133,12 @@ EOF`
 CLUSTER_ID=`curl -vv -X POST \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer $AUTH_TOKEN" \
-    -d "$CLUSTER_POST_BODY" $PUBLIC_API_ENDPOINT/v1beta2/clusters | jq -r .operation.metadata.cluster_id`
+    -d "$CLUSTER_POST_BODY" $PUBLIC_API_ENDPOINT/v1/clusters | jq -r .operation.metadata.cluster_id`
 
 echo $CLUSTER_ID
 ----
 
-. **BYOC clusters:** Check that the cluster operation is completed by calling xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1beta2/operations/-id-[`GET /v1beta2/operations/\{id}`], and passing the operation ID returned from the Create Cluster call.
+. **BYOC clusters:** Check that the cluster operation is completed by calling xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/operations/-id-[`GET /v1/operations/\{id}`], and passing the operation ID returned from the Create Cluster call.
 +
 When the Create Cluster operation is completed (`STATE_COMPLETED`), run the following `rpk cloud` command to finish setting up your BYOC cluster with Private Link enabled:
 +
@@ -159,7 +160,7 @@ CAUTION: As soon as Private Link is available on your virtual network, all commu
 CLUSTER_ID=<cluster_id>
 ----
 
-. Make a xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1beta2/clusters/-cluster.id-[`PATCH /v1beta2/clusters/{cluster.id}`] request to update the cluster with the service enabled.
+. Make a xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1/clusters/-cluster.id-[`PATCH /v1/clusters/{cluster.id}`] request to update the cluster with the service enabled.
 +
 [,bash]
 ----
@@ -176,33 +177,33 @@ EOF`
 curl -vv -X PATCH \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $AUTH_TOKEN" \
-  -d "$CLUSTER_PATCH_BODY" $PUBLIC_API_ENDPOINT/v1beta2/clusters/$CLUSTER_ID
+  -d "$CLUSTER_PATCH_BODY" $PUBLIC_API_ENDPOINT/v1/clusters/$CLUSTER_ID
 ----
 
-. Before proceeding, check the state of the Update Cluster operation by calling xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1beta2/operations/-id-[`GET /v1beta2/operations/\{id}`], and passing the operation ID returned from the Update Cluster call. When the state is `STATE_READY`, continue to <<configure-azure-private-link-connection-to-redpanda-cloud,configure the Private Link connection to Redpanda>>.
+. Before proceeding, check the state of the Update Cluster operation by calling xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/operations/-id-[`GET /v1/operations/\{id}`], and passing the operation ID returned from the Update Cluster call. When the state is `STATE_READY`, continue to <<configure-azure-private-link-connection-to-redpanda-cloud,configure the Private Link connection to Redpanda>>.
 
 == Configure Azure Private Link connection to Redpanda Cloud
 
 . In the Redpanda Cloud UI, go to https://cloud.redpanda.com/users?tab=users[**Users**^] and create a new user to authenticate the Private Link endpoint connections with the service. You will need the username and password to <<connect-to-redpanda-services-through-private-link-endpoints,access Redpanda services>> or <<test-the-connection,test the connection>> using `rpk` or cURL.
 
-. Call the xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1beta2/clusters/-id-[`GET /v1beta2/clusters/\{id}`] endpoint to check the service status and retrieve the service ID, DNS name, and Redpanda Console URL to use.
+. Call the xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/clusters/-id-[`GET /v1/clusters/\{id}`] endpoint to check the service status and retrieve the service ID, DNS name, and Redpanda Console URL to use.
 +
 [,bash]
 ----
 DNS_RECORD=`curl -s -X GET \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer $AUTH_TOKEN" \
-  $PUBLIC_API_ENDPOINT/v1beta2/clusters/$CLUSTER_ID | jq -r ".cluster.azure_private_link.status.dns_a_record"`
+  $PUBLIC_API_ENDPOINT/v1/clusters/$CLUSTER_ID | jq -r ".cluster.azure_private_link.status.dns_a_record"`
 
 PRIVATE_SERVICE_ID=`curl -s -X GET \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer $AUTH_TOKEN" \
-  $PUBLIC_API_ENDPOINT/v1beta2/clusters/$CLUSTER_ID | jq -r ".cluster.azure_private_link.status.service_id"`
+  $PUBLIC_API_ENDPOINT/v1/clusters/$CLUSTER_ID | jq -r ".cluster.azure_private_link.status.service_id"`
 
 CONSOLE_URL=`curl -s -X GET \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer $AUTH_TOKEN" \
-  $PUBLIC_API_ENDPOINT/v1beta2/clusters/$CLUSTER_ID | jq -r ".cluster.redpanda_console.url"`
+  $PUBLIC_API_ENDPOINT/v1/clusters/$CLUSTER_ID | jq -r ".cluster.redpanda_console.url"`
 
 echo $DNS_RECORD
 echo $PRIVATE_SERVICE_ID
