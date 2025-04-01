@@ -268,6 +268,7 @@ endif::[]
 
 To update your cluster configuration properties, make a request to the xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1/clusters/-id-[`PATCH /v1/clusters/\{id}`] endpoint, passing the cluster ID as a parameter. Include the properties to update in the request body.
 
+ifdef::env-byoc[]
 [,bash]
 ----
 curl -H "Authorization: Bearer <token>"  \
@@ -282,6 +283,23 @@ curl -H "Authorization: Bearer <token>"  \
       }
     }' -X PATCH "https://api.cloud.redpanda.com/v1/clusters/<cluster-id>"
 ----
+endif::[]
+
+ifndef::env-byoc[]
+[,bash]
+----
+curl -H "Authorization: Bearer <token>"  \
+ -H 'accept: application/json'\
+ -H 'content-type: application/json' \
+ -d '{
+      "cluster_configuration": {
+        "custom_properties": {
+          "audit_enabled":true
+        }
+      }
+    }' -X PATCH "https://api.cloud.redpanda.com/v1/clusters/<cluster-id>"
+----
+endif::[]
 
 THe Update Cluster endpoint returns a <<lro,long-running operation>>. Check the operation state to verify that the update is complete.
 
