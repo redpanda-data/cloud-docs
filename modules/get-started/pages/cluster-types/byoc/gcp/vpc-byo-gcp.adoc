@@ -93,6 +93,9 @@ gcloud compute firewall-rules create gke-redpanda-cluster-webhooks \
   --allow="tcp:9443,tcp:8443,tcp:6443"
 ```
 +
+Replace `<gke-master-cidr-range>` with a /28 CIDR. For example: 10.0.7.240/28.
+
++
 . Grant permission to read the VPC and related resources.
 +
 If the host project and service project are in different projects, it's helpful for the Redpanda team to have read access
@@ -604,7 +607,7 @@ gcloud iam service-accounts add-iam-policy-binding <gke-service-account-name>@<s
 
 Log in to the https://cloud.redpanda.com[Redpanda Cloud UI^], and follow the steps to xref:get-started:cluster-types/byoc/gcp/create-byoc-cluster-gcp.adoc[create a BYOC cluster], with the following exceptions:
 
-. On the *Network* page, select the *Customer-managed* connection type, and enter the network, service account, and storage bucket information you created. 
+. On the *Network* page, select the *Customer-managed* connection type, and enter the network, service account, storage bucket information, and GKE master CIDR range you created.
 
 . With customer-managed networks, you must grant yourself (the user deploying the cluster with `rpk`) the following permissions: 
 +
@@ -664,6 +667,14 @@ rpk cloud byoc gcp apply --redpanda-id='<redpanda-id>' --project-id='<service-pr
 . On the *Deploy* page, similar to standard BYOC clusters, log in to Redpanda Cloud and deploy the agent.
 
 include::get-started:partial$no-access.adoc[]
+
+== Delete cluster
+
+You can delete the cluster in the Cloud UI.
+
+. Log in to https://cloud.redpanda.com[Redpanda Cloud^].
+. Select your cluster.
+. Go to the **Cluster settings** page and click **Delete**, then confirm your deletion. 
 
 == Next steps
 
