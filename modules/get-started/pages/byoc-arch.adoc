@@ -1,0 +1,38 @@
+= BYOC Architecture
+:description: Learn about the control plane - data plane architecture in BYOC. 
+
+For high availability, Redpanda Cloud uses the following control plane - data plane architecture:
+
+image::shared:control_d_plane.png[Control plane and data plane]
+
+* *Control plane*: This is where most cluster management, operations, and maintenance takes place. The control plane enforces rules in the data plane. You can use role-based access control xref:security:authorization/rbac/rbac.adoc[(RBAC) in the control plane] to manage access to organization-level resources like clusters, resource groups, and networks. 
+
+* *Data plane*: This is where your cluster lives. The term _data plane_ is sometimes used interchangeably with _cluster_. The data plane is where you manage topics, consumer groups, connectors, and schemas. You can use xref:security:authorization/rbac/rbac_dp.adoc[RBAC in the data plane] to configure cluster-level permissions for provisioned users at scale. 
+
+* *Agent*: For BYOC, Redpanda uses an agent to manage the data plane from the control plane. The agent pulls cluster specifications from the control plane. IAM permissions allow the agent to access the the cloud provider API to create and manage cluster resources. The permissions follow the principle of least privilege, limiting access to only what is necessary.
+
+Clusters are configured and maintained in the control plane, but they remain available even if the network connection to the control plane is lost. 
+
+TIP: In the Redpanda Cloud UI, you see a different side navigation in the control plane and the data plane. You're in the control plane when you first log in. You're at the organization (org) level, and you haven't yet selected a cluster. This is where you can select, create, and delete clusters, networks, and resource groups. You're in the data plane when you're at the cluster level working with topics, consumer groups, connectors, and schemas.
+
+== BYOC setup
+
+In a BYOC architecture, you deploy the data plane in your own VPC. All network connections into the data plane take place through either a public endpoint, or for private clusters, through Redpanda Cloud network connections such as VPC peering, AWS PrivateLink, Azure Private Link, or GCP Private Service Connect. Customer data never leaves the data plane.
+
+A BYOC cluster is initially set up from the control plane. This is a two-step process performed by `rpk cloud byoc apply`:
+
+. You bootstrap a virtual machine (VM) in your VPC. 
++
+This VM spins up the agent and the required infrastructure. Redpanda assigns the necessary IAM policies required to run the agent and configures workload identity. That is, it configures independent IAM roles for each workload, with only the permissions each workload requires. 
+
+. The agent communicates with the control plane to pull the cluster specifications. 
++
+After the agent is up and running, it connects to the control plane and starts dequeuing and applying cluster specifications that provision, configure, and maintain clusters. The agent is in constant communication with the control plane,
+receiving and applying cluster specifications and exchanging cluster metadata. Agents are authenticated and authorized through opaque and ephemeral tokens, and
+they have dedicated job queues in the control plane. Agents also manage VPC peering networks. 
++
+image::shared:byoc_apply.png[cloud_byoc_apply]
+
+NOTE: To create a Redpanda cluster in your virtual private cloud (VPC), follow the instructions in the Redpanda Cloud UI. The UI contains the parameters necessary to successfully run `rpk cloud byoc apply` with your cloud provider. 
+
+include::get-started:partial$no-access.adoc[]
