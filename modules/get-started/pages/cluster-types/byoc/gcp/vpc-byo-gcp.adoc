@@ -55,7 +55,7 @@ gcloud compute routers create <router-name> \
    --region <region> \
    --network <shared-vpc-name>
 
-gcloud compute addresses create <address-name>
+gcloud compute addresses create <address-name> 
 
 gcloud compute routers nats create <nat-config-name> \
    --project <host-project-id> \
@@ -169,7 +169,8 @@ cat << EOT > redpanda-agent.role
   "title": "Redpanda Agent Role",
   "description": "A role comprising general permissions allowing the agent to manage Redpanda cluster resources.",
   "includedPermissions": [
-   "compute.firewalls.get",
+    "compute.firewalls.get",
+    "compute.disks.get",
     "compute.globalOperations.get",
     "compute.instanceGroupManagers.get",
     "compute.instanceGroupManagers.delete",
@@ -284,6 +285,62 @@ gcloud storage buckets add-iam-policy-binding gs://<tiered-storage-bucket-name> 
 ```
 ====
 
+* Redpanda Connect service accounts
++
+.Show commands
+[%collapsible]
+====
+```bash
+# Account used to check for and read secrets, which are required to create Redpanda Connect pipelines.
+
+gcloud iam service-accounts create redpanda-connect-api \ 
+  --display-name="Redpanda Connect API Service Account" 
+
+cat << EOT > redpanda-connect-api.role 
+{
+  "name": "redpanda_connect_api_role",
+  "title": "Redpanda Connect API Role",  
+  "description": "Redpanda Connect API Role", 
+  "includedPermissions": [
+    "resourcemanager.projects.get",
+    "secretmanager.secrets.get",
+    "secretmanager.versions.access"
+  ],
+}
+EOT
+
+gcloud iam roles create redpanda_connect_api_role --project=<service-project-id> --file redpanda-connect-api.role
+
+gcloud projects add-iam-policy-binding <service-project-id> \
+  --member="serviceAccount:redpanda-connect-api@<service-project-id>.iam.gserviceaccount.com" \
+  --role="projects/<service-project-id>/roles/redpanda_connect_api_role"
+```
+```bash
+# Account used to retrieve secrets and create Redpanda Connect pipelines.
+
+gcloud iam service-accounts create redpanda-connect \
+  --display-name="Redpanda Connect Service Account"
+
+cat << EOT > redpanda-connect.role
+{
+  "name": "redpanda_connect_role",
+  "title": "Redpanda Connect Role",
+  "description": "Redpanda Connect Role",
+  "includedPermissions": [
+    "resourcemanager.projects.get",
+    "secretmanager.versions.access"
+  ],
+}
+EOT
+
+gcloud iam roles create redpanda_connect_role --project=<service-project-id> --file redpanda-connect.role
+
+gcloud projects add-iam-policy-binding <service-project-id> \
+  --member="serviceAccount:redpanda-connect@<service-project-id>.iam.gserviceaccount.com" \
+  --role="projects/<service-project-id>/roles/redpanda_connect_role"
+```
+====
+
 * Redpanda Console service account
 +
 .Show commands
@@ -318,63 +375,7 @@ gcloud iam roles create redpanda_console_secret_manager_role --project=<service-
 
 gcloud projects add-iam-policy-binding <service-project-id> \
   --member="serviceAccount:redpanda-console@<service-project-id>.iam.gserviceaccount.com" \
-  --role='projects/<service-project-id>/roles/redpanda_console_secret_manager_role'
-```
-====
-
-* Redpanda Connect service accounts
-+
-.Show commands
-[%collapsible]
-====
-```bash
-# Account used to check for and read secrets, which are required to create Redpanda Connect pipelines.
-
-gcloud iam service-accounts create redpanda-connect-api \ 
-  --display-name="Redpanda Connect API Service Account" 
-
-cat << EOT > redpanda-connect-api.role 
-{
-  "name": "redpanda_connect_api_role",
-  "title": "Redpanda Connect API Role",  
-  "description": "Redpanda Connect API Role", 
-  "includedPermissions": [
-    "resourcemanager.projects.get",
-    "secretmanager.secrets.get",
-    "secretmanager.versions.access"
-  ],
-}
-EOT
-
-gcloud iam roles create redpanda_connect_api_role --project=<service-project-id> --file redpanda-connect-api.role
-
-gcloud projects add-iam-policy-binding <service-project-id> \
-  --member="serviceAccount:redpanda-connect-api@<service-project-id>.iam.gserviceaccount.com" \
-  --role='projects/<service-project-id>/roles/redpanda_connect_api_role'
-```
-```bash
-# Account used to retrieve secrets and create Redpanda Connect pipelines.
-
-gcloud iam service-accounts create redpanda-connect \
-  --display-name="Redpanda Connect Service Account"
-
-cat << EOT > redpanda-connect.role
-{
-  "name": "redpanda_connect_role",
-  "title": "Redpanda Connect Role",
-  "description": "Redpanda Connect Role",
-  "includedPermissions": [
-    "resourcemanager.projects.get",
-    "secretmanager.versions.access"
-  ],
-}
-EOT
-
-gcloud iam roles create redpanda_connect_role --project=<service-project-id> --file redpanda-connect.role
-
-gcloud projects add-iam-policy-binding <service-project-id> \
-  --member="serviceAccount:redpanda-connect@<service-project-id>.iam.gserviceaccount.com" \
-  --role='projects/<service-project-id>/roles/redpanda_connect_role'
+  --role="projects/<service-project-id>/roles/redpanda_console_secret_manager_role"
 ```
 ====
 
@@ -403,7 +404,7 @@ gcloud iam roles create redpanda_connectors_role --project=<service-project-id> 
 
 gcloud projects add-iam-policy-binding <service-project-id> \
   --member="serviceAccount:redpanda-connectors@<service-project-id>.iam.gserviceaccount.com" \
-  --role='projects/<service-project-id>/roles/redpanda_connectors_role'
+  --role="projects/<service-project-id>/roles/redpanda_connectors_role"
 ```
 ====
 
@@ -510,7 +511,7 @@ gcloud iam roles create redpanda_gke_utility_role --project=<service-project-id>
 
 gcloud projects add-iam-policy-binding <service-project-id> \
   --member="serviceAccount:redpanda-gke@<service-project-id>.iam.gserviceaccount.com" \
-  --role='projects/<service-project-id>/roles/redpanda_gke_utility_role'
+  --role="projects/<service-project-id>/roles/redpanda_gke_utility_role"
 ```
 ====
 
