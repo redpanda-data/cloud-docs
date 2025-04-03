@@ -3,7 +3,7 @@
 
 Learn how to create and configure a support agent. The support agent can use text-based content, such as such as Markdown or AsciiDoc, from any GitHub repository to enrich the responses given by an OpenAI model. You can then enter prompts from a chat interface and receive more accurate, domain-specific responses.
 
-include::shared:partial$feature-flag-rpcn.adoc[]
+include::shared:partial$feature-flag-agents.adoc[]
 
 == Overview
 
@@ -25,7 +25,7 @@ Before you can configure a support agent, you need to add it from within the Clo
 
 . Log in to Redpanda Cloud and select your cluster.
 . Go to the **AI Agents** page and click **Create agent**.
-. Click on the **Support Agent** block.
+. Click on the **Support Agent** block to start configuring your agent.
 
 == Configure your support agent
 
@@ -42,7 +42,7 @@ Next, create a topic on your cluster for ingesting and processing the GitHub dat
 . In **Redpanda topic**, select **+Create New**.
 . Enter a custom name for your topic, then click **Create**.
 . In **Username**, select **+Create New** and enter credentials for a new user.
-. Select a **SASL mechanism**. For more information, see  
+. Leave the default **SASL mechanism**.  
 . Enter a unique **Secret ID**, which is used to store and retrieve the user credentials from the **Secrets Store**.
 . Click **Create**, and take a note of your password.
 . Click **Create ACLs** to update the user's permission to the topic you created. The **Access Control** page opens in a new browser tab.
@@ -53,8 +53,8 @@ Now, add the details of your GitHub repository.
 
 . In **Repository URL**, add the full URL to your GitHub repository, for example: `https://github.com/redpanda-data/docs`.
 . In **Repository branch**, enter the name of the Git branch from which you want to ingest data, for example: `main`.
-. If your repository is private, also select **Private repository** and enter your personal access token.
-. In **Include glob pattern**, specify the content you want the RAG pipeline to ingest, for example: all Markdown documents (`**/*.md`), all AsciiDoc documents (`**/*.adoc`), or everything beneath the `docs` directory (`/docs/**`).
+. If your repository is private, also select the **Private repository** checkbox and enter your personal access token.
+. In **Include glob pattern**, specify the content you want the RAG pipeline to ingest, for example: all Markdown documents (```**/*.md```), all AsciiDoc documents (`**/*.adoc`), or everything beneath the `docs` directory (`/docs/**`).
 . In **Exclude glob pattern** (optional), you can also specify any content you do not want to ingest, for example: `README.md`.
 
 Finally, add your OpenAI API key and PostgreSQL details.
