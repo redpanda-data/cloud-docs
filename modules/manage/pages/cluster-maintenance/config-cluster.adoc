@@ -1,15 +1,13 @@
 = Configure Cluster Properties
 :description: Learn how to configure cluster properties to enable and manage additional features.
 
-include::ROOT:reference:properties/cluster-properties.adoc[tags=audit_enabled;audit_enabled_event_types;audit_excluded_principals;auto_create_topics_enabled;data_transforms_binary_max_size;data_transforms_commit_interval_ms;data_transforms_enabled;data_transforms_logging_line_max_bytes;data_transforms_per_function_memory_limit;default_topic_partitions;disable_metrics;disable_public_metrics;enable_idempotence;enable_schema_id_validation;enable_transactions;fetch_max_bytes;fetch_pid_max_debounce_ms;fetch_read_strategy;fetch_reads_debounce_timeout;group_initial_rebalance_delay;group_max_session_timeout_ms;group_min_session_timeout_ms;group_new_member_join_timeout;group_offset_retention_check_ms;group_offset_retention_sec;group_topic_partitions;iceberg_catalog_commit_interval_ms;iceberg_catalog_type;iceberg_delete;iceberg_enabled;iceberg_rest_catalog_client_id;iceberg_rest_catalog_client_secret;iceberg_rest_catalog_token;iceberg_rest_catalog_authentication_mode;iceberg_rest_catalog_endpoint;iceberg_rest_catalog_oauth2_server_uri;iceberg_rest_catalog_prefix;iceberg_rest_catalog_request_timeout_ms;iceberg_default_partition_spec;iceberg_invalid_record_action;iceberg_target_lag_ms;iceberg_rest_catalog_trust;iceberg_rest_catalog_crl;kafka_batch_max_bytes;kafka_max_bytes_per_fetch;kafka_qdc_enable;kafka_request_max_bytes;kafka_tcp_keepalive_timeout;log_cleanup_policy;log_retention_ms;log_segment_ms;log_segment_size;min_cleanable_dirty_ratio;raft_learner_recovery_rate;retention_bytes;retention_local_target_bytes_default;retention_local_target_ms_default;schema_registry_normalize_on_startup;tombstone_retention_ms;transaction_coordinator_cleanup_policy;transaction_coordinator_delete_retention_ms;transaction_coordinator_log_segment_size;transaction_coordinator_partitions;transaction_max_timeout_ms;transactional_id_expiration_ms;width=100%]
-
-Redpanda cluster configuration properties are automatically set to the default values and are replicated across all brokers.
+Redpanda cluster configuration properties are automatically set to the default values and are replicated across all brokers. 
 
 Some properties can be configured at either the cluster level or the topic level, such as `retention_bytes` (cluster-level) and `retention.bytes` (topic-level). Topic-level properties override cluster-level properties. Most Redpanda configuration properties are cluster properties.
 
 You can edit certain cluster configuration properties with the Cloud API. For example, you can enable and manage Iceberg topics, data transforms, audit logging, and server-side schema ID validation. 
 
-For information about using the Cloud API, see: 
+For information about using the Cloud API, see:
 
 * xref:manage:api/cloud-api-overview.adoc[Redpanda Cloud API Overview]
 * xref:manage:api/cloud-api-quickstart.adoc[Redpanda Cloud API Quickstart]
@@ -33,7 +31,7 @@ To set a cluster property, edit `cluster_configuration` in the request body with
 
 === Cluster Configuration Properties
 
-The following table lists the cluster configuration properties you can edit in Redpanda Cloud. 
+For a complete list of the cluster configuration properties you can edit in Redpanda Cloud, see xref:reference:cluster-properties.adoc[Cluster Configuration Properties].
 
 NOTE: Some properties require a cluster restart for updates to take effect. This triggers a xref:manage:api/cloud-byoc-controlplane-api.adoc#lro[long-running operation] that can take several minutes to complete.
 
