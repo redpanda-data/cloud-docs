@@ -21,6 +21,10 @@ Cluster configuration with the Cloud API is supported on BYOC and Dedicated clus
 
 == Set cluster configuration properties
 
+For a complete list of the cluster configuration properties you can edit in Redpanda Cloud, see xref:reference:properties/cluster-properties.adoc[Cluster Configuration Properties].
+
+NOTE: Some properties require a cluster restart for updates to take effect. This triggers a xref:manage:api/cloud-byoc-controlplane-api.adoc#lro[long-running operation] that can take several minutes to complete.
+
 You can set cluster configuration properties when you create a cluster, or you can edit an existing cluster.
 
 * Create a cluster by making a xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1/clusters[`POST /v1/clusters`] request.
@@ -28,8 +32,4 @@ You can set cluster configuration properties when you create a cluster, or you c
 * Update a cluster by making a xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1/clusters/-cluster.id-[`PATCH /v1/clusters/{cluster.id}`] request.
 
 To set a cluster property, edit `cluster_configuration` in the request body with a key-value pair for `custom_properties`.
-
-For a complete list of the cluster configuration properties you can edit in Redpanda Cloud, see xref:reference:properties/cluster-properties.adoc[Cluster Configuration Properties].
-
-NOTE: Some properties require a cluster restart for updates to take effect. This triggers a xref:manage:api/cloud-byoc-controlplane-api.adoc#lro[long-running operation] that can take several minutes to complete.
 
