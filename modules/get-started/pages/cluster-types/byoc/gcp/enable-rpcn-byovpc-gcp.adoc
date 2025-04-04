@@ -1,0 +1,124 @@
+= Enable Redpanda Connect on an Existing BYOVPC Cluster on GCP
+:description: Add Redpanda Connect to your existing BYOVPC cluster.
+:page-beta: true
+
+include::shared:partial$feature-flag-rpcn.adoc[]
+
+To enable Redpanda Connect on an existing BYOVPC cluster, you must update your configuration. You can also create xref:get-started:cluster-types/byoc/gcp/vpc-byo-gcp.adoc[a new BYOVPC cluster] with Redpanda Connect already enabled.
+
+Replace all `<placeholders>` with your own values.
+
+. Create two new service accounts with the necessary permissions and roles. 
++
+.Show commands
+[%collapsible]
+====
+```bash
+# Account used to check for and read secrets, which are required to create Redpanda Connect pipelines.
+
+gcloud iam service-accounts create redpanda-connect-api \ 
+  --display-name="Redpanda Connect API Service Account" 
+
+cat << EOT > redpanda-connect-api.role 
+{
+  "name": "redpanda_connect_api_role",
+  "title": "Redpanda Connect API Role",  
+  "description": "Redpanda Connect API Role", 
+  "includedPermissions": [
+    "resourcemanager.projects.get",
+    "secretmanager.secrets.get",
+    "secretmanager.versions.access"
+  ],
+}
+EOT
+
+gcloud iam roles create redpanda_connect_api_role --project=<service-project-id> --file redpanda-connect-api.role
+
+gcloud projects add-iam-policy-binding <service-project-id> \
+  --member="serviceAccount:redpanda-connect-api@<service-project-id>.iam.gserviceaccount.com" \
+  --role="projects/<service-project-id>/roles/redpanda_connect_api_role"
+```
+
+```bash
+# Account used to retrieve secrets and create Redpanda Connect pipelines.
+
+gcloud iam service-accounts create redpanda-connect \
+  --display-name="Redpanda Connect Service Account"
+
+cat << EOT > redpanda-connect.role
+{
+  "name": "redpanda_connect_role",
+  "title": "Redpanda Connect Role",
+  "description": "Redpanda Connect Role",
+  "includedPermissions": [
+    "resourcemanager.projects.get",
+    "secretmanager.versions.access"
+  ],
+}
+EOT
+
+gcloud iam roles create redpanda_connect_role --project=<service-project-id> --file redpanda-connect.role
+
+gcloud projects add-iam-policy-binding <service-project-id> \
+  --member="serviceAccount:redpanda-connect@<service-project-id>.iam.gserviceaccount.com" \
+  --role="projects/<service-project-id>/roles/redpanda_connect_role"
+```
+====
+
+. Bind the service accounts. 
++
+The account ID of the GCP service account is used to configure service account bindings. This account ID is the local part of the email address for the GCP service account. For example, if the GCP service account is `my-gcp-sa@my-project.iam.gserviceaccount.com`, then the account ID is `my-gcp-sa`.
++
+.Show commands
+[%collapsible]
+====
+```
+gcloud iam service-accounts add-iam-policy-binding <redpanda_connect_api-gcp-sa-account-id>@<service-project-id>.iam.gserviceaccount.com \
+    --role roles/iam.workloadIdentityUser \
+    --member "serviceAccount:<service-project-id>.svc.id.goog[redpanda-connect/<redpanda_connect_api-gcp-sa-account-id>]"
+```
+```
+gcloud iam service-accounts add-iam-policy-binding <redpanda_connect-gcp-sa-account-id>@<service-project-id>.iam.gserviceaccount.com \
+    --role roles/iam.workloadIdentityUser \
+    --member "serviceAccount:<service-project-id>.svc.id.goog[redpanda-connect/<redpanda_connect-gcp-sa-account-id>]"
+```
+====
+
+. Make a xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1/clusters/-cluster.id-[`PATCH /v1/clusters/\{cluster-id}`] request to update the cluster configuration.
++
+.Show request
+[%collapsible]
+====
+```bash
+export CLUSTER_PATCH_BODY=`cat << EOF
+{
+    "customer_managed_resources": {
+        "gcp": {
+            "redpanda_connect_api_service_account": {
+              "email": "<redpanda_connect-api-gcp-sa-account-id>@<service-project-id>.iam.gserviceaccount.com"
+            },
+            "redpanda_connect_service_account": {
+              "email": "<redpanda_connect-gcp-sa-account-id>@<service-project-id>.iam.gserviceaccount.com"
+            }
+        }
+    }
+}
+EOF`
+curl -v -X PATCH \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer $AUTH_TOKEN" \
+-d "$CLUSTER_PATCH_BODY" $PUBLIC_API_ENDPOINT/v1/clusters/<cluster-id>
+```
+====
+
+. Check Redpanda Connect is available in the Cloud UI. 
+.. Log in to https://cloud.redpanda.com[Redpanda Cloud^].
+.. Go to the **Connect** page and you should see the **Redpanda Connect** tab alongside **Kafka Connect**. 
+
+== Next steps
+
+* Choose xref:develop:connect/components/catalog.adoc[connectors for your use case].
+* Learn how to xref:redpanda-connect:guides:getting_started.adoc[configure, test, and run a data pipeline locally].
+* Try the xref:develop:connect/connect-quickstart.adoc[Redpanda Connect quickstart].
+* Try one of our xref:cookbooks:index.adoc[Redpanda Connect cookbooks].
+* Learn how to xref:develop:connect/configuration/secret-management.adoc[add secrets to your pipeline].
