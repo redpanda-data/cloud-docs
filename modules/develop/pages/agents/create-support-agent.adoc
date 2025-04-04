@@ -10,7 +10,7 @@ include::shared:partial$feature-flag-agents.adoc[]
 
 The support agent ingests data from a GitHub repository into a Redpanda topic. The ingested data is then processed by a Redpanda Connect pipeline, using an OpenAI model to generate vector embeddings. The vector embeddings are written to a PostgreSQL vector database, ready for retrieval by the agent. This is a type of Retrieval-Augmented Generation (RAG) pipeline, which continuously identifies and processes any changes to the GitHub repository so that the stored and retrieved data is always up-to-date.
 
-The processing, storage, and retrieval of data is achieved using three preconfigured Redpanda Connect pipelines. While in beta, server resources used by these pipelines are charged at an xref:billing:billing.adoc#redpanda-connect-pipeline-metrics-dedicated-and-serverless[hourly rate in compute unit hours (compute/hour)], excluding the use of any GPU machines that are deployed.
+The processing, storage, and retrieval of data is achieved using three preconfigured Redpanda Connect pipelines, with a minimum of xref:develop:connect/configuration/resource-management.adoc#understanding-compute-units[one compute unit] of server resources allocated to each pipeline. While in beta, server resources are charged at an xref:billing:billing.adoc#redpanda-connect-pipeline-metrics-dedicated-and-serverless[hourly rate in compute unit hours (compute/hour)], excluding the use of any GPU machines that are deployed. 
 
 == Prerequisites
 
