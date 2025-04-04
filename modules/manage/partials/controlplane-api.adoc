@@ -102,6 +102,7 @@ Create a network by making a request to xref:api:ROOT:cloud-controlplane-api.ado
 
 Choose a xref:networking:cidr-ranges.adoc[CIDR range] that does not overlap with your existing VPCs or your Redpanda network.
 
+ifdef::env-dedicated[]
 [,bash]
 ----
 curl -d \
@@ -114,6 +115,21 @@ curl -d \
   "region": "us-west1"
 }' -H "Authorization: Bearer <token>" -X POST https://api.redpanda.com/v1/networks 
 ----
+endif::[]
+ifdef::env-byoc[]
+[,bash]
+----
+curl -d \
+'{
+  "cidr_block": "10.0.0.0/20",
+  "cloud_provider": "CLOUD_PROVIDER_GCP",
+  "cluster_type": "TYPE_BYOC",
+  "name": "<network-name>",
+  "resource_group_id": "<resource-group-id>",
+  "region": "us-west1"
+}' -H "Authorization: Bearer <token>" -X POST https://api.redpanda.com/v1/networks 
+----
+endif::[]
 
 This endpoint returns a <<lro,long-running operation>>. 
 
@@ -121,6 +137,7 @@ This endpoint returns a <<lro,long-running operation>>.
 
 After the network is created, make a request to the xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1/clusters[`POST /v1/clusters`] with the resource group ID and network ID in the request body. 
 
+ifdef::env-dedicated[]
 [,bash]
 ----
 curl -d \
@@ -137,9 +154,41 @@ curl -d \
     "us-west1-a",
     "us-west1-b",
     "us-west1-c"
-    ]
-  }' -H "Authorization: Bearer <token>" -X POST https://api.redpanda.com/v1/clusters
+  ],
+  "cluster_configuration": {
+      "custom_properties": {
+        "audit_enabled":true
+      }
+  }
+}' -H "Authorization: Bearer <token>" -X POST https://api.redpanda.com/v1/clusters
 ----
+endif::[]
+ifdef::env-byoc[]
+[,bash]
+----
+curl -d \
+'{
+  "cloud_provider": "CLOUD_PROVIDER_GCP",
+  "connection_type": "CONNECTION_TYPE_PUBLIC",
+  "name": "my-new-cluster",
+  "resource_group_id": "<resource-group-id>",
+  "network_id": "<network-id>",
+  "region": "us-west1",
+  "throughput_tier": "tier-1-gcp-um4g",
+  "type": "TYPE_BYOC",
+  "zones": [
+    "us-west1-a",
+    "us-west1-b",
+    "us-west1-c"
+  ],
+  "cluster_configuration": {
+    "custom_properties": {
+      "audit_enabled":true
+    }
+  }
+}' -H "Authorization: Bearer <token>" -X POST https://api.redpanda.com/v1/clusters
+----
+endif::[]
 
 The Create Cluster endpoint returns a <<lro,long-running operation>>. When the operation completes, you can retrieve cluster details by calling xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/clusters/-id-[`GET /v1/clusters/\{id}`], and passing the cluster ID as a parameter.
 
@@ -264,6 +313,45 @@ The Create Serverless Cluster endpoint returns a <<lro-serverless,long-running o
 
 endif::[]
 
+== Update cluster configuration
+
+To update your cluster configuration properties, make a request to the xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1/clusters/-id-[`PATCH /v1/clusters/\{id}`] endpoint, passing the cluster ID as a parameter. Include the properties to update in the request body.
+
+ifdef::env-byoc[]
+[,bash]
+----
+curl -H "Authorization: Bearer <token>"  \
+ -H 'accept: application/json'\
+ -H 'content-type: application/json' \
+ -d '{
+      "cluster_configuration": {
+        "custom_properties": {
+          "iceberg_enabled":true,
+          "iceberg_catalog_type":"rest"
+        }
+      }
+    }' -X PATCH "https://api.cloud.redpanda.com/v1/clusters/<cluster-id>"
+----
+endif::[]
+
+ifndef::env-byoc[]
+[,bash]
+----
+curl -H "Authorization: Bearer <token>"  \
+ -H 'accept: application/json'\
+ -H 'content-type: application/json' \
+ -d '{
+      "cluster_configuration": {
+        "custom_properties": {
+          "audit_enabled":true
+        }
+      }
+    }' -X PATCH "https://api.cloud.redpanda.com/v1/clusters/<cluster-id>"
+----
+endif::[]
+
+The Update Cluster endpoint returns a <<lro,long-running operation>>. <<check-operation-state,Check the operation state>> to verify that the update is complete.
+
 == Delete a cluster
 
 ifndef::env-serverless[]
@@ -271,7 +359,7 @@ ifndef::env-serverless[]
 To delete a cluster, make a request to the xref:api:ROOT:cloud-controlplane-api.adoc#delete-/v1/clusters/-id-[`DELETE /v1/clusters/\{id}`] endpoint, passing the cluster ID as a parameter. This is a <<lro,long-running operation>>.
 
 ```bash
-curl -H "Authorization: Bearer <token>" -X DELETE https://api.redpanda.com/v1/clusters/<cluster_id>
+curl -H "Authorization: Bearer <token>" -X DELETE https://api.redpanda.com/v1/clusters/<cluster-id>
 ```
 
 ifdef::env-byoc[]
