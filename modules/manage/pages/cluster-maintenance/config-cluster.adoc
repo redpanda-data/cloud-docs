@@ -7,11 +7,6 @@ Some properties can be configured at either the cluster level or the topic level
 
 You can edit certain cluster configuration properties with the Cloud API. For example, you can enable and manage Iceberg topics, data transforms, audit logging, and server-side schema ID validation. 
 
-For information about using the Cloud API, see:
-
-* xref:manage:api/cloud-api-overview.adoc[Redpanda Cloud API Overview]
-* xref:manage:api/cloud-api-quickstart.adoc[Redpanda Cloud API Quickstart]
-
 == Limitations
 
 Cluster configuration with the Cloud API is supported on BYOC and Dedicated clusters running on AWS and GCP. 
@@ -23,11 +18,14 @@ Cluster configuration with the Cloud API is supported on BYOC and Dedicated clus
 
 You can set cluster configuration properties when you create a cluster, or you can edit an existing cluster.
 
-* Create a cluster by making a xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1/clusters[`POST /v1/clusters`] request.
+* Create a cluster by making a xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1/clusters[`POST /v1/clusters`] request. Edit `cluster_configuration` in the request body with a key-value pair for `custom_properties`.
 
-* Update a cluster by making a xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1/clusters/-cluster.id-[`PATCH /v1/clusters/{cluster.id}`] request.
+* Update a cluster by making a xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1/clusters/-cluster.id-[`PATCH /v1/clusters/{cluster.id}`] request, passing the cluster ID as a parameter. Include the properties to update in the request body.
 
-To set a cluster property, edit `cluster_configuration` in the request body with a key-value pair for `custom_properties`.
+For information, see:
+* xref:manage:api/cloud-api-overview.adoc[Redpanda Cloud API Overview]
+* xref:manage:api/cloud-api-quickstart.adoc[Redpanda Cloud API Quickstart]
+* xref:manage:api/cloud-byoc-controlplane-api/#update-cluster-configuration[Update Cluster Configuration]
 
 For a complete list of the cluster configuration properties you can edit in Redpanda Cloud, see xref:reference:properties/cluster-properties.adoc[Cluster Configuration Properties].
 
