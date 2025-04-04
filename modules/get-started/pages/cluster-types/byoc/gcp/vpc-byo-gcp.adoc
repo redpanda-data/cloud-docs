@@ -57,7 +57,7 @@ gcloud compute routers create <router-name> \
    --region <region> \
    --network <shared-vpc-name>
 
-gcloud compute addresses create <address-name>
+gcloud compute addresses create <address-name> --region <region> 
 
 gcloud compute routers nats create <nat-config-name> \
    --project <host-project-id> \
@@ -94,6 +94,8 @@ gcloud compute firewall-rules create gke-redpanda-cluster-webhooks \
   --source-ranges="<gke-master-cidr-range>" \
   --allow="tcp:9443,tcp:8443,tcp:6443"
 ```
++
+Replace `<gke-master-cidr-range>` with a /28 CIDR. For example: 172.16.0.32/28. For information about the master CIDR, and how to set it using `--master-ipv4-cidr`, see the **gcloud** tab in https://cloud.google.com/kubernetes-engine/docs/how-to/legacy/network-isolation#private_cp[Creating a private cluster with no client access to the public endpoint]
 +
 . Grant permission to read the VPC and related resources.
 +
@@ -171,7 +173,8 @@ cat << EOT > redpanda-agent.role
   "title": "Redpanda Agent Role",
   "description": "A role comprising general permissions allowing the agent to manage Redpanda cluster resources.",
   "includedPermissions": [
-   "compute.firewalls.get",
+    "compute.firewalls.get",
+    "compute.disks.get",
     "compute.globalOperations.get",
     "compute.instanceGroupManagers.get",
     "compute.instanceGroupManagers.delete",
@@ -286,6 +289,62 @@ gcloud storage buckets add-iam-policy-binding gs://<tiered-storage-bucket-name> 
 ```
 ====
 
+* Redpanda Connect service accounts
++
+.Show commands
+[%collapsible]
+====
+```bash
+# Account used to check for and read secrets, which are required to create Redpanda Connect pipelines.
+
+gcloud iam service-accounts create redpanda-connect-api \ 
+  --display-name="Redpanda Connect API Service Account" 
+
+cat << EOT > redpanda-connect-api.role 
+{
+  "name": "redpanda_connect_api_role",
+  "title": "Redpanda Connect API Role",  
+  "description": "Redpanda Connect API Role", 
+  "includedPermissions": [
+    "resourcemanager.projects.get",
+    "secretmanager.secrets.get",
+    "secretmanager.versions.access"
+  ],
+}
+EOT
+
+gcloud iam roles create redpanda_connect_api_role --project=<service-project-id> --file redpanda-connect-api.role
+
+gcloud projects add-iam-policy-binding <service-project-id> \
+  --member="serviceAccount:redpanda-connect-api@<service-project-id>.iam.gserviceaccount.com" \
+  --role="projects/<service-project-id>/roles/redpanda_connect_api_role"
+```
+```bash
+# Account used to retrieve secrets and create Redpanda Connect pipelines.
+
+gcloud iam service-accounts create redpanda-connect \
+  --display-name="Redpanda Connect Service Account"
+
+cat << EOT > redpanda-connect.role
+{
+  "name": "redpanda_connect_role",
+  "title": "Redpanda Connect Role",
+  "description": "Redpanda Connect Role",
+  "includedPermissions": [
+    "resourcemanager.projects.get",
+    "secretmanager.versions.access"
+  ],
+}
+EOT
+
+gcloud iam roles create redpanda_connect_role --project=<service-project-id> --file redpanda-connect.role
+
+gcloud projects add-iam-policy-binding <service-project-id> \
+  --member="serviceAccount:redpanda-connect@<service-project-id>.iam.gserviceaccount.com" \
+  --role="projects/<service-project-id>/roles/redpanda_connect_role"
+```
+====
+
 * Redpanda Console service account
 +
 .Show commands
@@ -320,11 +379,11 @@ gcloud iam roles create redpanda_console_secret_manager_role --project=<service-
 
 gcloud projects add-iam-policy-binding <service-project-id> \
   --member="serviceAccount:redpanda-console@<service-project-id>.iam.gserviceaccount.com" \
-  --role='projects/<service-project-id>/roles/redpanda_console_secret_manager_role'
+  --role="projects/<service-project-id>/roles/redpanda_console_secret_manager_role"
 ```
 ====
 
-* Redpanda Connectors service account
+* Kafka Connect connectors service account
 +
 .Show commands
 [%collapsible]
@@ -349,7 +408,7 @@ gcloud iam roles create redpanda_connectors_role --project=<service-project-id> 
 
 gcloud projects add-iam-policy-binding <service-project-id> \
   --member="serviceAccount:redpanda-connectors@<service-project-id>.iam.gserviceaccount.com" \
-  --role='projects/<service-project-id>/roles/redpanda_connectors_role'
+  --role="projects/<service-project-id>/roles/redpanda_connectors_role"
 ```
 ====
 
@@ -456,7 +515,7 @@ gcloud iam roles create redpanda_gke_utility_role --project=<service-project-id>
 
 gcloud projects add-iam-policy-binding <service-project-id> \
   --member="serviceAccount:redpanda-gke@<service-project-id>.iam.gserviceaccount.com" \
-  --role='projects/<service-project-id>/roles/redpanda_gke_utility_role'
+  --role="projects/<service-project-id>/roles/redpanda_gke_utility_role"
 ```
 ====
 
@@ -489,7 +548,24 @@ gcloud iam service-accounts add-iam-policy-binding <console-gcp-sa-account-id>@<
 ```
 ====
 
-* Redpanda Connectors service account
+* Redpanda Connect service accounts
++
+.Show command
+[%collapsible]
+====
+```
+gcloud iam service-accounts add-iam-policy-binding <redpanda_connect_api-gcp-sa-account-id>@<service-project-id>.iam.gserviceaccount.com \
+    --role roles/iam.workloadIdentityUser \
+    --member "serviceAccount:<service-project-id>.svc.id.goog[redpanda-connect/<redpanda_connect_api-gcp-sa-account-id>]"
+```
+```
+gcloud iam service-accounts add-iam-policy-binding <redpanda_connect-gcp-sa-account-id>@<service-project-id>.iam.gserviceaccount.com \
+    --role roles/iam.workloadIdentityUser \
+    --member "serviceAccount:<service-project-id>.svc.id.goog[redpanda-connect/<redpanda_connect-gcp-sa-account-id>]"
+```
+====
+
+* Kafka Connect connectors service account
 +
 .Show command
 [%collapsible]
@@ -532,7 +608,7 @@ gcloud iam service-accounts add-iam-policy-binding <gke-service-account-name>@<s
 
 Log in to the https://cloud.redpanda.com[Redpanda Cloud UI^], and follow the steps to xref:get-started:cluster-types/byoc/gcp/create-byoc-cluster-gcp.adoc[create a BYOC cluster], with the following exceptions:
 
-. On the *Network* page, select the *Customer-managed* connection type, and enter the network, service account, and storage bucket information you created. 
+. On the *Network* page, select the *Customer-managed* connection type, and enter the network, service account, storage bucket information, and GKE master CIDR range you created.
 
 . With customer-managed networks, you must grant yourself (the user deploying the cluster with `rpk`) the following permissions: 
 +
@@ -592,6 +668,14 @@ rpk cloud byoc gcp apply --redpanda-id='<redpanda-id>' --project-id='<service-pr
 . On the *Deploy* page, similar to standard BYOC clusters, log in to Redpanda Cloud and deploy the agent.
 
 include::get-started:partial$no-access.adoc[]
+
+== Delete cluster
+
+You can delete the cluster in the Cloud UI.
+
+. Log in to https://cloud.redpanda.com[Redpanda Cloud^].
+. Select your cluster.
+. Go to the **Cluster settings** page and click **Delete**, then confirm your deletion. 
 
 == Next steps
 
