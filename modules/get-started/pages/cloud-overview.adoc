@@ -10,7 +10,7 @@ TIP: For more detailed information about the Redpanda platform, see xref:get-sta
 
 == Redpanda Cloud cluster types
 
-Redpanda offers four types of fully-managed cloud clusters. All products have access to unlimited storage and 280+ data connectors with xref:develop:connect/about.adoc[Redpanda Connect].
+Redpanda offers fully-managed cloud clusters for Serverless, BYOC, and Dedicated. All products have access to unlimited storage and 280+ data connectors with xref:develop:connect/about.adoc[Redpanda Connect].
 |===
 | <<Serverless>> | <<Bring Your Own Cloud (BYOC)>> | <<Dedicated>>
 
@@ -47,7 +47,11 @@ include::get-started:partial$get-started-serverless.adoc[]
 With BYOC clusters, you deploy Redpanda in your own cloud (AWS, Azure, or GCP), and all data is
 contained in your own environment. This provides an additional layer of security and isolation. (See xref:get-started:byoc-arch.adoc[].) When you create a BYOC cluster, you select the supported xref:reference:tiers/byoc-tiers.adoc[tier] that meets your compute and storage needs. Redpanda handles provisioning, operations, and maintenance. 
 
-NOTE: With standard BYOC clusters, Redpanda manages security policies and resources for your VPC or VNet, including subnetworks, IAM roles, and storage buckets/accounts. A Bring Your Own Virtual Private Cloud (BYOVPC) cluster allows you to deploy the Redpanda glossterm:data plane[] into your existing VPC/VNet and take full control of managing the networking lifecycle. Compared to standard BYOC, BYOVPC provides more security, but the configuration is more complex. See <<Shared responsibility model>>.
+NOTE: With standard BYOC clusters, Redpanda manages security policies and resources for your VPC or VNet, including subnetworks, IAM roles, and storage buckets/accounts. 
+
+==== Bring Your Own Virtual Private Cloud (BYOVPC) 
+
+BYOVPC clusters allow you to deploy the Redpanda glossterm:data plane[] into your existing VPC/VNet and take full control of managing the networking lifecycle. Compared to standard BYOC, BYOVPC provides more security, but the configuration is more complex. See <<Shared responsibility model>>.
 
 The BYOC infrastructure that Redpanda manages should not be used to deploy any other workloads.
 
@@ -106,7 +110,7 @@ For details about the control plane - data plane framework in BYOC, see xref:get
 
 == Shared responsibility model
 
-The Redpanda Cloud shared responsibility model lists the security ownership areas for Redpanda and customers. Responsibilities depend on the type of deployment. 
+The Redpanda Cloud shared responsibility model lists the security areas owned by Redpanda and the security areas owned by customers. Responsibilities depend on the type of deployment. 
 
 [tabs]
 =====
@@ -133,7 +137,7 @@ BYOC::
 | Access controls and audit | &#10003; | &#10003;  
 | Managed disaster recovery |  | &#10003; 
 | Observability and monitoring (SLOs, SLIs, tracing, alerting, runbooks) | &#10003; |    
-| Availability SLA | &#10003; (subject to required access to customer resources) |  
+| Availability service-level agreement (SLA) | &#10003; (subject to required access to customer resources) |  
 | Proactive threat detection | &#10003; | &#10003;  
 | Static secret rotation | &#10003; |  
 | Incident response | &#10003; |     
