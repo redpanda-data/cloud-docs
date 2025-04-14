@@ -1,6 +1,10 @@
 = BYOC Architecture
 :description: Learn about the control plane - data plane architecture in BYOC. 
 
+With Bring Your Own Cloud (BYOC) clusters, you deploy Redpanda in your own cloud (AWS, Azure, or GCP), and all data is contained in your own environment. This provides an additional layer of security and isolation. Redpanda handles provisioning, operations, and maintenance.
+
+== Control plane - data plane 
+
 For high availability, Redpanda Cloud uses the following control plane - data plane architecture:
 
 image::shared:control_d_plane.png[Control plane and data plane]
@@ -13,7 +17,14 @@ IAM permissions allow the agent to access the cloud provider API to create and m
 
 Clusters are configured and maintained in the control plane, but they remain available even if the network connection to the control plane is lost. 
 
-TIP: In the Redpanda Cloud UI, you see a different side navigation in the control plane and the data plane. You're in the control plane when you first log in. You're at the organization (org) level, and you haven't yet selected a cluster. This is where you can select, create, and delete clusters, networks, and resource groups. You're in the data plane when you're at the cluster level working with topics, consumer groups, connectors, and schemas.
+[TIP]
+====
+
+In the Redpanda Cloud UI, you can identify which plane you're in by the side navigation:
+
+* *Control Plane:* Visible after login at the organization level. Here you can select, create, and delete clusters, networks, and resource groups. 
+* *Data Plane:* Visible after selecting a specific cluster. Here you can work with topics, consumer groups, connectors, and schemas.
+====
 
 == BYOC setup
 
