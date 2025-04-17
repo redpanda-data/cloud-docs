@@ -3,7 +3,7 @@
 :page-aliases: deploy:deployment-option/cloud/security/cloud-security-network.adoc
 
 
-This page explains how Redpanda manages network security and connectivity in cloud environments. It includes the following topics:
+This page explains how Redpanda Cloud manages network security and connectivity. It includes the following topics:
 
 * Public vs private cluster network designs
 * Network port configurations
@@ -17,7 +17,7 @@ laid out across multiple availability zones (AZs) to enable the creation of one 
 many single and multi-AZ Redpanda clusters within them.
 
 With both private and public Redpanda clusters, TCP listeners are protected by SASL/SCRAM
-(SCRAM-SHA-256, SCRAM-SHA-512) authentication and encrypted in transit using TLS 1.2.
+(SCRAM-SHA-256, SCRAM-SHA-512) authentication and encrypted in transit using TLS 1.2. The following table compares public and private clusters.
 
 [cols="1,2,2"]
 |===
@@ -56,7 +56,7 @@ NAT gateways are used selectively in Redpanda Cloud:
 | Use case | NAT gateway required?
 
 | Redpanda streaming traffic | No 
-| Tiered Storage traffic | No: VPC gateway endpoint used, no data transfer charges
+| Redpanda Tiered Storage traffic | No: VPC gateway endpoint used, no data transfer charges
 | Internet-facing connectors | Yes
 | BYOC/BYOVPC provisioning and telemetry | Yes: minimal usage for artifact downloads and metrics
 |===
@@ -66,7 +66,7 @@ NAT gateways are used selectively in Redpanda Cloud:
 This section lists the external ports on which Redpanda Cloud components communicate. Redpanda manages security group and firewall configurations on your behalf, but if you need to add to your own rule sets, these are the available network ports. The following table provides a quick reference of network ports: 
 
 |===
-| Direction | Purpose | Key ports
+| Direction | Purpose | Ports
 
 | North-South | External client access | 30092, 9092, 30081, 30082, 443
 | East-West | Internal cluster communication | 30092, 9092, 30081, 30082, 33145, 30644, 8083
