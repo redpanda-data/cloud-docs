@@ -12,6 +12,7 @@ Before you deploy a BYOC cluster on AWS, check that the user creating the cluste
 
 * A minimum version of Redpanda `rpk` v24.1. See xref:manage:rpk/rpk-install.adoc[].
 * The user authenticating to AWS has `AWSAdministratorAccess` access to create the IAM policies specified in xref:security:authorization/cloud-iam-policies.adoc[AWS IAM policies].
+
 * The user has the AWS variables necessary to authenticate. Use either:
 +
 --
@@ -42,7 +43,10 @@ Optionally, click *Advanced settings* to specify up to five key-value custom tag
 . Click *Next*.
 . On the Deploy page, follow the steps to log in to Redpanda Cloud and deploy the agent.
 +
-As part of agent deployment, Redpanda assigns the permission required to run the agent. For details about these permissions, see xref:security:authorization/cloud-iam-policies.adoc[AWS IAM policies].
+As part of agent deployment:
++
+** Redpanda assigns the permission required to run the agent. For details about these permissions, see xref:security:authorization/cloud-iam-policies.adoc[AWS IAM policies].
+** Redpanda allocates one Elastic IP (EIP) address in AWS for each BYOC cluster. 
 
 include::get-started:partial$no-access.adoc[]
 
