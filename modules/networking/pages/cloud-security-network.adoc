@@ -1,5 +1,5 @@
-= Network Design, Ports, and Flows
-:description: Learn about Redpanda Cloud network design, including ports, and flows.
+= Network Design and Ports
+:description: Learn how Redpanda Cloud manages network security and connectivity.
 :page-aliases: deploy:deployment-option/cloud/security/cloud-security-network.adoc
 
 
@@ -9,26 +9,29 @@ This page explains how Redpanda Cloud manages network security and connectivity.
 * Network port configurations
 * Cloud provider-specific network services
 
-== Public vs private network designs
-
-Redpanda Cloud deploys different types of networks for private Redpanda
-clusters and for public Redpanda clusters. By default, networks are always
+Redpanda Cloud deploys different types of networks for public Redpanda
+clusters and for private Redpanda clusters. By default, networks are always
 laid out across multiple availability zones (AZs) to enable the creation of one or
 many single and multi-AZ Redpanda clusters within them.
 
-With both private and public Redpanda clusters, TCP listeners are protected by SASL/SCRAM
-(SCRAM-SHA-256, SCRAM-SHA-512) authentication and encrypted in transit using TLS 1.2. The following table compares public and private clusters.
+== Public vs private network designs
+
+The following table compares public and private Redpanda clusters:
 
 [cols="1,2,2"]
 |===
 | Feature | Public clusters | Private clusters
 
-| Access | Internet-accessible endpoints | Access only through VPC peering or private connections
+| Access | Internet-accessible endpoints | Access only through VPC peering or private service connectivity (AWS PrivateLink, Azure Private Link, or GCP Private Service Connect)
 | Security | SASL/SCRAM authentication + TLS encryption | SASL/SCRAM authentication + TLS encryption + network isolation
-| Use Case | Development, testing, or scenarios where public access is needed | Production environments requiring heightened security
+| Use case | Development, testing, or scenarios where public access is needed | Production environments requiring heightened security
 |===
 
+The Redpanda Cloud agent (sometimes called the glossterm:data plane[] agent) provisions, configures, and maintains cluster resources, including the network. Each agent has a dedicated operations queue in the glossterm:control plane[] through which it pulls and materializes cluster definition documents into cloud infrastructure resources. For BYOC clusters, agents are provisioned by the user with `rpk`.
+
 === Public Redpanda clusters
+
+Public Redpanda clusters deploy networks segmented by workload type. The Redpanda Cloud agent gets its own subnet as well as Redpanda's brokers and Redpanda Connect nodes. Public clusters deploy brokers in public subnets. Redpanda ports are protected by SASL/SCRAM (SCRAM-SHA-256, SCRAM-SHA-512) authentication and encrypted in transit using TLS 1.2. Everything else is deployed on private subnets.
 
 The following diagram shows the public subnet used by public Redpanda clusters.
 
@@ -36,13 +39,7 @@ image::shared:cloud-public-networks.png[Redpanda Cloud Security Architecture]
 
 === Private Redpanda clusters
 
-Private Redpanda clusters are designed based on the following behaviors:
-
-* There is proper network segmentation.
-* All Redpanda services are only accessible from within the same VPC or through
-VPC peering.
-* The data plane agent is placed in public subnets and segmented away by
-firewall rules from Redpanda services.
+Private Redpanda clusters also deploy networks segmented by workload type. Brokers are placed on private subnets, accessible from within the same VPC or from VPC peerings and private links. The Redpanda Cloud agent and Redpanda Connect nodes are placed in distinct subnets, segmented away from Redpanda services by routing and firewall rules. 
 
 The following diagram shows the private subnet used by private Redpanda clusters.
 
@@ -63,24 +60,24 @@ NAT gateways are used selectively in Redpanda Cloud:
 
 == Network ports
 
-This section lists the external ports on which Redpanda Cloud components communicate. Redpanda manages security group and firewall configurations on your behalf, but if you need to add to your own rule sets, these are the available network ports. The following table provides a quick reference of network ports: 
+This section lists the external ports on which Redpanda Cloud components communicate. Redpanda manages security group and firewall configurations, but if you need to add to your own rule sets, these are the available network ports. The following table provides a quick reference of network ports: 
 
 |===
 | Direction | Purpose | Ports
 
-| North-South | External client access | 30092, 9092, 30081, 30082, 443
-| East-West | Internal cluster communication | 30092, 9092, 30081, 30082, 33145, 30644, 8083
-| South-North | Outgoing connections | 443
+| North-south | External client access | 30092, 9092, 30081, 30082, 443
+| East-west | Internal cluster communication | 30092, 9092, 8081, 8082, 33145, 30644, 8083
+| South-north | Outgoing connections | 443
 |===
 
-NOTE: Redpanda also uses some ports for internal communication inside the cluster, including ports 80, 8081, 8082, and 9644. 
+NOTE: Redpanda also uses some ports for internal communication inside the cluster, including ports 80 and 9644. 
 
-=== North-South
+=== North-south
 
 The following table lists the network ports available to external clients within
-each data plane. For private-only Redpanda clusters, access to these ports is
+each data plane. For private clusters, access to these ports is
 only possible through Redpanda Cloud network connections such as xref:networking:dedicated/vpc-peering.adoc[VPC peering],
-transit gateway attachments, or Private Links/Private Service Connect.
+transit gateway attachments, or private service connectivity.
 
 |===
 | Service | Port
@@ -88,20 +85,20 @@ transit gateway attachments, or Private Links/Private Service Connect.
 | Kafka API
 | 30092/tcp
 
-| Kafka bootstrap
+| Kafka API bootstrap
 | 9092/tcp
 
 | Schema Registry
 | 30081/tcp
 
-| HTTP Proxy
+| Kafka HTTP Proxy and Kafka HTTP Proxy bootstrap
 | 30082/tcp
 
-| Redpanda Console, Prometheus metrics
+| Redpanda Console, Data Plane API, Prometheus metrics
 | 443/tcp
 |===
 
-=== East-West
+=== East-west
 
 The following table lists the network ports available within each data plane for
 internal communication only.
@@ -112,16 +109,16 @@ internal communication only.
 | Kafka API
 | 30092/tcp
 
-| Kafka bootstrap
+| Kafka API bootstrap
 | 9092/tcp
 
 | Schema Registry
-| 30081/tcp
+| 8081/tcp
 
-| HTTP Proxy
-| 30082/tcp
+| Kafka HTTP Proxy
+| 8082/tcp
 
-| Redpanda Console
+| Redpanda RPC
 | 33145/tcp
 
 | Redpanda Admin API
@@ -131,14 +128,42 @@ internal communication only.
 | 8083/tcp
 |===
 
-=== South-North
+=== South-north
 
 The following network port is used for outgoing network connections outside the VPC. DNS and NTP ports are not included because those network flows do not leave the cloud provider's network, and they reach the internal cloud provider services within the VPC.
 
 |===
 | Service | Port
 
-| Control plane, breakglass, artifact repository
+| Control plane, breakglass, artifact repository, and telemetry
+| 443/tcp
+|===
+
+== Private service connectivity network ports
+
+=== North-south
+
+When private service connectivity is enabled (AWS PrivateLink, Azure Private Link, or GCP Private Service Connect), the following network ports are made available to external clients:
+
+|===
+| Service | Port
+
+| Kafka API
+| 32000-32500/tcp
+
+| Kafka API bootstrap
+| 30292/tcp
+
+| Schema Registry
+| 30081/tcp
+
+| Kafka HTTP Proxy
+| 35000-35500/tcp
+
+| Kafka HTTP Proxy bootstrap
+| 30282/tcp
+
+| Redpanda Console, Data Plane API, Prometheus metrics
 | 443/tcp
 |===
 
@@ -152,58 +177,129 @@ Each cloud provider offers specific network services integrated with Redpanda Cl
 AWS::
 +
 --
-* Time synchronization
+* *Time synchronization*
 +
-To ensure time synchronization, Redpanda Cloud in AWS uses the https://aws.amazon.com/about-aws/whats-new/2017/11/introducing-the-amazon-time-sync-service/[Amazon Time Sync Service^], a fleet of redundant satellite-connected and atomic reference clocks in AWS regions.
+Redpanda Cloud uses the https://aws.amazon.com/about-aws/whats-new/2017/11/introducing-the-amazon-time-sync-service/[Amazon Time Sync Service^], a fleet of redundant satellite-connected and atomic reference clocks in AWS regions.
 
-* Domain Name System (DNS)
+* *Domain name system (DNS)*
 +
 Redpanda Cloud creates a new DNS zone for each cluster in the control plane and delegates its management exclusively to each cluster's data plane. In turn, the data plane creates a hosted zone in Route 53, managing DNS records for Redpanda services as needed. All interactions with Route 53 are controlled by IAM policies targeted to the specific Route 53 resources managed by each data plane, following the least privilege principle.
++
+The Route 53-hosted DNS zone in the data plane has the following naming convention: 
++
+** BYOC/BYOVPC: `[cluster_id].byoc.prd.cloud.redpanda.com`
+** Dedicated: `[cluster_id].fmc.prd.cloud.redpanda.com`
 
-* Distributed denial of service (DDoS) protection
+* *Distributed denial of service (DDoS) protection*
 +
 All Redpanda Cloud services publicly exposed in the control plane and data plane are protected against the most common layer 3 and 4 DDoS attacks by https://aws.amazon.com/shield/features/#AWS_Shield_Standard[AWS Shield Standard^], with no latency impact.
 
-* VPC peering
+* *VPC peering*
 +
 Redpanda Cloud supports configuring xref:networking:dedicated/vpc-peering.adoc[VPC peering] against Redpanda Cloud networks, making them available to one or many private clusters and allowing users to connect to those clusters without traversing the public internet.
 +
 You can establish VPC peering connections between two VPCs with non-overlapping network addresses. When creating a network intended for peering, ensure that the specified network address range does not overlap with the network address range of the destination VPC.
 +
-*Security Best Practice:* When using VPC peering, always reject all network traffic initiated from a Redpanda Cloud network and only accept traffic from trusted Kafka connectors.
+_Security best practice:_ When using VPC peering, always reject all network traffic initiated from a Redpanda Cloud network and only accept traffic from trusted connectors.
+
+* *AWS PrivateLink*
++
+AWS PrivateLink lets you connect to cluster services using unidirectional TCP connections that client applications can only initiate. These applications can run from multiple customer-managed VPCs, even if their CIDR ranges overlap with the Redpanda cluster VPC. 
++
+AWS PrivateLink is configured against the Redpanda cluster's network load balancer. All client connections to cluster services pass through this load balancer. You configure PrivateLink with the Redpanda Cloud API or UI, and it is protected by an allowlist of principal ARNs during creation. Only those principals can create VPC endpoint attachments to the PrivateLink service.
+
+* *Internet*
++
+Redpanda Cloud clusters rely on outbound-only internet access to connect to the control plane, perform cluster upgrades, and deliver cluster telemetry to the control plane. For Dedicated and BYOC standard clusters, one NAT gateway and one internet gateway are provisioned. For BYOVPC, you decide how to provide access to the internet, since you fully manage the network. 
++
+Redpanda Connect and Kafka Connect connectors can egress to the internet and incur high NAT data transfer costs. Without connectors, monthly NAT-incurred costs should be relatively low, because it is only used for telemetry and artifact downloading during cluster upgrades.
 --
 
 Azure::
 +
 --
-* Time synchronization
+* *Time synchronization*
 +
-To ensure time synchronization, Redpanda Cloud in Azure uses https://learn.microsoft.com/en-us/azure/virtual-machines/linux/time-sync[Microsoft time sync^].
+Redpanda Cloud synchronizes time through the underlying Azure host, which uses internal Microsoft time servers that get their time from Microsoft-owned Stratum 1 devices with GPS antennas. 
 
-* Domain Name System (DNS)
+* *Domain name system (DNS)*
 +
-Redpanda Cloud creates a new DNS zone for each cluster in the control plane and delegates its management exclusively to each cluster's data plane. In turn, the data plane creates a managed zone in Azure DNS, managing DNS records for Redpanda services, as needed. All interactions with Azure DNS are controlled by Azure RBAC policies targeted to the specific Azure DNS resources managed by each data plane, following the least privilege principle.
+Redpanda Cloud creates a new DNS zone for each cluster in the control plane and delegates its management exclusively to each cluster's agent. In turn, the agent creates an Azure DNS zone and manages the DNS records for Redpanda services, as needed. All Azure API interactions with Azure DNS are done through a user-assigned managed identity, with constrained Azure RBAC permissions, following the least privilege principle.
++
+The DNS zone in the data plane has the following naming convention: 
++
+** BYOC: `[cluster_id].byoc.prd.cloud.redpanda.com`
+** Dedicated: `[cluster_id].fmc.prd.cloud.redpanda.com`
+
+* *Distributed denial of service (DDoS) protection*
++
+All Redpanda Cloud services publicly exposed in the control plane are protected against the most common layer 3 and 4 DDoS attacks by AWS. Data plane services in Azure are not protected by default against common network-level DDoS attacks. Azure customers are fully responsible for enabling this protection, because it has an added cost.
+
+* *VNet peering*
++
+NOTE: VNet peering in Azure is in limited availability. 
++
+Redpanda Cloud supports configuring VNet peerings against Redpanda Cloud networks, making them available to one or many private clusters. This lets you connect to those clusters without traversing the public internet. 
++
+VNet peering connections can only be established between two or more VNets with non-overlapping network addresses. When creating a Redpanda Cloud network for peering, make sure the Redpanda network address range does not overlap with the network address range of the destination VNet.
++
+_Security best practice:_ When using VNet peering, always reject all network traffic initiated from a Redpanda Cloud network and only accept traffic from trusted connectors.
++
+Unlike AWS and GCP, Azure charges $0.01 per GB transferred over a VNet peering, in either direction. For high-throughput use cases, consider using BYOVPC clusters. With BYOVPC, client application workloads are deployed on the same VNet as the Redpanda brokers, avoiding additional data transfer costs.
+
+* *Azure Private Link*
++
+Azure Private Link lets you connect to cluster services using an unidirectional TCP connection that can only be initiated by client applications. These applications can run from multiple customer-managed VNets, even if their CIDR ranges overlap with the Redpanda cluster VNet. 
++
+Redpanda configures Private Link against the cluster's Azure load balancer. All client connections to the Redpanda cluster services pass through this load balancer. You configure Private Link with the Redpanda Cloud API, and it is protected during creation by an allowlist of Azure subscription IDs. Only allowlisted subscriptions can create private endpoint attachments to the cluster's Private Link service.
+
+* *Internet*
++
+Redpanda Cloud clusters rely on outbound-only internet access to connect to the control plane, perform cluster upgrades, and deliver cluster telemetry to the control plane. For Dedicated and BYOC standard clusters, one NAT gateway and one public IP prefix of 31 bits are provisioned. For BYOVPC clusters, you decide how to provide access to the internet, because you fully manage the network.
++
+Redpanda Connect and Kafka Connect connectors can egress to the internet and incur high NAT data transfer costs. Without connectors, monthly NAT-incurred costs should be relatively low, because it is only used for telemetry and artifact downloading during cluster upgrades.
 --
 
 GCP::
 +
 --
-* Time synchronization
+* *Time synchronization*
 +
-To ensure time synchronization, Redpanda Cloud in GCP uses https://cloud.google.com/compute/docs/instances/configure-ntp#linux-chrony[Google NTP Servers^], a fleet of satellite-connected and atomic reference clocks.
+Redpanda Cloud uses https://cloud.google.com/compute/docs/instances/configure-ntp#linux-chrony[Google NTP Servers^], a fleet of satellite-connected and atomic reference clocks.
 
-* Domain Name System (DNS)
+* *Domain name system (DNS)*
 +
 Redpanda Cloud creates a new DNS zone for each cluster in the control plane and delegates its management exclusively to each cluster's data plane. In turn, the data plane creates a managed zone in Cloud DNS, managing DNS records for Redpanda services, as needed. All interactions with Cloud DNS are controlled by IAM policies targeted to the specific Cloud DNS resources managed by each data plane, following the least privilege principle.
 
-* VPC peering
+* *Distributed denial of service (DDoS) protection*
++
+All Redpanda Cloud services publicly exposed in the control plane and data plane are protected against the most common layer 3 and 4 DDoS attacks by xref:https://cloud.google.com/armor/docs/advanced-network-ddos[Google Cloud Armor Standard], with no latency impact.
+
+* *VPC peering*
 +
 Redpanda Cloud supports configuring xref:networking:dedicated/vpc-peering.adoc[VPC peering] against Redpanda Cloud networks, making them available to one or many private Redpanda clusters and allowing users to connect to those clusters without traversing the public internet.
 +
 You can establish VPC peering connections between two VPCs with non-overlapping network addresses. When creating a network intended for peering, ensure that the specified network address range does not overlap with the network address range of the destination VPC.
 +
-*Security Best Practice:* When using VPC peering, always reject all network traffic initiated from a Redpanda Cloud network and only accept traffic from trusted Kafka connectors.
+_Security best practice:_ When using VPC peering, always reject all network traffic initiated from a Redpanda Cloud network and only accept traffic from trusted connectors.
+
+* *GCP Private Service Connect*
++
+GCP Private Service Connect lets you connect to cluster services using an unidirectional TCP connection that can only be initiated by client applications. These applications can run from multiple customer-managed VPCs, even if their CIDR ranges overlap with the Redpanda cluster VPC. 
++
+Redpanda configures a Private Service Connect publisher or producer against the cluster's network load balancer. All client connections to the Redpanda cluster services pass through this load balancer. You configure a Private Service Connect publisher with the Redpanda Cloud API. It is protected during creation by a consumer accept list of GCP networks or project IDs. Only those consumers can create consumer endpoints to the Redpanda cluster's Private Service Connect published service.
+
+* *Internet*
++
+Redpanda Cloud clusters rely on outbound-only internet access to connect to the control plane, perform cluster upgrades, and deliver cluster telemetry to the control plane. For Dedicated and BYOC standard clusters, one NAT gateway and one internet gateway are provisioned. In BYOVPC, you decide how to provide access to the internet, because you fully manage the network.
++
+Redpanda Connect and Kafka Connect connectors can egress to the internet and incur high NAT data transfer costs. Without connectors, monthly NAT-incurred costs should be relatively low, because it is only used for telemetry and artifact downloading during cluster upgrades.
 --
 ====
 
+== Suggested reading
 
+* xref:get-started:cloud-overview.adoc[Redpanda Cloud overview]
+* xref:get-started:byoc-arch.adoc[BYOC architecture]
+* xref:networking:byoc/index.adoc[BYOC networking]
+* xref:networking:dedicated/index.adoc[Dedicated networking]
