@@ -3,12 +3,6 @@
 :page-aliases: deploy:deployment-option/cloud/security/cloud-security-network.adoc
 
 
-This page explains how Redpanda Cloud manages network security and connectivity. It includes the following topics:
-
-* Public vs private cluster network designs
-* Network port configurations
-* Cloud provider-specific network services
-
 Redpanda Cloud deploys different types of networks for public Redpanda
 clusters and for private Redpanda clusters. By default, networks are always
 laid out across multiple availability zones (AZs) to enable the creation of one or
@@ -27,7 +21,7 @@ The following table compares public and private Redpanda clusters:
 | Use case | Development, testing, or scenarios where public access is needed | Production environments requiring heightened security
 |===
 
-The Redpanda Cloud agent (sometimes called the glossterm:data plane[] agent) provisions, configures, and maintains cluster resources, including the network. Each agent has a dedicated operations queue in the glossterm:control plane[] through which it pulls and materializes cluster definition documents into cloud infrastructure resources. For BYOC clusters, agents are provisioned by the user with `rpk`.
+The Redpanda Cloud agent (sometimes called the glossterm:data plane[] agent) provisions, configures, and maintains cluster resources, including the network. Each agent has a dedicated operations queue in the glossterm:control plane[] through which it pulls and materializes cluster definition documents into cloud infrastructure resources. For BYOC clusters, agents are provisioned by the user with `rpk`. For more information, see xref:get-started:byoc-arch.adoc[BYOC Architecture].
 
 === Public Redpanda clusters
 
@@ -47,16 +41,18 @@ image::shared:cloud-private-network.png[Redpanda Cloud Security Architecture]
 
 == NAT gateways 
 
-NAT gateways are used selectively in Redpanda Cloud:
+Redpanda Connect and Kafka Connect connectors can egress to the internet and incur high NAT data transfer costs. Without connectors, monthly NAT-incurred costs should be relatively low:
 
 |===
 | Use case | NAT gateway required?
 
 | Redpanda streaming traffic | No 
 | Redpanda Tiered Storage traffic | No: VPC gateway endpoint used, no data transfer charges
-| Internet-facing connectors | Yes
+| Internet-facing connectors | Yes: incurs NAT data-transfer charges
 | BYOC/BYOVPC provisioning and telemetry | Yes: minimal usage for artifact downloads and metrics
 |===
+
+See also: <<Cloud provider network services, Cloud provider network internet services>>.
 
 == Network ports
 
@@ -196,9 +192,7 @@ All Redpanda Cloud services publicly exposed in the control plane and data plane
 
 * *VPC peering*
 +
-Redpanda Cloud supports configuring xref:networking:dedicated/vpc-peering.adoc[VPC peering] against Redpanda Cloud networks, making them available to one or many private clusters and allowing users to connect to those clusters without traversing the public internet.
-+
-You can establish VPC peering connections between two VPCs with non-overlapping network addresses. When creating a network intended for peering, ensure that the specified network address range does not overlap with the network address range of the destination VPC.
+VPC peering against Redpanda Cloud networks allows users to connect to private clusters without traversing the public internet. You can establish VPC peering connections between two VPCs with non-overlapping network addresses. When creating a network intended for peering, ensure that the specified network address range does not overlap with the network address range of the destination VPC.
 +
 _Security best practice:_ When using VPC peering, always reject all network traffic initiated from a Redpanda Cloud network and only accept traffic from trusted connectors.
 
@@ -211,8 +205,6 @@ AWS PrivateLink is configured against the Redpanda cluster's network load balanc
 * *Internet*
 +
 Redpanda Cloud clusters rely on outbound-only internet access to connect to the control plane, perform cluster upgrades, and deliver cluster telemetry to the control plane. For Dedicated and BYOC standard clusters, one NAT gateway and one internet gateway are provisioned. For BYOVPC, you decide how to provide access to the internet, since you fully manage the network. 
-+
-Redpanda Connect and Kafka Connect connectors can egress to the internet and incur high NAT data transfer costs. Without connectors, monthly NAT-incurred costs should be relatively low, because it is only used for telemetry and artifact downloading during cluster upgrades.
 --
 
 Azure::
@@ -237,9 +229,9 @@ All Redpanda Cloud services publicly exposed in the control plane are protected 
 
 * *VNet peering*
 +
-NOTE: VNet peering in Azure is in limited availability. 
+VNet peering against Redpanda Cloud networks allows users to connect to private clusters without traversing the public internet. 
 +
-Redpanda Cloud supports configuring VNet peerings against Redpanda Cloud networks, making them available to one or many private clusters. This lets you connect to those clusters without traversing the public internet. 
+NOTE: VNet peering in Azure is in limited availability. 
 +
 VNet peering connections can only be established between two or more VNets with non-overlapping network addresses. When creating a Redpanda Cloud network for peering, make sure the Redpanda network address range does not overlap with the network address range of the destination VNet.
 +
@@ -256,8 +248,6 @@ Redpanda configures Private Link against the cluster's Azure load balancer. All 
 * *Internet*
 +
 Redpanda Cloud clusters rely on outbound-only internet access to connect to the control plane, perform cluster upgrades, and deliver cluster telemetry to the control plane. For Dedicated and BYOC standard clusters, one NAT gateway and one public IP prefix of 31 bits are provisioned. For BYOVPC clusters, you decide how to provide access to the internet, because you fully manage the network.
-+
-Redpanda Connect and Kafka Connect connectors can egress to the internet and incur high NAT data transfer costs. Without connectors, monthly NAT-incurred costs should be relatively low, because it is only used for telemetry and artifact downloading during cluster upgrades.
 --
 
 GCP::
@@ -277,9 +267,7 @@ All Redpanda Cloud services publicly exposed in the control plane and data plane
 
 * *VPC peering*
 +
-Redpanda Cloud supports configuring xref:networking:dedicated/vpc-peering.adoc[VPC peering] against Redpanda Cloud networks, making them available to one or many private Redpanda clusters and allowing users to connect to those clusters without traversing the public internet.
-+
-You can establish VPC peering connections between two VPCs with non-overlapping network addresses. When creating a network intended for peering, ensure that the specified network address range does not overlap with the network address range of the destination VPC.
+VPC peering against Redpanda Cloud networks allows users to connect to private clusters without traversing the public internet. You can establish VPC peering connections between two VPCs with non-overlapping network addresses. When creating a network intended for peering, ensure that the specified network address range does not overlap with the network address range of the destination VPC.
 +
 _Security best practice:_ When using VPC peering, always reject all network traffic initiated from a Redpanda Cloud network and only accept traffic from trusted connectors.
 
@@ -292,8 +280,6 @@ Redpanda configures a Private Service Connect publisher or producer against the 
 * *Internet*
 +
 Redpanda Cloud clusters rely on outbound-only internet access to connect to the control plane, perform cluster upgrades, and deliver cluster telemetry to the control plane. For Dedicated and BYOC standard clusters, one NAT gateway and one internet gateway are provisioned. In BYOVPC, you decide how to provide access to the internet, because you fully manage the network.
-+
-Redpanda Connect and Kafka Connect connectors can egress to the internet and incur high NAT data transfer costs. Without connectors, monthly NAT-incurred costs should be relatively low, because it is only used for telemetry and artifact downloading during cluster upgrades.
 --
 ====
 

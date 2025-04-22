@@ -34,7 +34,7 @@ A BYOC cluster is initially set up from the control plane. This is a two-step pr
 
 . You bootstrap a virtual machine (VM) in your VPC. 
 +
-This VM spins up the agent and the required infrastructure. Redpanda assigns the necessary IAM policies required to run the agent and configures workload identity. That is, it configures independent IAM roles for each workload, with only the permissions each workload requires. 
+This VM launches the agent and bootstraps the necessary infrastructure. Redpanda then assigns fine-grained IAM policies following least privilege, creating dedicated IAM roles per workload with only the permissions each requires. 
 
 . The agent communicates with the control plane to pull the cluster specifications. 
 +
