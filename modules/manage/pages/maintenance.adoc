@@ -13,4 +13,90 @@ If you select a *Scheduled* maintenance window, then Redpanda Cloud runs operati
 
 TIP: Redpanda Cloud maintenance cycles always start on Tuesdays. Clusters scheduled for maintenance on Tuesdays are updated first, and clusters scheduled on Mondays are updated last. Keep this in mind when sequencing updates for multiple clusters.
 
+== Minor upgrades
+
+During your maintenance window, Redpanda Cloud runs minor upgrades. Minor upgrades include standard Redpanda state changes that clients handle gracefully, such as leader elections. 
+
+[cols="1,3"]
+|===
+| Impact
+| Minimal
+
+| Examples
+| * Redpanda cluster roll +
+* Upgrade Redpanda to a fully backward-compatible version +
+* Add new features
+
+| Frequency
+| Minor upgrades could happen multiple times each day.
+
+| Communication
+| Prior communication happens only if necessary. 
+
+There could be email notifications, updated documentation, release notes, or communication from Sales and Support.
+
+| Timing
+| 100% at Redpanda's discretion within the maintenance window.
+|===
+
+== Major upgrades
+
+Major upgrades require code changes to customer applications, such as Kafka clients, and API integrations.
+
+[cols="1,3"]
+|===
+| Impact
+| Large
+
+A major upgrade could prevent use of the service without code or configuration changes, or it could problematically alter the performance profile.
+
+| Examples
+| * Upgrade Kafka to a version that is not fully backward-compatible with the previous version +
+* Update an API version +
+* Security update that materially changes cluster or client throughput
+
+| Frequency
+| Approximately three times per year to coincide with major releases of Redpanda, and at least once per year for Kubernetes upgrades.
+
+| Communication
+| Guaranteed
+
+Multiple email notifications are sent to all registered users—starting at least 180 days before the upgrade date—with details about the change and available options.
+
+There could be updated documentation, release notes, and communication from Sales and Support.
+
+| Timing
+| Major upgrades may be coordinated with customers, but the final date set by Redpanda is not negotiable.
+|===
+
+== Deprecations
+
+Deprecations include any removal of customer-usable functionality from Redpanda Cloud services. There is no guarantee of equivalent functionality in new versions. Deprecations could be included in major upgrades. 
+
+[cols="1,3"]
+|===
+| Impact
+| Potentially large
+
+If you depend on this service, the deprecation could prevent use of service.
+
+| Examples
+| * Remove a feature from the UI +
+  * Shut down an API version +
+  * Remove a connector as an option
+
+| Frequency
+| Rare
+
+| Communication
+| Guaranteed
+
+Multiple email notifications are sent to all registered users—starting at least 180 days before the deprecation date—with details about the change and available alternatives.
+
+There could be updated documentation, release notes, and communication from Sales and Support.
+
+| Timing
+| 100% at Redpanda's discretion.
+|===
+
 See also: xref:manage:api/cloud-api-deprecation-policy.adoc[]
