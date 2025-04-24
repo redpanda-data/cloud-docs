@@ -25,7 +25,7 @@ The Redpanda Cloud agent (sometimes called the glossterm:data plane[] agent) pro
 
 === Public Redpanda clusters
 
-Public Redpanda clusters deploy networks segmented by workload type. The Redpanda Cloud agent gets its own subnet as well as Redpanda's brokers and Redpanda Connect nodes. Public clusters deploy brokers in public subnets. Redpanda ports are protected by SASL/SCRAM (SCRAM-SHA-256, SCRAM-SHA-512) authentication and encrypted in transit using TLS 1.2. Everything else is deployed on private subnets.
+Public Redpanda clusters deploy networks segmented by workload type. The Redpanda Cloud agent gets its own subnet as well as Redpanda's brokers and Redpanda Connect nodes. Public clusters deploy brokers in public subnets. Redpanda ports are protected by SASL/SCRAM authentication (SCRAM-SHA-256, SCRAM-SHA-512) and encrypted in transit using TLS 1.2. Everything else is deployed on private subnets.
 
 The following diagram shows the public subnet used by public Redpanda clusters.
 
@@ -183,7 +183,7 @@ Redpanda Cloud uses the https://aws.amazon.com/about-aws/whats-new/2017/11/intro
 
 * *Domain name system (DNS)*
 +
-Redpanda Cloud creates a new DNS zone for each cluster in the control plane and delegates its management exclusively to each cluster's data plane. In turn, the data plane creates a hosted zone in Route 53, managing DNS records for Redpanda services as needed. All interactions with Route 53 are controlled by IAM policies targeted to the specific Route 53 resources managed by each data plane, following the least privilege principle.
+Redpanda Cloud creates a new DNS zone for each cluster in the control plane and delegates its management exclusively to each cluster's data plane. In turn, the data plane creates a hosted zone in Route 53, managing DNS records for Redpanda services as needed. All interactions with Route 53 are controlled by IAM policies targeted to the specific Route 53 resources managed by each data plane, following the principle of least privilege.
 +
 The Route 53-hosted DNS zone in the data plane has the following naming convention: 
 +
@@ -216,7 +216,7 @@ Redpanda Cloud synchronizes time through the underlying Azure host, which uses i
 
 * *Domain name system (DNS)*
 +
-Redpanda Cloud creates a new DNS zone for each cluster in the control plane and delegates its management exclusively to each cluster's agent. In turn, the agent creates an Azure DNS zone and manages the DNS records for Redpanda services, as needed. All Azure API interactions with Azure DNS are done through a user-assigned managed identity, with constrained Azure RBAC permissions, following the least privilege principle.
+Redpanda Cloud creates a new DNS zone for each cluster in the control plane and delegates its management exclusively to each cluster's agent. In turn, the agent creates an Azure DNS zone and manages the DNS records for Redpanda services, as needed. All Azure API interactions with Azure DNS are done through a user-assigned managed identity, with constrained Azure RBAC permissions, following the principle of least privilege.
 +
 The DNS zone in the data plane has the following naming convention: 
 +
@@ -255,7 +255,7 @@ Redpanda Cloud uses https://cloud.google.com/compute/docs/instances/configure-nt
 
 * *Domain name system (DNS)*
 +
-Redpanda Cloud creates a new DNS zone for each cluster in the control plane and delegates its management exclusively to each cluster's data plane. In turn, the data plane creates a managed zone in Cloud DNS, managing DNS records for Redpanda services, as needed. All interactions with Cloud DNS are controlled by IAM policies targeted to the specific Cloud DNS resources managed by each data plane, following the least privilege principle.
+Redpanda Cloud creates a new DNS zone for each cluster in the control plane and delegates its management exclusively to each cluster's data plane. In turn, the data plane creates a managed zone in Cloud DNS, managing DNS records for Redpanda services, as needed. All interactions with Cloud DNS are controlled by IAM policies targeted to the specific Cloud DNS resources managed by each data plane, following the principle of least privilege.
 
 * *Distributed denial of service (DDoS) protection*
 +
