@@ -66,42 +66,71 @@ az network watcher configure --resource-group 'NetworkWatcherRG' --locations '<r
 
 === Check Azure quota
 
-Confirm that the Azure subscription has enough vCPUs per instance family and total regional vCPUs in the region where you will use Redpanda:
+Check your Azure subscription's virtual CPU (vCPU) quota for the specified virtual machine (VM) series in the target region. Ensure the quotas meet or exceed the requirements listed in this section. If needed, request a quota increase from Azure to avoid deployment issues. For more information, see the https://learn.microsoft.com/en-us/azure/quotas/view-quotas[Microsoft documentation^].
 
-* Standard Ddv5-series vCPUs:  12  (3 Redpanda broker nodes + extra capacity for 3 more nodes that could be utilized temporarily during tier 1 maintenance)
-* Standard Dadsv5-series vCPUs: 26  (2 Redpanda utility nodes + extra capacity for upgrade operations)
-* Standard Dv3-series vCPUs:    2  (1 Redpanda agent node)
+The following table shows vCPU requirements for different xref:reference:tiers/byoc-tiers.adoc[usage tiers]. The total number of vCPUs includes extra capacity required for upgrades. For example, Tier 1 uses Standard_D2ads_v5 VMs, each requiring 2 vCPUs. With 2 utility nodes plus extra capacity for upgrades, the total vCPUs required for Tier 1 is 8.
 
-Optional: If you <<enable-kafka-connect,enable Kafka Connect>>, Redpanda also deploys a kafka-connect node pool:
+[cols="1,2,1,1,1"]
+|===
+| Tier | VM size | vCPUs per node | Utility nodes | Total vCPUs required
 
-* Standard Fsv2-series vCPUs:   2  (1 Kafka Connect node)
+| Tier 1 | Standard_D2ads_v5 | 2 | 2 | 8
+| Tier 2 | Standard_D2ads_v5 | 2 | 2 | 8
+| Tier 3 | Standard_D2ads_v5 | 2 | 2 | 8
+| Tier 4 | Standard_E2ads_v5 | 2 | 2 | 8
+| Tier 5 | Standard_E4ads_v5 | 4 | 2 | 16
+| Tier 6 | Standard_E8ads_v5 | 8 | 2 | 32
+| Tier 7 | Standard_E16ads_v5 | 16 | 2 | 64
+| Tier 8 | Standard_E16ads_v5 | 16 | 2 | 64
+| Tier 9 | Standard_E32ads_v5 | 32 | 2 | 128
+|===
 
-See the https://learn.microsoft.com/en-us/azure/quotas/view-quotas[Microsoft documentation^].
+
+Optional: If you <<enable-kafka-connect,enable Kafka Connect>>, Redpanda also deploys an additional node pool. This requires 2 vCPUs from the Standard Fsv2-series.
 
 === Check Azure SKU restrictions
 
-Ensure that the Azure subscription does not have any SKU restrictions for the VM sizes in the region where you will use Redpanda. Using the Azure CLI or in the Azure Cloud Shell, run:
+Ensure your subscription has access to the required VM sizes in the region where you will use Redpanda. For example, using the Azure CLI or in the Azure Cloud Shell, run:
 
+[source,bash]
 ----
-az vm list-skus -l eastus2 --zone --size Standard_D2d_v5 --output table
-az vm list-skus -l eastus2 --zone --size Standard_D2s_v3 --output table
+# Replace eastus2 with your target region
 az vm list-skus -l eastus2 --zone --size Standard_D2ads_v5 --output table
 ----
 
-If you see restrictions, https://learn.microsoft.com/en-us/troubleshoot/azure/general/region-access-request-process[open a Microsoft support request^] to remove the restrictions. For example, checking the Standard_D2d_v5 VM SKU restriction in the eastus2 region for all zones could show:
-
+.Example Output (No Restrictions - Good)
 [%nowrap,bash]
 ----
-ResourceType     Locations    Name              Zones    Restrictions
----------------  -----------  ---------------   -------  ------------
-virtualMachines  eastus2      Standard_D2d_v5   1,2,3    NotAvailableForSubscription, type: Zone, locations: eastus2, zones: 2,3
+ResourceType     Locations    Name               Zones    Restrictions
+---------------  -----------  ---------------    -------  ------------
+virtualMachines  eastus2      Standard_D2ads_v5  1,2,3    None
 ----
+
+.Example Output (With Restrictions - Needs Attention)
+[%nowrap,bash]
+----
+ResourceType     Locations    Name               Zones    Restrictions
+---------------  -----------  ---------------    -------  ------------
+virtualMachines  eastus2      Standard_D2ads_v5  1,2,3    NotAvailableForSubscription
+----
+
+
+If you see restrictions, https://learn.microsoft.com/en-us/troubleshoot/azure/general/region-access-request-process[open a Microsoft support request^] to remove the restrictions. 
+
+=== Prerequisite checklist
+
+[%interactive]
+* [ ] Verified `rpk` version
+* [ ] Verified Azure user has Owner role
+* [ ] Registered all required resource providers
+* [ ] Registered EncryptionAtHost feature
+* [ ] Enabled Network Watcher
+* [ ] Verified vCPU quota
+* [ ] Verified no SKU restrictions
 
 == Create a BYOC cluster
 
 To create a Redpanda cluster in your Azure Virtual Network, follow the <<prerequisites,prerequisites>> then follow the instructions in the Redpanda Cloud UI. The UI contains the parameters necessary to successfully run `rpk cloud byoc apply`.  
-
-See also: xref:get-started:cloud-overview.adoc#redpanda-cloud-architecture[Redpanda Cloud architecture].
 
 . Log in to https://cloud.redpanda.com[Redpanda Cloud^].
 . On the Clusters page, click *Create cluster*, then click *Create BYOC cluster*.
@@ -150,4 +179,6 @@ include::get-started:partial$no-access.adoc[]
 
 == Next steps
 
-xref:networking:azure-private-link.adoc[]
+* xref:networking:azure-private-link.adoc[Configure Azure Private Link]
+* xref:security:authorization/cloud-iam-policies-azure.adoc[Review Azure IAM policies]
+* xref:reference:rpk/index.adoc[Learn about `rpk` commands]
