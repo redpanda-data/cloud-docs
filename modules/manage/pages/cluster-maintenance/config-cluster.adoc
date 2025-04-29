@@ -30,7 +30,8 @@ For example, to enable data transforms, set xref:reference:properties/cluster-pr
 rpk cluster config set data_transforms_enabled true
 ----
 
-NOTE: The `rpk cluster config set` command returns the operation ID. Cluster configuration operations can take up to ten minutes to complete. 
+NOTE: Some properties require a rolling restart, and it can take several minutes for the update to take effect. The `rpk cluster config set` command returns the operation ID.  
+
 
 --
 Cloud API::
@@ -66,6 +67,7 @@ curl -H "Authorization: Bearer ${RP_CLOUD_TOKEN}" -X PATCH \
 
 The xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1/clusters/-cluster.id-[`PATCH /clusters/{cluster.id}`] request returns the ID of a long-running operation. The operation may take up to ten minutes to complete. You can check the status of the operation by polling the xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/operations/-id-[`GET /operations/\{id}`] endpoint.
 
+NOTE: Some properties require a rolling restart for the update to take effect. This triggers a xref:manage:api/cloud-byoc-controlplane-api.adoc#lro[long-running operation] that can take several minutes to complete.
 
 --
 ======
