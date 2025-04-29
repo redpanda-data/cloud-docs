@@ -1,7 +1,9 @@
 = Configure Cluster Properties
 :description: Learn how to configure cluster properties to enable and manage features.
 
-Redpanda cluster configuration properties are automatically set to the default values and are replicated across all brokers. You can edit certain cluster configuration properties with the Cloud API. For example, you can enable and manage xref:manage:iceberg/about-iceberg-topics.adoc[Iceberg topics], xref:develop:data-transforms/index.adoc[data transforms], and xref:manage:audit-logging.adoc[audit logging]. 
+Redpanda cluster configuration properties are automatically set to the default values and are replicated across all brokers. When you create or edit a cluster, you can set certain cluster configuration properties with `rpk cluster config` or with the Cloud API. For example, you can enable and manage xref:manage:iceberg/about-iceberg-topics.adoc[Iceberg topics], xref:develop:data-transforms/index.adoc[data transforms], and xref:manage:audit-logging.adoc[audit logging]. 
+
+For a complete list of the cluster configuration properties you can edit in Redpanda Cloud, see xref:reference:properties/cluster-properties.adoc[Cluster Configuration Properties].
 
 == Limitations
 
@@ -10,15 +12,28 @@ Cluster configuration with the Cloud API is supported on BYOC and Dedicated clus
 - It is not available on Serverless clusters. 
 - It is not available on BYOC and Dedicated clusters running on Azure.
 
-== Set cluster configuration properties
+== Set cluster properties with `rpk`
 
-You can set cluster configuration properties when you create a cluster, or you can edit an existing cluster.
+Use `rpk cluster config` to set cluster properties. For example, to enable data transforms, set the `data_transforms_enabled` cluster property to `true`:
+
+[source,bash]
+----
+rpk cluster config set data_transforms_enabled true
+----
+
+Some properties require a cluster restart for updates to take effect. To restart all brokers, run:
+
+[source,bash]
+----
+rpk redpanda stop
+rpk redpanda start
+----
+
+== Set cluster properties with the Cloud API
 
 * Create a cluster by making a xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1/clusters[`POST /v1/clusters`] request. Edit `cluster_configuration` in the request body with a key-value pair for `custom_properties`.
 
 * Update a cluster by making a xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1/clusters/-cluster.id-[`PATCH /v1/clusters/{cluster.id}`] request, passing the cluster ID as a parameter. Include the properties to update in the request body.
-
-For a complete list of the cluster configuration properties you can edit in Redpanda Cloud, see xref:reference:properties/cluster-properties.adoc[Cluster Configuration Properties].
 
 NOTE: Some properties require a cluster restart for updates to take effect. This triggers a xref:manage:api/cloud-byoc-controlplane-api.adoc#lro[long-running operation] that can take several minutes to complete.
 
