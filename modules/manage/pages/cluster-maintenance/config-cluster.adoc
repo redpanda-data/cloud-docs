@@ -1,9 +1,9 @@
 = Configure Cluster Properties
 :description: Learn how to configure cluster properties to enable and manage features.
 
-Cluster configuration properties are set to their default values and automatically replicated across all brokers. You can use them to enable and manage features such as xref:manage:iceberg/about-iceberg-topics.adoc[Iceberg topics], xref:develop:data-transforms/index.adoc[data transforms], and xref:manage:audit-logging.adoc[audit logging].
+Cluster configuration properties are set to their default values and automatically replicated across all brokers. You can use cluster properties to enable and manage features such as xref:manage:iceberg/about-iceberg-topics.adoc[Iceberg topics], xref:develop:data-transforms/index.adoc[data transforms], and xref:manage:audit-logging.adoc[audit logging].
 
-For a complete list of the cluster configuration properties you can set in Redpanda Cloud, see xref:reference:properties/cluster-properties.adoc[Cluster Configuration Properties].
+For a complete list of the cluster properties you can set in Redpanda Cloud, see xref:reference:properties/cluster-properties.adoc[Cluster Configuration Properties].
 
 == Limitations
 
@@ -14,6 +14,7 @@ Cluster configuration is supported on BYOC and Dedicated clusters running on AWS
 
 == Set cluster configuration properties 
 
+Set cluster configuration properties using the `rpk` command-line tool or the Cloud API.
 
 [tabs]
 ======
@@ -29,13 +30,7 @@ For example, to enable data transforms, set xref:reference:properties/cluster-pr
 rpk cluster config set data_transforms_enabled true
 ----
 
-Some properties require a cluster restart for updates to take effect. To restart all brokers, run:
-
-[source,bash]
-----
-rpk redpanda stop
-rpk redpanda start
-----
+NOTE: The `rpk cluster config set` command returns the operation ID. Cluster configuration operations can take up to ten minutes to complete. 
 
 --
 Cloud API::
@@ -71,7 +66,6 @@ curl -H "Authorization: Bearer ${RP_CLOUD_TOKEN}" -X PATCH \
 
 The xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1/clusters/-cluster.id-[`PATCH /clusters/{cluster.id}`] request returns the ID of a long-running operation. The operation may take up to ten minutes to complete. You can check the status of the operation by polling the xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/operations/-id-[`GET /operations/\{id}`] endpoint.
 
-NOTE: You must restart your cluster if you change this configuration for a running cluster.
 
 --
 ======
