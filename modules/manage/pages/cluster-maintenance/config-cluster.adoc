@@ -1,20 +1,27 @@
 = Configure Cluster Properties
 :description: Learn how to configure cluster properties to enable and manage features.
 
-Redpanda cluster configuration properties are automatically set to the default values and are replicated across all brokers. When you create or edit a cluster, you can set certain cluster configuration properties with `rpk cluster config` or with the Cloud API. For example, you can enable and manage xref:manage:iceberg/about-iceberg-topics.adoc[Iceberg topics], xref:develop:data-transforms/index.adoc[data transforms], and xref:manage:audit-logging.adoc[audit logging]. 
+Redpanda cluster configuration properties are automatically set to the default values and are replicated across all brokers. With cluster properties, you can enable and manage certain features, like xref:manage:iceberg/about-iceberg-topics.adoc[Iceberg topics], xref:develop:data-transforms/index.adoc[data transforms], and xref:manage:audit-logging.adoc[audit logging]. 
 
-For a complete list of the cluster configuration properties you can edit in Redpanda Cloud, see xref:reference:properties/cluster-properties.adoc[Cluster Configuration Properties].
+For a complete list of the cluster configuration properties you can set in Redpanda Cloud, see xref:reference:properties/cluster-properties.adoc[Cluster Configuration Properties].
 
 == Limitations
 
-Cluster configuration with the Cloud API is supported on BYOC and Dedicated clusters running on AWS and GCP. 
+Cluster configuration is supported on BYOC and Dedicated clusters running on AWS and GCP. 
 
 - It is not available on Serverless clusters. 
 - It is not available on BYOC and Dedicated clusters running on Azure.
 
-== Set cluster properties with `rpk`
+== Set cluster configuration properties 
 
-Use `rpk cluster config` to set cluster properties. For example, to enable data transforms, set the `data_transforms_enabled` cluster property to `true`:
+[tabs]
+======
+`rpk`::
++
+--
+Use `rpk cluster config` to set cluster properties. 
+
+For example, to enable data transforms, set xref:reference:properties/cluster-properties.adoc#data_transforms_enabled[`data_transforms_enabled`] to `true`:
 
 [source,bash]
 ----
@@ -29,15 +36,47 @@ rpk redpanda stop
 rpk redpanda start
 ----
 
-== Set cluster properties with the Cloud API
+--
+Cloud API::
++
+--
+Use the Cloud API to set cluster properties:
 
 * Create a cluster by making a xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1/clusters[`POST /v1/clusters`] request. Edit `cluster_configuration` in the request body with a key-value pair for `custom_properties`.
 
 * Update a cluster by making a xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1/clusters/-cluster.id-[`PATCH /v1/clusters/{cluster.id}`] request, passing the cluster ID as a parameter. Include the properties to update in the request body.
 
-NOTE: Some properties require a cluster restart for updates to take effect. This triggers a xref:manage:api/cloud-byoc-controlplane-api.adoc#lro[long-running operation] that can take several minutes to complete.
+For example, to set xref:reference:properties/cluster-properties.adoc#data_transforms_enabled[`data_transforms_enabled`] to `true`:
+
+[source,bash]
+----
+# Store your cluster ID in a variable
+export RP_CLUSTER_ID=<cluster-id>
+
+# Retrieve a Redpanda Cloud access token
+export RP_CLOUD_TOKEN=`curl -X POST "https://auth.prd.cloud.redpanda.com/oauth/token" \
+    -H "content-type: application/x-www-form-urlencoded" \
+    -d "grant_type=client_credentials" \
+    -d "client_id=<client-id>" \
+    -d "client_secret=<client-secret>"`
+
+# Update cluster configuration to enable data transforms
+curl -H "Authorization: Bearer ${RP_CLOUD_TOKEN}" -X PATCH \
+  "https://api.cloud.redpanda.com/v1/clusters/${RP_CLUSTER_ID}" \
+ -H 'accept: application/json'\
+ -H 'content-type: application/json' \
+ -d '{"cluster_configuration":{"custom_properties": {"data_transforms_enabled":true}}}'
+----
+
+The xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1/clusters/-cluster.id-[`PATCH /clusters/{cluster.id}`] request returns the ID of a long-running operation. The operation may take up to ten minutes to complete. You can check the status of the operation by polling the xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/operations/-id-[`GET /operations/\{id}`] endpoint.
+
+NOTE: You must restart your cluster if you change this configuration for a running cluster.
+
+--
+======
 
 == Suggested reading
 
+* xref:manage:rpk/intro-to-rpk.adoc[]
 * xref:manage:api/cloud-api-overview.adoc[Redpanda Cloud API Overview]
 * xref:manage:api/cloud-api-quickstart.adoc[Redpanda Cloud API Quickstart]
