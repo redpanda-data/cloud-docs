@@ -13,7 +13,7 @@ image::shared:control_d_plane.png[Control plane and data plane]
 
 * *Data plane*: This is where your cluster lives. The term _data plane_ is sometimes used interchangeably with _cluster_. The data plane is where you manage topics, consumer groups, connectors, and schemas. You can use xref:security:authorization/rbac/rbac_dp.adoc[RBAC in the data plane] to configure cluster-level permissions for provisioned users at scale. 
 
-IAM permissions allow the agent to access the cloud provider API to create and manage cluster resources. The permissions follow the principle of least privilege, limiting access to only what is necessary.
+IAM permissions allow the Redpanda Cloud agent to access the cloud provider API to create and manage cluster resources. The permissions follow the principle of least privilege, limiting access to only what is necessary.
 
 Clusters are configured and maintained in the control plane, but they remain available even if the network connection to the control plane is lost. 
 
@@ -34,7 +34,7 @@ A BYOC cluster is initially set up from the control plane. This is a two-step pr
 
 . You bootstrap a virtual machine (VM) in your VPC. 
 +
-This VM spins up the agent and the required infrastructure. Redpanda assigns the necessary IAM policies required to run the agent and configures workload identity. That is, it configures independent IAM roles for each workload, with only the permissions each workload requires. 
+This VM launches the agent and bootstraps the necessary infrastructure. Redpanda then assigns fine-grained IAM policies following least privilege, creating dedicated IAM roles per workload with only the permissions each requires. 
 
 . The agent communicates with the control plane to pull the cluster specifications. 
 +
