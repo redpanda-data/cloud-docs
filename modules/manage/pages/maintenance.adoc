@@ -7,10 +7,114 @@ Redpanda runs maintenance operations on clusters in a rolling fashion, accompani
 
 == Maintenance windows
 
-Redpanda Cloud may run maintenance operations on any day at any time. You can override this default and schedule a specific maintenance window on your cluster's *Cluster settings* page. 
+Redpanda Cloud may run maintenance operations on any day, at any time. You can override this default and schedule a specific maintenance window on your cluster's *Cluster settings* page. 
 
-If you select a *Scheduled* maintenance window, then Redpanda Cloud runs operations on the day and time specified. Maintenance windows typically take six hours. All operations commence during the maintenance window, but some operations may complete after the window closes. All times are in Coordinated Universal Time (UTC).
+If you select a *Scheduled* maintenance window, then Redpanda Cloud runs operations on the day and time specified. Maintenance windows typically take six hours. All operations begin during your maintenance window, but some operations may complete after the window closes. All times are in Coordinated Universal Time (UTC).
 
 TIP: Redpanda Cloud maintenance cycles always start on Tuesdays. Clusters scheduled for maintenance on Tuesdays are updated first, and clusters scheduled on Mondays are updated last. Keep this in mind when sequencing updates for multiple clusters.
 
+== Minor upgrades
+
+During your defined maintenance window, Redpanda Cloud runs minor upgrades. Minor upgrades include standard Redpanda state changes that clients handle gracefully, such as leader elections. 
+
+
+[cols="1,4", options="header"]
+|===
+| Category
+| Details
+
+| Impact
+| Minimal.
+
+| Examples
+a|
+* Patches to known issues. +
+* Cluster rolling restart.  +
+* Upgrade Redpanda to a fully backward-compatible version. 
+
+| Frequency
+| Minor upgrades could happen multiple times a day.
+
+| Communication
+| Prior communication happens only if necessary. +
+
+There could be email notifications, updated documentation, release notes, or communication from your Redpanda account team.
+
+| Timing
+| At Redpanda's discretion during your defined maintenance window.
+|===
+
+== Major upgrades
+
+Major upgrades may require code changes to customer applications, such as Kafka clients or API integrations. 
+
+[cols="1,4", options="header"]
+|===
+| Category
+| Details
+
+| Impact
+| Potentially large.
+
+| Examples
+a|
+* Upgrade Kafka to a version that is not fully backward-compatible with the previous version.
+* Update an API version.
+* Security update that materially changes cluster or client throughput.
+
+| Frequency
+| Rare.
+
+| Communication
+| Email notifications may be sent to registered users with details about the change and available options. +
+
+There could be updated documentation, release notes, and communication from your Redpanda account team.
+
+| Timing
+| Major upgrades may be coordinated with customers, but the final date set by Redpanda is not negotiable.
+|===
+
+== Deprecations
+
+Deprecations indicate future removal of features that you can currently use. There is no guarantee of equivalent functionality in new versions. Deprecations could be included in major upgrades. 
+
+
+[cols="1,4", options="header"]
+|===
+| Category
+| Details
+
+| Impact
+| Potentially large, if you depend on the feature being deprecated.
+
+| Examples
+a|
+* Remove a feature from the UI. +
+* Shut down an API version. +
+* Remove a connector as an option.
+
+| Frequency
+| Rare.
+
+| Communication
+| Email notifications may be sent to registered users with details about the change and available alternatives. +
+
+There could be updated documentation, release notes, and communication from your Redpanda account team.
+
+| Timing
+| At Redpanda's discretion.
+|===
+
 See also: xref:manage:api/cloud-api-deprecation-policy.adoc[]
+
+
+=== Deprecated features
+
+
+[cols="1,2,3", options="header"]
+|===
+| Deprecated in | Feature | Details
+
+| March 2025 | Serverless Standard | For a better customer experience, the Serverless Standard and Serverless Pro products merged into a single offering. xref:get-started:cluster-types/serverless.adoc[Serverless clusters] include the higher usage limits, 99.9% SLA, additional regions, and the free trial. 
+| February 2025 | Private Service Connect v1 | The Redpanda xref:networking:gcp-private-service-connect.adoc[GCP Private Service Connect v2] service provides the ability to allow requests from Private Service Connect endpoints to stay within the same availability zone, avoiding additional networking costs. To upgrade, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda Support^]. 
+|===
