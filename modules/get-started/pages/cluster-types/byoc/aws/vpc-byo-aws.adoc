@@ -130,6 +130,7 @@ To create the Redpanda network:
 ```json
 cat > redpanda-network.json <<EOF
 {
+  "network": {
     "name":"sample-redpanda-network",
     "resource_group_id": "${REDPANDA_RG_ID}",
     "cloud_provider":"CLOUD_PROVIDER_AWS",
@@ -144,13 +145,14 @@ cat > redpanda-network.json <<EOF
           "arn": "${AWS_DYNAMODB_TABLE}"
         },
         "private_subnets": {
-          "arns": "${AWS_PRIVATE_SUBNETS}"
+          "arns": ${AWS_PRIVATE_SUBNETS}
         },
         "vpc": {
           "arn": "${AWS_VPC}"
         }
       }
-   }
+    }
+  } 
 } 
 EOF
 ```
