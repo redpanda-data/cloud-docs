@@ -100,18 +100,13 @@ curl -X POST "<dataplane-api-url>/v1/topics" \
  -d '{"name":"<topic-name>"}'
 ----
 
-
 === Manage secrets
 
-Secrets are stored in the secret management solution of your Cloud provider and are retrieved when you run a pipeline configuration that references them.
+Secrets are stored in the secret management solution of your Cloud provider and are retrieved when you set a cluster property to reference the secret.
 
 ==== Create a secret
 
-You can create a secret and reference it in .
-
-You must use a Base64-encoded secret.
-
-Make a request to xref:api:ROOT:cloud-dataplane-api.adoc#post-/v1/secrets[`POST /v1/secrets`].
+Make a request to xref:api:ROOT:cloud-dataplane-api.adoc#post-/v1/secrets[`POST /v1/secrets`]. You must use a Base64-encoded secret.
 
 [,bash]
 ----
@@ -130,19 +125,13 @@ You must include the following values:
 - `<secret-value>`: The Base64-encoded secret.
 - This scope: `"SCOPE_REDPANDA_CLUSTER"`.
 
-The response returns the name of the secret and the scope `"SCOPE_REDPANDA_CLUSTTER"`.
+The response returns the name of the secret and the scope `"SCOPE_REDPANDA_CLUSTER"`.
 
-You can now <<add-a-secret-to-a-cluster-configuration,add the secret to your cluster-configuration>>.
+You can then use the Control Plane API or `rpk` to xref:manage:cluster-maintenance/config-cluster.adoc[set a cluster property value] to reference a secret, using the secret name.  
 
 ==== Update a secret
 
-You can only update the secret value, not its name.
-
-NOTE: Changes to secret values do not take effect until .
-
-You must use a Base64-encoded secret.
-
-Make a request to xref:api:ROOT:cloud-dataplane-api.adoc#put-/v1/secrets/-id-[`PUT /v1/secrets/\{id}`].
+Make a request to xref:api:ROOT:cloud-dataplane-api.adoc#put-/v1/secrets/-id-[`PUT /v1/secrets/\{id}`]. You can only update the secret value, not its name. You must use a Base64-encoded secret.
 
 [,bash]
 ----
@@ -150,13 +139,13 @@ curl -X PUT "https://<dataplane-api-url>/v1/secrets/<secret-name>" \
  -H 'accept: application/json'\
  -H 'authorization: Bearer <token>'\
  -H 'content-type: application/json' \
- -d '{"scopes":["SCOPE_REDPANDA_CLUSTER"],"secret_data":"<secret-value>"}'
+ -d '{"scopes":["SCOPE_REDPANDA_CLUSTER"],"secret_data":"<new-secret-value>"}'
 ----
 
 You must include the following values:
 
 - `<dataplane-api-url>`: The base URL for the Data Plane API.
-- `<secret-name>`: The name of the secret you want to update.
+- `<secret-name>`: The name of the secret you want to update. The secret's name is also its ID.
 - `<token>`: The API key you generated during authentication.
 - This scope: `"SCOPE_REDPANDA_CLUSTER"`.
 - `<secret-value>`: Your new Base64-encoded secret.
@@ -183,20 +172,6 @@ You must include the following values:
 - `<dataplane-api-url>`: The base URL for the Data Plane API.
 - `<secret-name>`: The name of the secret you want to delete.
 - `<token>`: The API key you generated during authentication.
-
-==== Add a secret to a data pipeline
-
-You can add a secret to your cluster configuration using the Control Plane API.
-
-For example:
-
-```yml
-    sasl:
-      - mechanism: SCRAM-SHA-256
-        username: "user"
-        password: "${secrets.PASSWORD}"
-```
-
 
 === Use Redpanda Connect
 
