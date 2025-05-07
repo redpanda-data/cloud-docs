@@ -127,7 +127,13 @@ You must include the following values:
 
 The response returns the name of the secret and the scope `"SCOPE_REDPANDA_CLUSTER"`.
 
-You can then use the Control Plane API or `rpk` to xref:manage:cluster-maintenance/config-cluster.adoc[set a cluster property value] to reference a secret, using the secret name.  
+You can then use the Control Plane API or `rpk` to xref:manage:cluster-maintenance/config-cluster.adoc[set a cluster property value] to reference a secret, using the secret name.
+
+For the Control Plane API, you must use the following notation with the secret name in the request body to correctly reference the secret:
+
+```bash
+"iceberg_rest_catalog_client_secret": "${secrets.<secret-name>}"
+```
 
 ==== Update a secret
 
