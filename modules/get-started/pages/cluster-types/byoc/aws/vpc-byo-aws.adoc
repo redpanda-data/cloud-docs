@@ -52,7 +52,7 @@ The https://github.com/redpanda-data/cloud-examples/blob/main/customer-managed/a
 
 NOTE: For simplicity, these instructions assume that Terraform is configured to use local state. You may want to configure https://developer.hashicorp.com/terraform/language/state/remote[remote state^]. 
 
-Define a JSON file called `byovnet.auto.tfvars.json` inside the Terraform directory that contains information about the VPC. Optionally, you can enable PrivateLink. For example: 
+Define a JSON file called `byovnet.auto.tfvars.json` inside the Terraform directory that contains information about the VPC. Optionally, you can enable PrivateLink, and the `force_destroy_cloud_storage`, which destroys all existing cluster data when a cluster is created. For example: 
 
 ```json
 cat > byoc.auto.tfvars.json <<EOF
@@ -70,7 +70,8 @@ cat > byoc.auto.tfvars.json <<EOF
   "zones": [],
   "enable_private_link": true,
   "create_rpk_user": true,
-  "force_destroy_cloud_storage": true
+  "force_destroy_cloud_storage": true,
+  "public_subnet_cidrs": ["10.0.1.0/24"]
 }
 EOF
 
@@ -164,7 +165,7 @@ export REDPANDA_NETWORK_ID=$(curl -X POST "https://api.redpanda.com/v1/networks"
  -H "accept: application/json" \
  -H "content-type: application/json" \
  -H "authorization: Bearer ${BEARER_TOKEN}" \
- --data-binary @redpanda-network.json | jq -r '.operation.id')
+ --data-binary @redpanda-network.json | jq -r '.operation.resource_id')
 ```
 +
 The Create Network request returns a `resource_id`. For example:
@@ -190,13 +191,28 @@ The Create Network request returns a `resource_id`. For example:
 
 To create the Redpanda cluster: 
 
-. Create environment variables for cluster information, like the version, tier, and availability zones. 
+. For all cluster information, including the version, tier, storage, security, and availability zones, create the following environment variables with values from Terraform. 
 +
 ```bash
 export AWS_ZONES='["use-az1", "use-az2", "use-az3"]'
 export REDPANDA_CLUSTER_NAME=sample-redpanda-cluster
 export REDPANDA_VERSION=24.3
 export REDPANDA_THROUGHPUT_TIER=tier-1-aws-v3-arm
+export AGENT_INSTANCE_PROFILE_ARN="$(terraform output -raw agent_instance_profile_arn)"
+export CONNECTORS_NODE_GROUP_INSTANCE_PROFILE="$(terraform output -raw connectors_node_group_instance_profile_arn)"
+export REDPANDA_NODE_GROUP_INSTANCE_PROFILE="$(terraform output -raw redpanda_node_group_instance_profile_arn)"
+export REDPANDA_CONNECT_NODE_GROUP_INSTANCE_PROFILE="$(terraform output -raw redpanda_connect_node_group_instance_profile_arn)"
+export UTILITY_NODE_GROUP_INSTANCE_PROFILE="$(terraform output -raw utility_node_group_instance_profile_arn)"
+export CONNECTORS_SECURITY_GROUP="$(terraform output -raw connectors_security_group_arn)" 
+export REDPANDA_CONNECT_SECURITY_GROUP="$(terraform output -raw redpanda_connect_security_group_arn)"
+export NODE_SECURITY_GROUP="$(terraform output -raw node_security_group_arn)"
+export UTILITY_SECURITY_GROUP="$(terraform output -raw utility_security_group_arn)"
+export REDPANDA_AGENT_SECURITY_GROUP="$(terraform output -raw redpanda_agent_security_group_arn)"
+export REDPANDA_NODE_GROUP_SECURITY_GROUP="$(terraform output -raw redpanda_node_group_security_group_arn)"
+export CLUSTER_SECURITY_GROUP="$(terraform output -raw cluster_security_group_arn)"
+export K8S_CLUSTER_ROLE="$(terraform output -raw k8s_cluster_role_arn)"
+export CLOUD_STORAGE_BUCKET="$(terraform output -raw cloud_storage_bucket_arn)"
+export PERMISSIONS_BOUNDARY_POLICY="$(terraform output -raw permissions_boundary_policy_arn)"
 ```
 +
 TIP: See the full list of zones and tiers available with each provider in the xref:api:ROOT:cloud-controlplane-api.adoc#api-description[Control Plane API reference].
@@ -206,62 +222,64 @@ TIP: See the full list of zones and tiers available with each provider in the xr
 ```json
 cat > redpanda-cluster.json <<EOF
 {
-  "cloud_provider":"CLOUD_PROVIDER_AWS",
-  "connection_type":"CONNECTION_TYPE_PRIVATE",
-  "name": "${REDPANDA_CLUSTER_NAME}",
-  "resource_group_id": "${REDPANDA_RG_ID}",
-  "network_id": "${REDPANDA_NETWORK_ID}",
-  "region": "${AWS_REGION}",
-  "throughput_tier": "${REDPANDA_THROUGHPUT_TIER}",
-  "type": "TYPE_BYOC",
-  "zones": ${AWS_ZONES},
-  "redpanda_version": "${REDPANDA_VERSION}",
-  "customer_managed_resources": {
-    "aws": {
-      "agent_instance_profile": {
-        "arn": "<agent_instance_profile_arn from terraform outputs>"
-      },
-      "connectors_node_group_instance_profile": {
-        "arn": "<connectors_node_group_instance_profile_arn from terraform outputs>"
-      },
-      "redpanda_connect_node_group_instance_profile": {
-        "arn": "<redpanda_connect_node_group_instance_profile_arn from terraform outputs>"
-      },
-      "redpanda_node_group_instance_profile": {
-        "arn": "<redpanda_node_group_instance_profile_arn from terraform outputs>"
-      },
-      "utility_node_group_instance_profile": {
-        "arn": "<utility_node_group_instance_profile_arn from terraform outputs>"
-      },
-      "connectors_security_group": {
-        "arn": "<connectors_security_group_arn from terraform outputs>"
-      },
-      "redpanda_connect_security_group": {
-        "arn": "<redpanda_connect_security_group_arn from terraform outputs>"
-      },
-      "node_security_group": {
-        "arn": "<node_security_group_arn from terraform outputs>"
-      },
-      "utility_security_group": {
-        "arn": "<utility_security_group_arn from terraform outputs>"
-      },
-      "redpanda_agent_security_group": {
-        "arn": "<redpanda_agent_security_group_arn from terraform outputs>"
-      },
-      "redpanda_node_group_security_group": {
-        "arn": "<redpanda_node_group_security_group_arn from terraform outputs>"
-      },
-      "cluster_security_group": {
-        "arn": "<cluster_security_group_arn from terraform outputs>"
-      },
-      "k8s_cluster_role": {
-        "arn": "<k8s_cluster_role_arn from terraform outputs>"
-      },
-      "cloud_storage_bucket": {
-        "arn": "<cloud_storage_bucket_arn from terraform outputs>"
-      },
-      "permissions_boundary_policy": {
-        "arn": "<permissions_boundary_policy_arn from terraform outputs>"
+  "cluster": {
+    "cloud_provider":"CLOUD_PROVIDER_AWS",
+    "connection_type":"CONNECTION_TYPE_PRIVATE",
+    "name": "${REDPANDA_CLUSTER_NAME}",
+    "resource_group_id": "${REDPANDA_RG_ID}",
+    "network_id": "${REDPANDA_NETWORK_ID}",
+    "region": "${AWS_REGION}",
+    "throughput_tier": "${REDPANDA_THROUGHPUT_TIER}",
+    "type": "TYPE_BYOC",
+    "zones": ${AWS_ZONES},
+    "redpanda_version": "${REDPANDA_VERSION}",
+    "customer_managed_resources": {
+      "aws": {
+        "agent_instance_profile": {
+          "arn": "${AGENT_INSTANCE_PROFILE_ARN}"
+        },
+        "connectors_node_group_instance_profile": {
+          "arn": "${CONNECTORS_NODE_GROUP_INSTANCE_PROFILE}"
+        },
+        "redpanda_connect_node_group_instance_profile": {
+          "arn": "${REDPANDA_CONNECT_NODE_GROUP_INSTANCE_PROFILE}"
+        },
+        "redpanda_node_group_instance_profile": {
+          "arn": "${REDPANDA_NODE_GROUP_INSTANCE_PROFILE}"
+        },
+        "utility_node_group_instance_profile": {
+          "arn": "${UTILITY_NODE_GROUP_INSTANCE_PROFILE}"
+        },
+        "connectors_security_group": {
+          "arn": "${CONNECTORS_SECURITY_GROUP}"
+        },
+        "redpanda_connect_security_group": {
+          "arn": "${REDPANDA_CONNECT_SECURITY_GROUP}"
+        },
+        "node_security_group": {
+          "arn": "${NODE_SECURITY_GROUP}"
+        },
+        "utility_security_group": {
+          "arn": "${UTILITY_SECURITY_GROUP}"
+        },
+        "redpanda_agent_security_group": {
+          "arn": "${REDPANDA_AGENT_SECURITY_GROUP}"
+        },
+        "redpanda_node_group_security_group": {
+          "arn": "${REDPANDA_NODE_GROUP_SECURITY_GROUP}"
+        },
+        "cluster_security_group": {
+          "arn": "${CLUSTER_SECURITY_GROUP}"
+        },
+        "k8s_cluster_role": {
+          "arn": "${K8S_CLUSTER_ROLE}"
+        },
+        "cloud_storage_bucket": {
+          "arn": "${CLOUD_STORAGE_BUCKET}"
+        },
+        "permissions_boundary_policy": {
+          "arn": "${PERMISSIONS_BOUNDARY_POLICY}"
+        }
       }
     }
   }
