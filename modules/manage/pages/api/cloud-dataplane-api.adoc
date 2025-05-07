@@ -102,7 +102,7 @@ curl -X POST "<dataplane-api-url>/v1/topics" \
 
 === Manage secrets
 
-Secrets are stored in the secret management solution of your Cloud provider and are retrieved when you set a cluster property to reference the secret.
+Secrets are stored externally in your cloud provider’s secret management service. Redpanda fetches the secrets when you reference them in cluster properties.
 
 ==== Create a secret
 
@@ -111,9 +111,9 @@ Make a request to xref:api:ROOT:cloud-dataplane-api.adoc#post-/v1/secrets[`POST 
 [,bash]
 ----
 curl -X POST "https://<dataplane-api-url>/v1/secrets" \
- -H 'accept: application/json'\
- -H 'authorization: Bearer <token>'\
- -H 'content-type: application/json' \
+ -H "accept: application/json" \
+ -H "authorization: Bearer <token>" \
+ -H "content-type: application/json" \
  -d '{"id":"<secret-name>","scopes":["SCOPE_REDPANDA_CLUSTER"],"secret_data":"<secret-value>"}' 
 ----
 
@@ -121,7 +121,7 @@ You must include the following values:
 
 - `<dataplane-api-url>`: The base URL for the Data Plane API.
 - `<token>`: The API key you generated during authentication.
-- `<secret-name>`: The ID or name of the secret you want to add. Use only the following characters: `^[A-Z][A-Z0-9_]*$`.
+- `<secret-name>`: The name of the secret you want to add. Use only the following characters: `^[A-Z][A-Z0-9_]*$`.
 - `<secret-value>`: The Base64-encoded secret.
 - This scope: `"SCOPE_REDPANDA_CLUSTER"`.
 
