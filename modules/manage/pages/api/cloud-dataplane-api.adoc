@@ -156,13 +156,11 @@ You must include the following values:
 - This scope: `"SCOPE_REDPANDA_CLUSTER"`.
 - `<secret-value>`: Your new Base64-encoded secret.
 
-The response returns the name of the secret and the scope `"SCOPE_REDPANDA_CLUSTER"`.
+The response returns the name of the secret and the scope `"SCOPE_REDPANDA_CLUSTER"`. It might take several minutes for the new secret value to propagate to any cluster properties that reference it.
 
 ==== Delete a secret
 
 Before you delete a secret, make sure that you remove references to it from your cluster configuration. 
-
-NOTE: Changes do not affect clusters that are already running.
 
 Make a request to xref:api:ROOT:cloud-dataplane-api.adoc#delete-/v1/secrets/-id-[`DELETE /v1/secrets/\{id}`].
 
