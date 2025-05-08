@@ -68,7 +68,7 @@ Each Redpanda Cloud data plane runs its own dedicated agent,
 which authenticates and connects against the control plane over a single TLS 1.2
 encrypted TCP connection.
 
-Different Redpanda APIs support different authentication methods. You can configure a listener with an authentication method for each API. For GCP, you can simultaneously enable mTLS and SASL for multi-protocol authentication. If you enable both mTLS and SASL for an API on GCP clusters, one mTLS listener and one SASL listener are created each on separate ports.
+Different Redpanda APIs support different authentication methods. For GCP, you can simultaneously enable mTLS and SASL. If you enable both mTLS and SASL for an API on GCP clusters, one mTLS listener and one SASL listener are created each on separate ports.
 
 .Redpanda APIs authentication methods
 [%collapsible]
@@ -78,53 +78,57 @@ Different Redpanda APIs support different authentication methods. You can config
 .3+|AWS
 |Kafka API
 a|
-* SASL/SCRAM only
-* mTLS only
+* SASL/SCRAM
+* mTLS
 
 |HTTP Proxy
 a|
-* Basic authentication only
-* mTLS only
+* Basic authentication
+* mTLS
 
 |Schema Registry
 a|
-* Basic authentication only
-* mTLS only
+* Basic authentication
+* mTLS
 
-.3+|GCP
+.3+a|GCP
+
+See <<enable-mtls-and-sasl,Enable mTLS and SASL>>. 
+
 |Kafka API
 a|
-* SASL/SCRAM only
-* mTLS only
-* Multi-protocol (SASL/SCRAM + mTLS)
+* SASL
+** SASL/SCRAM
+** SASL/PLAIN
+* mTLS
 
 |HTTP Proxy
 a|
-* Basic authentication only
-* mTLS only
-* Multi-protocol (SASL + mTLS)
+* Basic authentication
+* mTLS
 
 |Schema Registry
 a|
-* Basic authentication only
-* mTLS only
-* Multi-protocol (SASL + mTLS)
+* Basic authentication
+* mTLS
 
 .3+|Azure
 |Kafka API
 a|
-* SASL/SCRAM only
-* mTLS only
+* SASL
+** SASL/SCRAM
+** SASL/PLAIN
+* mTLS
 
 |HTTP Proxy
 a|
-* Basic authentication only
-* mTLS only
+* Basic authentication
+* mTLS
 
 |Schema Registry
 a|
-* Basic authentication only
-* mTLS only
+* Basic authentication
+* mTLS
 |===
 
 * Kafka API: Redpanda Cloud enables SASL/SCRAM authentication
@@ -147,9 +151,9 @@ least privilege.
 
 == Configure service authentication
 
-Redpanda Cloud supports mTLS or SASL authentication for Kafka API, HTTP Proxy, and Schema Registry. For GCP clusters, you can enable both authentication methods simultaneously.
+Redpanda Cloud supports mTLS or SASL authentication for Kafka API, HTTP Proxy, and Schema Registry.
 
-When you create a new cluster using the https://cloud.redpanda.com/[Cloud UI^], the cluster is enabled with SASL by default. If you want to enable mTLS, or multi-protocol authentication (both mTLS and SASL) for GCP clusters only, you must use the Cloud API to create the cluster or update an existing cluster.
+When you create a new cluster using the https://cloud.redpanda.com/[Cloud UI^], the cluster is enabled with SASL by default. If you want to enable mTLS, or both mTLS and SASL for GCP clusters only, you must use the Cloud API to create the cluster or update an existing cluster.
 
 === Requirements
 
@@ -183,6 +187,8 @@ Make sure to replace the following variables:
 [[mtls]]
 === Enable mTLS authentication
 :description: Use the Cloud API to enable mTLS for Kafka API, HTTP Proxy, and Schema Registry connections on your Redpanda cluster.
+
+For clusters with mTLS authentication, Redpanda creates a dedicated mTLS-enabled listener for each API service (Kafka API, HTTP Proxy, or Schema Registry) where you've enabled this authentication method. After you enable mTLS, <<retrieve-api-endpoints,get the API endpoints>> and <<verify-mtls,verify that mTLS authentication is in effect>>. 
 
 ==== Create a new cluster with mTLS enabled
 
@@ -302,9 +308,40 @@ curl -H "Authorization: Bearer $AUTH_TOKEN" https://api.redpanda.com/v1/operatio
 
 When the operation state is `COMPLETED`, you can <<verify-mtls,verify that mTLS is enabled>> for the API endpoints.
 
-=== Enable multi-protocol authentication (mTLS and SASL)
+=== Enable SASL authentication
 
-NOTE: Multi-protocol authentication is available for GCP clusters only. To unlock this feature for your account, contact your Customer Success Manager.
+New clusters are enabled with SASL authentication by default. If you enabled mTLS and want to switch to SASL, you must use the Cloud API to update the cluster. 
+
+To switch to SASL authentication on AWS and Azure clusters, make a xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1/clusters/-cluster.id-[`PATCH /v1/clusters/{cluster.id}`] request.
+
+The following code block shows a request to enable SASL authentication only for the Kafka API:
+
+.Show example request
+[%collapsible]
+====
+[,bash]
+----
+CLUSTER_PATCH_BODY=`cat << EOF
+{
+  "kafka_api": {
+     "sasl": {
+        "enabled": true
+     }
+  }
+}
+EOF`
+curl -v -X PATCH \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer $AUTH_TOKEN" \
+-d "$CLUSTER_PATCH_BODY" https://api.redpanda.com/v1/clusters/<cluster-id>`
+----
+====
+
+For GCP clusters, you have the option to enable both mTLS and SASL. This means that the cluster has one mTLS-enabled listener and one SASL-enabled listener.
+
+=== Enable mTLS and SASL
+
+NOTE: Enabling mTLS and SASL simultaneously is available for GCP clusters only. To unlock this feature for your account, contact your Customer Success Manager.
 
 ==== Create a new cluster with both mTLS and SASL enabled
 
@@ -533,6 +570,7 @@ When you consume, produce to, or manage topics using xref:ROOT:reference:rpk/rpk
 rpk topic create test-topic --tls-enabled --tls-cert=/path/to/tls.crt --tls-key=/path/to/tls.key
 ----
 
+[[verify-mtls-http]]
 === Verify mTLS for HTTP Proxy and Schema Registry
 
 To verify that mTLS is enabled for the HTTP Proxy and Schema Registry, run the following `curl` commands, without providing a security certificate or key:
