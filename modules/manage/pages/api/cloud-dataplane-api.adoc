@@ -125,7 +125,7 @@ You must include the following values:
 - `<secret-value>`: The Base64-encoded secret.
 - This scope: `"SCOPE_REDPANDA_CLUSTER"`.
 
-The response returns the name of the secret and the scope `"SCOPE_REDPANDA_CLUSTER"`.
+The response returns the name and scope of the secret.
 
 You can then use the Control Plane API or `rpk` to xref:manage:cluster-maintenance/config-cluster.adoc[set a cluster property value] to reference a secret, using the secret name.
 
@@ -142,9 +142,9 @@ Make a request to xref:api:ROOT:cloud-dataplane-api.adoc#put-/v1/secrets/-id-[`P
 [,bash]
 ----
 curl -X PUT "https://<dataplane-api-url>/v1/secrets/<secret-name>" \
- -H 'accept: application/json'\
- -H 'authorization: Bearer <token>'\
- -H 'content-type: application/json' \
+ -H "accept: application/json" \
+ -H "authorization: Bearer <token>" \
+ -H "content-type: application/json" \
  -d '{"scopes":["SCOPE_REDPANDA_CLUSTER"],"secret_data":"<new-secret-value>"}'
 ----
 
@@ -154,9 +154,9 @@ You must include the following values:
 - `<secret-name>`: The name of the secret you want to update. The secret's name is also its ID.
 - `<token>`: The API key you generated during authentication.
 - This scope: `"SCOPE_REDPANDA_CLUSTER"`.
-- `<secret-value>`: Your new Base64-encoded secret.
+- `<new-secret-value>`: Your new Base64-encoded secret.
 
-The response returns the name of the secret and the scope `"SCOPE_REDPANDA_CLUSTER"`. It might take several minutes for the new secret value to propagate to any cluster properties that reference it.
+The response returns the name and scope of the secret. It might take several minutes for the new secret value to propagate to any cluster properties that reference it.
 
 ==== Delete a secret
 
@@ -167,8 +167,8 @@ Make a request to xref:api:ROOT:cloud-dataplane-api.adoc#delete-/v1/secrets/-id-
 [,bash]
 ----
 curl -X DELETE "https://<dataplane-api-url>/v1/secrets/<secret-name>" \
- -H 'accept: application/json'\
- -H 'authorization: Bearer <token>'\
+ -H "accept: application/json" \
+ -H "authorization: Bearer <token>" \
 ----
 
 You must include the following values:
