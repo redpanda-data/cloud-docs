@@ -52,7 +52,21 @@ The https://github.com/redpanda-data/cloud-examples/blob/main/customer-managed/a
 
 NOTE: For simplicity, these instructions assume that Terraform is configured to use local state. You may want to configure https://developer.hashicorp.com/terraform/language/state/remote[remote state^]. 
 
-Define a JSON file called `byovnet.auto.tfvars.json` inside the Terraform directory that contains information about the VPC. Optionally, you can enable PrivateLink, and the `force_destroy_cloud_storage`, which destroys all cluster data when you delete the cluster. For example: 
+Define a JSON file called `byovnet.auto.tfvars.json` inside the Terraform directory that contains information about the VPC.
+
+You can update the example configuration to customize your setup:
+
+- Enable PrivateLink (`"enable_private_link": true`).
+- Preserve cluster data when deleting the cluster (`"force_destroy_cloud_storage": false`).
+- Use https://docs.aws.amazon.com/IAM/latest/UserGuide/access_iam-tags.html[condition tags] to control resource modifications based on AWS tags. For example:
++
+```json
+"condition_tags": {
+"redpanda-managed": "true"
+},
+```
+
+Example configuration:
 
 ```json
 cat > byoc.auto.tfvars.json <<EOF
@@ -67,15 +81,31 @@ cat > byoc.auto.tfvars.json <<EOF
   "ignore_tags": [
   ],
   "vpc_id": "${AWS_VPC_ID}",
-  "zones": [],
-  "enable_private_link": true,
+  "zones": [
+    "use2-az1",
+    "use2-az2",
+    "use2-az3"
+  ],
+  "create_rpk_user": true,
+  "enable_redpanda_connect": true,
+  "enable_private_link": false,
   "create_rpk_user": true,
   "force_destroy_cloud_storage": true,
-  "public_subnet_cidrs": ["10.0.1.0/24"]
+  "public_subnet_cidrs": [
+    "10.0.1.0/24",
+    "10.0.3.0/24",
+    "10.0.5.0/24",
+    "10.0.7.0/24",
+    "10.0.9.0/24",
+    "10.0.11.0/24"
+  ]
 }
 EOF
 
 ```
+
+NOTE: At least one public subnet is required to create a cluster. The example configuration includes multiple public subnets to allow for future scaling.
+
 
 == Deploy Terraform
 
@@ -191,12 +221,12 @@ The Create Network request returns a `resource_id`. For example:
 
 To create the Redpanda cluster: 
 
-. For all cluster information, including the version, tier, storage, security, and availability zones, create the following environment variables with values from Terraform. 
+. For all cluster information, including the version, tier, storage, security, and availability zones, create the following environment variables with values from Terraform. You can customize the cluster name, Repdanda version, thoughput tier, and AWS zones for your cluster using the environment variables.
 +
 ```bash
-export AWS_ZONES='["use-az1", "use-az2", "use-az3"]'
+export AWS_ZONES='["use2-az1", "use2-az2", "use2-az3"]'
 export REDPANDA_CLUSTER_NAME=sample-redpanda-cluster
-export REDPANDA_VERSION=24.3
+export REDPANDA_VERSION=25.1
 export REDPANDA_THROUGHPUT_TIER=tier-1-aws-v3-arm
 export AGENT_INSTANCE_PROFILE_ARN="$(terraform output -raw agent_instance_profile_arn)"
 export CONNECTORS_NODE_GROUP_INSTANCE_PROFILE="$(terraform output -raw connectors_node_group_instance_profile_arn)"
