@@ -15,13 +15,13 @@ The xref:manage:api/cloud-api-overview.adoc#cloud-api-architecture[data plane] c
 BYOC or Dedicated::
 +
 --
-To retrieve the Data Plane API URL of a cluster, make a request to xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/clusters/-id-[`GET /v1/clusters/\{id}`].
+To retrieve the Data Plane API URL of a cluster, make a request to the xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/clusters/-id-[`GET /v1/clusters/\{id}`] endpoint of the Control Plane API.
 --
 
 Serverless::
 +
 --
-To retrieve the Data Plane API URL of a cluster, make a request to xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/serverless/clusters/-id-[`GET /v1/serverless/clusters/\{id}`].
+To retrieve the Data Plane API URL of a cluster, make a request to the xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/serverless/clusters/-id-[`GET /v1/serverless/clusters/\{id}`] endpoint of the Control Plane API.
 --
 ======
 
@@ -99,6 +99,83 @@ curl -X POST "<dataplane-api-url>/v1/topics" \
  -H "content-type: application/json" \
  -d '{"name":"<topic-name>"}'
 ----
+
+=== Manage secrets
+
+Secrets are stored externally in your cloud provider’s secret management service. Redpanda fetches the secrets when you reference them in cluster properties.
+
+==== Create a secret
+
+Make a request to xref:api:ROOT:cloud-dataplane-api.adoc#post-/v1/secrets[`POST /v1/secrets`]. You must use a Base64-encoded secret.
+
+[,bash]
+----
+curl -X POST "https://<dataplane-api-url>/v1/secrets" \
+ -H "accept: application/json" \
+ -H "authorization: Bearer <token>" \
+ -H "content-type: application/json" \
+ -d '{"id":"<secret-name>","scopes":["SCOPE_REDPANDA_CLUSTER"],"secret_data":"<secret-value>"}' 
+----
+
+You must include the following values:
+
+- `<dataplane-api-url>`: The base URL for the Data Plane API.
+- `<token>`: The API key you generated during authentication.
+- `<secret-name>`: The name of the secret you want to add. Use only the following characters: `^[A-Z][A-Z0-9_]*$`.
+- `<secret-value>`: The Base64-encoded secret.
+- This scope: `"SCOPE_REDPANDA_CLUSTER"`.
+
+The response returns the name and scope of the secret.
+
+You can then use the Control Plane API or `rpk` to xref:manage:cluster-maintenance/config-cluster.adoc[set a cluster property value] to reference a secret, using the secret name.
+
+For the Control Plane API, you must use the following notation with the secret name in the request body to correctly reference the secret:
+
+```bash
+"iceberg_rest_catalog_client_secret": "${secrets.<secret-name>}"
+```
+
+==== Update a secret
+
+Make a request to xref:api:ROOT:cloud-dataplane-api.adoc#put-/v1/secrets/-id-[`PUT /v1/secrets/\{id}`]. You can only update the secret value, not its name. You must use a Base64-encoded secret.
+
+[,bash]
+----
+curl -X PUT "https://<dataplane-api-url>/v1/secrets/<secret-name>" \
+ -H "accept: application/json" \
+ -H "authorization: Bearer <token>" \
+ -H "content-type: application/json" \
+ -d '{"scopes":["SCOPE_REDPANDA_CLUSTER"],"secret_data":"<new-secret-value>"}'
+----
+
+You must include the following values:
+
+- `<dataplane-api-url>`: The base URL for the Data Plane API.
+- `<secret-name>`: The name of the secret you want to update. The secret's name is also its ID.
+- `<token>`: The API key you generated during authentication.
+- This scope: `"SCOPE_REDPANDA_CLUSTER"`.
+- `<new-secret-value>`: Your new Base64-encoded secret.
+
+The response returns the name and scope of the secret. It might take several minutes for the new secret value to propagate to any cluster properties that reference it.
+
+==== Delete a secret
+
+Before you delete a secret, make sure that you remove references to it from your cluster configuration. 
+
+Make a request to xref:api:ROOT:cloud-dataplane-api.adoc#delete-/v1/secrets/-id-[`DELETE /v1/secrets/\{id}`].
+
+[,bash]
+----
+curl -X DELETE "https://<dataplane-api-url>/v1/secrets/<secret-name>" \
+ -H "accept: application/json" \
+ -H "authorization: Bearer <token>" \
+----
+
+You must include the following values:
+
+- `<dataplane-api-url>`: The base URL for the Data Plane API.
+- `<secret-name>`: The name of the secret you want to delete.
+- `<token>`: The API key you generated during authentication.
 
 === Use Redpanda Connect
 
