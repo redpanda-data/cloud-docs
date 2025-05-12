@@ -64,6 +64,7 @@ You can update the example configuration to customize your setup:
 "condition_tags": {
   "redpanda-managed": "true"
 },
+- Redpanda Connect is enabled by default. To explicitly disable Redpanda Connect, set the following variable in the tfvars file: `"enable_redpanda_connect": true` and remove the additional security groups and node instance profiles that are required for Redpanda Connect. 
 ```
 
 Example configuration:
@@ -87,7 +88,6 @@ cat > byoc.auto.tfvars.json <<EOF
     "use2-az3"
   ],
   "create_rpk_user": true,
-  "enable_redpanda_connect": true,
   "enable_private_link": false,
   "create_rpk_user": true,
   "force_destroy_cloud_storage": true,
