@@ -58,13 +58,13 @@ You can update the example configuration to customize your setup:
 
 - Enable PrivateLink (`"enable_private_link": true`).
 - Preserve cluster data when deleting the cluster (`"force_destroy_cloud_storage": false`).
+- Redpanda Connect is enabled by default. To disable Redpanda Connect, set `"enable_redpanda_connect": false` in the `tfvars` file, and remove the additional security groups and node instance profiles that are required for Redpanda Connect. 
 - Use https://docs.aws.amazon.com/IAM/latest/UserGuide/access_iam-tags.html[condition tags^] to control resource modifications based on AWS tags. For example:
 +
 ```json
 "condition_tags": {
   "redpanda-managed": "true"
 },
-- Redpanda Connect is enabled by default. To explicitly disable Redpanda Connect, set the following variable in the tfvars file: `"enable_redpanda_connect": true` and remove the additional security groups and node instance profiles that are required for Redpanda Connect. 
 ```
 
 Example configuration:
