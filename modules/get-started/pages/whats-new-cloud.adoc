@@ -13,6 +13,55 @@ This page lists new features added to Redpanda Cloud.
 
 The xref:manage:terraform-provider.adoc[Redpanda Terraform provider] is now generally available (GA). The provider lets you create and manage resources in Redpanda Cloud, such as clusters, topics, users, ACLs, networks, and resource groups.
 
+== May 2025
+
+=== Support for additional region
+
+xref:reference:tiers/byoc-tiers.adoc#byoc-supported-regions[BYOC clusters] on GCP now support the us-west2 (Los Angeles) region.
+
+== April 2025
+
+=== Increased number of supported partitions
+
+The number of partitions (pre-replication) Redpanda Cloud supports for each xref:reference:tiers/index.adoc[usage tier] has been doubled. For example, the number of supported partitions in tier 1 went from 1,000 to 2,000, and tier 5 went from 22,800 to 45,600.   
+
+=== Iceberg topics: beta
+
+The xref:manage:iceberg/about-iceberg-topics.adoc[Iceberg integration for Redpanda] allows you to store topic data in the cloud in the Iceberg open table format. This makes your streaming data immediately available in downstream analytical systems without setting up and maintaining additional ETL pipelines. You can also integrate your data directly into commonly-used big data processing frameworks, standardizing and simplifying the consumption of streams as tables in a wide variety of data analytics pipelines.
+
+Iceberg topics are supported for BYOC clusters in AWS and GCP.
+
+=== Cluster configuration
+
+You can now xref:manage:cluster-maintenance/config-cluster.adoc[configure certain cluster properties] with `rpk cluster config` or with the Cloud API. For example, you can enable and manage xref:manage:iceberg/about-iceberg-topics.adoc[Iceberg topics], xref:develop:data-transforms/index.adoc[data transforms], and xref:manage:audit-logging.adoc[audit logging]. Available properties are listed in xref:reference:properties/cluster-properties.adoc[Cluster Configuration Properties].
+
+Iceberg topics properties are available for clusters running Redpanda version 25.1 or later.
+
+=== Manage secrets for cluster configuration
+
+Redpanda Cloud now supports managing secrets that you can reference in cluster properties, for example, to configure Iceberg topics. You can create, update, and delete secrets and reference a secret in cluster properties using `rpk` or the Cloud API.
+
+See also:
+
+* Manage secrets using xref:reference:rpk/rpk-security/rpk-security-secret.adoc[`rpk security secret`]
+* Manage secrets using the xref:manage:api/cloud-dataplane-api.adoc#manage-secrets[Data Plane API]
+* Reference a secret in a cluster property using xref:reference:rpk/rpk-cluster/rpk-cluster-config-set.adoc[`rpk cluster config set`]
+* Reference a secret in a cluster property using the xref:manage:cluster-maintenance/config-cluster.adoc[Control Plane API]
+
+=== Data transforms: GA
+
+WebAssembly xref:develop:data-transforms/index.adoc[data transforms] are now generally available in Redpanda Cloud. Data transforms let you run common data streaming tasks within Redpanda, like filtering, scrubbing, and transcoding. 
+
+Data transforms are supported for BYOC and Dedicated clusters running Redpanda version 24.3 and later.
+
+=== AI agents: beta
+
+Redpanda Cloud is starting to introduce beta versions of xref:develop:agents/about.adoc[AI agents] for enterprise agentic applications driven by a continuous data feed.
+
+=== Redpanda Connect for BYOVPC on AWS and GCP: beta
+
+Redpanda Connect is now enabled when you create a BYOVPC cluster on xref:get-started:cluster-types/byoc/aws/vpc-byo-aws.adoc[AWS] or xref:get-started:cluster-types/byoc/gcp/vpc-byo-gcp.adoc[GCP]. You can also add Redpanda Connect to an xref:get-started:cluster-types/byoc/gcp/enable-rpcn-byovpc-gcp.adoc[existing BYOVPC GCP cluster].
+
 == March 2025
 
 === Serverless
@@ -35,7 +84,7 @@ The link:https://registry.terraform.io/providers/redpanda-data/redpanda/latest/d
 
 == February 2025
 
-=== Role-based access control (RBAC) 
+=== Role-based access control (RBAC)
 
 With xref:security:authorization/rbac/rbac.adoc[RBAC in the control plane], you can manage access to organization-level resources like clusters, resource groups, and networks. For example, you could grant everyone access to clusters in a development resource group while limiting access to clusters in a production resource group. Or, you could limit access to geographically-dispersed clusters in accordance with data residency laws. With xref:security:authorization/rbac/rbac_dp.adoc[RBAC in the data plane], you can configure cluster-level permissions for provisioned users at scale. 
 

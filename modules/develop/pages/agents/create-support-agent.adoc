@@ -1,0 +1,88 @@
+= Create a Support Agent
+:page-beta: true
+:description: Learn how to create, configure and run a support agent.
+
+Learn how to create and configure a support agent. The support agent can use text-based content, such as Markdown or AsciiDoc, from any GitHub repository to enrich the responses given by an OpenAI model. You can then enter prompts from a chat interface and receive more accurate, domain-specific responses.
+
+include::shared:partial$feature-flag-agents.adoc[]
+
+== Overview
+
+The support agent ingests data from a GitHub repository into a Redpanda topic. The ingested data is then processed by a Redpanda Connect pipeline, using an OpenAI model to generate vector embeddings. The vector embeddings are written to a PostgreSQL vector database, ready for retrieval by the agent. This is a type of Retrieval-Augmented Generation (RAG) pipeline, which continuously identifies and processes any changes to the GitHub repository so that the stored and retrieved data is always up-to-date.
+
+The processing, storage, and retrieval of data is achieved using three preconfigured Redpanda Connect pipelines, with a minimum of xref:develop:connect/configuration/resource-management.adoc#understanding-compute-units[one compute unit] of server resources allocated to each pipeline. While in beta, server resources used by these pipelines are charged at an xref:billing:billing.adoc#redpanda-connect-pipeline-metrics-dedicated-and-serverless[hourly rate in compute unit hours (compute/hour)], excluding the use of any GPU machines that are deployed. 
+
+== Prerequisites
+
+- A running Dedicated or BYOC (not BYOVPC) cluster.
+- An OpenAI account (with a credit card) and https://platform.openai.com/settings/organization/api-keys[API secret key^].
+- A PostgreSQL database with a vector extension installed.
+- The https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING[Data Source Name (DSN)^] for the PostgreSQL database.
+- A GitHub repository containing text-based content. To use a private repository, you must also provide a https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens[fine-grained personal access token^] with read access to Contents.
+
+You must also request access to AI agents. To do this:
+
+. Log in to Redpanda Cloud and select the cluster on which you want to run the agent.
+. Go to the **AI Agents** page and click **Request access**.
+
+== Add a support agent
+
+Before you can configure a support agent, you need to add it from within the Cloud UI.
+
+. Log in to Redpanda Cloud and select your cluster.
+. Go to the **AI Agents** page and click **Create agent**.
+. Click on the **Support Agent** block to start configuring your agent.
+
+== Configure your support agent
+
+The first time you set up an agent, you must enter configuration details for most components. These details are then stored securely in Redpanda Cloud's secret store, so they are available when you add new agents or update existing ones.
+
+Start by adding custom details to identify your agent and to guide how you want your agent to behave.
+
+. In **Agent name**, enter a short name for the agent.
+. In **Agent description**, enter a short description for the agent.
+. In **System prompt**, add some short statements that describe what you want your agent to do.
+
+Next, create a topic on your cluster for ingesting the GitHub data, and add a new user with access to the topic. The user must have read or write access to the topic.
+
+. In **Redpanda topic**, select **+Create New**.
+. Enter a custom name for your topic, then click **Create**.
+. In **Username**, select **+Create New** and enter credentials for a new user.
+. Leave the default **SASL mechanism**.  
+. Enter a unique **Secret ID**, which is used to store and retrieve the user credentials from the **Secrets Store**.
+. Click **Create**, and take a note of your password.
+. Click **Create ACLs** to update the user's permission to the topic you created. The **Access Control** page opens in a new browser tab.
+. Select the name of the new user, and for testing purposes, select **Allow all operations** and click **OK**.
+. Return to the original browser tab, click **Close**, and the **Username**, **Password**, and **SASL mechanism** are populated with the new user's details.
+
+Now, add the details of your GitHub repository.
+
+. In **Repository URL**, add the full URL to your GitHub repository, for example: `https://github.com/redpanda-data/docs`.
+. In **Repository branch**, enter the name of the Git branch from which you want to ingest data, for example: `main`.
+. If your repository is private, also select the **Private repository** checkbox and enter your personal access token.
+. In **Include glob pattern**, specify the content you want the RAG pipeline to ingest, for example:
+
+  - All Markdown documents (`+**/*.md+`)
+  - All AsciiDoc documents (`+**/*.adoc+`)
+  - Everything beneath the `docs` directory (`+/docs/**+`)
+
+. In **Exclude glob pattern** (optional), you can also specify any content you do not want to ingest, for example: `README.md`.
+
+Finally, add your OpenAI API key and PostgreSQL details.
+
+. In **PostgreSQL vector database**, select **+Create New** to add the DSN of your PostgreSQL database.
+. Enter a unique ID for the DSN, then paste in your connection string using the format: `postgresql://username:password@hostname/dbname`.
+. Click **Create**.
+. In **OpenAI API key**, select **+Create New** to add your OpenAI API secret key, which is used to process GitHub content into vector embeddings, and to send and retrieve responses from OpenAI.
+. Enter a unique ID for the secret key, then paste in your secret key.
+. Click **Create**.
+. Click **Create** to create and run your agent. If the agent does not start, check the **Logs** under the **Git** and **RAG Indexing**, and **Agent** tabs to help identify the issue.
+. When the **Chat** box appears, try out some prompts.
+
+== Stop a support agent
+
+To stop a support agent, you can either stop each of the three Redpanda Connect pipelines that run the support agent or delete your agent.
+
+To stop the pipelines, select each of the three tabs (**Git**, **RAG Indexing**, and **Agent**) and click **Stop**.
+
+To delete a pipeline, click **Delete** and confirm your deletion.
