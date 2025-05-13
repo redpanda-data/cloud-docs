@@ -308,37 +308,6 @@ curl -H "Authorization: Bearer $AUTH_TOKEN" https://api.redpanda.com/v1/operatio
 
 When the operation state is `COMPLETED`, you can <<verify-mtls,verify that mTLS is enabled>> for the API endpoints.
 
-=== Enable SASL authentication
-
-New clusters are enabled with SASL authentication by default. If you enabled mTLS and want to switch to SASL, you must use the Cloud API to update the cluster. 
-
-To switch to SASL authentication on AWS and Azure clusters, make a xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1/clusters/-cluster.id-[`PATCH /v1/clusters/{cluster.id}`] request.
-
-The following code block shows a request to enable SASL authentication only for the Kafka API:
-
-.Show example request
-[%collapsible]
-====
-[,bash]
-----
-CLUSTER_PATCH_BODY=`cat << EOF
-{
-  "kafka_api": {
-     "sasl": {
-        "enabled": true
-     }
-  }
-}
-EOF`
-curl -v -X PATCH \
--H "Content-Type: application/json" \
--H "Authorization: Bearer $AUTH_TOKEN" \
--d "$CLUSTER_PATCH_BODY" https://api.redpanda.com/v1/clusters/<cluster-id>`
-----
-====
-
-For GCP clusters, you have the option to enable both mTLS and SASL. This means that the cluster has one mTLS-enabled listener and one SASL-enabled listener.
-
 === Enable mTLS and SASL
 
 NOTE: Enabling mTLS and SASL simultaneously is available for GCP clusters only. To unlock this feature for your account, contact your Customer Success Manager.
