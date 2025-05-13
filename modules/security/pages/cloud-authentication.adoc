@@ -152,13 +152,21 @@ least privilege.
 
 Redpanda Cloud supports mTLS or SASL authentication for Kafka API, HTTP Proxy, and Schema Registry.
 
-When you create a new cluster using the https://cloud.redpanda.com/[Cloud UI^], the cluster is enabled with SASL by default. If you want to enable mTLS, or both mTLS and SASL for GCP clusters only, you must use the Cloud API to create the cluster or update an existing cluster.
+When you create a new cluster using the https://cloud.redpanda.com/[Cloud UI^], the cluster is enabled by default with SASL for Kafka API,  and Basic authentication for HTTP Proxy and Schema Registry.
 
 === Requirements
 
-To configure service authentication in your cluster, you must have the following:
+NOTE: mTLS authentication is supported on AWS and GCP clusters only.
 
-// version?
+If you want to enable mTLS authentication:
+
+* You must use the Cloud API to create a new mTLS-enabled cluster. 
+* You must also use the Cloud API to update an existing cluster to switch to mTLS authentication for Kafka API.
+* You can use the Cloud UI to update an existing cluster to switch to mTLS authentication for HTTP Proxy and Schema Registry only.
+* To enable mTLS and SASL (or Basic authentication) simultaneously on GCP clusters, you must use the Cloud API to create a new cluster or update an existing cluster.
+
+To configure service authentication in your cluster using the Cloud API, you must have the following:
+
 * A service account in your Redpanda organization. You must have administrative privileges to create a service account.
 * Access to the xref:manage:api/cloud-api-overview.adoc[Cloud API] to enable mTLS or both SASL and mTLS. You use the service account to obtain an access token. You then make a request to the Control Plane API, passing the access token in the authorization header.
 
@@ -194,8 +202,10 @@ For clusters with mTLS authentication, Redpanda creates a dedicated mTLS-enabled
 . Follow the steps to to create a resource group and network for xref:manage:api/cloud-byoc-controlplane-api.adoc#create-a-resource-group[BYOC] or xref:manage:api/cloud-dedicated-controlplane-api.adoc#create-a-resource-group[Dedicated], if you haven't already. You'll need the resource group ID and network ID to create a cluster in the next step.
 
 . Make a xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1/clusters/-cluster.id-[`POST /v1/clusters/{cluster.id}`] request to create a new cluster with mTLS enabled.
-+
-.Show example request
+
+NOTE: The following example enables mTLS for Kafka API. To enable mTLS for HTTP Proxy and Schema Registry, add the `http_proxy.mtls` and `schema_registry.mtls` fields to the request body. You can choose to enable mTLS for any combination of the three services.
+
+.Show example request to enable mTLS for Kafka API
 [%collapsible]
 ====
 [,bash,lines=13-19,%collapsible]
@@ -261,7 +271,7 @@ When the operation state is `COMPLETED`, you can <<verify-mtls,verify that mTLS 
 
 Make a xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1/clusters/-cluster.id-[`PATCH /v1/clusters/{cluster.id}`] request to enable mTLS for the Kafka API on a cluster.
 
-The following code block shows a request to enable mTLS:
+The following code block shows a request to enable mTLS for Kafka API. To enable mTLS for HTTP Proxy and Schema Registry, add the `http_proxy.mtls` and `schema_registry.mtls` fields to the request body:
 
 .Show example request
 [%collapsible]
@@ -311,18 +321,20 @@ When the operation state is `COMPLETED`, you can <<verify-mtls,verify that mTLS 
 
 NOTE: Enabling mTLS and SASL simultaneously is available for GCP clusters only. To unlock this feature for your account, contact your Customer Success Manager.
 
+You can choose to enable mTLS and SASL simultaneously for the Kafka API, and mTLS and Basic authentication for HTTP Proxy and Schema Registry. The `sasl` field in the API request examples toggle both SASL and Basic authentication. 
+
 ==== Create a new cluster with both mTLS and SASL enabled
 
 . Follow the steps to to create a resource group and network for xref:manage:api/cloud-byoc-controlplane-api.adoc#create-a-resource-group[BYOC] or xref:manage:api/cloud-dedicated-controlplane-api.adoc#create-a-resource-group[Dedicated], if you haven't already done so. You'll need the resource group ID and network ID to create a cluster in the next step.
 
-. Make a xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1/clusters/-cluster.id-[`POST /v1/clusters/{cluster.id}`] request to create a new cluster with both mTLS and SASL enabled.
+. Make a xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1/clusters/-cluster.id-[`POST /v1/clusters/{cluster.id}`] request to create a new cluster with both mTLS and SASL or Basic authentication enabled.
 +
-You can choose to enable mTLS and SASL simultaneously on any of the following Redpanda services: Kafka API, HTTP Proxy, and Schema Registry. For example, if you want to enable both mTLS and SASL for Kafka API and Schema Registry only, leave out the entire `http_proxy` block from the request body. If you want to enable multi-protocol authentication for Kafka API and Schema Registry, and enable mTLS only for HTTP Proxy, leave out the `http_proxy.sasl` field.
+You can enable mTLS and SASL or Basic authentication for any combination of the three services. For example, if you want to enable mTLS and SASL simultaneously for Kafka API and mTLS and Basic authentication simultaneously for Schema Registry only, leave out the entire `http_proxy` block from the request body. If you want to enable mTLS only for Kafka API, and mTLS and Basic authentication for HTTP Proxy and Schema Registry, leave out the `kafka_api.sasl` field.
 +
 .Show example request
 [%collapsible]
 ====
-[,bash,lines=13+23+33]
+[,bash,lines=13+23+32]
 ----
 CLUSTER_CREATE_BODY=`cat << EOF
 {
@@ -349,8 +361,7 @@ CLUSTER_CREATE_BODY=`cat << EOF
     "http_proxy": {
        "mtls": {
           "enabled": true,
-          "ca_certificates_pem": ["<ca-certificate-pem>"],
-          "principal_mapping_rules": ["<principal-mapping-rule>"]
+          "ca_certificates_pem": ["<ca-certificate-pem>"]
        },
        "sasl": {
           "enabled": true
@@ -359,8 +370,7 @@ CLUSTER_CREATE_BODY=`cat << EOF
     "schema_registry": {
        "mtls": {
           "enabled": true,
-          "ca_certificates_pem": ["<ca-certificate-pem>"],
-          "principal_mapping_rules": ["<principal-mapping-rule>"]
+          "ca_certificates_pem": ["<ca-certificate-pem>"]
        },
        "sasl": {
           "enabled": true
@@ -408,12 +418,12 @@ When the operation state is `COMPLETED`, you can <<verify-mtls,verify that mTLS 
 
 Make a xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1/clusters/-cluster.id-[`PATCH /v1/clusters/{cluster.id}`] request to enable mTLS and SASL on an existing cluster.
 
-You can choose to enable mTLS and SASL simultaneously on any of the following Redpanda services: Kafka API, HTTP Proxy, and Schema Registry. For example, if you want to enable both mTLS and SASL for Kafka API and Schema Registry only, leave out the entire `http_proxy` block from the request body. If you want to enable multi-protocol authentication for Kafka API and Schema Registry, and enable mTLS only for HTTP Proxy, leave out the `http_proxy.sasl` field.
+You can choose to enable mTLS and SASL or Basic authentication for any combination of the three services. For example, if you want to enable mTLS and SASL simultaneously for Kafka API and mTLS and Basic authentication simultaneously for Schema Registry only, leave out the entire `http_proxy` block from the request body. If you want to enable mTLS only for Kafka API, and mTLS and Basic authentication for HTTP Proxy and Schema Registry, leave out the `kafka_api.sasl` field.
 
 .Show example request
 [%collapsible]
 ====
-[,bash,lines=3+13+23]
+[,bash,lines=3+13+22]
 ----
 CLUSTER_PATCH_BODY=`cat << EOF
 {
@@ -430,8 +440,7 @@ CLUSTER_PATCH_BODY=`cat << EOF
   "schema_registry": {
      "mtls": {
         "enabled": true,
-        "ca_certificates_pem": ["<ca-certificate-pem>"],
-        "principal_mapping_rules": ["<principal-mapping-rule>"]
+        "ca_certificates_pem": ["<ca-certificate-pem>"]
      },
      "sasl": {
         "enabled": true
@@ -440,8 +449,7 @@ CLUSTER_PATCH_BODY=`cat << EOF
   "http_proxy": {
      "mtls": {
         "enabled": true,
-        "ca_certificates_pem": ["<ca-certificate-pem>"],
-        "principal_mapping_rules": ["<principal-mapping-rule>"]
+        "ca_certificates_pem": ["<ca-certificate-pem>"]
      },
      "sasl": {
         "enabled": true
@@ -554,15 +562,15 @@ curl -u $USERNAME:$PASSWORD -k -H "Content-Type: application/vnd.schemaregistry.
 
 You should get an error indicating that the certificate is required.
 
-To successfully connect to the HTTP Proxy and Schema Registry, you must provide a client certificate and private key. The following cURL commands show example requests to mTLS-enabled endpoints using `test` as the username and `12345` as the password.
+To successfully connect to the HTTP Proxy and Schema Registry, you must provide a client certificate and private key. The following `curl` commands show example requests to mTLS-enabled endpoints using `test` as the username and `12345` as the password.
 
 [,bash]
 ----
 # HTTP Proxy
-curl -u test:12345 -k --cert $CERT_FILE --key $PRIVATE_KEY_FILE -H "Content-Type: application/vnd.kafka.json.v2+json" --sslv2 --http2 https://pandaproxy-45f811b1.cge5asc6006u7fvep0q0.fmc.dev.cloud.redpanda.com:30082/topics
+curl -u test:12345 -k --cert cert.pem --key key.pem -H "Content-Type: application/vnd.kafka.json.v2+json" --sslv2 --http2 https://pandaproxy-45f811b1.cge5asc6006u7fvep0q0.fmc.dev.cloud.redpanda.com:30082/topics
 
 # Schema Registry
-curl -u test:12345 -k --cert $CERT_FILE --key $CERT_FILE https://schema-registry-15d24f32.cge5asc6006u7fvep0q0.fmc.dev.cloud.redpanda.com:30081/subjects/Kafka-value/versions/1
+curl -u test:12345 -k --cert cert.pem --key key.pem https://schema-registry-15d24f32.cge5asc6006u7fvep0q0.fmc.dev.cloud.redpanda.com:30081/subjects/Kafka-value/versions/1
 ----
 
 include::shared:partial$suggested-reading.adoc[]
