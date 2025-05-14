@@ -5,20 +5,17 @@ Cluster configuration properties are set to their default values and automatical
 
 You can use cluster properties to enable and manage features such as xref:manage:iceberg/about-iceberg-topics.adoc[Iceberg topics], xref:develop:data-transforms/index.adoc[data transforms], and xref:manage:audit-logging.adoc[audit logging].
 
-To view read-only cluster configuration properties, run: 
-
-```
-rpk cluster config get
-```
-
 For a complete list of the cluster properties available in Redpanda Cloud, see xref:reference:properties/cluster-properties.adoc[Cluster Configuration Properties].
+
+NOTE: Some properties are read-only and cannot be changed. For example, `cluster_id` is a read-only property that is automatically set when the cluster is created. 
 
 == Limitations
 
-Cluster configuration is supported on BYOC and Dedicated clusters running on AWS and GCP. 
+Cluster properties are supported on BYOC and Dedicated clusters running on AWS and GCP. 
 
-- It is not available on Serverless clusters. 
-- It is not available on BYOC and Dedicated clusters running on Azure.
+- They are not available on BYOC and Dedicated clusters running on Azure.
+- They are not available on Serverless clusters. 
+
 
 == Set cluster configuration properties 
 
@@ -76,6 +73,57 @@ curl -H "Authorization: Bearer ${RP_CLOUD_TOKEN}" -X PATCH \
 The xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1/clusters/-cluster.id-[`PATCH /clusters/{cluster.id}`] request returns the ID of a long-running operation. You can check the status of the operation by polling the xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/operations/-id-[`GET /operations/\{id}`] endpoint.
 
 NOTE: Some properties require a rolling restart for the update to take effect. This triggers a xref:manage:api/cloud-byoc-controlplane-api.adoc#lro[long-running operation] that can take several minutes to complete.
+
+--
+======
+
+== View cluster property values
+
+You can see the value of a cluster configuration property using `rpk` or the Cloud API.
+
+[tabs]
+======
+`rpk`::
++
+--
+Use `rpk cluster config get` to view the current cluster property value. 
+
+For example, to view the current value of xref:reference:properties/cluster-properties.adoc#data_transforms_enabled[`data_transforms_enabled`], run:
+
+[source,bash]
+----    
+rpk cluster config get data_transforms_enabled
+----    
+
+
+--
+Cloud API::
++  
+--
+Use the Cloud API to get the value of a cluster property.
+
+Make a xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/clusters/-id-[`GET /clusters/{cluster.id}`] request, passing the cluster ID as a parameter. The response body contains the current `computed_properties` values. For example, to get the current value of xref:reference:properties/cluster-properties.adoc#data_transforms_enabled[`data_transforms_enabled`]:
+
+[source,bash]
+----
+# Store your cluster ID in a variable.
+export RP_CLUSTER_ID=<cluster-id>
+
+# Retrieve a Redpanda Cloud access token.
+export RP_CLOUD_TOKEN=`curl -X POST "https://auth.prd.cloud.redpanda.com/oauth/token" \
+    -H "content-type: application/x-www-form-urlencoded" \
+    -d "grant_type=client_credentials" \
+    -d "client_id=<client-id>" \
+    -d "client_secret=<client-secret>"`
+
+# Get your cluster configuration property values.
+curl -H "Authorization: Bearer ${RP_CLOUD_TOKEN}" -X GET \
+  "https://api.cloud.redpanda.com/v1/clusters/${RP_CLUSTER_ID}" \
+ -H 'accept: application/json'\
+ -H 'content-type: application/json' \
+ -d '{"cluster_configuration":{"computed_properties": {"data_transforms_enabled"}}}'
+----
+
 
 --
 ======
