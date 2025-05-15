@@ -152,7 +152,7 @@ least privilege.
 
 Redpanda Cloud supports mTLS or SASL authentication for Kafka API, HTTP Proxy, and Schema Registry.
 
-When you create a new cluster using the https://cloud.redpanda.com/[Cloud UI^], the cluster is enabled by default with SASL for Kafka API,  and Basic authentication for HTTP Proxy and Schema Registry.
+When you create a new cluster using the https://cloud.redpanda.com/[Cloud UI^], the cluster is enabled by default with SASL for Kafka API, and Basic authentication for HTTP Proxy and Schema Registry.
 
 === Requirements
 
@@ -205,6 +205,8 @@ Make sure to replace the following variables:
 :description: Use the Cloud API to enable mTLS for Kafka API, HTTP Proxy, and Schema Registry connections on your Redpanda cluster.
 
 For clusters with mTLS authentication, Redpanda creates a dedicated mTLS-enabled listener for each API service (Kafka API, HTTP Proxy, or Schema Registry) where you've enabled this authentication method. After you enable mTLS, <<retrieve-api-endpoints,get the API endpoints>> and <<verify-mtls,verify that mTLS authentication is in effect>>. 
+
+NOTE: If you enable mTLS only, you cannot disable it later.
 
 ==== Create a new cluster with mTLS enabled
 
@@ -480,8 +482,6 @@ curl -H "Authorization: Bearer $AUTH_TOKEN" https://api.redpanda.com/v1/operatio
 ----
 
 When the operation state is `COMPLETED`, you can <<verify-mtls,verify that mTLS is enabled>> for the API endpoints.
-
-NOTE: If you enable mTLS only, you cannot disable it later.
 
 ==== Update an existing cluster to use mTLS and SASL
 
