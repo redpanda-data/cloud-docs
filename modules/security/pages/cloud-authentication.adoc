@@ -68,7 +68,7 @@ Each Redpanda Cloud data plane runs its own dedicated agent,
 which authenticates and connects against the control plane over a single TLS 1.2
 encrypted TCP connection.
 
-Different Redpanda APIs support different authentication methods. For GCP, you can simultaneously enable mTLS and SASL. If you enable both mTLS and SASL for an API on GCP clusters, one mTLS listener and one SASL listener are created each on separate ports.
+Different Redpanda APIs support different authentication methods. For GCP, you can simultaneously enable mTLS and SASL for Kafka API, and mTLS and Basic authentication for the HTTP APIs (HTTP Proxy and Schema Registry). If you enable both mTLS and SASL on GCP clusters, Redpanda creates two distinct listeners: an mTLS listener operating on one port and a SASL listener operating on a different port.
 
 .Redpanda APIs authentication methods
 [%collapsible]
@@ -186,10 +186,19 @@ AUTH_TOKEN=`curl -s --request POST \
     --data client_secret=<client-secret> \
     --data audience=cloudv2-production.redpanda.cloud | jq -r .access_token`
 ----
++
 Make sure to replace the following variables:
++
+[cols="1,1"]
+|===
+|Placeholder variable |Description
 
-* `<client-id>`: Client ID.
-* `<client-secret>`: Client secret.
+|`<client-id>`
+|Client ID.
+
+|`<client-secret>`
+|Client secret.
+|===
 
 [[mtls]]
 === Enable mTLS authentication
@@ -237,26 +246,50 @@ curl -v -X POST \
 -H "Authorization: Bearer $AUTH_TOKEN" \
 -d "$CLUSTER_CREATE_BODY" https://api.redpanda.com/v1/clusters/<cluster-id>`
 ----
-====
 
 Make sure to replace the following variables:
 
-* `<cluster-id>`: ID of the Redpanda cluster.
-* `<cluster-name>`: Name of the Redpanda cluster.
-* `<resource-group-id>`: ID of the resource group.
-* `<network-id>`: ID of the network.
-* `<region>`: The region where the cluster is created. For example, `us-central1`.
-* `<zones>`: The zones where the cluster is created. For example, `["us-central1-a", "us-central1-b", "us-central1-c"]`.
-* `<tier>`: The usage tier of the cluster. For example, .
-* `<cluster-type>`: The Redpanda cluster type, `TYPE_BYOC` or `TYPE_DEDICATED`.
-* `<ca-certificate-pem>`: A trusted Kafka client CA certificate in PEM format. The `ca_certificates_pem` field accepts a list of certificates.
-* `<principal-mapping-rule>`: Configurable rule for mapping the Distinguished Name of Kafka client certificates to Kafka principals.  
-+
+[cols="1,1"]
+|===
+|Placeholder variable |Description
+
+|`<cluster-id>`
+|ID of the Redpanda cluster.
+
+|`<cluster-name>`
+|Name of the Redpanda cluster.
+
+|`<resource-group-id>`
+|ID of the resource group.
+
+|`<network-id>`
+|ID of the network.
+
+|`<region>`
+|The region where the cluster is created. For example, `us-central1`.
+
+|`<zones>`
+|The zones where the cluster is created. For example, `["us-central1-a", "us-central1-b", "us-central1-c"]`.
+
+|`<tier>`
+|The usage tier of the cluster. For example, .
+
+|`<cluster-type>`
+|The Redpanda cluster type, `TYPE_BYOC` or `TYPE_DEDICATED`.
+
+|`<ca-certificate-pem>`
+|A trusted Kafka client CA certificate in PEM format. The `ca_certificates_pem` field accepts a list of certificates.
+
+|`<principal-mapping-rule>`
+a|Configurable rule for mapping the Distinguished Name of Kafka client certificates to Kafka principals.  
+
 For example, the mapping rule `RULE:.\*CN=([^,]+).*/\\$1/` maps the following certificate subject to a principal named `test`:
-+
+
 `Subject: C=US, ST=IL, L=Chicago, O=redpanda, OU=cloud, CN=test, emailAddress=test123@redpanda.com`
-+
+
 See xref:ROOT:manage:security/authentication.adoc#mtls[Configure Authentication] for more details on principal mapping rules. The `principal_mapping_rules` field accepts a list of rules.
+|===
+====
 
 The Create Cluster endpoint returns a long-running operation. You can check the status of the operation by making a `GET` request to the following endpoint:
 
@@ -294,19 +327,29 @@ curl -v -X PATCH \
 -H "Authorization: Bearer $AUTH_TOKEN" \
 -d "$CLUSTER_PATCH_BODY" https://api.redpanda.com/v1/clusters/<cluster-id>`
 ----
-====
 
 Make sure to replace the following variables:
 
-* `<cluster-id>`: ID of Redpanda cluster.
-* `<ca-certificate-pem>`: A trusted Kafka client CA certificate in PEM format. The `ca_certificates_pem` field accepts a list of certificates.
-* `<principal-mapping-rule>`: Configurable rule for mapping the Distinguished Name of Kafka client certificates to Kafka principals.  
-+
+[cols="1,1"]
+|===
+|Placeholder variable |Description
+
+|`<cluster-id>`
+|ID of Redpanda cluster.
+
+|`<ca-certificate-pem>`
+|A trusted Kafka client CA certificate in PEM format. The `ca_certificates_pem` field accepts a list of certificates.
+
+|`<principal-mapping-rule>`
+a|Configurable rule for mapping the Distinguished Name of Kafka client certificates to Kafka principals.  
+
 For example, the mapping rule `RULE:.\*CN=([^,]+).*/\\$1/` maps the following certificate subject to a principal named `test`:
-+
+
 `Subject: C=US, ST=IL, L=Chicago, O=redpanda, OU=cloud, CN=test, emailAddress=test123@redpanda.com`
-+
+
 See xref:ROOT:manage:security/authentication.adoc#mtls[Configure Authentication] for more details on principal mapping rules. The `principal_mapping_rules` field accepts a list of rules.
+|===
+====
 
 The Update Cluster endpoint returns a long-running operation. You can check the status of the operation by making a `GET` request to the following endpoint:
 
@@ -384,26 +427,50 @@ curl -v -X POST \
 -H "Authorization: Bearer $AUTH_TOKEN" \
 -d "$CLUSTER_CREATE_BODY" https://api.redpanda.com/v1/clusters/<cluster-id>`
 ----
-====
 
 Make sure to replace the following variables:
 
-* `<cluster-id>`: ID of Redpanda cluster.
-* `<cluster-name>`: Name of the Redpanda cluster.
-* `<resource-group-id>`: ID of the resource group.
-* `<network-id>`: ID of the network.
-* `<region>`: The region where the cluster is created. For example, `us-central1`.
-* `<zones>`: The zones where the cluster is created. For example, `["us-central1-a", "us-central1-b", "us-central1-c"]`.
-* `<tier>`: The usage tier of the cluster. For example, .
-* `<cluster-type>`: The Redpanda cluster type, `TYPE_BYOC` or `TYPE_DEDICATED`.
-* `<ca-certificate-pem>`: A trusted Kafka client CA certificate in PEM format. The `ca_certificates_pem` field accepts a list of certificates.
-* `<principal-mapping-rule>`: Configurable rule for mapping the Distinguished Name of Kafka client certificates to Kafka principals.  
-+
+[cols="1,1"]
+|===
+|Placeholder variable |Description
+
+|`<cluster-id>`
+|ID of Redpanda cluster.
+
+|`<cluster-name>`
+|Name of the Redpanda cluster.
+
+|`<resource-group-id>`
+|ID of the resource group.
+
+|`<network-id>`
+|ID of the network.
+
+|`<region>`
+|The region where the cluster is created. For example, `us-central1`.
+
+|`<zones>`
+|The zones where the cluster is created. For example, `["us-central1-a", "us-central1-b", "us-central1-c"]`.
+
+|`<tier>`
+|The usage tier of the cluster. For example, .
+
+|`<cluster-type>`
+|The Redpanda cluster type, `TYPE_BYOC` or `TYPE_DEDICATED`.
+
+|`<ca-certificate-pem>`
+|A trusted Kafka client CA certificate in PEM format. The `ca_certificates_pem` field accepts a list of certificates.
+
+|`<principal-mapping-rule>`
+a|Configurable rule for mapping the Distinguished Name of Kafka client certificates to Kafka principals.  
+
 For example, the mapping rule `RULE:.\*CN=([^,]+).*/\\$1/` maps the following certificate subject to a principal named `test`:
-+
+
 `Subject: C=US, ST=IL, L=Chicago, O=redpanda, OU=cloud, CN=test, emailAddress=test123@redpanda.com`
-+
+
 See xref:ROOT:manage:security/authentication.adoc#mtls[Configure Authentication] for more details on principal mapping rules. The `principal_mapping_rules` field accepts a list of rules.
+|===
+====
 
 The Create Cluster endpoint returns a long-running operation. You can check the status of the operation by making a `GET` request to the following endpoint:
 
@@ -413,6 +480,8 @@ curl -H "Authorization: Bearer $AUTH_TOKEN" https://api.redpanda.com/v1/operatio
 ----
 
 When the operation state is `COMPLETED`, you can <<verify-mtls,verify that mTLS is enabled>> for the API endpoints.
+
+NOTE: If you enable mTLS only, you cannot disable it later.
 
 ==== Update an existing cluster to use mTLS and SASL
 
@@ -462,19 +531,29 @@ curl -v -X PATCH \
 -H "Authorization: Bearer $AUTH_TOKEN" \
 -d "$CLUSTER_PATCH_BODY" https://api.redpanda.com/v1/clusters/<cluster-id>`
 ----
-====
 
 Make sure to replace the following variables:
 
-* `<cluster-id>`: ID of Redpanda cluster.
-* `<ca-certificate-pem>`: A trusted Kafka client CA certificate in PEM format. The `ca_certificates_pem` field accepts a list of certificates.
-* `<principal-mapping-rule>`: Configurable rule for mapping the Distinguished Name of Kafka client certificates to Kafka principals.  
-+
+[cols="1,1"]
+|===
+|Placeholder variable |Description
+
+|`<cluster-id>`
+|ID of Redpanda cluster.
+
+|`<ca-certificate-pem>`
+|A trusted Kafka client CA certificate in PEM format. The `ca_certificates_pem` field accepts a list of certificates.
+
+|`<principal-mapping-rule>`
+a|Configurable rule for mapping the Distinguished Name of Kafka client certificates to Kafka principals.  
+
 For example, the mapping rule `RULE:.\*CN=([^,]+).*/\\$1/` maps the following certificate subject to a principal named `test`:
-+
+
 `Subject: C=US, ST=IL, L=Chicago, O=redpanda, OU=cloud, CN=test, emailAddress=test123@redpanda.com`
-+
+
 See xref:ROOT:manage:security/authentication.adoc#mtls[Configure Authentication] for more details on principal mapping rules. The `principal_mapping_rules` field accepts a list of rules.
+|===
+====
 
 The Update Cluster endpoint returns a long-running operation. You can check the status of the operation by making a `GET` request to the following endpoint:
 
@@ -484,6 +563,31 @@ curl -H "Authorization: Bearer $AUTH_TOKEN" https://api.redpanda.com/v1/operatio
 ----
 
 When the operation state is `COMPLETED`, you can <<verify-mtls,verify that mTLS is enabled>> for the API endpoints.
+
+==== Update an existing cluster to disable SASL
+
+If you enabled mTLS and SASL on a cluster, you can disable SASL by making a xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1/clusters/-cluster.id-[`PATCH /v1/clusters/{cluster.id}`] request:
+
+.Show example request
+[%collapsible]
+====
+[,bash]
+----
+CLUSTER_PATCH_BODY=`cat << EOF
+{
+  "kafka_api": {
+     "sasl": {
+        "enabled": false
+     }
+  }
+}
+EOF`
+curl -v -X PATCH \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer $AUTH_TOKEN" \
+-d "$CLUSTER_PATCH_BODY" https://api.redpanda.com/v1/clusters/<cluster-id>`
+----
+====
 
 === Retrieve API endpoints
 
@@ -572,6 +676,17 @@ curl -u test:12345 -k --cert cert.pem --key key.pem -H "Content-Type: applicatio
 # Schema Registry
 curl -u test:12345 -k --cert cert.pem --key key.pem https://schema-registry-15d24f32.cge5asc6006u7fvep0q0.fmc.dev.cloud.redpanda.com:30081/subjects/Kafka-value/versions/1
 ----
+
+=== Verify SASL
+
+To verify that SASL is enabled for Kafka API, run the following `rpk` command:
+
+[,bash]
+----
+rpk topic create test-topic --tls-enabled --user <username> --password <password>
+----
+
+The command should succeed, and you should be able to create a topic named `test-topic`.
 
 include::shared:partial$suggested-reading.adoc[]
 
