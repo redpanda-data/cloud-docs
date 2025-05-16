@@ -42,7 +42,7 @@ The YAML contains the Prometheus scrape target configuration, as well as authent
 
 To monitor a Dedicated or BYOC cluster in https://www.datadoghq.com/[Datadog]:
 
-. On the Redpanda Cloud *Overview* page for your cluster, under *How to connect*, click the *Prometheus* tab. 
+. On the Redpanda Cloud *Overview* page for your cluster, under *How to connect*, click the *Prometheus* tab.
 
 . Click the copy icon for *Prometheus YAML* to find scrape target configuration, as well as authentication, for the cluster.
 
@@ -51,7 +51,7 @@ To monitor a Dedicated or BYOC cluster in https://www.datadoghq.com/[Datadog]:
 [,yaml]
 ----
 instances:
-  # The endpoint to collect metrics about Polaris. Replace ORGANIZATION_NAME with the name of your organization.
+  # The endpoint to collect metrics from.
   - openmetrics_endpoint: https://console-<id>.<identifier>.fmc.cloud.redpanda.com/api/cloud/prometheus/public_metrics
     use_openmetrics: true
     collect_counters_with_distributions: true
@@ -61,7 +61,7 @@ instances:
     password: prom_pass
 ----
 
-. Restart the Datadog agent. 
+. Restart the Datadog agent.
 
 NOTE: Because the Prometheus endpoint in Redpanda Cloud aggregates metrics for all cluster services, only a single Datadog agent is required. The agent must run in a container in your own container infrastructure. Redpanda does not support launching this container inside a Dedicated or BYOC Kubernetes cluster. For more information, see the https://docs.datadoghq.com/integrations/redpanda/?tab=host[Datadog documentation^] and https://github.com/DataDog/integrations-extras/tree/master/redpanda[Redpanda Datadog integration^].
 
