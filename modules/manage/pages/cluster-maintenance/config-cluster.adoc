@@ -100,7 +100,7 @@ rpk cluster config get data_transforms_enabled
 Cloud API::
 +  
 --
-Use the Cloud API to get the value of a cluster property.
+Use the Cloud API to get the current configuration property values for a cluster.
 
 Make a xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/clusters/-id-[`GET /clusters/{cluster.id}`] request, passing the cluster ID as a parameter. The response body contains the current `computed_properties` values. For example, to get the current value of xref:reference:properties/cluster-properties.adoc#data_transforms_enabled[`data_transforms_enabled`]:
 
@@ -121,7 +121,6 @@ curl -H "Authorization: Bearer ${RP_CLOUD_TOKEN}" -X GET \
   "https://api.cloud.redpanda.com/v1/clusters/${RP_CLUSTER_ID}" \
  -H 'accept: application/json'\
  -H 'content-type: application/json' \
- -d '{"cluster_configuration":{"computed_properties": {"data_transforms_enabled"}}}'
 ----
 
 
