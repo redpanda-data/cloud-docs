@@ -2,13 +2,13 @@
 :description: Guidelines for choosing CIDR ranges when VPC peering.
 :page-aliases: deploy:deployment-option/cloud/cidr-ranges.adoc
 
-Choosing appropriate Classless Inter-Domain Routing (CIDR) ranges is essential for successful VPC peering between Redpanda and your cloud provider. Redpanda supports the RFC 1918 standard for IP addresses, which are used in private networks and not accessible from the internet.
+Choosing appropriate Classless Inter-Domain Routing (CIDR) ranges is essential for successful VPC peering between Redpanda and your cloud provider. Redpanda uses RFC 1918 private IP address ranges, which are not accessible from the internet.
 
 NOTE: These guidelines provide general recommendations for choosing non-conflicting CIDR ranges. If you have a complex networking setup, work with a networking engineer to identify Redpanda CIDRs that won't conflict with your existing VPCs.
 
 == Prerequisites
 
-* *VPC network or virtual network (VNet)*: Before setting up a peering connection in Redpanda Cloud, you must have another VPC or VNet to which Redpanda can connect. If you do not already have a network, create one in your cloud provider.
+* *VPC or virtual network (VNet)*: Before setting up a peering connection in Redpanda Cloud, you must have another VPC or VNet to which Redpanda can connect. If you do not already have a network, create one in your cloud provider.
 * *Matching region*: VPC peering connections can only be established between networks created in the _same region_. Redpanda Cloud does not support inter-region VPC peering connections.
 
 TIP: Consider adding an `rp-` prefix to the VPC or VNet name to indicate that it is for deploying a Redpanda cluster.
@@ -63,7 +63,7 @@ Ranges like `10.0.0.6/20`, `10.0.8.0/20`, or `10.0.1.7/20` would not work. You c
 
 == Multi-VPC/VNet example
 
-If you have many IP ranges allocated in a complex system, work with a network engineer who can help with IP allocation. Your Redpanda CIDR cannot overlap with any of your existing VPCs/Vnets, nor can it overlap with the VPC/VNet you want to peer with.
+If you have many IP ranges allocated in a complex system, work with a network engineer who can help with IP allocation. Your Redpanda CIDR cannot overlap with any of your existing VPCs/VNets, nor can it overlap with the VPC/VNet you want to peer with.
 
 Assume that the following example ranges are in use:
 
