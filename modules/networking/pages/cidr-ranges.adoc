@@ -2,32 +2,33 @@
 :description: Guidelines for choosing CIDR ranges when VPC peering.
 :page-aliases: deploy:deployment-option/cloud/cidr-ranges.adoc
 
-Choosing Classless Inter-Domain Routing (CIDR) ranges is an essential part of the VPC peering process, required to ensure that data can transfer successfully between Redpanda and your cloud provider. Redpanda supports the RFC 1918 standard for IP addresses. RFC 1918 addresses are used in private networks, which are not available, or reachable, from the internet.
+Choosing appropriate Classless Inter-Domain Routing (CIDR) ranges is essential for successful VPC peering between Redpanda and your cloud provider. Redpanda uses RFC 1918 private IP address ranges, which are not accessible from the internet.
 
-NOTE: These are general recommendations for choosing a CIDR range to peer. If you have a complex networking setup, work with a networking engineer to identify the Redpanda CIDRs that do not conflict with your existing VPCs.
+NOTE: These guidelines provide general recommendations for choosing non-conflicting CIDR ranges. If you have a complex networking setup, work with a networking engineer to identify Redpanda CIDRs that won't conflict with your existing VPCs.
 
 == Prerequisites
 
-* *VPC network*: Before setting up a peering connection in Redpanda Cloud, you must have another VPC to which Redpanda can connect. If you do not already have a network, create one in your cloud provider.
+* *VPC or virtual network (VNet)*: Before setting up a peering connection in Redpanda Cloud, you must have another VPC or VNet to which Redpanda can connect. If you do not already have a network, create one in your cloud provider.
 * *Matching region*: VPC peering connections can only be established between networks created in the _same region_. Redpanda Cloud does not support inter-region VPC peering connections.
 
-TIP: Consider adding an `rp-` prefix to the VPC name to indicate that the VPC is for deploying a Redpanda cluster.
+TIP: Consider adding an `rp-` prefix to the VPC or VNet name to indicate that it is for deploying a Redpanda cluster.
 
 == What are CIDRs?
 
 The following CIDR ranges are a critical part of Redpanda's BYOC configuration:
 
-* Your existing (client) VPC CIDR
+* Your existing (client) VPC/VNet CIDR
 * Your Redpanda cluster CIDR
 
 It is important to ensure that these ranges do not overlap when setting up VPC peering.
 
 == Choose the CIDR ranges
 
-To choose a range for Redpanda, you must know your VPC CIDR:
+To choose a range for Redpanda, you must know your VPC/VNet CIDR:
 
 * In AWS, find it in the VPC area of the AWS Management Console, labeled *IPv4 CIDRs*.
-* In GCP, find it in the Details view of your VPC, and labeled *Internal IP Ranges*.
+* In Azure, find it in the Essentials view of your virtual network, labeled *Address space*.
+* In GCP, find it in the Details view of your VPC, labeled *Internal IP Ranges*.
 
 You can check which IPs this range encompasses by using either the https://www.linux.com/topic/networking/how-calculate-network-addresses-ipcalc/[ipcalc^] command in your terminal or the https://www.ipaddressguide.com/cidr[CIDR calculation tool^]. For example, if your client's CIDR range is 10.0.0.0/20, run:
 
@@ -60,9 +61,9 @@ A limited set of examples that work with `10.0.0.0/20` are `10.8.0.0/20`, `10.0.
 
 Ranges like `10.0.0.6/20`, `10.0.8.0/20`, or `10.0.1.7/20` would not work. You can use http://trk.free.fr/ipcalc/tools.html[ipcalc^] to check for overlapping IPs.
 
-== Multi-VPC example
+== Multi-VPC/VNet example
 
-If you have many IP ranges allocated in a complex system, seek guidance from a network engineer who can help with IP allocation. Your Redpanda CIDR cannot overlap with any of your existing VPCs, nor can it overlap with the VPC you want to peer with.
+If you have many IP ranges allocated in a complex system, work with a network engineer who can help with IP allocation. Your Redpanda CIDR cannot overlap with any of your existing VPCs/VNets, nor can it overlap with the VPC/VNet you want to peer with.
 
 Assume that the following example ranges are in use:
 
