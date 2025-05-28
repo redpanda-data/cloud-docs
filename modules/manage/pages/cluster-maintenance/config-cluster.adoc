@@ -35,6 +35,13 @@ For example, to enable data transforms, set xref:reference:properties/cluster-pr
 rpk cluster config set data_transforms_enabled true
 ----
 
+To set a cluster property with a secret, you must use the following notation:
+
+[source,bash]
+----
+rpk cluster config set iceberg_rest_catalog_client_secret ${secrets.<secret-name>}
+----
+
 NOTE: Some properties require a rolling restart, and it can take several minutes for the update to complete. The `rpk cluster config set` command returns the operation ID.  
 
 
@@ -71,6 +78,22 @@ curl -H "Authorization: Bearer ${RP_CLOUD_TOKEN}" -X PATCH \
 ----
 
 The xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1/clusters/-cluster.id-[`PATCH /clusters/{cluster.id}`] request returns the ID of a long-running operation. You can check the status of the operation by polling the xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/operations/-id-[`GET /operations/\{id}`] endpoint.
+
+To set a cluster property with a secret, you must use the following notation with the secret name:
+
+[source,bash]
+----
+curl -H "Authorization: Bearer <token>" -X PATCH \
+"https://api.cloud.redpanda.com/v1/clusters/<cluster-id>" \
+  -H 'accept: application/json'\
+  -H 'content-type: application/json' \
+  -d '{"cluster_configuration": {
+        "custom_properties": {
+            "iceberg_rest_catalog_client_secret": "${secrets.<secret-name>}"
+            }
+        }
+    }'
+----
 
 NOTE: Some properties require a rolling restart for the update to take effect. This triggers a xref:manage:api/cloud-byoc-controlplane-api.adoc#lro[long-running operation] that can take several minutes to complete.
 
