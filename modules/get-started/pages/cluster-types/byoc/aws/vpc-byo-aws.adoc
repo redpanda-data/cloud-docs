@@ -58,7 +58,10 @@ You can update the example configuration to customize your setup:
 
 - Enable PrivateLink (`"enable_private_link": true`).
 - Preserve cluster data when deleting the cluster (`"force_destroy_cloud_storage": false`).
-- Redpanda Connect is enabled by default. To disable Redpanda Connect, set `"enable_redpanda_connect": false` in the `byoc.auto.tfvars.json` file, and remove the additional security groups and node instance profiles that are required for Redpanda Connect. 
+- Redpanda Connect is enabled by default. To disable Redpanda Connect, set `"enable_redpanda_connect": false` in the `byoc.auto.tfvars.json` file, and remove the additional security groups and node instance profiles that are required for Redpanda Connect.
+- Storing and reading secrets are enabled by default, which allow you to use Iceberg REST catalogs with Iceberg-enabled topics.
++
+NOTE: For existing clusters, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda Support^] to enable secrets management.
 - Use https://docs.aws.amazon.com/IAM/latest/UserGuide/access_iam-tags.html[condition tags^] to control resource modifications based on AWS tags. For example:
 +
 ```json
