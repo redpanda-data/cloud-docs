@@ -280,12 +280,61 @@ gcloud projects add-iam-policy-binding <host-project-id> \
 [%collapsible]
 ====
 ```bash
+cat << EOT > redpanda-cluster.role
+{
+  "name": "redpanda_cluster_role",
+  "title": "Redpanda Cluster Role",
+  "description": "Redpanda Cluster Role",
+  "includedPermissions": [
+    "resourcemanager.projects.get",
+    "secretmanager.secrets.get",
+    "secretmanager.versions.access"
+  ],
+}
+EOT
+
 gcloud iam service-accounts create redpanda-cluster \
   --display-name="Redpanda Cluster Service Account"
 
 gcloud storage buckets add-iam-policy-binding gs://<tiered-storage-bucket-name> \
   --member="serviceAccount:redpanda-cluster@<service-project-id>.iam.gserviceaccount.com" \
   --role="roles/storage.objectAdmin"
+
+gcloud iam roles create redpanda_cluster_role --project=<service-project-id> --file redpanda-cluster.role
+
+gcloud projects add-iam-policy-binding <service-project-id> \
+  --member="serviceAccount:redpanda-cluster@<service-project-id>.iam.gserviceaccount.com" \
+  --role="projects/<service-project-id>/roles/redpanda_cluster_role"
+```
+====
+
+* Redpanda operator service account
++
+.Show commands
+[%collapsible]
+====
+```bash
+gcloud iam service-accounts create redpanda-operator \
+  --display-name="Redpanda Operator Service Account"
+
+cat << EOT > redpanda-operator.role
+{
+  "name": "redpanda_operator_role",
+  "title": "Redpanda Operator Role",
+  "description": "Redpanda Operator Role",
+  "includedPermissions": [
+    "resourcemanager.projects.get",
+    "secretmanager.secrets.get",
+    "secretmanager.versions.access"
+  ],
+}
+EOT
+
+gcloud iam roles create redpanda_operator_role --project=<service-project-id> --file redpanda-operator.role
+
+gcloud projects add-iam-policy-binding <service-project-id> \
+  --member="serviceAccount:redpanda-operator@<service-project-id>.iam.gserviceaccount.com" \
+  --role="projects/<service-project-id>/roles/redpanda_operator_role"
 ```
 ====
 
@@ -535,6 +584,18 @@ gcloud iam service-accounts add-iam-policy-binding <redpanda-cluster-gcp-sa-acco
     --member "serviceAccount:<service-project-id>.svc.id.goog[redpanda/rp-<redpanda-cluster-gcp-sa-account-id>]"
 ```
 ====
+
+* Redpanda operator service account
++
+.Show command
+[%collapsible]
+====
+```
+gcloud iam service-accounts add-iam-policy-binding <redpanda_operator-gcp-sa-account-id>@<service-project-id>.iam.gserviceaccount.com \
+    --role roles/iam.workloadIdentityUser \
+    --member "serviceAccount:<service-project-id>.svc.id.goog[redpanda-system/<redpanda_operator-gcp-sa-account-id>]"
+```
+===
 
 * Redpanda Console service account
 +
