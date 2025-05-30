@@ -6,7 +6,7 @@
 ====
 
 * This guide is for configuring GCP Private Service Connect using the Redpanda Cloud API. To configure and manage Private Service Connect on an existing public cluster, you must use the Cloud API. See xref:networking:configure-private-service-connect-in-cloud-ui.adoc[Configure Private Service Connect in the Cloud UI] to set up the endpoint service using the Redpanda Cloud UI.
-* The latest version of the Redpanda GCP Private Service Connect service (available March, 2025) supports AZ affinity. This allows requests from Private Service Connect endpoints to stay within the same availability zone, avoiding additional networking costs. To upgrade, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda Support^]. NOTE: The original GCP Private Service Connect service is deprecated and will be removed in a future release.
+* The latest version of the Redpanda GCP Private Service Connect service (available March, 2025) supports AZ affinity. This allows requests from Private Service Connect endpoints to stay within the same availability zone, avoiding additional networking costs. To upgrade, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda Support^]. DEPRECATION: The original GCP Private Service Connect service is deprecated and will be removed in a future release.
 ==== 
 
 The Redpanda GCP Private Service Connect service provides secure access to Redpanda Cloud from your own VPC. Traffic over Private Service Connect does not go through the public internet because a Private Service Connect connection is treated as its own private GCP service. While your VPC has access to the Redpanda VPC, Redpanda cannot access your VPC.
@@ -17,6 +17,7 @@ Consider using Private Service Connect if you have multiple VPCs and could benef
 
 [NOTE]
 ====
+* Each client VPC can have one endpoint connected to the Private Service Connect service.
 * Private Service Connect allows overlapping xref:networking:cidr-ranges.adoc[CIDR ranges] in VPC networks.
 * Private Service Connect does not limit the number of connections.
 * You control from which GCP projects connections are allowed.
