@@ -11,8 +11,10 @@ Consider using the PrivateLink endpoint service if you have multiple VPCs and co
 
 [NOTE]
 ====
-* PrivateLink allows overlapping CIDR ranges in VPC networks.
-* PrivateLink does not limit the number of VPC connections. However, VPC peering is limited to 125 connections. See https://aws.amazon.com/privatelink/faqs/[How scalable is AWS PrivateLink?^]
+* Each client VPC can have one endpoint connected to the PrivateLink service.
+* PrivateLink allows overlapping xref:networking:cidr-ranges.adoc[CIDR ranges] in VPC networks.
+* The number of connections is limited only by your Redpanda usage tier. PrivateLink does not add extra connection limits. However, VPC peering is limited to 125 connections. See https://aws.amazon.com/privatelink/faqs/[How scalable is AWS PrivateLink?^]
+* You control which AWS principals are allowed to connect to the endpoint service.
 ====
 
 After <<get-a-cloud-api-access-token,getting an access token>>, you can <<create-new-cluster-with-privatelink-endpoint-service-enabled,enable PrivateLink when creating a new cluster>>, or you can <<enable-privatelink-endpoint-service-for-existing-clusters,enable PrivateLink for existing clusters>>.
