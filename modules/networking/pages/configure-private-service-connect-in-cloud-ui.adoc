@@ -6,22 +6,26 @@
 ====
 
 * This guide is for configuring GCP Private Service Connect using the Redpanda Cloud UI. To configure and manage Private Service on an existing public cluster, you must use the xref:networking:gcp-private-service-connect.adoc[Redpanda Cloud API].
-* The latest version of the Redpanda GCP Private Service Connect service (available March, 2025) supports AZ affinity. This allows requests from Private Service Connect endpoints to stay within the same availability zone, avoiding additional networking costs. To upgrade, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda Support^]. NOTE: The original GCP Private Service Connect service is deprecated and will be removed in a future release.
+* The latest version of Redpanda GCP Private Service Connect (available March, 2025) supports AZ affinity. This allows requests from Private Service Connect endpoints to stay within the same availability zone, avoiding additional networking costs. 
+* DEPRECATION: The original Redpanda GCP Private Service Connect is deprecated and will be removed in a future release. For more information, see xref:manage:maintenance.adoc#deprecated-features[Deprecated features].
 ==== 
-
 
 
 The Redpanda GCP Private Service Connect service provides secure access to Redpanda Cloud from your own VPC. Traffic over Private Service Connect does not go through the public internet because these connections are treated as their own private GCP service. While your VPC has access to the Redpanda VPC, Redpanda cannot access your VPC.
 
-Consider using the endpoint services if you have multiple VPCs and could benefit from a more simplified approach to network management:
+Consider using the endpoint services if you have multiple VPCs and could benefit from a more simplified approach to network management.
 
+[NOTE]
+====
+* Each client VPC can have one endpoint connected to Private Service Connect.
 * Private Service Connect allows overlapping xref:networking:cidr-ranges.adoc[CIDR ranges] in VPC networks.
-* Private Service Connect does not limit the number of connections using the service.
-* You control which GCP projects are allowed to connect to the service.
+* The number of connections is limited only by your Redpanda usage tier. Private Service Connect does not add extra connection limits. 
+* You control from which GCP projects connections are allowed.
+====
 
 == Requirements
 
-* Use the https://cloud.google.com/sdk/docs/install[gcloud^] command-line interface (CLI) to create the consumer-side resources, such as a client VPC and forwarding rule, or to modify existing resources to use the Private Service Connect service attachment created for your cluster.
+* Use the https://cloud.google.com/sdk/docs/install[gcloud^] command-line interface (CLI) to create the consumer-side resources, such as a client VPC and forwarding rule, or to modify existing resources to use the Private Service Connect attachment created for your cluster.
 * The client VPC must be in the same region as your Redpanda cluster.
 
 == Enable endpoint service for existing clusters
