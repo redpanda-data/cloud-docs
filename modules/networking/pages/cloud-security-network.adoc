@@ -31,9 +31,31 @@ Public Redpanda clusters deploy networks segmented by workload type. Public clus
 
 Private Redpanda clusters also deploy networks segmented by workload type. Brokers are placed on private subnets, accessible from within the same VPC or from VPC peerings or private connectivity. The Redpanda Cloud agent and Redpanda Connect nodes are placed in distinct subnets, segmented away from Redpanda services by routing and firewall rules. 
 
-The following diagram shows the private subnet used by private Redpanda clusters.
+The private link service (AWS PrivateLink, Azure Private Link, or GCP Private Service Connect) and VPC peering connections are used to connect to the Redpanda cluster. 
 
-image::shared:private-cloud.png[Redpanda Cloud private cluster network architecture]
+==== Private network data flows
+
+Data flows are the network traffic that carries data, such as messages produced to a topic or consumed from a topic. 
+
+The following diagram shows the data flows used by private Redpanda clusters. 
+
+image::shared:data-flows.png[Redpanda Cloud private cluster data flows]
+
+==== Private network metadata flows
+
+Metadata flows are the network traffic that carries metadata, such as topic and partition information and cluster configuration. Metadata flows are used by the Redpanda Cloud agent to manage the cluster and by clients to discover cluster resources.
+
+The following diagram shows the metadata flows used by private Redpanda clusters. 
+
+image::shared:metadata-flows.png[Redpanda Cloud private cluster metadata flows]
+
+==== Private network control flows
+
+Control flows are the network traffic that carries control messages, such as cluster management commands and configuration updates. Control flows are used by the Redpanda Cloud agent to manage the cluster and by clients to send administrative commands.
+
+The following diagram shows the control flows used by private Redpanda clusters.
+
+image::shared:control-flows.png[Redpanda Cloud private cluster control flows]
 
 == Network ports
 
