@@ -96,6 +96,7 @@ cat > byovnet.auto.tfvars.json <<EOF
   "zones": ${AZURE_ZONES},
   "resource_name_prefix": "${AZURE_RESOURCE_PREFIX}",
   "tags": {},
+  "create_resource_groups": "false",
   "redpanda_resource_group_name": "${AZURE_RESOURCE_GROUP_NAME}",
   "redpanda_storage_resource_group_name": "${AZURE_RESOURCE_GROUP_NAME}",
   "redpanda_network_resource_group_name": "${AZURE_RESOURCE_GROUP_NAME}",
@@ -108,7 +109,9 @@ cat > byovnet.auto.tfvars.json <<EOF
   "aks_identity_name": "aks-uai",
   "redpanda_console_identity_name": "console-uai",
   "redpanda_console_role_name": "console-role",
-  "kafka_connect_identity_name": "",
+  "kafka_connect_identity_name": "kafka-connect-uai",
+  "redpanda_connect_identity_name": "redpanda-connect-uai",
+  "redpanda_connect_api_identity_name": "redpanda-connect-api-uai",
   "redpanda_management_storage_account_name": "rpmgmtsa",
   "redpanda_management_storage_container_name": "rpmgmtsc",
   "redpanda_tiered_storage_account_name": "tieredsa",
@@ -220,6 +223,8 @@ iam_resource_group_name = "my-iam-rg"
 kafka_connect_pods_subnet_name = "my-snet-kafka-connect-pods"
 kafka_connect_user_assigned_identity_name = "my-kafka-connect-uai"
 kafka_connect_vnet_subnet_name = "my-snet-kafka-connect-vnet"
+redpanda_connect_user_assigned_identity_name = "my-redpanda-connect-uai"
+redpanda_connect_api_user_assigned_identity_name = "my-redpanda-connect-api-uai"
 management_bucket_storage_account_name = "mymanagement"
 management_bucket_storage_container_name = "mymanagement"
 management_key_vault_name = "my-redpandavault"
@@ -306,7 +311,7 @@ cat > redpanda-network.json <<EOF
             "rp_0_pods" : { "name" : "$rp_0_pods_subnet_name" },
             "rp_0_vnet" : { "name" : "$rp_0_vnet_subnet_name" },
             "rp_1_pods" : { "name" : "$rp_1_pods_subnet_name" },
-            "rp_1_vnet" : { "name" : "$rp_2_vnet_subnet_name" },
+            "rp_1_vnet" : { "name" : "$rp_1_vnet_subnet_name" },
             "rp_2_pods" : { "name" : "$rp_2_pods_subnet_name" },
             "rp_2_vnet" : { "name" : "$rp_2_vnet_subnet_name" },
             "rp_connect_pods" : { "name" : "$rp_connect_pods_subnet_name" },
@@ -380,11 +385,13 @@ cat > redpanda-cluster.json <<EOF
        "user_assigned_identities" : {
          "agent_user_assigned_identity": { "name" : "$agent_user_assigned_identity_name" },
          "aks_user_assigned_identity": { "name" : "$aks_user_assigned_identity_name" },
-         "cert_manager_assigned_identity": { "name" : "$cert_manager_assigned_identity_name" },
-         "external_dns_assigned_identity": { "name" : "$external_dns_assigned_identity_name" },
-         "redpanda_cluster_assigned_identity": { "name" : "$redpanda_cluster_assigned_identity_name" },
-         "redpanda_console_assigned_identity": { "name" : "$redpanda_console_assigned_identity_name" },
-         "kafka_connect_assigned_identity": { "name" : "$kafka_connect_assigned_identity_name" }
+         "cert_manager_assigned_identity": { "name" : "$cert_manager_user_assigned_identity_name" },
+         "external_dns_assigned_identity": { "name" : "$external_dns_user_assigned_identity_name" },
+         "redpanda_cluster_assigned_identity": { "name" : "$cluster_user_assigned_identity_name" },
+         "redpanda_console_assigned_identity": { "name" : "$console_user_assigned_identity_name" },
+         "kafka_connect_assigned_identity": { "name" : "$kafka_connect_user_assigned_identity_name" },
+         "redpanda_connect_assigned_identity": { "name" : "$redpanda_connect_user_assigned_identity_name" },
+         "redpanda_connect_api_assigned_identity": { "name" : "$redpanda_connect_api_user_assigned_identity_name" }
        }
      }
   }
