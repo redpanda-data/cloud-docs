@@ -31,9 +31,31 @@ Public Redpanda clusters deploy networks segmented by workload type. Public clus
 
 Private Redpanda clusters also deploy networks segmented by workload type. Brokers are placed on private subnets, accessible from within the same VPC or from VPC peerings or private connectivity. The Redpanda Cloud agent and Redpanda Connect nodes are placed in distinct subnets, segmented away from Redpanda services by routing and firewall rules. 
 
-The following diagram shows the private subnet used by private Redpanda clusters.
+The private link service (AWS PrivateLink, Azure Private Link, or GCP Private Service Connect) and VPC peering connections are used to connect to the Redpanda cluster. 
 
-image::shared:private-cloud.png[Redpanda Cloud private cluster network architecture]
+==== Private network data flows
+
+Data flows are the network traffic that carries data, such as messages produced to a topic or consumed from a topic. 
+
+The following diagram shows the data flows from private Redpanda clusters. 
+
+image::shared:data-flows.png[Redpanda Cloud private cluster data flows]
+
+==== Private network metadata flows
+
+Metadata flows are the network traffic that carries metadata, such as telemetry and cluster configuration. The Redpanda Cloud agent uses metadata flows to share with the control plane connection endpoints, cluster readiness, and status.
+
+The following diagram shows the metadata flows from private Redpanda clusters. 
+
+image::shared:metadata-flows.png[Redpanda Cloud private cluster metadata flows]
+
+==== Private network control flows
+
+Control flows are the network traffic that carries control messages, such as cluster upgrades and configuration updates. The Redpanda Cloud agent uses control flows to manage the cluster. Occasionally, incident responders use control flows to mitigate incidents when automated controls are insufficient.
+
+The following diagram shows the control flows from private Redpanda clusters.
+
+image::shared:control-flows.png[Redpanda Cloud private cluster control flows]
 
 == Network ports
 
