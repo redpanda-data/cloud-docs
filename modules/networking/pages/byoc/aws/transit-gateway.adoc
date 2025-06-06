@@ -1,0 +1,22 @@
+= Add Amazon VPC Transit Gateway
+:description: Use a transit gateway to connect your BYOC cluster to AWS VPCs or on-premises networks.
+
+You can set up an https://docs.aws.amazon.com/vpc/latest/tgw/what-is-transit-gateway.html[Amazon VPC Transit Gateway^] to connect your internal VPCs to Redpanda services while maintaining full control over network traffic. The transit gateway acts as a central hub for routing traffic between VPCs, enabling communication between a Redpanda cluster and client applications hosted in different VPCs that can be in different AWS accounts.
+
+AWS Transit Gateway is available for BYOC and BYOVPC clusters.  
+
+== Set up Amazon VPC Transit Gateway
+
+To set up Amazon VPC Transit Gateway for Redpanda:
+
+. Create a transit gateway in your AWS account.
+. Create transit gateway attachments to the VPC hosting Redpanda and the VPC that will communicate to Redpanda (where the producer or consumer resides).
+. Update the transit gateway route table with the new routes for transit gateway attachments.
+
+For detailed instructions, see the https://docs.aws.amazon.com/vpc/latest/tgw/tgw-transit-gateways.html[AWS Transit Gateways documentation^].
+
+== Example
+
+The https://github.com/redpanda-data/cloud-examples/blob/9e2083e4bd8392e288ab6991b2a5a9b77a5fb0c5/aws-transit-gateway/README.md[Redpanda Cloud Examples repository^] provides sample Terraform code to set up and manage an Amazon VPC Transit Gateway for accessing Redpanda services across multiple VPCs. It includes steps for when the Redpanda cluster and client applications are hosted in the same AWS account and in different AWS accounts.
+
+NOTE: Your implementation may differ depending on the networking configuration within your VPCs.
