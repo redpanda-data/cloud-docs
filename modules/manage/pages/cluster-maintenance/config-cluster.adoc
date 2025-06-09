@@ -28,11 +28,11 @@ You can set cluster configuration properties using the `rpk` command-line tool o
 --
 Use `rpk cluster config` to set cluster properties. 
 
-For example, to enable data transforms, set xref:reference:properties/cluster-properties.adoc#data_transforms_enabled[`data_transforms_enabled`] to `true`:
+For example, to enable audit logging, set xref:reference:properties/cluster-properties.adoc#audit_enabled[`audit_enabled`] to `true`:
 
 [source,bash]
 ----
-rpk cluster config set data_transforms_enabled true
+rpk cluster config set audit_enabled true
 ----
 
 To set a cluster property with a secret, you must use the following notation:
@@ -55,7 +55,7 @@ Use the Cloud API to set cluster properties:
 
 * Update a cluster by making a xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1/clusters/-cluster.id-[`PATCH /v1/clusters/{cluster.id}`] request, passing the cluster ID as a parameter. Include the properties to update in the request body.
 
-For example, to set xref:reference:properties/cluster-properties.adoc#data_transforms_enabled[`data_transforms_enabled`] to `true`:
+For example, to set xref:reference:properties/cluster-properties.adoc#audit_enabled[`audit_enabled`] to `true`:
 
 [source,bash]
 ----
@@ -74,7 +74,7 @@ curl -H "Authorization: Bearer ${RP_CLOUD_TOKEN}" -X PATCH \
   "https://api.cloud.redpanda.com/v1/clusters/${RP_CLUSTER_ID}" \
  -H 'accept: application/json'\
  -H 'content-type: application/json' \
- -d '{"cluster_configuration":{"custom_properties": {"data_transforms_enabled":true}}}'
+ -d '{"cluster_configuration":{"custom_properties": {"audit_enabled":true}}}'
 ----
 
 The xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1/clusters/-cluster.id-[`PATCH /clusters/{cluster.id}`] request returns the ID of a long-running operation. You can check the status of the operation by polling the xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/operations/-id-[`GET /operations/\{id}`] endpoint.
@@ -111,11 +111,11 @@ You can see the value of a cluster configuration property using `rpk` or the Clo
 --
 Use `rpk cluster config get` to view the current cluster property value. 
 
-For example, to view the current value of xref:reference:properties/cluster-properties.adoc#data_transforms_enabled[`data_transforms_enabled`], run:
+For example, to view the current value of xref:reference:properties/cluster-properties.adoc#audit_enabled[`audit_enabled`], run:
 
 [source,bash]
 ----    
-rpk cluster config get data_transforms_enabled
+rpk cluster config get audit_enabled
 ----    
 
 
@@ -125,7 +125,7 @@ Cloud API::
 --
 Use the Cloud API to get the current configuration property values for a cluster.
 
-Make a xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/clusters/-id-[`GET /clusters/{cluster.id}`] request, passing the cluster ID as a parameter. The response body contains the current `computed_properties` values. For example, to get the current value of xref:reference:properties/cluster-properties.adoc#data_transforms_enabled[`data_transforms_enabled`]:
+Make a xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/clusters/-id-[`GET /clusters/{cluster.id}`] request, passing the cluster ID as a parameter. The response body contains the current `computed_properties` values. For example, to get the current value of xref:reference:properties/cluster-properties.adoc#audit_enabled[`audit_enabled`]:
 
 [source,bash]
 ----
