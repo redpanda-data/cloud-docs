@@ -12,13 +12,11 @@ Serverless::
 |===
 |State |Description
 |Creating |Cluster is in the process of having its control plane state created.
-|Deleted |Cluster is deleted.
-|Deleting |Cluster is in the process of having its control plane state removed. Resources dedicated to the cluster in the data plane are released.
+|Deleting |Cluster is in the process of having its control plane state removed. Resources dedicated to the cluster in the data plane will be released.
 |Failed |Cluster was unable to enter the ready state from either the creating or placing states.
-|Placing |Cluster is in the process of being placed on a cell with sufficient resources in the data plane.
+|Placing |Serverless cluster is in the process of being placed on a cell with sufficient resources in the data plane.
 |Ready |Cluster is running and accepting external requests.
-|Suspended |Cluster is running but blocks all external requests.
-|Unrecognized |
+|Suspended |cluster is running but blocks all external requests.
 |Unspecified |
 |===
 --
@@ -29,17 +27,17 @@ BYOC::
 |===
 |State |Description
 |Creating |Cluster is in the process of having its control plane state created.
-|Creating agent |
-|Deleted |Cluster is deleted.
+|Creating agent |Cluster is in the process of having its control plane state created, and the Redpanda Cloud agent is being deployed.  
+|Deleted |Cluster is soft deleted.
 |Deleting |Cluster is in the process of having its control plane state removed. Resources dedicated to the cluster in the data plane are released.
-|Delete agent |
+|Deleting agent |Cluster is in the process of having its control plane state removed, and the Redpanda Cloud agent is being removed.   
 |Deploy agent |Redpanda Cloud has been deployed
-|Failed |Cluster was unable to enter the ready state from either the creating or the creating_agent states.
+|Failed |Cluster was unable to enter the Ready state from either the Creating or the Creating agent states.
+|Node operation in progress |Cluster is undergoing a node operation, such as adding or removing nodes.
 |Ready |Cluster is running and accepting external requests.
-|Resizing |
 |Suspended |Cluster is running but blocks all external requests.
-|Unknown |
-|Upgrading |
+|Upgrading |Cluster is undergoing a rolling upgrade.
+|Unspecified |
 |===
 --
 Dedicated::
@@ -49,16 +47,16 @@ Dedicated::
 |===
 |State |Description
 |Creating |Cluster is in the process of having its control plane state created.
-|Creating agent |
-|Deleted |Cluster is deleted.
+|Creating agent |Cluster is in the process of having its control plane state created, and the Redpanda Cloud agent is being deployed.   
+|Deleted |Cluster is soft deleted.
 |Deleting |Cluster is in the process of having its control plane state removed. Resources dedicated to the cluster in the data plane are released.
-|Delete agent |
-|Failed |Cluster was unable to enter the ready state from either the creating or the creating_agent states.
+|Deleting agent |Cluster is in the process of having its control plane state removed, and the Redpanda Cloud agent is being removed.  
+|Failed |Cluster was unable to enter the Ready state from either the Creating or the Creating agent states.
+|Node operation in progress |Cluster is undergoing a node operation, such as adding or removing nodes.
 |Ready |Cluster is running and accepting external requests.
-|Resizing |
 |Suspended |Cluster is running but blocks all external requests.
-|Unknown |
-|Upgrading |
+|Upgrading |Cluster is undergoing a rolling upgrade.
+|Unspecified |
 |===
 --
 =====
