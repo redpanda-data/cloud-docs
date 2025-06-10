@@ -1,0 +1,64 @@
+= Cluster State
+:description: Learn about the current status of a cluster.
+
+Cluster state indicates the current status of a cluster. The cluster state is automatically updated by Redpanda Cloud and can be used to monitor the health and availability of the cluster.
+
+[tabs]
+=====
+Serverless::
++
+--
+[cols="1,4",options="header"]
+|===
+|State |Description
+|Creating |Cluster is in the process of having its control plane state created.
+|Deleted |Cluster is deleted.
+|Deleting |Cluster is in the process of having its control plane state removed. Resources dedicated to the cluster in the data plane are released.
+|Failed |Cluster was unable to enter the ready state from either the creating or placing states.
+|Placing |Cluster is in the process of being placed on a cell with sufficient resources in the data plane.
+|Ready |Cluster is running and accepting external requests.
+|Suspended |Cluster is running but blocks all external requests.
+|Unrecognized |
+|Unspecified |
+|===
+--
+BYOC::
++
+--
+[cols="1,4",options="header"]
+|===
+|State |Description
+|Creating |Cluster is in the process of having its control plane state created.
+|Creating agent |
+|Deleted |Cluster is deleted.
+|Deleting |Cluster is in the process of having its control plane state removed. Resources dedicated to the cluster in the data plane are released.
+|Delete agent |
+|Deploy agent |Redpanda Cloud has been deployed
+|Failed |Cluster was unable to enter the ready state from either the creating or the creating_agent states.
+|Ready |Cluster is running and accepting external requests.
+|Resizing |
+|Suspended |Cluster is running but blocks all external requests.
+|Unknown |
+|Upgrading |
+|===
+--
+Dedicated::
++
+--
+[cols="1,4",options="header"]
+|===
+|State |Description
+|Creating |Cluster is in the process of having its control plane state created.
+|Creating agent |
+|Deleted |Cluster is deleted.
+|Deleting |Cluster is in the process of having its control plane state removed. Resources dedicated to the cluster in the data plane are released.
+|Delete agent |
+|Failed |Cluster was unable to enter the ready state from either the creating or the creating_agent states.
+|Ready |Cluster is running and accepting external requests.
+|Resizing |
+|Suspended |Cluster is running but blocks all external requests.
+|Unknown |
+|Upgrading |
+|===
+--
+=====
