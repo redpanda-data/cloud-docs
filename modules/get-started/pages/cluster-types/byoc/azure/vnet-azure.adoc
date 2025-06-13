@@ -112,6 +112,7 @@ cat > byovnet.auto.tfvars.json <<EOF
   "kafka_connect_identity_name": "kafka-connect-uai",
   "redpanda_connect_identity_name": "redpanda-connect-uai",
   "redpanda_connect_api_identity_name": "redpanda-connect-api-uai",
+  "redpanda_operator_identity_name": "redpanda-operator-uai",
   "redpanda_management_storage_account_name": "rpmgmtsa",
   "redpanda_management_storage_container_name": "rpmgmtsc",
   "redpanda_tiered_storage_account_name": "tieredsa",
@@ -225,6 +226,7 @@ kafka_connect_user_assigned_identity_name = "my-kafka-connect-uai"
 kafka_connect_vnet_subnet_name = "my-snet-kafka-connect-vnet"
 redpanda_connect_user_assigned_identity_name = "my-redpanda-connect-uai"
 redpanda_connect_api_user_assigned_identity_name = "my-redpanda-connect-api-uai"
+redpanda_operator_user_assigned_identity_name = "my-operator-connect-uai"
 management_bucket_storage_account_name = "mymanagement"
 management_bucket_storage_container_name = "mymanagement"
 management_key_vault_name = "my-redpandavault"
@@ -391,7 +393,8 @@ cat > redpanda-cluster.json <<EOF
          "redpanda_console_assigned_identity": { "name" : "$console_user_assigned_identity_name" },
          "kafka_connect_assigned_identity": { "name" : "$kafka_connect_user_assigned_identity_name" },
          "redpanda_connect_assigned_identity": { "name" : "$redpanda_connect_user_assigned_identity_name" },
-         "redpanda_connect_api_assigned_identity": { "name" : "$redpanda_connect_api_user_assigned_identity_name" }
+         "redpanda_connect_api_assigned_identity": { "name" : "$redpanda_connect_api_user_assigned_identity_name" },
+         "redpanda_operator_assigned_identity": { "name" : "$redpanda_operator_user_assigned_identity_name" }
        }
      }
   }
