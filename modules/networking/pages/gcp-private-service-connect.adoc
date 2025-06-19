@@ -1,40 +1,9 @@
 = Configure GCP Private Service Connect with the Cloud API
 :description: Set up GCP Private Service Connect to securely access Redpanda Cloud.
 :page-aliases: deploy:deployment-option/cloud/gcp-private-service-connect.adoc
+:env-byoc: true
 
-[NOTE]
-====
-
-* This guide is for configuring GCP Private Service Connect using the Redpanda Cloud API. To configure and manage Private Service Connect on an existing public cluster, you must use the Cloud API. See xref:networking:configure-private-service-connect-in-cloud-ui.adoc[Configure Private Service Connect in the Cloud UI] to set up the endpoint service using the Redpanda Cloud UI.
-* The latest version of Redpanda GCP Private Service Connect (available March, 2025) supports AZ affinity. This allows requests from Private Service Connect endpoints to stay within the same availability zone, avoiding additional networking costs. 
-* DEPRECATION: The original Redpanda GCP Private Service Connect is deprecated and will be removed in a future release. For more information, see xref:manage:maintenance.adoc#deprecated-features[Deprecated features].
-==== 
-
-The Redpanda GCP Private Service Connect service provides secure access to Redpanda Cloud from your own VPC. Traffic over Private Service Connect does not go through the public internet because a Private Service Connect connection is treated as its own private GCP service. While your VPC has access to the Redpanda VPC, Redpanda cannot access your VPC.
-
-As of February 2025 ability to allow requests from Private Service Connect endpoints to stay within the same AZ, avoiding additional networking costs. To upgrade, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda Support^].
-
-Consider using Private Service Connect if you have multiple VPCs and could benefit from a more simplified approach to network management.
-
-[NOTE]
-====
-* Each client VPC can have one endpoint connected to Private Service Connect.
-* Private Service Connect allows overlapping xref:networking:cidr-ranges.adoc[CIDR ranges] in VPC networks.
-* The number of connections is limited only by your Redpanda usage tier. Private Service Connect does not add extra connection limits. 
-* You control from which GCP projects connections are allowed.
-====
-
-After <<get-a-cloud-api-access-token,getting an access token>>, you can <<create-a-new-byovpc-cluster-with-private-service-connect,create a new BYOVPC cluster with Private Service Connect enabled>>, or you can <<enable-private-service-connect-on-an-existing-byoc-or-byovpc-cluster,enable Private Service Connect for an existing BYOC or BYOVPC cluster>>.
-
-== Requirements
-
-* In this guide, you use the xref:manage:api/cloud-api-overview.adoc[Redpanda Cloud API] to enable the Redpanda endpoint service for your clusters. Follow the steps on this page to <<get-a-cloud-api-access-token, get an access token>>.
-* Use the https://cloud.google.com/sdk/docs/install[gcloud^] command-line interface (CLI) to create the consumer-side resources, such as a VPC and forwarding rule, or to modify existing resources to use the Private Service Connect attachment created for your cluster.
-
-== Get a Cloud API access token
-
-include::networking:partial$private-links-api-access-token.adoc[]
-
+include::networking:partial$psc-api.adoc[]
 
 == Create a new BYOVPC cluster with Private Service Connect
 
@@ -288,33 +257,5 @@ Wait for the cluster to apply the new configuration (around 15 minutes). The Pri
 gcloud compute service-attachments list --project '<service-project-id>'
 ----
 
-== Access Redpanda services through VPC endpoint
+include::networking:partial$psc-api2.adoc[]
 
-After you have enabled Private Service Connect for your cluster, your connection URLs are available in the *How to Connect* section of the cluster overview in the Redpanda Cloud UI.
-
-include::networking:partial$private-links-access-rp-services-through-vpc.adoc[]
-
-== Test the connection
-
-You can test the Private Service Connect connection from any VM or container in the consumer VPC. If configuring a client isn't possible right away, you can do these checks using `rpk` or curl:
-
-include::networking:partial$private-links-test-connection.adoc[]
-
-== Disable Private Service Connect
-
-Make a xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1/clusters/-cluster.id-[`PATCH /v1/clusters/{cluster.id}`] request to update the cluster to disable Private Service Connect.
-
-[,bash]
-----
-CLUSTER_PATCH_BODY=`cat << EOF
-{
-    "gcp_private_service_connect": {
-        "enabled": false,
-    }
-}
-EOF`
-curl -v -X PATCH \
--H "Content-Type: application/json" \
--H "Authorization: Bearer $AUTH_TOKEN" \
--d "$CLUSTER_PATCH_BODY" $PUBLIC_API_ENDPOINT/v1/clusters/$CLUSTER_ID
-----
