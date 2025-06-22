@@ -54,7 +54,7 @@ export AZURE_REGION=eastus
 
 . Create a resource group to contain all resources, and then create a VNet with your address and subnet prefixes.
 +
-The following example uses the environment variables to create the `sample-redpanda-rg` resource group and the `sample-vnet` virtual network with an address space of `10.0.0.0/16` and a subnet named `default` with a smaller range of `10.0.0.0/24`.
+The following example uses the environment variables to create the `sample-redpanda-rg` resource group and the `sample-vnet` virtual network with an address space of `10.0.0.0/16`.
 +
 ```bash
 az group create --name ${AZURE_RESOURCE_GROUP_NAME} --location ${AZURE_REGION}
@@ -63,9 +63,7 @@ az network vnet create \
     --name ${AZURE_VNET_NAME} \
     --resource-group $AZURE_RESOURCE_GROUP_NAME \
     --location ${AZURE_REGION} \
-    --address-prefix 10.0.0.0/16 \
-    --subnet-name default \
-    --subnet-prefixes 10.0.0.0/24
+    --address-prefix 10.0.0.0/16 
 ```
 
 . Set additional environment variables for Azure resources. For example:
