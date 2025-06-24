@@ -47,7 +47,7 @@ Set environment variables for the resource group, VNet name, and Azure region. F
 ```bash
 export AZURE_RESOURCE_GROUP_NAME=sample-redpanda-rg
 export AZURE_VNET_NAME="sample-vnet"
-export AZURE_REGION=eastus
+export AZURE_REGION=centralus
 ```
 
 == Create Azure resource group and VNet
@@ -61,7 +61,7 @@ az group create --name ${AZURE_RESOURCE_GROUP_NAME} --location ${AZURE_REGION}
 
 az network vnet create \
     --name ${AZURE_VNET_NAME} \
-    --resource-group $AZURE_RESOURCE_GROUP_NAME \
+    --resource-group ${AZURE_RESOURCE_GROUP_NAME} \
     --location ${AZURE_REGION} \
     --address-prefix 10.0.0.0/16 
 ```
@@ -71,8 +71,48 @@ az network vnet create \
 ```bash
 export AZURE_SUBSCRIPTION_ID=
 export AZURE_TENANT_ID=
-export AZURE_ZONES=[\"eastus-az2\"]
+export AZURE_ZONES='["centralus-az1", "centralus-az2", "centralus-az3"]'
 export AZURE_RESOURCE_PREFIX=sample-
+export REDPANDA_CLUSTER_NAME=<Redpanda Cluster Name>
+export REDPANDA_RG_ID=<Redpanda Cloud Resource Group Id>
+export REDPANDA_THROUGHPUT_TIER=tier-1-azure-v3-x86
+export REDPANDA_VERSION=25.1
+export REDPANDA_MANAGEMENT_STORAGE_ACCOUNT_NAME=rpmgmtsa
+export REDPANDA_MANAGEMENT_STORAGE_CONTAINER_NAME=rpmgmtsc
+export REDPANDA_0_PODS_SUBNET_NAME=snet-rp-0-pods
+export REDPANDA_0_VNET_SUBNET_NAME=snet-rp-0-vnet
+export REDPANDA_1_PODS_SUBNET_NAME=snet-rp-1-pods
+export REDPANDA_1_VNET_SUBNET_NAME=snet-rp-1-vnet
+export REDPANDA_2_PODS_SUBNET_NAME=snet-rp-2-pods
+export REDPANDA_2_VNET_SUBNET_NAME=snet-rp-2-vnet
+export REDPANDA_CONNECT_PODS_SUBNET_NAME=snet-connect-pods
+export REDPANDA_CONNECT_VNET_SUBNET_NAME=snet-connect-vnet
+export KAFKA_CONNECT_PODS_SUBNET_NAME=snet-kafka-connect-pods
+export KAFKA_CONNECT_VNET_SUBNET_NAME=snet-kafka-connect-vnet
+export SYSTEM_PODS_SUBNET_NAME=snet-system-pods
+export SYSTEM_VNET_SUBNET_NAME=snet-system-vnet
+export REDPANDA_AGENT_SUBNET_NAME=snet-agent-private
+export REDPANDA_EGRESS_SUBNET_NAME=snet-agent-public
+export REDPANDA_MANAGEMENT_KEY_VAULT_NAME=redpanda-vault
+export REDPANDA_CONSOLE_KEY_VAULT_NAME=rp-console-vault
+export REDPANDA_AKS_SUBNET_CIDR="10.0.15.0/24"
+export REDPANDA_IAM_RESOURCE_GROUP_NAME=dyu-redpanda-rg
+export REDPANDA_NETWORK_RESOURCE_GROUP_NAME=dyu-redpanda-rg
+export REDPANDA_RESOURCE_GROUP_NAME=dyu-redpanda-rg
+export REDPANDA_STORAGE_RESOURCE_GROUP_NAME=dyu-redpanda-rg
+export REDPANDA_SECURITY_GROUP_NAME=redpanda-nsg
+export REDPANDA_TIERED_STORAGE_ACCOUNT_NAME=tieredsa
+export REDPANDA_TIERED_STORAGE_CONTAINER_NAME=tieredsc
+export REDPANDA_AGENT_USER_ASSIGNED_IDENTITY_NAME=agent-uai
+export REDPANDA_AKS_USER_ASSIGNED_IDENTITY_NAME=aks-uai
+export REDPANDA_CERT_MANAGER_USER_ASSIGNED_IDENTITY_NAME=cert-manager-uai
+export REDPANDA_EXTERNAL_DNS_USER_ASSIGNED_IDENTITY_NAME=external-dns-uai
+export REDPANDA_CLUSTER_USER_ASSIGNED_IDENTITY_NAME=cluster-uai
+export REDPANDA_CONSOLE_USER_ASSIGNED_IDENTITY_NAME=console-uai
+export KAFKA_CONNECT_USER_ASSIGNED_IDENTITY_NAME=kafka-connect-uai
+export REDPANDA_CONNECT_USER_ASSIGNED_IDENTITY_NAME=redpanda-connect-uai
+export REDPANDA_CONNECT_API_USER_ASSIGNED_IDENTITY_NAME=redpanda-connect-api-uai
+export REDPANDA_OPERATOR_USER_ASSIGNED_IDENTITY_NAME=redpanda-operator-uai
 ```
 
 == Configure Terraform
@@ -85,7 +125,7 @@ Create a JSON file called `byovnet.auto.tfvars.json` inside the Terraform direct
 [%collapsible]
 ====
 ```bash
-cat > byovnet.auto.tfvars.json <<EOF 
+cat > byovnet.auto.tfvars.json <<EOF
 {
   "azure_subscription_id": "${AZURE_SUBSCRIPTION_ID}",
   "azure_tenant_id": "${AZURE_TENANT_ID}",
@@ -96,27 +136,27 @@ cat > byovnet.auto.tfvars.json <<EOF
   "tags": {},
   "create_resource_groups": "false",
   "redpanda_resource_group_name": "${AZURE_RESOURCE_GROUP_NAME}",
-  "redpanda_storage_resource_group_name": "${AZURE_RESOURCE_GROUP_NAME}",
-  "redpanda_network_resource_group_name": "${AZURE_RESOURCE_GROUP_NAME}",
-  "redpanda_iam_resource_group_name": "${AZURE_RESOURCE_GROUP_NAME}",
-  "redpanda_agent_identity_name": "agent-uai",
+  "redpanda_storage_resource_group_name": "${REDPANDA_STORAGE_RESOURCE_GROUP_NAME}",
+  "redpanda_network_resource_group_name": "${REDPANDA_NETWORK_RESOURCE_GROUP_NAME}",
+  "redpanda_iam_resource_group_name": "${REDPANDA_IAM_RESOURCE_GROUP_NAME}",
+  "redpanda_agent_identity_name": "${REDPANDA_AGENT_USER_ASSIGNED_IDENTITY_NAME}",
   "redpanda_agent_role_name": "agent-role",
-  "redpanda_cert_manager_identity_name": "cert-manager-uai",
-  "redpanda_external_dns_identity_name": "external-dns-uai",
-  "redpanda_cluster_identity_name": "cluster-uai",
-  "aks_identity_name": "aks-uai",
-  "redpanda_console_identity_name": "console-uai",
+  "redpanda_cert_manager_identity_name": "${REDPANDA_CERT_MANAGER_USER_ASSIGNED_IDENTITY_NAME}",
+  "redpanda_external_dns_identity_name": "${REDPANDA_EXTERNAL_DNS_USER_ASSIGNED_IDENTITY_NAME}",
+  "redpanda_cluster_identity_name": "${REDPANDA_CLUSTER_USER_ASSIGNED_IDENTITY_NAME}",
+  "aks_identity_name": "${REDPANDA_AKS_USER_ASSIGNED_IDENTITY_NAME}",
+  "redpanda_console_identity_name": "${REDPANDA_CONSOLE_USER_ASSIGNED_IDENTITY_NAME}",
   "redpanda_console_role_name": "console-role",
-  "kafka_connect_identity_name": "kafka-connect-uai",
-  "redpanda_connect_identity_name": "redpanda-connect-uai",
-  "redpanda_connect_api_identity_name": "redpanda-connect-api-uai",
-  "redpanda_operator_identity_name": "redpanda-operator-uai",
-  "redpanda_management_storage_account_name": "rpmgmtsa",
-  "redpanda_management_storage_container_name": "rpmgmtsc",
-  "redpanda_tiered_storage_account_name": "tieredsa",
-  "redpanda_tiered_storage_container_name": "tieredsc",
-  "redpanda_management_key_vault_name": "redpanda-vault",
-  "redpanda_console_key_vault_name": "rp-console-vault",
+  "kafka_connect_identity_name": "${KAFKA_CONNECT_USER_ASSIGNED_IDENTITY_NAME}",
+  "redpanda_connect_identity_name": "${REDPANDA_CONNECT_USER_ASSIGNED_IDENTITY_NAME}",
+  "redpanda_connect_api_identity_name": "${REDPANDA_CONNECT_API_USER_ASSIGNED_IDENTITY_NAME}",
+  "redpanda_operator_identity_name": "${REDPANDA_OPERATOR_USER_ASSIGNED_IDENTITY_NAME}",
+  "redpanda_management_storage_account_name": "${REDPANDA_MANAGEMENT_STORAGE_ACCOUNT_NAME}",
+  "redpanda_management_storage_container_name": "${REDPANDA_MANAGEMENT_STORAGE_CONTAINER_NAME}",
+  "redpanda_tiered_storage_account_name": "${REDPANDA_TIERED_STORAGE_ACCOUNT_NAME}",
+  "redpanda_tiered_storage_container_name": "${REDPANDA_TIERED_STORAGE_CONTAINER_NAME}",
+  "redpanda_management_key_vault_name": "${REDPANDA_MANAGEMENT_KEY_VAULT_NAME}",
+  "redpanda_console_key_vault_name": "${REDPANDA_CONSOLE_KEY_VAULT_NAME}",
   "redpanda_private_link_role_name": "pl-role",
   "vnet_name": "${AZURE_VNET_NAME}",
   "vnet_addresses": [
@@ -125,67 +165,67 @@ cat > byovnet.auto.tfvars.json <<EOF
   "private_subnets": {
     "agent-private": {
       "cidr": "10.0.3.0/24",
-      "name": "snet-agent-private"
+      "name": "${REDPANDA_AGENT_SUBNET_NAME}"
     },
     "connect-pod": {
       "cidr": "10.0.10.0/24",
-      "name": "snet-connect-pods"
+      "name": "${REDPANDA_CONNECT_PODS_SUBNET_NAME}"
     },
     "connect-vnet": {
       "cidr": "10.0.11.0/24",
-      "name": "snet-connect-vnet"
+      "name": "${REDPANDA_CONNECT_VNET_SUBNET_NAME}"
     },
     "kafka-connect-pod": {
       "cidr": "10.0.12.0/24",
-      "name": "snet-kafka-connect-pods"
+      "name": "${KAFKA_CONNECT_PODS_SUBNET_NAME}"
     },
     "kafka-connect-vnet": {
       "cidr": "10.0.13.0/24",
-      "name": "snet-kafka-connect-vnet"
+      "name": "${KAFKA_CONNECT_VNET_SUBNET_NAME}"
     },
     "rp-0-pods": {
       "cidr": "10.0.4.0/24",
-      "name": "snet-rp-0-pods"
+      "name": "${REDPANDA_0_PODS_SUBNET_NAME}"
     },
     "rp-0-vnet": {
       "cidr": "10.0.5.0/24",
-      "name": "snet-rp-0-vnet"
+      "name": "${REDPANDA_0_VNET_SUBNET_NAME}"
     },
     "rp-1-pods": {
       "cidr": "10.0.6.0/24",
-      "name": "snet-rp-1-pods"
+      "name": "${REDPANDA_1_PODS_SUBNET_NAME}"
     },
     "rp-1-vnet": {
       "cidr": "10.0.7.0/24",
-      "name": "snet-rp-1-vnet"
+      "name": "${REDPANDA_1_VNET_SUBNET_NAME}"
     },
     "rp-2-pods": {
       "cidr": "10.0.8.0/24",
-      "name": "snet-rp-2-pods"
+      "name": "${REDPANDA_2_PODS_SUBNET_NAME}"
     },
     "rp-2-vnet": {
       "cidr": "10.0.9.0/24",
-      "name": "snet-rp-2-vnet"
+      "name": "${REDPANDA_2_VNET_SUBNET_NAME}"
     },
     "system-pod": {
       "cidr": "10.0.1.0/24",
-      "name": "snet-system-pods"
+      "name": "${SYSTEM_PODS_SUBNET_NAME}"
     },
     "system-vnet": {
       "cidr": "10.0.2.0/24",
-      "name": "snet-system-vnet"
+      "name": "${SYSTEM_VNET_SUBNET_NAME}"
     }
   },
   "egress_subnets": {
     "agent-public": {
       "cidr": "10.0.0.0/24",
-      "name": "snet-agent-public"
+      "name": "${REDPANDA_EGRESS_SUBNET_NAME}"
     }
   },
   "reserved_subnet_cidrs": {
-    "k8s-service": "10.0.15.0/24"
+    "k8s-service": "${REDPANDA_AKS_SUBNET_CIDR}"
   },
-  "redpanda_security_group_name": "redpanda-nsg"
+  "redpanda_security_group_name": "${REDPANDA_SECURITY_GROUP_NAME}"
 }
 EOF
 ```
@@ -283,29 +323,6 @@ TIP: To get the Redpanda authentication credentials, follow the xref:manage:api/
 
 To create the Redpanda network:
 
-. Define environment variables to be utilized by the subsequent steps to configure the Redpanda Network. The following environment variables shown below use configuration values parsed from the `terraform output` which is populated after applying the `cloud-examples` Terraform module. 
-+
-```base
-export REDPANDA_CLUSTER_NAME=<Redpanda Cluster Name>
-export REDPANDA_RG_ID=<Redpanda Cloud Resource Group Id>
-export REDPANDA_MANAGEMENT_STORAGE_ACCOUNT="$(terraform output -raw management_bucket_storage_account_name)"
-export REDPANDA_MANAGEMENT_STORAGE_CONTAINER="$(terraform output -raw management_bucket_storage_container_name)"
-export REDPANDA_0_PODS_SUBNET_NAME="$(terraform output -raw rp_0_pods_subnet_name)"
-export REDPANDA_0_VNET_SUBNET_NAME="$(terraform output -raw rp_0_vnet_subnet_name)"
-export REDPANDA_1_PODS_SUBNET_NAME="$(terraform output -raw rp_1_pods_subnet_name)"
-export REDPANDA_1_VNET_SUBNET_NAME="$(terraform output -raw rp_1_vnet_subnet_name)"
-export REDPANDA_2_PODS_SUBNET_NAME="$(terraform output -raw rp_2_pods_subnet_name)"
-export REDPANDA_2_VNET_SUBNET_NAME="$(terraform output -raw rp_2_vnet_subnet_name)"
-export REDPANDA_CONNECT_PODS_SUBNET_NAME="$(terraform output -raw rp_connect_pods_subnet_name)"
-export REDPANDA_CONNECT_VNET_SUBNET_NAME="$(terraform output -raw rp_connect_vnet_subnet_name)"
-export KAFKA_CONNECT_PODS_SUBNET_NAME="$(terraform output -raw kafka_connect_pods_subnet_name)"
-export KAFKA_CONNECT_VNET_SUBNET_NAME="$(terraform output -raw kafka_connect_vnet_subnet_name)"
-export SYSTEM_PODS_SUBNET_NAME="$(terraform output -raw system_pods_subnet_name)"
-export SYSTEM_VNET_SUBNET_NAME="$(terraform output -raw system_vnet_subnet_name)"
-export REDPANDA_AGENT_SUBNET_NAME="$(terraform output -raw agent_private_subnet_name)"
-export REDPANDA_EGRESS_SUBNET_NAME="$(terraform output -raw egress_subnet_name)"
-```
-
 . Define a JSON file called `redpanda-network.json` to configure the network for Redpanda with details about VNet, subnets, and storage.
 +
 .Show script
@@ -323,8 +340,8 @@ cat > redpanda-network.json <<EOF
     "customer_managed_resources": {
       "azure" : {
         "management_bucket" : {
-           "storage_account_name": "${REDPANDA_MANAGEMENT_STORAGE_ACCOUNT}",
-           "storage_container_name": "${REDPANDA_MANAGEMENT_STORAGE_CONTAINER}",
+           "storage_account_name": "${REDPANDA_MANAGEMENT_STORAGE_ACCOUNT_NAME}",
+           "storage_container_name": "${REDPANDA_MANAGEMENT_STORAGE_CONTAINER_NAME}",
            "resource_group" : { "name" : "${AZURE_RESOURCE_GROUP_NAME}" }
         },
         "vnet" : {
@@ -369,31 +386,6 @@ export REDPANDA_NETWORK_ID=$(curl -X POST "https://api.redpanda.com/v1/networks"
 
 To create the Redpanda cluster:
 
-. Define environment variables to define the Redpanda Cluster configuration. The following environment variables shown below use configuration values parsed from the `terraform output` which is populated after applying the `cloud-examples` Terraform module. 
-+
-```bash
-export REDPANDA_THROUGHPUT_TIER=tier-1-azure-v3-x86
-export REDPANDA_VERSION=25.1
-export REDPANDA_MANAGEMENT_KEY_VAULT_NAME="$(terraform output -raw management_key_vault_name)"
-export REDPANDA_CONSOLE_KEY_VAULT_NAME="$(terraform output -raw console_key_vault_name)"
-export REDPANDA_AKS_SUBNET_CIDR="$(terraform output -json networks | jq -r  'fromjson | .["subnet-cidrs-aks"].["k8s-service"]')"
-export REDPANDA_IAM_RESOURCE_GROUP_NAME="$(terraform output -raw iam_resource_group_name)"
-export REDPANDA_RESOURCE_GROUP_NAME="$(terraform output -raw redpanda_resource_group_name)"
-export REDPANDA_STORAGE_RESOURCE_GROUP_NAME="$(terraform output -raw storage_resource_group_name)"
-export REDPANDA_SECURITY_GROUP_NAME="$(terraform output -raw redpanda_security_group_name)"
-export REDPANDA_TIERED_STORAGE_ACCOUNT_NAME="$(terraform output -raw tiered_storage_account_name)"
-export REDPANDA_TIERED_STORAGE_CONTAINER_NAME="$(terraform output -raw tiered_storage_container_name)"
-export REDPANDA_AGENT_USER_ASSIGNED_IDENTITY_NAME="$(terraform output -raw agent_user_assigned_identity_name)"
-export REDPANDA_AKS_USER_ASSIGNED_IDENTITY_NAME="$(terraform output -raw aks_user_assigned_identity_name)"
-export REDPANDA_CERT_MANAGER_USER_ASSIGNED_IDENTITY_NAME="$(terraform output -raw cert_manager_user_assigned_identity_name)"
-export REDPANDA_EXTERNAL_DNS_USER_ASSIGNED_IDENTITY_NAME="$(terraform output -raw external_dns_user_assigned_identity_name)"
-export REDPANDA_CLUSTER_USER_ASSIGNED_IDENTITY_NAME="$(terraform output -raw cluster_user_assigned_identity_name)"
-export REDPANDA_CONSOLE_USER_ASSIGNED_IDENTITY_NAME="$(terraform output -raw console_user_assigned_identity_name)"
-export KAFKA_CONNECT_USER_ASSIGNED_IDENTITY_NAME="$(terraform output -raw kafka_connect_user_assigned_identity_name)"
-export REDPANDA_CONNECT_USER_ASSIGNED_IDENTITY_NAME="$(terraform output -raw redpanda_connect_user_assigned_identity_name)"
-export REDPANDA_CONNECT_API_USER_ASSIGNED_IDENTITY_NAME="$(terraform output -raw redpanda_connect_api_user_assigned_identity_name)"
-export REDPANDA_OPERATOR_USER_ASSIGNED_IDENTITY_NAME="$(terraform output -raw redpanda_operator_user_assigned_identity_name)"
-```
 . Define a JSON file called `redpanda-cluster.json` that includes cluster information:
 +
 .Show script
