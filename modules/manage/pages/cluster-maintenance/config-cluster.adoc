@@ -1,7 +1,7 @@
 = Configure Cluster Properties
 :description: Learn how to configure cluster properties to enable and manage features.
 
-Cluster configuration properties are set to their default values and automatically replicated across all brokers. You can use cluster properties to enable and manage features such as xref:manage:iceberg/about-iceberg-topics.adoc[Iceberg topics], xref:develop:data-transforms/index.adoc[data transforms], and xref:manage:audit-logging.adoc[audit logging].
+Cluster configuration properties are set to their default values and are automatically replicated across all brokers. You can use cluster properties to enable and manage features such as xref:manage:iceberg/about-iceberg-topics.adoc[Iceberg topics], xref:develop:data-transforms/index.adoc[data transforms], and xref:manage:audit-logging.adoc[audit logging].
 
 For a complete list of the cluster properties available in Redpanda Cloud, see xref:reference:properties/cluster-properties.adoc[Cluster Configuration Properties] and xref:reference:properties/object-storage-properties.adoc[Object Storage Properties].
 
@@ -9,7 +9,56 @@ NOTE: Some properties are read-only and cannot be changed. For example, `cluster
 
 == Prerequisites
 
-Clusters must be running Redpanda version 25.1.2 or later to configure cluster properties. To verify your version of `rpk`, see xref:manage:rpk/rpk-install.adoc[].
+Clusters must be running Redpanda version 25.1.2 or later to configure cluster properties. You can see the Redpanda version on the cluster overview page in the Redpanda Cloud UI. Or, you can check the version with `rpk` or the Cloud API:
+               
+[tabs]
+====
+`rpk`::
++
+--
+
+First, to verify your installation and version of `rpk`, see xref:manage:rpk/rpk-install.adoc[].
+
+Then, to verify the Redpanda version using `rpk`, run:
+
+[source,bash]
+----
+rpk cluster info | grep redpanda_version
+----
+
+The output displays the Redpanda version running in your cluster.
+--
+
+Cloud API::
++
+--
+To verify the Redpanda version using the Cloud API, make a xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/clusters/-id-[`GET /clusters/{cluster.id}`] request. The `redpanda_version` field in the response body contains the version number.
+
+For example:
+
+[source,bash]
+----
+# Store your cluster ID in a variable.
+export RP_CLUSTER_ID=<cluster-id>
+
+# Retrieve a Redpanda Cloud access token.
+export RP_CLOUD_TOKEN=`curl -X POST "https://auth.prd.cloud.redpanda.com/oauth/token" \
+    -H "content-type: application/x-www-form-urlencoded" \
+    -d "grant_type=client_credentials" \
+    -d "client_id=<client-id>" \
+    -d "client_secret=<client-secret>"`
+
+# Get your cluster details.
+    curl -H "Authorization: Bearer ${RP_CLOUD_TOKEN}" -X GET \
+      "https://api.cloud.redpanda.com/v1/clusters/${RP_CLUSTER_ID}" \
+      -H 'accept: application/json' \
+      -H 'content-type: application/json'
+----
+
+Check the `redpanda_version` field in the response.
+--
++
+====
 
 == Limitations
 
@@ -24,7 +73,7 @@ Cluster properties are supported on BYOC and Dedicated clusters running on AWS a
 You can set cluster configuration properties using the `rpk` command-line tool or the Cloud API.
 
 [tabs]
-======
+====
 `rpk`::
 +
 --
@@ -100,14 +149,14 @@ curl -H "Authorization: Bearer <token>" -X PATCH \
 NOTE: Some properties require a rolling restart for the update to take effect. This triggers a xref:manage:api/cloud-byoc-controlplane-api.adoc#lro[long-running operation] that can take several minutes to complete.
 
 --
-======
+====
 
 == View cluster property values
 
 You can see the value of a cluster configuration property using `rpk` or the Cloud API.
 
 [tabs]
-======
+====
 `rpk`::
 +
 --
@@ -150,7 +199,7 @@ curl -H "Authorization: Bearer ${RP_CLOUD_TOKEN}" -X GET \
 
 
 --
-======
+====
 
 == Suggested reading
 
