@@ -9,56 +9,7 @@ NOTE: Some properties are read-only and cannot be changed. For example, `cluster
 
 == Prerequisites
 
-Clusters must be running Redpanda version 25.1.2 or later to configure cluster properties. You can see the Redpanda version on the cluster overview page in the Redpanda Cloud UI. Or, you can check the version with `rpk` or the Cloud API:
-               
-[tabs]
-====
-`rpk`::
-+
---
-
-First, to verify your installation and version of `rpk`, see xref:manage:rpk/rpk-install.adoc[].
-
-Then, to verify the Redpanda version using `rpk`, run:
-
-[source,bash]
-----
-rpk cluster info | grep redpanda_version
-----
-
-The output displays the Redpanda version running in your cluster.
---
-
-Cloud API::
-+
---
-To verify the Redpanda version using the Cloud API, make a xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/clusters/-id-[`GET /clusters/{cluster.id}`] request. The `redpanda_version` field in the response body contains the version number.
-
-For example:
-
-[source,bash]
-----
-# Store your cluster ID in a variable.
-export RP_CLUSTER_ID=<cluster-id>
-
-# Retrieve a Redpanda Cloud access token.
-export RP_CLOUD_TOKEN=`curl -X POST "https://auth.prd.cloud.redpanda.com/oauth/token" \
-    -H "content-type: application/x-www-form-urlencoded" \
-    -d "grant_type=client_credentials" \
-    -d "client_id=<client-id>" \
-    -d "client_secret=<client-secret>"`
-
-# Get your cluster details.
-    curl -H "Authorization: Bearer ${RP_CLOUD_TOKEN}" -X GET \
-      "https://api.cloud.redpanda.com/v1/clusters/${RP_CLUSTER_ID}" \
-      -H 'accept: application/json' \
-      -H 'content-type: application/json'
-----
-
-Check the `redpanda_version` field in the response.
---
-+
-====
+Clusters must be running Redpanda version 25.1.2 or later to configure cluster properties. You can find the version on your cluster's Overview page in the Redpanda Cloud UI.
 
 == Limitations
 
