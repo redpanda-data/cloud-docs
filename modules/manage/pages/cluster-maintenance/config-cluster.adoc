@@ -1,13 +1,17 @@
 = Configure Cluster Properties
 :description: Learn how to configure cluster properties to enable and manage features.
 
-Cluster configuration properties are set to their default values and automatically replicated across all brokers. 
-
-You can use cluster properties to enable and manage features such as xref:manage:iceberg/about-iceberg-topics.adoc[Iceberg topics], xref:develop:data-transforms/index.adoc[data transforms], and xref:manage:audit-logging.adoc[audit logging].
+Cluster configuration properties are set to their default values and are automatically replicated across all brokers. You can use cluster properties to enable and manage features such as xref:manage:iceberg/about-iceberg-topics.adoc[Iceberg topics], xref:develop:data-transforms/index.adoc[data transforms], and xref:manage:audit-logging.adoc[audit logging].
 
 For a complete list of the cluster properties available in Redpanda Cloud, see xref:reference:properties/cluster-properties.adoc[Cluster Configuration Properties] and xref:reference:properties/object-storage-properties.adoc[Object Storage Properties].
 
 NOTE: Some properties are read-only and cannot be changed. For example, `cluster_id` is a read-only property that is automatically set when the cluster is created. 
+
+== Prerequisites
+
+* To configure clusters properties, a cluster must be running Redpanda version 25.1.2 or later. You can find the version on your cluster's Overview page in the Redpanda Cloud UI. 
+
+* To use `rpk` to configure cluster properties, you must be using `rpk` version 25.1.2 or later. To check your current version, see xref:manage:rpk/rpk-install.adoc[].
 
 == Limitations
 
@@ -22,7 +26,7 @@ Cluster properties are supported on BYOC and Dedicated clusters running on AWS a
 You can set cluster configuration properties using the `rpk` command-line tool or the Cloud API.
 
 [tabs]
-======
+====
 `rpk`::
 +
 --
@@ -98,14 +102,14 @@ curl -H "Authorization: Bearer <token>" -X PATCH \
 NOTE: Some properties require a rolling restart for the update to take effect. This triggers a xref:manage:api/cloud-byoc-controlplane-api.adoc#lro[long-running operation] that can take several minutes to complete.
 
 --
-======
+====
 
 == View cluster property values
 
 You can see the value of a cluster configuration property using `rpk` or the Cloud API.
 
 [tabs]
-======
+====
 `rpk`::
 +
 --
@@ -148,7 +152,7 @@ curl -H "Authorization: Bearer ${RP_CLOUD_TOKEN}" -X GET \
 
 
 --
-======
+====
 
 == Suggested reading
 
