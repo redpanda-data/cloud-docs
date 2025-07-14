@@ -2,15 +2,16 @@
 :description: Connect Redpanda Cloud to your existing VPC for additional security.
 :page-aliases: get-started:cluster-types/byoc/vpc-byo-aws.adoc
 :page-cloud: true
-:page-beta: true
 
-include::shared:partial$feature-flag-rpcn.adoc[]
+[IMPORTANT]
+====
 
-This topic explains how to create a Bring Your Own Virtual Private Cloud (BYOVPC) cluster on Amazon Web Services (AWS). This setup allows you to deploy the Redpanda glossterm:data plane[] into your existing VPC and manage the networking lifecycle. See also: xref:get-started:byoc-arch.adoc[BYOC architecture]. 
+Bring Your Own Virtual Private Cloud (BYOVPC) is an add-on feature that may require an additional purchase. 
+==== 
 
-Compared to a standard Bring Your Own Cloud (BYOC) setup, where Redpanda manages the networking lifecycle for you, BYOVPC provides more control.
+A BYOVPC cluster allows you to deploy the Redpanda glossterm:data plane[] into your existing VPC and manage the networking lifecycle. Compared to a standard Bring Your Own Cloud (BYOC) setup, where Redpanda manages the networking lifecycle for you, BYOVPC provides more control. See also: xref:get-started:byoc-arch.adoc[BYOC architecture]. 
 
-When you create a BYOCVPC cluster, you specify your VPC and service account. The Redpanda Cloud agent doesn't create any new resources or alter any settings in your account. With BYOVPC: 
+When you create a BYOVPC cluster, you specify your VPC and the IAM role (instance profile) that the Redpanda agent will assume. The Redpanda Cloud agent doesn't create any new resources or alter any settings in your account. With BYOVPC: 
 
 * You provide your own VPC in your AWS account.
 * You maintain more control over your account, because Redpanda requires fewer permissions than standard BYOC clusters.
