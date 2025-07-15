@@ -1,7 +1,7 @@
 = Configure Azure Private Link in the Cloud UI
 :description: Set up Azure Private Link in the Redpanda Cloud UI.
 
-NOTE: This guide is for configuring Azure Private Link using the Redpanda Cloud UI. To configure and manage Private Link on an existing public cluster, you must use the xref:networking:azure-private-link.adoc[Cloud API].
+NOTE: This guide is for configuring new clusters with Azure Private Link using the Redpanda Cloud UI. To configure and manage Private Link on an existing cluster, you must use the xref:networking:azure-private-link.adoc[Cloud API].
 
 The Redpanda Azure Private Link service provides secure access to Redpanda Cloud from your own VNet. Traffic over Private Link does not go through the public internet because these connections are treated as their own private Azure service. While your VNet has access to the Redpanda virtual network, Redpanda cannot access your VNet.
 
@@ -24,10 +24,12 @@ TIP: In Kafka clients, set `connections.max.idle.ms` to a value less than 350 se
 .. For *Connection type*, select *Private*.
 .. For *Azure Private Link*, select *Enabled*.
 .. For *Allowed subscriptions*, click *Add subscription*, and enter the Azure subscription ID that can access the cluster. You can add multiple subscriptions.
+. Follow the steps on the cluster's *Overview* page. In the *How to connect* section, click *Private Link*. 
+
 
 == Access Redpanda services through VNet endpoint
 
-After you have enabled Private Link for your cluster, your connection URLs are available in the *How to Connect* section of the cluster overview page.
+Your connection URLs are available in the *How to Connect* section of your cluster's *Overview* page.
 
 include::networking:partial$private-links-access-rp-services-through-vpc.adoc[]
 
