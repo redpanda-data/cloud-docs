@@ -12,6 +12,20 @@ NOTE: With standard BYOC clusters, Redpanda manages security policies and resour
 
 Before you deploy a BYOC cluster on Azure, check all prerequisites to ensure that your Azure subscription meets requirements.
 
+===  Configure Azure CLI
+
+* https://learn.microsoft.com/en-us/cli/azure/install-azure-cli[Install the Azure CLI^].
+* https://learn.microsoft.com/en-us/cli/azure/authenticate-azure-cli[Sign in^] with the Azure CLI:
++
+```
+az login
+```
+* Set the desired subscription for the Azure CLI:
++
+```
+az account set --subscription <subscription-name>
+```
+
 === Verify rpk version
 
 Confirm you have a minimum version of Redpanda `rpk` v24.1. See xref:manage:rpk/rpk-install.adoc[].
@@ -84,7 +98,7 @@ Ensure your subscription has access to the required VM sizes in the region where
 [source,bash]
 ----
 # Replace eastus2 with your target region
-az vm list-skus -l eastus2 --zone --size Standard_D2ads_v5 --output table
+az vm list-skus -l eastus2 --zone --size Standard_D2d_v5 --output table
 ----
 
 .Example output (no restrictions: good)
@@ -92,7 +106,7 @@ az vm list-skus -l eastus2 --zone --size Standard_D2ads_v5 --output table
 ----
 ResourceType     Locations    Name               Zones    Restrictions
 ---------------  -----------  ---------------    -------  ------------
-virtualMachines  eastus2      Standard_D2ads_v5  1,2,3    None
+virtualMachines  eastus2      Standard_D2d_v5    1,2,3    None
 ----
 
 .Example output (with restrictions: needs attention)
@@ -100,7 +114,7 @@ virtualMachines  eastus2      Standard_D2ads_v5  1,2,3    None
 ----
 ResourceType     Locations    Name               Zones    Restrictions
 ---------------  -----------  ---------------    -------  ------------
-virtualMachines  eastus2      Standard_D2ads_v5  1,2,3    NotAvailableForSubscription
+virtualMachines  eastus2      Standard_D2d_v5    1,2,3    NotAvailableForSubscription
 ----
 
 If you see restrictions, https://learn.microsoft.com/en-us/troubleshoot/azure/general/region-access-request-process[open a Microsoft support request^] to remove them. 
