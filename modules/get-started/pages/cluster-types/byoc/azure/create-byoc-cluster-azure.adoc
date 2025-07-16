@@ -12,11 +12,12 @@ NOTE: With standard BYOC clusters, Redpanda manages security policies and resour
 
 Before you deploy a BYOC cluster on Azure, check all prerequisites to ensure that your Azure subscription meets requirements.
 
-===  Azure CLI
+===  Configure Azure CLI
 
-* https://learn.microsoft.com/en-us/cli/azure/install-azure-cli[Install the Azure CLI] according to instructions
-* https://learn.microsoft.com/en-us/cli/azure/authenticate-azure-cli[Sign in] with the Azure CLI
-* Set the desired subscription for the Azure CLI. To set the subscription, run:
+* https://learn.microsoft.com/en-us/cli/azure/install-azure-cli[Install the Azure CLI^].
+* https://learn.microsoft.com/en-us/cli/azure/authenticate-azure-cli[Sign in^] with the Azure CLI.
+* Set the desired subscription for the Azure CLI:
++
 ```
 az account set --subscription <subscription-name>
 ```
@@ -77,9 +78,9 @@ az network watcher configure --resource-group 'NetworkWatcherRG' --locations '<r
 
 Confirm that the Azure subscription has enough virtual CPUs (vCPUs) per instance family and total regional vCPUs in the region where you will use Redpanda:
 
-* Standard Ddv5-series vCPUs:  12  (3 Redpanda broker nodes + extra capacity for 3 more nodes that could be utilized temporarily during tier 1 maintenance)
-* Standard Dadsv5-series vCPUs: 8  (2 Redpanda utility nodes)
-* Standard Dv3-series vCPUs:    2  (1 Redpanda agent node)
+* Standard_D2d_v5 vCPUs:  12  (3 Redpanda broker nodes + extra capacity for 3 more nodes that could be utilized temporarily during tier 1 maintenance)
+* Standard_D2ads_v5 vCPUs: 8  (2 Redpanda utility nodes)
+* Standard_D2_v3 vCPUs:    2  (1 Redpanda agent node)
 
 See the https://learn.microsoft.com/en-us/azure/quotas/view-quotas[Microsoft documentation^].
 
@@ -113,6 +114,8 @@ virtualMachines  eastus2      Standard_D2d_v5    1,2,3    NotAvailableForSubscri
 ----
 
 If you see restrictions, https://learn.microsoft.com/en-us/troubleshoot/azure/general/region-access-request-process[open a Microsoft support request^] to remove them. 
+
+NOTE: For BYOVNet clusters, you may need to specify zones in the region-prefixed format. For example, if you're working in the `eastus2` region with zones `1,2,3`, you would reference them as `eastus2-az1`, `eastus2-az2`, and `eastus2-az3` respectively.
 
 === Prerequisite checklist
 
