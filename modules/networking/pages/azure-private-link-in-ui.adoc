@@ -20,27 +20,21 @@ TIP: In Kafka clients, set `connections.max.idle.ms` to a value less than 350 se
 == Enable endpoint service for new clusters
 
 . In the Redpanda Cloud UI, create a new cluster.
-. On the *Networking* page, 
+. On the *Networking* page:
 .. For *Connection type*, select *Private*.
 .. For *Azure Private Link*, select *Enabled*.
 .. For *Allowed subscriptions*, click *Add subscription*, and enter the Azure subscription ID that can access the cluster. You can add multiple subscriptions.
 . Follow the steps on the cluster's *Overview* page. In the *How to connect* section, click *Private Link*. 
 
+image::shared:private-link-tab.png[Private Link tab in Overview page]
 
 == Access Redpanda services through VNet endpoint
-
-Your connection URLs are available in the *How to Connect* section of your cluster's *Overview* page.
 
 include::networking:partial$private-links-access-rp-services-through-vpc.adoc[]
 
 == Test the connection
 
-You can test the connection to the endpoint service from any VM or container in the consumer VPC. If configuring a client isn't possible right away, you can do these checks using `rpk` or cURL:
+You can test the connection to the endpoint service from any VM or container in the consumer VNet. If configuring a client isn't possible right away, you can do these checks using `rpk` or cURL:
 
 include::networking:partial$private-links-test-connection.adoc[]
 
-== Disable endpoint service
-
-On the Cluster settings page for the cluster, click *Disable* for Private Link. 
-
-Existing connections close when the Azure Private Link service is disabled. To connect using Private Link again, you must re-enable the service.
