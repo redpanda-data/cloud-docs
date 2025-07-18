@@ -68,7 +68,7 @@ Each Redpanda Cloud data plane runs its own dedicated agent,
 which authenticates and connects against the control plane over a single TLS 1.2
 encrypted TCP connection.
 
-Different Redpanda APIs support different authentication methods. For AWS and GCP, you can simultaneously enable mTLS and SASL for Kafka API, and mTLS and Basic authentication for the HTTP APIs (HTTP Proxy and Schema Registry). If you enable both mTLS and SASL on AWS and GCP clusters, Redpanda creates two distinct listeners: an mTLS listener operating on one port and a SASL listener operating on a different port.
+Different Redpanda APIs support different authentication methods. For AWS and GCP, you can simultaneously enable mTLS and SASL for Kafka API, and mTLS and Basic authentication for the HTTP APIs (HTTP Proxy and Schema Registry). If you enable both mTLS and SASL, Redpanda creates two distinct listeners: an mTLS listener operating on one port and a SASL listener operating on a different port.
 
 .Redpanda APIs authentication methods
 [%collapsible]
@@ -166,7 +166,7 @@ If you want to enable mTLS authentication:
 * You must use the Cloud API to create a new mTLS-enabled cluster. 
 * You must also use the Cloud API to update an existing cluster to switch to mTLS authentication for Kafka API.
 * You can use the Cloud UI to update an existing cluster to switch to mTLS authentication for HTTP Proxy and Schema Registry only.
-* To enable mTLS and SASL (or Basic authentication) simultaneously on AWS and GCP clusters, you must use the Cloud API to create a new cluster or update an existing cluster.
+* To enable mTLS and SASL (or Basic authentication) simultaneously, you must use the Cloud API to create a new cluster or update an existing cluster.
 
 To configure service authentication in your cluster using the Cloud API, you must have the following:
 
@@ -227,7 +227,7 @@ NOTE: The following example enables mTLS for Kafka API. To enable mTLS for HTTP 
 CLUSTER_CREATE_BODY=`cat << EOF
 {
   "cluster": {
-    "cloud_provider": "CLOUD_PROVIDER_GCP",
+    "cloud_provider": "<cloud-provider>",
     "connection_type": "CONNECTION_TYPE_PRIVATE",
     "name": "<cluster-name>",
     "resource_group_id": "<resource-group-id>",
@@ -260,6 +260,9 @@ Make sure to replace the following variables:
 
 |`<cluster-id>`
 |ID of the Redpanda cluster.
+
+|`<cloud-provider>`
+|Cloud provider for the cluster (`CLOUD_PROVIDER_AWS` or `CLOUD_PROVIDER_GCP`).
 
 |`<cluster-name>`
 |Name of the Redpanda cluster.
@@ -387,7 +390,7 @@ You can enable mTLS and SASL or Basic authentication for any combination of the 
 CLUSTER_CREATE_BODY=`cat << EOF
 {
   "cluster": {
-    "cloud_provider": "CLOUD_PROVIDER_GCP",
+    "cloud_provider": "<cloud-provider>",
     "connection_type": "CONNECTION_TYPE_PRIVATE",
     "name": "<cluster-name>",
     "resource_group_id": "<resource-group-id>",
@@ -441,6 +444,9 @@ Make sure to replace the following variables:
 
 |`<cluster-id>`
 |ID of Redpanda cluster.
+
+|`<cloud-provider>`
+|Cloud provider for the cluster (`CLOUD_PROVIDER_AWS` or `CLOUD_PROVIDER_GCP`).
 
 |`<cluster-name>`
 |Name of the Redpanda cluster.
