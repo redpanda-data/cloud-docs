@@ -1,0 +1,42 @@
+= Configure Azure Private Link in the Cloud UI
+:description: Set up Azure Private Link in the Redpanda Cloud UI.
+
+NOTE: This guide is for configuring new clusters with Azure Private Link using the Redpanda Cloud UI. To configure and manage Private Link on an existing cluster, you must use the xref:networking:azure-private-link.adoc[Cloud API].
+
+The Redpanda Azure Private Link service provides secure access to Redpanda Cloud from your own VNet. Traffic over Private Link does not go through the public internet because these connections are treated as their own private Azure service. While your VNet has access to the Redpanda virtual network, Redpanda cannot access your VNet.
+
+Consider using the endpoint service if you have multiple VNets and could benefit from a more simplified approach to network management:
+
+* Azure Private Link allows overlapping xref:networking:cidr-ranges.adoc[CIDR ranges].
+* You control which Azure subscriptions are allowed to connect to the endpoint service.
+
+== Requirements
+
+* Your Redpanda cluster and VNet must be in the same region.
+* Use the https://learn.microsoft.com/en-us/cli/azure/get-started-with-azure-cli?view=azure-cli-latest[Azure command-line interface (CLI)^] to create a new client VNet or modify an existing one to use the Private Link endpoint.
+
+TIP: In Kafka clients, set `connections.max.idle.ms` to a value less than 350 seconds. 
+
+== Enable endpoint service for new clusters
+
+. In the Redpanda Cloud UI, create a new cluster.
+. On the *Networking* page:
+.. For *Connection type*, select *Private*.
+.. For *Azure Private Link*, select *Enabled*.
+.. For *Allowed subscriptions*, click *Add subscription*, and enter the Azure subscription ID that can access the cluster. You can add multiple subscriptions.
+
+
+== Access Redpanda services through VNet endpoint
+
+To access Redpanda services, follow the steps on the cluster's *Overview* page. In the *How to connect* section, click *Private Link*. 
+
+image::shared:private-link-tab.png[Private Link tab in Overview page,align="left"]
+
+include::networking:partial$private-links-access-rp-services-through-vpc.adoc[]
+
+== Test the connection
+
+You can test the connection to the endpoint service from any VM or container in the consumer VNet. If configuring a client isn't possible right away, you can do these checks using `rpk` or cURL:
+
+include::networking:partial$private-links-test-connection.adoc[]
+
