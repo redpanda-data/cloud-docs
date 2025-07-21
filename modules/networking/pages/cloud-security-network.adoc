@@ -169,25 +169,31 @@ When private service connectivity is enabled (AWS PrivateLink, Azure Private Lin
 
 == NAT gateways
 
-Redpanda Cloud clusters rely on outbound-only internet access to connect to the control plane, perform cluster upgrades, and deliver cluster telemetry to the control plane. 
+A NAT (Network Address Translation) gateway allows resources in a private network to access the internet, while preventing inbound connections from the internet.
 
-* For BYOC and Dedicated clusters on AWS and GCP, Redpanda provisions one NAT gateway and one internet gateway. 
-* For BYOC and Dedicated clusters on Azure, Redpanda provisions one NAT gateway and one public IP prefix of 31 bits.
-* For BYOVPC and BYOVNet, you decide how to provide access to the internet, because you fully manage the network.
+Redpanda Cloud clusters require outbound-only internet access for control plane connectivity, upgrades, and telemetry. The way NAT gateways are provisioned depends on your cloud provider and deployment type:
 
-Without connectors, NAT-incurred costs should be relatively low. Redpanda Connect and Kafka Connect connectors can egress to the internet and incur high NAT data transfer costs.
+* *BYOC/Dedicated on AWS and GCP:* Redpanda provisions one NAT gateway and one internet gateway.
+* *BYOC/Dedicated on Azure:* Redpanda provisions one NAT gateway and one public IP prefix (31 bits).
+* *BYOVPC/BYOVNet:* You are responsible for providing internet access, as you fully manage the network.
+
+The following table summarizes when a NAT gateway is required:
 
 |===
 | Use case | NAT gateway required?
 
 | Redpanda streaming traffic | No 
-| Redpanda Tiered Storage traffic | No: VPC gateway endpoint used, no data transfer charges
-| Redpanda provisioning and telemetry | Yes: minimal usage for artifact downloads and metrics
-| Internet-facing connectors | Yes: incurs NAT data-transfer charges
+| Redpanda Tiered Storage traffic | No (VPC gateway endpoint used; no data transfer charges)
+| Redpanda provisioning and telemetry | Yes (minimal usage for artifact downloads and metrics)
+| Internet-facing connectors | Yes (incurs NAT data transfer charges)
 |===
 
+Without connectors, NAT-incurred costs should be relatively low. However, Redpanda Connect and Kafka Connect connectors that egress to the internet can incur higher NAT data transfer costs.
 
-NOTE: For BYOC clusters (including BYOVPC/BYOVNet), you can find the NAT gateway IP address of your cluster in the Redpanda Cloud UI. You can add this IP address to the allowlist of your data source. While Redpanda Data does not guarantee that the NAT gateway IP will remain static, it is unlikely to change.
+=== Allowlisting the NAT gateway
+
+For BYOC clusters (including BYOVPC/BYOVNet), you can find the *Internet gateway* IP address on the cluster *Overview* page. Add this address to your data source allowlist, if needed. While Redpanda Data does not guarantee the address will remain static, it is unlikely to change.
+
 
 == Cloud provider network services
 
