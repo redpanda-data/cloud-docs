@@ -68,14 +68,22 @@ Each Redpanda Cloud data plane runs its own dedicated agent,
 which authenticates and connects against the control plane over a single TLS 1.2
 encrypted TCP connection.
 
-Different Redpanda APIs support different authentication methods. For GCP, you can simultaneously enable mTLS and SASL for Kafka API, and mTLS and Basic authentication for the HTTP APIs (HTTP Proxy and Schema Registry). If you enable both mTLS and SASL on GCP clusters, Redpanda creates two distinct listeners: an mTLS listener operating on one port and a SASL listener operating on a different port.
+Different Redpanda APIs support different authentication methods: 
 
-.Redpanda APIs authentication methods
+* Kafka API: Redpanda Cloud supports both SASL (over TLS 1.2) and <<mtls,mTLS>> authentication for Kafka clients connecting to Redpanda clusters over the TCP endpoint or listener.
+* HTTP Proxy and Schema Registry: Redpanda Cloud supports HTTP Basic Authentication (encrypted over TLS 1.2) and <<mtls,mTLS>> for client authentication.
+
+For AWS and GCP, you can simultaneously enable mTLS and SASL for Kafka API, and mTLS and Basic authentication for the HTTP APIs (HTTP Proxy and Schema Registry). If you enable both mTLS and SASL, Redpanda creates two distinct listeners: an mTLS listener operating on one port and a SASL listener operating on a different port.
+
+.Redpanda API authentication methods
 [%collapsible]
 |===
 |Cloud provider |API |Supported authentication methods
 
-.3+|AWS
+.3+a|AWS
+
+See <<enable-mtls-and-sasl,Enable mTLS and SASL>>
+
 |Kafka API
 a|
 * SASL
@@ -95,7 +103,7 @@ a|
 
 .3+a|GCP
 
-See <<enable-mtls-and-sasl,Enable mTLS and SASL>>. 
+See <<enable-mtls-and-sasl,Enable mTLS and SASL>> 
 
 |Kafka API
 a|
@@ -130,12 +138,6 @@ a|
 * Basic authentication
 |===
 
-* Kafka API: Redpanda Cloud enables SASL/SCRAM authentication
-over TLS 1.2 as well as <<mtls,mTLS>> to authenticate Kafka clients connecting to Redpanda clusters over
-the TCP endpoint or listener.
-* HTTP Proxy and Schema Registry: Authentication is done through an
-HTTP Basic Authentication header encrypted over TLS 1.2.
-
 The following features use IAM policies to generate
 dynamic and short-lived credentials to interact with cloud provider APIs:
 
@@ -163,7 +165,7 @@ If you want to enable mTLS authentication:
 * You must use the Cloud API to create a new mTLS-enabled cluster. 
 * You must also use the Cloud API to update an existing cluster to switch to mTLS authentication for Kafka API.
 * You can use the Cloud UI to update an existing cluster to switch to mTLS authentication for HTTP Proxy and Schema Registry only.
-* To enable mTLS and SASL (or Basic authentication) simultaneously on GCP clusters, you must use the Cloud API to create a new cluster or update an existing cluster.
+* To enable mTLS and SASL (or Basic authentication) simultaneously, you must use the Cloud API to create a new cluster or update an existing cluster.
 
 To configure service authentication in your cluster using the Cloud API, you must have the following:
 
@@ -224,7 +226,7 @@ NOTE: The following example enables mTLS for Kafka API. To enable mTLS for HTTP 
 CLUSTER_CREATE_BODY=`cat << EOF
 {
   "cluster": {
-    "cloud_provider": "CLOUD_PROVIDER_GCP",
+    "cloud_provider": "<cloud-provider>",
     "connection_type": "CONNECTION_TYPE_PRIVATE",
     "name": "<cluster-name>",
     "resource_group_id": "<resource-group-id>",
@@ -258,6 +260,9 @@ Make sure to replace the following variables:
 |`<cluster-id>`
 |ID of the Redpanda cluster.
 
+|`<cloud-provider>`
+|Cloud provider for the cluster (`CLOUD_PROVIDER_AWS` or `CLOUD_PROVIDER_GCP`).
+
 |`<cluster-name>`
 |Name of the Redpanda cluster.
 
@@ -274,7 +279,7 @@ Make sure to replace the following variables:
 |The zones where the cluster is created. For example, `["us-central1-a", "us-central1-b", "us-central1-c"]`.
 
 |`<tier>`
-|The usage tier of the cluster. For example, .
+|The xref:reference:tiers/index.adoc[usage tier of the cluster].
 
 |`<cluster-type>`
 |The Redpanda cluster type, `TYPE_BYOC` or `TYPE_DEDICATED`.
@@ -364,7 +369,7 @@ When the operation state is `COMPLETED`, you can <<verify-mtls,verify that mTLS 
 
 === Enable mTLS and SASL
 
-NOTE: Enabling mTLS and SASL simultaneously is available for GCP clusters only. To unlock this feature for your account, contact your Customer Success Manager.
+NOTE: You can enable mTLS and SASL simultaneously for AWS and GCP clusters only. To unlock this feature for your account, contact your Customer Success Manager.
 
 You can choose to enable mTLS and SASL simultaneously for the Kafka API, and mTLS and Basic authentication for HTTP Proxy and Schema Registry. The `sasl` field in the API request examples toggle both SASL and Basic authentication. 
 
@@ -384,7 +389,7 @@ You can enable mTLS and SASL or Basic authentication for any combination of the 
 CLUSTER_CREATE_BODY=`cat << EOF
 {
   "cluster": {
-    "cloud_provider": "CLOUD_PROVIDER_GCP",
+    "cloud_provider": "<cloud-provider>",
     "connection_type": "CONNECTION_TYPE_PRIVATE",
     "name": "<cluster-name>",
     "resource_group_id": "<resource-group-id>",
@@ -439,6 +444,9 @@ Make sure to replace the following variables:
 |`<cluster-id>`
 |ID of Redpanda cluster.
 
+|`<cloud-provider>`
+|Cloud provider for the cluster (`CLOUD_PROVIDER_AWS` or `CLOUD_PROVIDER_GCP`).
+
 |`<cluster-name>`
 |Name of the Redpanda cluster.
 
@@ -455,7 +463,7 @@ Make sure to replace the following variables:
 |The zones where the cluster is created. For example, `["us-central1-a", "us-central1-b", "us-central1-c"]`.
 
 |`<tier>`
-|The usage tier of the cluster. For example, .
+|The xref:reference:tiers/index.adoc[usage tier of the cluster].
 
 |`<cluster-type>`
 |The Redpanda cluster type, `TYPE_BYOC` or `TYPE_DEDICATED`.
