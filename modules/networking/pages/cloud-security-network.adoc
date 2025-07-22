@@ -171,7 +171,7 @@ When private service connectivity is enabled (AWS PrivateLink, Azure Private Lin
 
 A NAT (Network Address Translation) gateway allows resources in a private network to access the internet, while preventing inbound connections from the internet.
 
-Redpanda Cloud clusters require outbound-only internet access for control plane connectivity, upgrades, and telemetry. The way NAT gateways are provisioned depends on your cloud provider and deployment type:
+Redpanda Cloud clusters require *outbound-only* internet access for control plane connectivity, upgrades, and telemetry. The way NAT gateways are provisioned depends on your cloud provider and deployment type:
 
 * *BYOC/Dedicated on AWS and GCP:* Redpanda provisions one NAT gateway and one internet gateway.
 * *BYOC/Dedicated on Azure:* Redpanda provisions one NAT gateway and a /31 public IP prefix (two usable IPs).
@@ -188,11 +188,9 @@ The following table summarizes when a NAT gateway is required:
 | Internet-facing connectors | Yes (incurs NAT data transfer charges)
 |===
 
-Without connectors, NAT-incurred costs should be relatively low. However, Redpanda Connect and Kafka Connect connectors that egress to the internet can incur higher NAT data transfer costs.
+=== Allowlist the NAT gateway
 
-=== Allowlisting the NAT gateway
-
-You can find the NAT gateway IP address on the cluster *Overview* page on the *Internet gateway* field. Add this address to your data source allowlist, if needed. While Redpanda Data does not guarantee the address will remain static, it is unlikely to change.
+Redpanda Connect and Kafka Connect connectors that egress to the internet can incur NAT data transfer costs. You can find the NAT gateway IP address on the cluster *Overview* page on the *Internet gateway* field. Add this address to your data source allowlist, if needed. While Redpanda Data does not guarantee the address will remain static, it is unlikely to change.
 
 The  *Internet gateway* field is available for BYOC clusters (including BYOVPC/BYOVNet) and Dedicated clusters.
 
