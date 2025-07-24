@@ -197,11 +197,9 @@ Do not use NAT gateway IPs for public clusters in GCP. Public clusters in GCP ma
 
 Redpanda Connect and Kafka Connect connectors that egress to the internet can incur NAT data transfer costs. You can add the NAT gateway IP address to your data source allowlist, if needed. 
 
-Redpanda Data does not guarantee that the NAT gateway address will remain static, but it is unlikely to change.
+Redpanda Data does not guarantee that the NAT gateway IP will remain static, but it is unlikely to change.
 
-You can find the NAT gateway address on the cluster *Overview* page (the *Internet gateway* field) or in the response body of the `GET /vi/networks/{network_id}` API request.  
-
-This field is available for BYOC clusters (including BYOVPC/BYOVNet) and Dedicated clusters.
+For BYOC and Dedicated clusters, you can find the NAT gateway IP on the cluster *Overview* page or in the response body of the xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/clusters/-id-[`GET /v1/clusters/\{id}`] API request.
 
 
 == Cloud provider network services
