@@ -114,16 +114,26 @@ Administrators can require MFA for all users in an organization.
 
 include::shared:partial$feature-flag.adoc[]
 
-Redpanda Cloud supports unified authentication and authorization between Redpanda Cloud and Redpanda with user impersonation. This means you can authenticate to fine-grained access within Redpanda using the same credentials you use to authenticate to Redpanda Cloud. For example, when you list topics in the Cloud UI or Cloud API, you see the topics that you have access to as a specific user, rather than as a generic admin user. This ensures accurate audit logs and unified identity enforcement.
+BYOC and Dedicated clusters support unified authentication and authorization between the Redpanda Cloud UI and Redpanda with user impersonation. This means you can use the same credentials to authenticate to both Redpanda Cloud and the underlying Redpanda cluster, with consistent permissions across all interfaces. This ensures accurate audit logs and unified identity enforcement across all client applications, including the Cloud UI. With user impersonation enabled, the topics and resources users see in the UI match exactly what they can access with the Cloud API or `rpk`. 
 
-* Without user impersonation, Redpanda Cloud evaluates permissions using role bindings defined in its configuration. Redpanda sees all requests as coming from a static service account.
-* With user impersonation, Redpanda Cloud evaluates permissions using glossterm:ACL[,access control lists (ACLs)] and xref:security:authorization/rbac/rbac_dp.adoc[role-based access control (RBAC)] in the glossterm:data plane[]. 
+* *Without user impersonation*: Redpanda Cloud uses a static service account to access your cluster. All UI requests appear to come from this generic admin user.
+* *With user impersonation*: Redpanda Cloud uses your individual user credentials and evaluates permissions using glossterm:ACL[,access control lists (ACLs)] and glossterm:RBAC[,role-based access control (RBAC)] in the data plane. Each user sees only the resources they have permission to access.  
 
-To enable user impersonation, go to the *Cluster settings* page and select the option to enable it.
+To enable user impersonation:
 
-After enabling user impersonation, new Readers and Writers added to the cluster must have their roles or ACLs granted by Admins in the cluster *Security* page.
+1. Go to the *Cluster settings* page and select the option to enable it.
+2. Configure permissions for your users on the cluster *Security* page using ACLs or RBAC roles.
 
-CAUTION: Enabling user impersonation does not affect Admin users, but Readers and Writers will lose access until they are granted roles or ACLs. 
+[IMPORTANT]
+====
+
+After enabling user impersonation:
+
+* *Admin users* continue to have full access as before
+* *Reader and Writer users* will lose access to the cluster until you explicitly grant them permissions through ACLs or RBAC roles on the *Security* page
+
+Plan to configure user permissions before or immediately after enabling this feature to avoid access disruption.
+==== 
 
 == Service authentication
 
