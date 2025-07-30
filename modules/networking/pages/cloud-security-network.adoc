@@ -184,7 +184,13 @@ The following table summarizes when a NAT gateway is required:
 | Use case | NAT gateway required?
 
 | Redpanda streaming traffic | No 
-| Redpanda Tiered Storage traffic | No (VPC gateway endpoint used; no data transfer charges)
+| Redpanda Tiered Storage traffic | This depends on the cloud provider: +
+
+*AWS*:  No, the VPC gateway endpoint is only a primitive in AWS.
+
+*Azure*: Yes
+
+*GCP*: No, Tiered Storage data transfer is free within the same region.
 | Redpanda provisioning and telemetry | Yes (minimal usage for artifact downloads and metrics)
 | Internet-facing connectors | Yes (incurs NAT data transfer charges)
 |===
