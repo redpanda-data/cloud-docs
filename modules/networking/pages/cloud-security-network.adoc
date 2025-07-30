@@ -174,30 +174,28 @@ A NAT (Network Address Translation) gateway allows resources in a private networ
 Redpanda Cloud clusters require *outbound-only* internet access for control plane connectivity, upgrades, and telemetry. The way NAT gateways are provisioned depends on your cloud provider and deployment type:
 
 * *BYOVPC/BYOVNet:* You are responsible for providing internet access, as you fully manage the network.
-* *BYOC/Dedicated on GCP:* Redpanda provisions one NAT gateway and one internet gateway. 
-* *BYOC/Dedicated on Azure:* Redpanda provisions one NAT gateway and a `/31` public IP prefix (two usable IPs).
-* *BYOC/Dedicated on GCP:* Redpanda provisions one NAT gateway and one internet gateway.
+* *BYOC/Dedicated* on *AWS* Redpanda provisions one NAT gateway and one internet gateway.
+* *BYOC/Dedicated* on *Azure:* Redpanda provisions one NAT gateway and a `/31` public IP prefix (two usable IPs).
+* *BYOC/Dedicated* on *GCP:* Redpanda provisions one NAT gateway and one internet gateway.
 
 The following table summarizes when a NAT gateway is required:
 
 |===
-| Use case | NAT gateway required?
+| Use case | NAT gateway required? | Notes
 
-| Redpanda streaming traffic | No 
-| Redpanda Tiered Storage traffic | This depends on the cloud provider: +
+| Redpanda streaming traffic | No | All connections are done through a VPC gateway endpoint in the VPC. BYOVPC customers must ensure that this VPC endpoint exists in the VPC and that routing rules are configured appropriately.
+| Redpanda Tiered Storage traffic | No | *AWS*: All connections are done through a VPC gateway endpoint in the VPC. BYOVPC customers must ensure that this VPC endpoint exists in the VPC and that routing rules are configured appropriately.
 
-*AWS*:  No, the VPC gateway endpoint is only a primitive in AWS.
+*Azure*: Three Private Link endpoints are used by Redpanda brokers to access Azure Blob Storage.
 
-*Azure*: Yes
-
-*GCP*: No, Tiered Storage data transfer is free within the same region.
-| Redpanda provisioning and telemetry | Yes (minimal usage for artifact downloads and metrics)
-| Internet-facing connectors | Yes (incurs NAT data transfer charges)
+*GCP*: Tiered Storage data transfer is free within the same region.
+| Redpanda provisioning and telemetry | Yes | There is a minimal usage for artifact downloads and metrics.
+| Internet-facing connectors | Yes | Internet-facing connectors incur NAT data transfer charges.
 |===
 
-[CAUTION]
+[NOTE]
 ====
-Do not use NAT gateway IPs for public clusters in GCP. Public clusters in GCP may have multiple gateways.
+Public clusters in GCP may have multiple gateways. Do not use NAT gateway IPs for public clusters in GCP.
 ====
 
 === Allowlist the NAT gateway
