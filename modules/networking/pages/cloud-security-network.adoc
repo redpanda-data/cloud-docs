@@ -171,12 +171,12 @@ When private service connectivity is enabled (AWS PrivateLink, Azure Private Lin
 
 A NAT (Network Address Translation) gateway allows resources in a private network to access the internet, while blocking inbound connections.
 
-Redpanda Cloud clusters require *outbound-only* internet access for control plane connectivity, upgrades, and telemetry. The way NAT gateways are provisioned depends on your cloud provider and deployment type:
+Redpanda Cloud clusters require outbound-only internet access for control plane connectivity, upgrades, and telemetry. The way NAT gateways are provisioned depends on your cloud provider and deployment type:
 
 * *BYOVPC/BYOVNet:* You are responsible for providing internet access, as you fully manage the network.
-* *BYOC/Dedicated* on *AWS* Redpanda provisions one NAT gateway and one internet gateway.
-* *BYOC/Dedicated* on *Azure:* Redpanda provisions one NAT gateway and a `/31` public IP prefix (two usable IPs).
-* *BYOC/Dedicated* on *GCP:* Redpanda provisions one NAT gateway and one internet gateway.
+* *BYOC/Dedicated* on *AWS:* Redpanda provisions one NAT gateway and one internet gateway for outbound-only access.
+* *BYOC/Dedicated* on *Azure:* Redpanda provisions one NAT gateway and a `/31` public IP prefix (two usable IPs) for outbound-only access.
+* *BYOC/Dedicated* on *GCP:* Redpanda provisions one NAT gateway and one internet gateway for outbound-only access.
 
 The following table summarizes when a NAT gateway is required:
 
@@ -195,7 +195,7 @@ The following table summarizes when a NAT gateway is required:
 
 [NOTE]
 ====
-Public clusters in GCP may have multiple gateways. Do not use NAT gateway IPs for public clusters in GCP.
+GCP public clusters use multiple NAT gateways with dynamic IP allocation. For GCP public clusters, do not use specific NAT gateway IP addresses for allowlisting or firewall rules.
 ====
 
 === Allowlist the NAT gateway
