@@ -167,24 +167,45 @@ When private service connectivity is enabled (AWS PrivateLink, Azure Private Lin
 |===
 
 
-== NAT gateways 
+== NAT gateways
 
-Redpanda Cloud clusters rely on outbound-only internet access to connect to the control plane, perform cluster upgrades, and deliver cluster telemetry to the control plane. 
+A NAT (Network Address Translation) gateway allows resources in a private network to access the internet, while blocking inbound connections.
 
-* For Dedicated and BYOC standard clusters on AWS and GCP, Redpanda provisions one NAT gateway and one internet gateway. 
-* For Dedicated and BYOC standard clusters on Azure, Redpanda provisions one NAT gateway and one public IP prefix of 31 bits.
-* For BYOVPC, you decide how to provide access to the internet, because you fully manage the network.
+Redpanda Cloud clusters require outbound-only internet access for control plane connectivity, upgrades, and telemetry. The way NAT gateways are provisioned depends on your cloud provider and deployment type:
 
-Without connectors, NAT-incurred costs should be relatively low. Redpanda Connect and Kafka Connect connectors can egress to the internet and incur high NAT data transfer costs.
+* *BYOVPC/BYOVNet:* You are responsible for providing internet access, as you fully manage the network.
+* *BYOC/Dedicated* on *AWS:* Redpanda provisions one NAT gateway and one internet gateway for outbound-only access.
+* *BYOC/Dedicated* on *Azure:* Redpanda provisions one NAT gateway and a `/31` public IP prefix (two usable IPs) for outbound-only access.
+* *BYOC/Dedicated* on *GCP:* Redpanda provisions one NAT gateway and one internet gateway for outbound-only access.
+
+The following table summarizes when a NAT gateway is required:
 
 |===
-| Use case | NAT gateway required?
+| Traffic type | NAT gateway required? | Notes
 
-| Redpanda streaming traffic | No 
-| Redpanda Tiered Storage traffic | No: VPC gateway endpoint used, no data transfer charges
-| Redpanda provisioning and telemetry | Yes: minimal usage for artifact downloads and metrics
-| Internet-facing connectors | Yes: incurs NAT data-transfer charges
+| Redpanda streaming traffic | No | 
+| Redpanda Tiered Storage traffic | No | *AWS*: All connections are done through a VPC gateway endpoint in the VPC. BYOVPC customers must ensure that this VPC endpoint exists in the VPC and that routing rules are configured appropriately.
+
+*Azure*: Three Private Link endpoints are used by Redpanda brokers to access Azure Blob Storage.
+
+*GCP*: Tiered Storage data transfer is free within the same region.
+| Redpanda provisioning and telemetry | Yes | There is a minimal usage for artifact downloads and metrics.
+| Internet-facing connectors | Yes | Internet-facing connectors incur NAT data transfer charges.
 |===
+
+[NOTE]
+====
+GCP public clusters use multiple NAT gateways with dynamic IP allocation. For GCP public clusters, do not use specific NAT gateway IP addresses for allowlisting or firewall rules.
+====
+
+=== Allowlist the NAT gateway
+
+Redpanda Connect and Kafka Connect connectors that egress to the internet can incur NAT data transfer costs. You can add the NAT gateway IP address to your data source allowlist, if needed. 
+
+Redpanda Data does not guarantee that the NAT gateway IP will remain static, but it is unlikely to change.
+
+For BYOC and Dedicated clusters, you can find the NAT gateway IP on the cluster *Overview* page or in the response body of the xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/clusters/-id-[`GET /v1/clusters/\{id}`] API request.
+
 
 == Cloud provider network services
 
@@ -205,7 +226,7 @@ Redpanda Cloud creates a new DNS zone for each cluster in the control plane and 
 +
 The Route 53-hosted DNS zone in the data plane has the following naming convention: 
 +
-** BYOC/BYOVPC: `[cluster_id].byoc.prd.cloud.redpanda.com`
+** BYOC/BYOVPC/BYOVNet: `[cluster_id].byoc.prd.cloud.redpanda.com`
 ** Dedicated: `[cluster_id].fmc.prd.cloud.redpanda.com`
 
 * *Distributed denial of service (DDoS) protection*
@@ -222,7 +243,7 @@ _Security best practice:_ When using VPC peering, always reject all network traf
 +
 AWS PrivateLink lets you connect to cluster services using unidirectional TCP connections that client applications can only initiate. These applications can run from multiple customer-managed VPCs, even if their CIDR ranges overlap with the Redpanda cluster VPC. 
 +
-AWS PrivateLink is configured against the Redpanda cluster's network load balancer. All client connections to cluster services pass through this load balancer. You configure PrivateLink with the Redpanda Cloud API or UI, and it is protected by an allowlist of principal ARNs during creation. Only those principals can create VPC endpoint attachments to the PrivateLink service. 
+AWS PrivateLink is configured against the Redpanda cluster's network load balancer. All client connections to cluster services pass through this load balancer. You configure PrivateLink with the Redpanda Cloud UI or Cloud API, and it is protected by an allowlist of principal ARNs during creation. Only those principals can create VPC endpoint attachments to the PrivateLink service. 
 --
 
 Azure::
@@ -261,7 +282,7 @@ Unlike AWS and GCP, Azure charges $0.01 per GB transferred over a VNet peering, 
 +
 Azure Private Link lets you connect to cluster services using an unidirectional TCP connection that can only be initiated by client applications. These applications can run from multiple customer-managed VNets, even if their CIDR ranges overlap with the Redpanda cluster VNet. 
 +
-Redpanda configures Private Link against the cluster's Azure load balancer. All client connections to the Redpanda cluster services pass through this load balancer. You configure Private Link with the Redpanda Cloud API, and it is protected during creation by an allowlist of Azure subscription IDs. Only allowlisted subscriptions can create private endpoint attachments to the cluster's Private Link service.
+Redpanda configures Private Link against the cluster's Azure load balancer. All client connections to the Redpanda cluster services pass through this load balancer. You configure Private Link with the Redpanda Cloud UI or the Cloud API, and it is protected during creation by an allowlist of Azure subscription IDs. Only allowlisted subscriptions can create private endpoint attachments to the cluster's Private Link service.
 --
 
 GCP::
@@ -289,7 +310,7 @@ _Security best practice:_ When using VPC peering, always reject all network traf
 +
 GCP Private Service Connect lets you connect to cluster services using a unidirectional TCP connection that can only be initiated by client applications. These applications can run from multiple customer-managed VPCs, even if their CIDR ranges overlap with the Redpanda cluster VPC. 
 +
-Redpanda configures a Private Service Connect publisher or producer against the cluster's network load balancer. All client connections to the Redpanda cluster services pass through this load balancer. You configure a Private Service Connect publisher with the Redpanda Cloud API. It is protected during creation by a consumer accept list of GCP networks or project IDs. Only those consumers can create consumer endpoints to the Redpanda cluster's Private Service Connect published service.
+Redpanda configures a Private Service Connect producer against the cluster's network load balancer. All client connections to the Redpanda cluster services pass through this load balancer. You configure a Private Service Connect publisher with the Redpanda Cloud UI or the Cloud API. It is protected during creation by a consumer accept list of GCP networks or project IDs. Only those consumers can create consumer endpoints to the Redpanda cluster's Private Service Connect published service.
 --
 ====
 
