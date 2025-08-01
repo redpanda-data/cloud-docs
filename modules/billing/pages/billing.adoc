@@ -1,5 +1,5 @@
 = Redpanda Cloud Usage Metrics
-:description: Learn about the metrics Redpanda uses to measure Serverless consumption in Redpanda Cloud.
+:description: Learn about the metrics Redpanda uses to measure consumption in Redpanda Cloud.
 :page-aliases: deploy:deployment-option/cloud/manage-billing/billing.adoc
 
 Redpanda Cloud uses various metrics to measure the consumption of resources. 
@@ -99,26 +99,34 @@ The cost varies based on the number of availability zones (AZ) you select for yo
 Replication to object storage is implemented with glossterm:Tiered Storage[]. All topics have a fixed replication factor of 3, but Redpanda counts each byte only once.
 
 |=== 
-
 --
-
-Iceberg metrics:: 
-+
---
-Pricing per pipeline depends on:
+======
 
 
-- 
-- 
+== Iceberg pipeline metrics
+
+Pricing per pipeline depends on: 
+
+?
 
 |===
 | Metric | Description
-
 | ? | ?
+|===
+
+NOTE: Iceberg integration is supported only for BYOC clusters.
+
+== Redpanda Connect pipeline metrics
+
+Pricing per pipeline depends on:
+
+- The number of xref:develop:connect/configuration/resource-management.adoc[compute units] you allocate.
+- The cost of a compute unit, which varies based on the cloud provider and region you select for your cluster.
 
 |=== 
---
-====== 
+| Metric | Description
+| Compute | Tracks the server resources (CPU and memory) a pipeline uses in compute units per hour.
+|=== 
 
 == Next steps
 
