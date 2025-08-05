@@ -133,7 +133,7 @@ CLUSTER_PATCH_BODY=`cat << EOF
 {
     "gcp_private_service_connect": {
         "enabled": true,
-         "consumer_accept_list": <accept-list>
+         "consumer_accept_list": <consumer-accept-list>
     }
 }
 EOF`
@@ -155,4 +155,23 @@ gcloud compute service-attachments list --project '<service-project-id>'
 ----
 
 
-include::networking:partial$psc-api2.adoc[]
+include::networking:partial$psc-ui.adoc[]
+
+== Disable Private Service Connect
+
+Make a xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1/clusters/-cluster.id-[`PATCH /v1/clusters/{cluster.id}`] request to update the cluster to disable Private Service Connect.
+
+[,bash]
+----
+CLUSTER_PATCH_BODY=`cat << EOF
+{
+    "gcp_private_service_connect": {
+        "enabled": false
+    }
+}
+EOF`
+curl -v -X PATCH \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer $AUTH_TOKEN" \
+-d "$CLUSTER_PATCH_BODY" $PUBLIC_API_ENDPOINT/v1/clusters/$CLUSTER_ID
+----
