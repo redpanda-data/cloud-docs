@@ -12,7 +12,7 @@ NOTE: Redpanda Support does not manage or monitor Kafka Connect connectors, but 
 
 == Disable Kafka Connect
 
-After you are authenticated to the Cloud API, make a xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1/clusters/-cluster.id-[`PATCH /v1/clusters/{cluster.id}`] request with your cluster ID:
+After you are authenticated to the Cloud API, make a xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1/clusters/-cluster.id-[`PATCH /v1/clusters/{cluster.id}`] request, replacing `{cluster.id}` with your actual cluster ID.
 
 [,bash]
 ----
@@ -22,7 +22,6 @@ curl -X PATCH "https://api.redpanda.com/v1/clusters/{cluster.id}" \
   -d '{"kafka_connect":{"enabled":false}}'
 ----
 
-Replace `{cluster.id}` with your actual cluster ID.
 
 The `PATCH` request returns the ID of a long-running operation. You can check the status of the operation by polling the xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/operations/-id-[`GET /operations/{id}`] endpoint:
 
