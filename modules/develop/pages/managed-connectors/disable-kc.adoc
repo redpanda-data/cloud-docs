@@ -3,7 +3,7 @@
 
 Kafka Connect is disabled by default on new clusters. If you previously enabled Kafka Connect on a cluster and want to disable it, you can use the Cloud API. 
 
-NOTE: Redpanda Support does not manage or monitor Kafka Connect connectors, but Support can enable the feature for your account.
+NOTE: Redpanda Support does not manage or monitor Kafka Connect, but Support can enable the feature for your account.
 
 == Prerequisites
 
@@ -11,6 +11,8 @@ NOTE: Redpanda Support does not manage or monitor Kafka Connect connectors, but 
 - You have an API token, and you are authenticated to the Cloud API. For details, see xref:manage:api/cloud-api-authentication.adoc[Authenticate to the API].
 
 == Disable Kafka Connect
+
+IMPORTANT: Make sure to stop any active connectors gracefully before disabling Kafka Connect to avoid data loss or incomplete processing.
 
 After you are authenticated to the Cloud API, make a xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1/clusters/-cluster.id-[`PATCH /v1/clusters/{cluster.id}`] request, replacing `{cluster.id}` with your actual cluster ID.
 
@@ -30,6 +32,3 @@ The `PATCH` request returns the ID of a long-running operation. You can check th
 curl -X GET "https://api.redpanda.com/v1/operations/{operation.id}" \
   -H "Authorization: Bearer $AUTH_TOKEN"
 ----
-
-
-IMPORTANT: Make sure to stop any active connectors gracefully before disabling Kafka Connect to avoid data loss or incomplete processing.
