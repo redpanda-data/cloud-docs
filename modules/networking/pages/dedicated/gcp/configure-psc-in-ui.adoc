@@ -11,7 +11,7 @@
 ==== 
 
 
-The Redpanda GCP Private Service Connect service provides secure access to Redpanda Cloud from your own VPC network. Traffic over Private Service Connect does not go through the public internet because these connections are treated as their own private GCP service. While your VPC network has access to the Redpanda VPC network, Redpanda cannot access your VPC network.
+The Redpanda GCP Private Service Connect service provides secure access to Redpanda Cloud from your VPC network. Traffic over Private Service Connect remains within GCP's private network, avoiding the public internet. Your VPC network can access the Redpanda VPC network, but Redpanda cannot access your VPC network.
 
 Consider using Private Service Connect if you have multiple VPC networks and could benefit from a more simplified approach to network management.
 
@@ -23,7 +23,7 @@ Consider using Private Service Connect if you have multiple VPC networks and cou
 * You control from which GCP projects connections are allowed.
 ====
 
-== Requirements
+== Prerequisites
 
 * Use the https://cloud.google.com/sdk/docs/install[gcloud^] command-line interface (CLI) to create the consumer-side resources, such as a consumer VPC network and forwarding rule, or to modify existing resources to use the Private Service Connect service attachment created for your cluster.
 * The consumer VPC network must be in the same region as your Redpanda cluster.

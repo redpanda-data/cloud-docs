@@ -7,7 +7,7 @@
 ==== 
 
 
-The Redpanda GCP Private Service Connect service provides secure access to Redpanda Cloud from your own VPC network. Traffic over Private Service Connect does not go through the public internet because these connections are treated as their own private GCP service. While your VPC network has access to the Redpanda VPC network, Redpanda cannot access your VPC network.
+The Redpanda GCP Private Service Connect service provides secure access to Redpanda Cloud from your VPC network. Traffic over Private Service Connect remains within GCP's private network, avoiding the public internet. Your VPC network can access the Redpanda VPC network, but Redpanda cannot access your VPC network.
 
 Consider using Private Service Connect if you have multiple VPC networks and could benefit from a more simplified approach to network management.
 
@@ -15,11 +15,11 @@ Consider using Private Service Connect if you have multiple VPC networks and cou
 ====
 * Each consumer VPC network can have one Private Service Connect endpoint connected to the Redpanda service attachment.
 * Private Service Connect allows overlapping xref:networking:cidr-ranges.adoc[CIDR ranges] in VPC networks.
-* The number of connections is limited only by your Redpanda usage tier. Private Service Connect does not add extra connection limits. 
+* The number of connections is limited only by your Redpanda xref:reference:tiers/index.adoc[usage tier]. Private Service Connect does not add extra connection limits. 
 * You control from which GCP projects connections are allowed.
 ====
 
-== Requirements
+== Prerequisites
 
 * In this guide, you use the xref:manage:api/cloud-api-overview.adoc[Redpanda Cloud API] to enable the Redpanda endpoint service for your clusters. Follow the steps on this page to <<get-a-cloud-api-access-token, get an access token>>.
 * Use the https://cloud.google.com/sdk/docs/install[gcloud^] command-line interface (CLI) to create the consumer-side resources, such as a VPC and forwarding rule, or to modify existing resources to use the Private Service Connect attachment created for your cluster.
