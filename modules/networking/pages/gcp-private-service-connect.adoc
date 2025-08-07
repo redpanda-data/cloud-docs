@@ -59,7 +59,7 @@ gcloud compute firewall-rules create redpanda-psc \
 +
 [,bash]
 ----
-network_post_body=`cat << EOF
+NETWORK_POST_BODY=`cat << EOF
 {
     "cloud_provider": "CLOUD_PROVIDER_GCP",
     "cluster_type": "TYPE_BYOC",
@@ -79,7 +79,7 @@ EOF`
 curl -vv -X POST \
 -H "Content-Type: application/json" \
 -H "Authorization: Bearer $AUTH_TOKEN" \
--d "$network_post_body" $PUBLIC_API_ENDPOINT/v1/networks
+-d "$NETWORK_POST_BODY" $PUBLIC_API_ENDPOINT/v1/networks
 ----
 +
 Replace the following placeholder variables for the request body:
@@ -128,7 +128,7 @@ export CLUSTER_POST_BODY=`cat << EOF
                 "secondary_ipv4_range_services": { "name": "<byovpc-subnet-services-range-name>" },
                 "k8s_master_ipv4_range": "<byovpc-subnet-master-range>"
             },
-            "psc_nat_subnet_name": "<psc-nat-subnet-name>"
+            "psc_nat_subnet_name": "<psc-nat-subnet-name>",
             "agent_service_account": { "email": "<byovpc-agent-service-acc-email>" },
             "connector_service_account": { "email": "<byovpc-connectors-service-acc-email>" },
             "console_service_account": { "email": "<byovpc-console-service-acc-email>" },
@@ -154,7 +154,7 @@ Replace the following placeholders for the request body. Variables with a `byovp
 - `<zones>`: Provide the list of GCP zones where the brokers will be deployed. Format: `["<zone 1>", "<zone 2>", "<zone N>"]`
 - `<throughput-tier>`: Choose a Redpanda Cloud cluster tier. For example, `tier-1-gcp-v2-x86`.
 - `<redpanda-version>`: Choose the Redpanda Cloud version.
-- `<consumer-accept-list>`: The list of IDs of GCP projects from which Private Service Connect connection requests are accepted. Format: `[{"source": "<GCP-project-ID-1>"}, {"source": "<GCP-project-I-2>"}, {"source": "<GCP-project-ID-N>"}]`
+- `<consumer-accept-list>`: The list of IDs of GCP projects from which Private Service Connect connection requests are accepted. Format: `[{"source": "<GCP-project-ID-1>"}, {"source": "<GCP-project-ID-2>"}, {"source": "<GCP-project-ID-N>"}]`
 - `<byovpc-subnet-name>`: The name of the GCP subnet that was created for the cluster.
 - `<byovpc-subnet-pods-range-name>`: The name of the IPv4 range designated for K8s pods.
 - `<byovpc-subnet-services-range-name>`: The name of the IPv4 range designated for services.
@@ -236,7 +236,7 @@ CLUSTER_PATCH_BODY=`cat << EOF
 {
     "gcp_private_service_connect": {
         "enabled": true,
-         "consumer_accept_list": <accept-list>
+         "consumer_accept_list": <consumer-accept-list>
     }
 }
 EOF`
@@ -248,7 +248,7 @@ curl -v -X PATCH \
 +
 Replace the following placeholder:
 +
-`<accept-list>`: a JSON list specifying the projects from which incoming connections will be accepted. All other sources. For example, `[{"source": "consumer-project-ID-1"},{"source": "consumer-project-ID-2"}]`.
+`<consumer-accept-list>`: A JSON list specifying the projects from which incoming connections will be accepted. All other sources are rejected. For example, `[{"source": "consumer-project-ID-1"},{"source": "consumer-project-ID-2"}]`.
 +
 Wait for the cluster to apply the new configuration (around 15 minutes). The Private Service Connect attachment is available when the cluster update is complete. To monitor the service attachment creation, run the following `gcloud` command with the project ID:
 +
