@@ -15,26 +15,11 @@ Copy and store the resource group ID (UUID) from the URL in the browser.
 export RESOURCE_GROUP_ID=<uuid>
 ----
 
-. Create VPC firewall rules to allow Private Service Connect traffic. Use the `gcloud` CLI to create the firewall rules:  
-+
-NOTE: The firewall rules support up to 20 Redpanda brokers. If you have more than 20 brokers, or for help enabling Private Service Connect, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda support^].
-+
-```
-gcloud compute firewall-rules create redpanda-psc \
-  --description="Allow access to Redpanda PSC endpoints" \
-  --network="<shared-vpc-name>" \
-  --project="<host-project-id>" \
-  --direction="INGRESS" \
-  --target-tags="redpanda-node" \
-  --source-ranges="10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,100.64.0.0/10" \
-  --allow="tcp:30181,tcp:30282,tcp:30292,tcp:31004,tcp:31082-31101,tcp:31182-31201,tcp:31282-31301,tcp:32092-32111,tcp:32192-32211,tcp:32292-32311"
-```
-
 . Make a request to the xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1/networks[`POST /v1/networks`] endpoint to create a network.
 +
 [,bash]
 ----
-network_post_body=`cat << EOF
+NETWORK_POST_BODY=`cat << EOF
 {
     "cloud_provider": "CLOUD_PROVIDER_GCP",
     "cluster_type": "TYPE_DEDICATED",
@@ -54,7 +39,7 @@ EOF`
 curl -vv -X POST \
 -H "Content-Type: application/json" \
 -H "Authorization: Bearer $AUTH_TOKEN" \
--d "$network_post_body" $PUBLIC_API_ENDPOINT/v1/networks
+-d "$NETWORK_POST_BODY" $PUBLIC_API_ENDPOINT/v1/networks
 ----
 +
 Replace the following placeholder variables for the request body:
@@ -94,7 +79,7 @@ export CLUSTER_POST_BODY=`cat << EOF
     "gcp_private_service_connect": {
         "enabled": true,
         "consumer_accept_list": <consumer-accept-list>
-    },
+    }
 }
 EOF`
 
@@ -110,7 +95,7 @@ curl -vv -X POST \
 - `<zones>`: Provide the list of GCP zones where the brokers will be deployed. Format: `["<zone 1>", "<zone 2>", "<zone N>"]`
 - `<throughput-tier>`: Choose a Redpanda Cloud cluster tier. For example, `tier-1-gcp-v2-x86`.
 - `<redpanda-version>`: Choose the Redpanda Cloud version.
-- `<consumer-accept-list>`: The list of IDs of GCP projects from which Private Service Connect connection requests are accepted. Format: `[{"source": "<GCP-project-ID-1>"}, {"source": "<GCP-project-I-2>"}, {"source": "<GCP-project-ID-N>"}]`
+- `<consumer-accept-list>`: The list of IDs of GCP projects from which Private Service Connect connection requests are accepted. Format: `[{"source": "<GCP-project-ID-1>"}, {"source": "<GCP-project-ID-2>"}, {"source": "<GCP-project-ID-N>"}]`
 --
 
 == Enable Private Service Connect on an existing cluster
@@ -133,7 +118,7 @@ CLUSTER_PATCH_BODY=`cat << EOF
 {
     "gcp_private_service_connect": {
         "enabled": true,
-         "consumer_accept_list": <accept-list>
+         "consumer_accept_list": <consumer-accept-list>
     }
 }
 EOF`
@@ -145,7 +130,7 @@ curl -v -X PATCH \
 +
 Replace the following placeholder:
 +
-`<accept-list>`: a JSON list specifying the projects from which incoming connections will be accepted. All other sources. For example, `[{"source": "consumer-project-ID-1"},{"source": "consumer-project-ID-2"}]`.
+`<consumer-accept-list>`: A JSON list specifying the projects from which incoming connections will be accepted. All other sources are rejected. For example, `[{"source": "consumer-project-ID-1"},{"source": "consumer-project-ID-2"}]`.
 +
 Wait for the cluster to apply the new configuration (around 15 minutes). The Private Service Connect attachment is available when the cluster update is complete. To monitor the service attachment creation, run the following `gcloud` command with the project ID:
 +
@@ -155,4 +140,23 @@ gcloud compute service-attachments list --project '<service-project-id>'
 ----
 
 
-include::networking:partial$psc-api2.adoc[]
+include::networking:partial$psc-ui.adoc[]
+
+== Disable Private Service Connect
+
+Make a xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1/clusters/-cluster.id-[`PATCH /v1/clusters/{cluster.id}`] request to update the cluster to disable Private Service Connect.
+
+[,bash]
+----
+CLUSTER_PATCH_BODY=`cat << EOF
+{
+    "gcp_private_service_connect": {
+        "enabled": false
+    }
+}
+EOF`
+curl -v -X PATCH \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer $AUTH_TOKEN" \
+-d "$CLUSTER_PATCH_BODY" $PUBLIC_API_ENDPOINT/v1/clusters/$CLUSTER_ID
+----
