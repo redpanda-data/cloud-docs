@@ -13,20 +13,18 @@ You can also verify with the Cloud API:
 
 [,bash]
 ----
-curl -X GET "https://api.redpanda.com/v1/clusters/{cluster.id}" \
-  -H "Authorization: Bearer $AUTH_TOKEN" \
-  -H "Content-Type: application/json"
+curl -sX GET "https://api.redpanda.com/v1/clusters/{cluster.id}" \
+ -H "Authorization: Bearer ${AUTH_TOKEN}" \
+ -H 'accept: application/json'  | jq -r '.cluster.kafka_connect' 
 ----  
 
 Replace `{cluster.id}` with your actual cluster ID. You can find the cluster ID in the Redpanda Cloud UI. Look in the **Details** section of the cluster overview.
 
-If Kafka Connect is enabled, the response will include the following:
+If Kafka Connect is enabled, the response will show:
 
 [,bash]
 ----
-"kafka_connect": {
   "enabled": true
-}
 ----  
 
 == Prerequisites
@@ -61,7 +59,5 @@ When the operation is complete, the status will show `"state": "STATE_COMPLETED"
 
 [,bash]
 ----
-"kafka_connect": {
   "enabled": false
-}
 ----
