@@ -15,21 +15,6 @@ Copy and store the resource group ID (UUID) from the URL in the browser.
 export RESOURCE_GROUP_ID=<uuid>
 ----
 
-. Create VPC firewall rules to allow Private Service Connect traffic. Use the `gcloud` CLI to create the firewall rules:  
-+
-NOTE: The firewall rules support up to 20 Redpanda brokers. If you have more than 20 brokers, or for help enabling Private Service Connect, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda support^].
-+
-```
-gcloud compute firewall-rules create redpanda-psc \
-  --description="Allow access to Redpanda PSC endpoints" \
-  --network="<shared-vpc-name>" \
-  --project="<host-project-id>" \
-  --direction="INGRESS" \
-  --target-tags="redpanda-node" \
-  --source-ranges="10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,100.64.0.0/10" \
-  --allow="tcp:30181,tcp:30282,tcp:30292,tcp:31004,tcp:31082-31101,tcp:31182-31201,tcp:31282-31301,tcp:32092-32111,tcp:32192-32211,tcp:32292-32311"
-```
-
 . Make a request to the xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1/networks[`POST /v1/networks`] endpoint to create a network.
 +
 [,bash]

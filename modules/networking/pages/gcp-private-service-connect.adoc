@@ -22,21 +22,21 @@ export RESOURCE_GROUP_ID=<uuid>
 +
 [,bash]
 ----
-gcloud compute networks subnets create <subnet-name> \
+gcloud compute networks subnets create <psc-nat-subnet-name> \
     --project=<host-project-id> \
     --network=<shared-vpc-name> \
     --region=<region> \
-    --range=<subnet-range> \
+    --range=<psc-nat-subnet-range>\
     --purpose=PRIVATE_SERVICE_CONNECT
 ----
 +
 Provide your values for the following placeholders:
 +
-- `<subnet-name>`: The name of the NAT subnet.
+- `<psc-nat-subnet-name>`: The name of the NAT subnet.
 - `<host-project-id>`: The host GCP project ID.
 - `<shared-vpc-name>`: The name of the VPC being used for your Redpanda Cloud cluster. The name is used to identify this network in the Cloud UI.
 - `<region>`: The GCP region of the Redpanda Cloud cluster.
-- `<subnet-range>`: The CIDR range of the subnet. The mask should be at least `/29`. Each Private Service Connect connection takes up one IP address from the NAT subnet, so the CIDR must be able to accommodate all projects from which connections to the service attachment will be issued.
+- `<psc-nat-subnet-range>`: The CIDR range of the subnet. The mask should be at least `/29`. Each Private Service Connect connection takes up one IP address from the NAT subnet, so the CIDR must be able to accommodate all projects from which connections to the service attachment will be issued.
 +
 See the GCP documentation for https://cloud.google.com/vpc/docs/configure-private-service-connect-producer#add-subnet-psc[creating a subnet for Private Service Connect^].
 
@@ -128,7 +128,7 @@ export CLUSTER_POST_BODY=`cat << EOF
                 "secondary_ipv4_range_services": { "name": "<byovpc-subnet-services-range-name>" },
                 "k8s_master_ipv4_range": "<byovpc-subnet-master-range>"
             },
-            "psc_nat_subnet_name": "<byovpc-psc-nat-subnet-name>"
+            "psc_nat_subnet_name": "<psc-nat-subnet-name>"
             "agent_service_account": { "email": "<byovpc-agent-service-acc-email>" },
             "connector_service_account": { "email": "<byovpc-connectors-service-acc-email>" },
             "console_service_account": { "email": "<byovpc-console-service-acc-email>" },
@@ -159,7 +159,7 @@ Replace the following placeholders for the request body. Variables with a `byovp
 - `<byovpc-subnet-pods-range-name>`: The name of the IPv4 range designated for K8s pods.
 - `<byovpc-subnet-services-range-name>`: The name of the IPv4 range designated for services.
 - `<byovpc-subnet-master-range>`: The master IPv4 range.
-- `<byovpc-psc-nat-subnet-name>`: The name of the GCP subnet that was created for Private Service Connect NAT.
+- `<psc-nat-subnet-name>`: The name of the GCP subnet that was created for Private Service Connect NAT.
 - `<byovpc-agent-service-acc-email>`: The email for the agent service account.
 - `<byovpc-connectors-service-acc-email>`: The email for the connectors service account.
 - `<byovpc-console-service-acc-email>`: The email for the console service account.
@@ -182,7 +182,7 @@ export CLUSTER_ID=<cluster-id>
 . For a *BYOC cluster*:
 + 
 --
-- Run `rpk cloud byoc gcp apply` to ensure that the PSC subnets are created in your BYOC cluster. 
+- Run `rpk cloud byoc gcp apply` to ensure that the PSC NAT subnets are created in your BYOC cluster. 
 ```bash
 rpk cloud byoc gcp apply --redpanda-id="${CLUSTER_ID}" --project-id='<service-project-id>'
 ``` 
@@ -226,7 +226,7 @@ curl -v -X PATCH \
 +
 Replace the following placeholder:
 +
-`<psc-nat-subnet-name>`: The name of the Private Service Connect NAT subnet. Use the fully-qualified name, for example `"projects/<host-project-id>/regions/<region>/subnetworks/<subnet-name>"`.
+`<psc-nat-subnet-name>`: The name of the Private Service Connect NAT subnet. Use the fully-qualified name, for example `"projects/<host-project-id>/regions/<region>/subnetworks/<psc-nat-subnet-name>"`.
 
 . Make a xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1/clusters/-cluster.id-[`PATCH /v1/clusters/{cluster.id}`] request to update the cluster to enable Private Service Connect.
 +
