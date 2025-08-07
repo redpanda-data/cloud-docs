@@ -5,9 +5,33 @@ Kafka Connect is disabled by default on new clusters. If you previously enabled 
 
 NOTE: Redpanda Support does not manage or monitor Kafka Connect, but Support can enable the feature for your account.
 
+== Verify Kafka Connect is enabled
+
+If Kafka Connect is enabled on your cluster, you will see it configured on the *Connect* page in the Redpanda Cloud UI.
+
+You can also verify with the Cloud API: 
+
+[,bash]
+----
+curl -X GET "https://api.redpanda.com/v1/clusters/{cluster.id}" \
+  -H "Authorization: Bearer $AUTH_TOKEN" \
+  -H "Content-Type: application/json"
+----  
+
+Replace `{cluster.id}` with your actual cluster ID. You can find the cluster ID in the Redpanda Cloud UI. Look in the **Details** section of the cluster overview.
+
+If Kafka Connect is enabled, the response will include the following:
+
+[,bash]
+----
+"kafka_connect": {
+  "enabled": true
+}
+----  
+
 == Prerequisites
 
-- You have the cluster ID of a cluster that has Kafka Connect enabled. In the Redpanda Cloud UI, go to the cluster overview and copy the cluster ID from the **Details** section.
+- You have the cluster ID of a cluster that has Kafka Connect enabled. 
 - You have a valid bearer token for the Cloud API. For details, see xref:manage:api/cloud-api-authentication.adoc[Authenticate to the API]. 
 
 IMPORTANT: Make sure to stop any active connectors gracefully before disabling Kafka Connect to avoid data loss or incomplete processing.
@@ -24,11 +48,20 @@ curl -X PATCH "https://api.redpanda.com/v1/clusters/{cluster.id}" \
   -d '{"kafka_connect":{"enabled":false}}'
 ----
 
-
 The `PATCH` request returns the ID of a long-running operation. You can check the status of the operation by polling the xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/operations/-id-[`GET /operations/{id}`] endpoint:
 
 [,bash]
 ----
 curl -X GET "https://api.redpanda.com/v1/operations/{operation.id}" \
-  -H "Authorization: Bearer $AUTH_TOKEN"
+  -H "Authorization: Bearer $AUTH_TOKEN" \
+  -H "Content-Type: application/json"
+----
+
+When the operation is complete, the status will show `"state": "STATE_COMPLETED"`. You can verify that Kafka Connect has been disabled by running the verification command from the previous section. The response should show:
+
+[,bash]
+----
+"kafka_connect": {
+  "enabled": false
+}
 ----
