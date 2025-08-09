@@ -61,16 +61,18 @@ gcloud compute firewall-rules create redpanda-psc \
 ----
 NETWORK_POST_BODY=`cat << EOF
 {
-    "cloud_provider": "CLOUD_PROVIDER_GCP",
-    "cluster_type": "TYPE_BYOC",
-    "name": "<shared-vpc-name>",
-    "resource_group_id": "$RESOURCE_GROUP_ID",
-    "region": "<region>",
-    "customer_managed_resources": {
-        "gcp": {
-            "network_name": "<byovpc-network-name>",
-            "network_project_id": "<byovpc-network-gcp-project-id>",
-            "management_bucket": { "name" : "<byovpc-management-bucket>" }
+    "network": {
+        "cloud_provider": "CLOUD_PROVIDER_GCP",
+        "cluster_type": "TYPE_BYOC",
+        "name": "<shared-vpc-name>",
+        "resource_group_id": "$RESOURCE_GROUP_ID",
+        "region": "<region>",
+        "customer_managed_resources": {
+            "gcp": {
+                "network_name": "<byovpc-network-name>",
+                "network_project_id": "<byovpc-network-gcp-project-id>",
+                "management_bucket": { "name" : "<byovpc-management-bucket>" }
+            }
         }
     }
 }
@@ -106,35 +108,37 @@ export NETWORK_ID=<metadata.network_id>
 ----
 export CLUSTER_POST_BODY=`cat << EOF
 {
-    "cloud_provider": "CLOUD_PROVIDER_GCP",
-    "connection_type": "CONNECTION_TYPE_PRIVATE",
-    "type": "TYPE_BYOC",
-    "name": "<cluster-name>",
-    "resource_group_id": "$RESOURCE_GROUP_ID",
-    "network_id": "$NETWORK_ID",
-    "region": "<region>",
-    "zones": <zones>,
-    "throughput_tier": "<throughput-tier>",
-    "redpanda_version": "<redpanda-version>",
-    "gcp_private_service_connect": {
-        "enabled": true,
-        "consumer_accept_list": <consumer-accept-list>
-    },
-    "customer_managed_resources": {
-        "gcp": {
-            "subnet": {
-                "name":"<byovpc-subnet-name>",
-                "secondary_ipv4_range_pods": { "name": "<byovpc-subnet-pods-range-name>" },
-                "secondary_ipv4_range_services": { "name": "<byovpc-subnet-services-range-name>" },
-                "k8s_master_ipv4_range": "<byovpc-subnet-master-range>"
-            },
-            "psc_nat_subnet_name": "<psc-nat-subnet-name>",
-            "agent_service_account": { "email": "<byovpc-agent-service-acc-email>" },
-            "connector_service_account": { "email": "<byovpc-connectors-service-acc-email>" },
-            "console_service_account": { "email": "<byovpc-console-service-acc-email>" },
-            "redpanda_cluster_service_account": { "email": "<byovpc-redpanda-service-acc-email>" },
-            "gke_service_account": { "email": "<byovpc-gke-service-acc-email>" },
-            "tiered_storage_bucket": { "name" : "<byovpc-tiered-storage-bucket>" }
+    "cluster": {
+        "cloud_provider": "CLOUD_PROVIDER_GCP",
+        "connection_type": "CONNECTION_TYPE_PRIVATE",
+        "type": "TYPE_BYOC",
+        "name": "<cluster-name>",
+        "resource_group_id": "$RESOURCE_GROUP_ID",
+        "network_id": "$NETWORK_ID",
+        "region": "<region>",
+        "zones": <zones>,
+        "throughput_tier": "<throughput-tier>",
+        "redpanda_version": "<redpanda-version>",
+        "gcp_private_service_connect": {
+            "enabled": true,
+            "consumer_accept_list": <consumer-accept-list>
+        },
+        "customer_managed_resources": {
+            "gcp": {
+                "subnet": {
+                    "name":"<byovpc-subnet-name>",
+                    "secondary_ipv4_range_pods": { "name": "<byovpc-subnet-pods-range-name>" },
+                    "secondary_ipv4_range_services": { "name": "<byovpc-subnet-services-range-name>" },
+                    "k8s_master_ipv4_range": "<byovpc-subnet-master-range>"
+                },
+                "psc_nat_subnet_name": "<psc-nat-subnet-name>",
+                "agent_service_account": { "email": "<byovpc-agent-service-acc-email>" },
+                "connector_service_account": { "email": "<byovpc-connectors-service-acc-email>" },
+                "console_service_account": { "email": "<byovpc-console-service-acc-email>" },
+                "redpanda_cluster_service_account": { "email": "<byovpc-redpanda-service-acc-email>" },
+                "gke_service_account": { "email": "<byovpc-gke-service-acc-email>" },
+                "tiered_storage_bucket": { "name" : "<byovpc-tiered-storage-bucket>" }
+            }
         }
     }
 }
