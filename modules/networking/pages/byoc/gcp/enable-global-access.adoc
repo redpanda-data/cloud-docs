@@ -1,0 +1,236 @@
+= Create a BYOC Cluster Enabled with Global Access 
+:description: Learn how to enable global access for new BYOC and BYOVPC clusters on GCP.
+
+You can enable https://cloud.google.com/load-balancing/docs/l7-internal/setting-up-l7-internal#global-access[global access^] when you create a new BYOC or BYOVPC cluster on GCP. Global access lets clients outside your cluster's region or VPC connect to your Redpanda cluster. This is useful for providing access to Redpanda for users and services distributed across different geographic locations.
+
+You can only enable global access as part of cluster creation, and not for running clusters.
+
+== Prerequisites
+
+* In this guide, you use the xref:manage:api/cloud-api-overview.adoc[Redpanda Cloud API] to enable the Redpanda endpoint service for your clusters. Follow the steps on this page to <<get-a-cloud-api-access-token, get an access token>>.
+
+== Get a Cloud API access token
+
+include::networking:partial$private-links-api-access-token.adoc[]
+
+== Create a new cluster with global access
+
+=== Create a resource group
+
+Make a request to the `POST /v1/resource-groups` endpoint and store the ID of the resource group you create.
+
+[,bash]
+----
+export RESOURCE_GROUP_ID=$(curl -X POST \
+  https://api.redpanda.com/v1/resource-groups \
+  -H "Authorization: Bearer $AUTH_TOKEN" \
+  -H 'content-type: application/json' \
+  -d '{
+    "resource_group": {
+      "name": "<resource-group-name>"
+    }
+  }' | jq -r '.resource_group.id')
+----
+
+
+If you're creating a BYOVPC cluster, continue to the next section. Otherwise, if you're creating a standard BYOC cluster, skip ahead to <<create-a-network>>.
+
+=== Configure customer-managed resources for BYOVPC
+
+. Before you proceed, check the xref:get-started:cluster-types/byoc/gcp/vpc-byo-gcp.adoc#prerequisites[prerequisites and limitations] for new BYOVPC clusters on GCP.
+. Follow the steps to xref:get-started:cluster-types/byoc/gcp/vpc-byo-gcp.adoc#configure-your-vpc[configure your VPC] with the required permissions and firewall rules.
+. Follow the next steps to xref:get-started:cluster-types/byoc/gcp/vpc-byo-gcp.adoc#configure-the-service-project[configure the service project] and service account bindings.
+
+=== Create a network
+
+Make a request to the `POST /v1/networks` endpoint and store the ID of the network you create.
+
+* For standard BYOC clusters, run: 
++
+[,bash]
+----
+NETWORK_POST_BODY=`cat << EOF
+{
+  "network": {
+    "name": "<byoc-network-name>",
+    "resource_group_id": "$RESOURCE_GROUP_ID",
+    "cloud_provider": "CLOUD_PROVIDER_GCP",
+    "cluster_type": "TYPE_BYOC",
+    "region": "<gcp-region>",
+    "cidr_block": "10.0.0.0/20"
+  }
+}
+EOF`
+
+export NETWORK_ID=$(curl -vv -X POST \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer $AUTH_TOKEN" \
+-d "$NETWORK_POST_BODY" https://api.redpanda.com/v1/networks | jq -r '.operation.metadata.network_id')
+----
+
+* For BYOVPC clusters, you also make a request to the `POST /v1/networks` endpoint, with a different request body:
++
+[,bash]
+----
+NETWORK_POST_BODY=`cat << EOF
+{
+  "network": {
+    "name": "<shared-vpc-name>",
+    "resource_group_id": "$RESOURCE_GROUP_ID",
+    "cloud_provider": "CLOUD_PROVIDER_GCP",
+    "cluster_type": "TYPE_BYOC",
+    "region": "<gcp-region>",
+    "customer_managed_resources": {
+        "gcp": {
+            "network_name": "<byovpc-network-name>",
+            "network_project_id": "<byovpc-network-gcp-project-id>",
+            "management_bucket": { "name" : "<byovpc-management-bucket>" }
+        }
+    }
+}
+EOF`
+
+export NETWORK_ID=$(curl -vv -X POST \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer $AUTH_TOKEN" \
+-d "$NETWORK_POST_BODY" https://api.redpanda.com/v1/networks | jq -r '.operation.metadata.network_id')
+----
++
+Replace the following placeholder variables for the request body:
++
+--
+- `<shared-vpc-name>`: The name for the Redpanda network. 
+- `<gcp-region>`: The GCP region where the network will be created.
+- `<byovpc-network-gcp-project-id>`: The ID of the GCP project where your VPC is created.
+- `<byovpc-network-name>`: The name of your VPC.
+- `<byovpc-management-bucket>`: The name of the Google Storage bucket you created for the cluster.
+--
+
+Note that this endpoint returns a long-running operation. To check the operation state, use the `GET /v1/operations/{operation_id}` endpoint.
+
+=== Create a cluster with global access enabled
+
+Make a request to the `POST /v1/clusters` endpoint to create a new cluster with global access enabled.
+
+* For BYOC clusters, run:
++
+[,bash]
+----
+CLUSTER_POST_BODY=`cat << EOF
+{
+  "cluster": {
+    "name": "<cluster-name>",
+    "resource_group_id": "$RESOURCE_GROUP_ID",
+    "network_id": "$NETWORK_ID",
+    "cloud_provider": "CLOUD_PROVIDER_GCP",
+    "type": "TYPE_BYOC",
+    "region": "<gcp-region>",
+    "zones": <gcp-zones>,
+    "throughput_tier": "<usage-tier>",
+    "gcp_enable_global_access": true
+  }
+}
+EOF`
+
+export CLUSTER_ID=$(curl -X POST \
+  https://api.redpanda.com/v1/clusters \
+  -H "Authorization: Bearer $AUTH_TOKEN" \
+  -H 'content-type: application/json' \
+  -d "$CLUSTER_POST_BODY" | jq -r '.operation.metadata.cluster_id')
+----
++
+Replace the following placeholder variables for the request body:
++
+--
+- `<cluster-name>`: The name for the Redpanda cluster.
+- `<gcp-region>`: The GCP region where the cluster will be created.
+- `<gcp-zones>`: Provide the list of GCP zones where the brokers will be deployed. Format: `["<zone 1>", "<zone 2>", "<zone N>"]`
+- `<usage-tier>`: Choose a Redpanda Cloud cluster tier. For example, `tier-1-gcp-v2-x86`.
+--
+
+* For BYOVPC clusters, you also make a request to the `POST /v1/clusters` endpoint, with a different request body:
++
+[,bash]
+----
+export CLUSTER_POST_BODY=`cat << EOF
+{
+  "cluster": {
+    "cloud_provider": "CLOUD_PROVIDER_GCP",
+    "connection_type": "CONNECTION_TYPE_PRIVATE",
+    "type": "TYPE_BYOC",
+    "name": "<cluster-name>",
+        "resource_group_id": "$RESOURCE_GROUP_ID",
+        "network_id": "$NETWORK_ID",
+        "region": "<gcp-region>",
+        "zones": <gcp-zones>,
+        "throughput_tier": "<usage-tier>",
+        "redpanda_version": "<redpanda-version>",
+        "gcp_enable_global_access": true,
+        "customer_managed_resources": {
+            "gcp": {
+                "subnet": {
+                    "name":"<byovpc-subnet-name>",
+                    "secondary_ipv4_range_pods": { 
+                        "name": "<byovpc-subnet-pods-range-name>" 
+                    },
+                    "secondary_ipv4_range_services": { 
+                        "name": "<byovpc-subnet-services-range-name>" 
+                    },
+                    "k8s_master_ipv4_range": "<byovpc-subnet-master-range>"
+                },
+                "agent_service_account": { 
+                    "email": "<byovpc-agent-service-acc-email>" 
+                },
+                "connector_service_account": { 
+                    "email": "<byovpc-connectors-service-acc-email>" 
+                },
+                "console_service_account": { 
+                    "email": "<byovpc-console-service-acc-email>" 
+                },
+                "redpanda_cluster_service_account": { 
+                    "email": "<byovpc-redpanda-service-acc-email>" 
+                },
+                "gke_service_account": { 
+                    "email": "<byovpc-gke-service-acc-email>" 
+                },
+                "tiered_storage_bucket": { 
+                    "name" : "<byovpc-tiered-storage-bucket>" 
+                }
+            }
+        }
+    }
+}
+EOF`
+
+export CLUSTER_ID=$(curl -vv -X POST \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer $AUTH_TOKEN" \
+-d "$CLUSTER_POST_BODY" https://api.redpanda.com/v1/clusters | jq -r '.operation.metadata.cluster_id')
+----
++
+Replace the following placeholders for the request body. Variables with a `byovpc_` prefix represent the customer-managed resources that you set up previously:
++
+--
+- `<cluster-name>`: Provide a name for the new cluster.
+- `<gcp-region>`: Choose a GCP region where the network will be created.
+- `<gcp-zones>`: Provide the list of GCP zones where the brokers will be deployed. Format: `["<zone 1>", "<zone 2>", "<zone N>"]`
+- `<usage-tier>`: Choose a Redpanda Cloud cluster tier. For example, `tier-1-gcp-v2-x86`.
+- `<redpanda-version>`: Choose the Redpanda Cloud version.
+- `<byovpc-subnet-name>`: The name of the GCP subnet that was created for the cluster.
+- `<byovpc-subnet-pods-range-name>`: The name of the IPv4 range designated for K8s pods.
+- `<byovpc-subnet-services-range-name>`: The name of the IPv4 range designated for services.
+- `<byovpc-subnet-master-range>`: The master IPv4 range.
+- `<psc-nat-subnet-name>`: The name of the GCP subnet that was created for Private Service Connect NAT.
+- `<byovpc-agent-service-acc-email>`: The email for the agent service account.
+- `<byovpc-connectors-service-acc-email>`: The email for the connectors service account.
+- `<byovpc-console-service-acc-email>`: The email for the Console service account.
+- `<byovpc-redpanda-service-acc-email>`: The email for the Redpanda service account.
+- `<byovpc-gke-service-acc-email>`: The email for the GKE service account.
+- `<byovpc-tiered-storage-bucket>`: The name of the Google Storage bucket to use for Tiered Storage.
+--
+
+* Run `rpk cloud byoc gcp apply`:
++
+```bash
+rpk cloud byoc gcp apply --redpanda-id="${CLUSTER_ID}" --project-id='<gcp-service-project-id>'
+```
