@@ -59,12 +59,14 @@ REGION=<aws_region>
 
 NETWORK_POST_BODY=`cat << EOF
 {
-    "cloud_provider": "CLOUD_PROVIDER_AWS",
-    "cluster_type": "TYPE_BYOC",
-    "name": "<my-private-link-network>",
-    "cidr_block": "<10.0.0.0/20>",
-    "resource_group_id": "$RESOURCE_GROUP_ID",
-    "region": "$REGION"
+    "network": {
+        "cloud_provider": "CLOUD_PROVIDER_AWS",
+        "cluster_type": "TYPE_BYOC",
+        "name": "<my-private-link-network>",
+        "cidr_block": "<10.0.0.0/20>",
+        "resource_group_id": "$RESOURCE_GROUP_ID",
+        "region": "$REGION"
+    }
 }
 EOF`
 
@@ -95,19 +97,21 @@ In the example below, make sure to set your own values for the following fields:
 ----
 CLUSTER_POST_BODY=`cat << EOF
 {
-    "cloud_provider": "CLOUD_PROVIDER_AWS",
-    "connection_type": "CONNECTION_TYPE_PRIVATE",
-    "name": "<my-private-link-cluster>",
-    "resource_group_id": "$RESOURCE_GROUP_ID",
-    "network_id": "$NETWORK_ID",
-    "region": "$REGION",
-    "zones": [ <zones> ],
-    "throughput_tier": "<tier>",
-    "type": "<type>",
-    "aws_private_link": {
-        "enabled": true,
-        "connect_console": true,
-        "allowed_principals": ["<principal_1>","<principal_2>"]
+    "cluster": {
+        "cloud_provider": "CLOUD_PROVIDER_AWS",
+        "connection_type": "CONNECTION_TYPE_PRIVATE",
+        "name": "<my-private-link-cluster>",
+        "resource_group_id": "$RESOURCE_GROUP_ID",
+        "network_id": "$NETWORK_ID",
+        "region": "$REGION",
+        "zones": [ <zones> ],
+        "throughput_tier": "<tier>",
+        "type": "<type>",
+        "aws_private_link": {
+            "enabled": true,
+            "connect_console": true,
+            "allowed_principals": ["<principal_1>","<principal_2>"]
+        }
     }
 }
 EOF`

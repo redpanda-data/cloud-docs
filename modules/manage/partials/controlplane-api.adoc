@@ -90,7 +90,9 @@ Create a resource group by making a POST request to the xref:api:ROOT:cloud-cont
 curl -H 'Content-Type: application/json' \
 -H "Authorization: Bearer <token>" \
 -d '{
-  "name": "<resource-group-name>"
+  "resource_group": {
+    "name": "<resource-group-name>"
+  }
 }' -X POST https://api.redpanda.com/v1/resource-groups
 ----
 
@@ -107,12 +109,14 @@ ifdef::env-dedicated[]
 ----
 curl -d \
 '{
-  "cidr_block": "10.0.0.0/20",
-  "cloud_provider": "CLOUD_PROVIDER_GCP",
-  "cluster_type": "TYPE_DEDICATED",
-  "name": "<network-name>",
-  "resource_group_id": "<resource-group-id>",
-  "region": "us-west1"
+  "network": {
+    "cidr_block": "10.0.0.0/20",
+    "cloud_provider": "CLOUD_PROVIDER_GCP",
+    "cluster_type": "TYPE_DEDICATED",
+    "name": "<network-name>",
+    "resource_group_id": "<resource-group-id>",
+    "region": "us-west1"
+  }
 }' -H "Authorization: Bearer <token>" -X POST https://api.redpanda.com/v1/networks 
 ----
 endif::[]
@@ -121,12 +125,14 @@ ifdef::env-byoc[]
 ----
 curl -d \
 '{
-  "cidr_block": "10.0.0.0/20",
-  "cloud_provider": "CLOUD_PROVIDER_GCP",
-  "cluster_type": "TYPE_BYOC",
-  "name": "<network-name>",
-  "resource_group_id": "<resource-group-id>",
-  "region": "us-west1"
+  "network": {
+    "cidr_block": "10.0.0.0/20",
+    "cloud_provider": "CLOUD_PROVIDER_GCP",
+    "cluster_type": "TYPE_BYOC",
+    "name": "<network-name>",
+    "resource_group_id": "<resource-group-id>",
+    "region": "us-west1"
+  }
 }' -H "Authorization: Bearer <token>" -X POST https://api.redpanda.com/v1/networks 
 ----
 endif::[]
@@ -142,23 +148,25 @@ ifdef::env-dedicated[]
 ----
 curl -d \
 '{
-  "cloud_provider": "CLOUD_PROVIDER_GCP",
-  "connection_type": "CONNECTION_TYPE_PUBLIC",
-  "name": "my-new-cluster",
-  "resource_group_id": "<resource-group-id>",
-  "network_id": "<network-id>",
-  "region": "us-west1",
-  "throughput_tier": "tier-1-gcp-um4g",
-  "type": "TYPE_DEDICATED",
-  "zones": [
-    "us-west1-a",
-    "us-west1-b",
-    "us-west1-c"
-  ],
-  "cluster_configuration": {
-      "custom_properties": {
-        "audit_enabled":true
-      }
+  "cluster": {
+    "cloud_provider": "CLOUD_PROVIDER_GCP",
+    "connection_type": "CONNECTION_TYPE_PUBLIC",
+    "name": "my-new-cluster",
+    "resource_group_id": "<resource-group-id>",
+    "network_id": "<network-id>",
+    "region": "us-west1",
+    "throughput_tier": "tier-1-gcp-um4g",
+    "type": "TYPE_DEDICATED",
+    "zones": [
+      "us-west1-a",
+      "us-west1-b",
+      "us-west1-c"
+    ],
+    "cluster_configuration": {
+        "custom_properties": {
+          "audit_enabled":true
+        }
+    }
   }
 }' -H "Authorization: Bearer <token>" -X POST https://api.redpanda.com/v1/clusters
 ----
@@ -168,22 +176,24 @@ ifdef::env-byoc[]
 ----
 curl -d \
 '{
-  "cloud_provider": "CLOUD_PROVIDER_GCP",
-  "connection_type": "CONNECTION_TYPE_PUBLIC",
-  "name": "my-new-cluster",
-  "resource_group_id": "<resource-group-id>",
-  "network_id": "<network-id>",
-  "region": "us-west1",
-  "throughput_tier": "tier-1-gcp-um4g",
-  "type": "TYPE_BYOC",
-  "zones": [
-    "us-west1-a",
-    "us-west1-b",
-    "us-west1-c"
-  ],
-  "cluster_configuration": {
-    "custom_properties": {
-      "audit_enabled":true
+  "cluster": {
+    "cloud_provider": "CLOUD_PROVIDER_GCP",
+    "connection_type": "CONNECTION_TYPE_PUBLIC",
+    "name": "my-new-cluster",
+    "resource_group_id": "<resource-group-id>",
+    "network_id": "<network-id>",
+    "region": "us-west1",
+    "throughput_tier": "tier-1-gcp-um4g",
+    "type": "TYPE_BYOC",
+    "zones": [
+      "us-west1-a",
+      "us-west1-b",
+      "us-west1-c"
+    ],
+    "cluster_configuration": {
+      "custom_properties": {
+        "audit_enabled":true
+      }
     }
   }
 }' -H "Authorization: Bearer <token>" -X POST https://api.redpanda.com/v1/clusters

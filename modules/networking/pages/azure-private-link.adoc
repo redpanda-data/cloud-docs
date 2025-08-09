@@ -80,12 +80,14 @@ REGION=<azure-region>
 
 NETWORK_POST_BODY=`cat << EOF
 {
-    "cloud_provider": "CLOUD_PROVIDER_AZURE",
-    "cluster_type": "<cluster-type>",
-    "name": "<network-name>",
-    "cidr_block": "<10.0.0.0/20>",
-    "resource_group_id": "$RESOURCE_GROUP_ID",
-    "region": "$REGION"
+    "network": {
+        "cloud_provider": "CLOUD_PROVIDER_AZURE",
+        "cluster_type": "<cluster-type>",
+        "name": "<network-name>",
+        "cidr_block": "<10.0.0.0/20>",
+        "resource_group_id": "$RESOURCE_GROUP_ID",
+        "region": "$REGION"
+    }
 }
 EOF`
 
@@ -114,19 +116,21 @@ In the following example, make sure to set your own values for the following fie
 ----
 CLUSTER_POST_BODY=`cat << EOF
 {
-  "cloud_provider": "CLOUD_PROVIDER_AZURE",
-  "connection_type": "CONNECTION_TYPE_PRIVATE",
-  "name": "<name>",
-  "resource_group_id": "$RESOURCE_GROUP_ID",
-  "network_id": "$NETWORK_ID",
-  "region": "$REGION",
-  "throughput_tier": "<tier>",
-  "type": "<type>",
-  "zones": [ <zones> ],
-  "azure_private_link": { 
-      "allowed_subscriptions": ["$SOURCE_CONNECTION_SUBSCRIPTION_ID"],
-      "enabled": true,
-      "connect_console": true
+  "cluster": {
+    "cloud_provider": "CLOUD_PROVIDER_AZURE",
+    "connection_type": "CONNECTION_TYPE_PRIVATE",
+    "name": "<name>",
+    "resource_group_id": "$RESOURCE_GROUP_ID",
+    "network_id": "$NETWORK_ID",
+    "region": "$REGION",
+    "throughput_tier": "<tier>",
+    "type": "<type>",
+    "zones": [ <zones> ],
+    "azure_private_link": { 
+        "allowed_subscriptions": ["$SOURCE_CONNECTION_SUBSCRIPTION_ID"],
+        "enabled": true,
+        "connect_console": true
+    }
   }
 }
 EOF`
