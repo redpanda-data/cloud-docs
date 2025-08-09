@@ -110,7 +110,7 @@ Note that this endpoint returns a long-running operation. To check the operation
 
 === Create a cluster with global access enabled
 
-Make a request to the `POST /v1/clusters` endpoint to create a new cluster with global access enabled.
+. Make a request to the `POST /v1/clusters` endpoint to create a new cluster with global access enabled.
 
 * For BYOC clusters, run:
 +
@@ -212,7 +212,7 @@ Replace the following placeholders for the request body. Variables with a `byovp
 +
 --
 - `<cluster-name>`: Provide a name for the new cluster.
-- `<gcp-region>`: Choose a GCP region where the network will be created.
+- `<gcp-region>`: Choose a GCP region where the cluster will be created.
 - `<gcp-zones>`: Provide the list of GCP zones where the brokers will be deployed. Format: `["<zone 1>", "<zone 2>", "<zone N>"]`
 - `<usage-tier>`: Choose a Redpanda Cloud cluster tier. For example, `tier-1-gcp-v2-x86`.
 - `<redpanda-version>`: Choose the Redpanda Cloud version.
@@ -220,7 +220,6 @@ Replace the following placeholders for the request body. Variables with a `byovp
 - `<byovpc-subnet-pods-range-name>`: The name of the IPv4 range designated for K8s pods.
 - `<byovpc-subnet-services-range-name>`: The name of the IPv4 range designated for services.
 - `<byovpc-subnet-master-range>`: The master IPv4 range.
-- `<psc-nat-subnet-name>`: The name of the GCP subnet that was created for Private Service Connect NAT.
 - `<byovpc-agent-service-acc-email>`: The email for the agent service account.
 - `<byovpc-connectors-service-acc-email>`: The email for the connectors service account.
 - `<byovpc-console-service-acc-email>`: The email for the Console service account.
@@ -229,7 +228,7 @@ Replace the following placeholders for the request body. Variables with a `byovp
 - `<byovpc-tiered-storage-bucket>`: The name of the Google Storage bucket to use for Tiered Storage.
 --
 
-* Run `rpk cloud byoc gcp apply`:
+. Run `rpk cloud byoc gcp apply`:
 +
 ```bash
 rpk cloud byoc gcp apply --redpanda-id="${CLUSTER_ID}" --project-id='<gcp-service-project-id>'
