@@ -143,7 +143,7 @@ Data Plane API::
 . Make a request to xref:api:ROOT:cloud-dataplane-api.adoc#get-/v1/redpanda-connect/pipelines[`GET /v1/redpanda-connect/pipelines`], which lists details of all pipelines on your cluster by ID. 
 +
 * Memory (`memory_shares`) is displayed in megabytes. For example, `1` compute unit is `400M` or 400 MB.
-* CPU resources (`cpu_shares`) are displayed milliCPU. For example, `1` compute unit is `100m` or 0.1 CPU.
+* CPU resources (`cpu_shares`) are displayed in milliCPU. For example, `1` compute unit is `100m` or 0.1 CPU.
 
 --
 =====
@@ -182,14 +182,15 @@ curl -X PUT "https://<data-plane-api-url>/v1/redpanda-connect/pipelines/xxx..." 
  -H 'accept: application/json'\
  -H 'authorization: Bearer xxx...' \
  -H "content-type: application/json" \
- -d '{"config_yaml":"input:\n generate:\n   interval: 1s\n   mapping: |\n     root.id = uuid_v4()\n     root.   user.name = fake(\"name\")\n     root.user.email = fake(\"email\")\n     root.content = fake(\"paragraph\")\n\npipeline:\n processors:\n   - mutation: |\n       root.title = \"PRIVATE AND CONFIDENTIAL\"\n\noutput:\n kafka_franz:\n   seed_brokers:\n     - seed-j888.byoc.prd.cloud.redpanda.com:9092\n   sasl:\n     - mechanism: SCRAM-SHA-256\n       password: password\n       username: connect\n   topic: processed-emails\n   tls:\n     enabled: true\n", \
-    "description":"Email processor", \ 
-    "display_name":"emailprocessor-pipeline", \
-    "resources":{ \
-        "memory_shares":"800M" \
-        "cpu_shares":"200m", \
-        } \
-      }' 
+ -d '{
+   "config_yaml": "input:\n generate:\n   interval: 1s\n   mapping: |\n     root.id = uuid_v4()\n     root.user.name = fake(\"name\")\n     root.user.email = fake(\"email\")\n     root.content = fake(\"paragraph\")\n\npipeline:\n  processors:\n    - mutation: |\n        root.title = \"PRIVATE AND CONFIDENTIAL\"\n\noutput:\n  kafka_franz:\n    seed_brokers:\n      - seed-j888.byoc.prd.cloud.redpanda.com:9092\n    sasl:\n      mechanism: SCRAM-SHA-256\n      password: password\n      username: connect\n    topic: processed-emails\n    tls:\n      enabled: true\n",
+   "description": "Email processor",
+   "display_name": "emailprocessor-pipeline",
+   "resources": {
+     "memory_shares": "800M",
+     "cpu_shares": "200m"
+   }
+ }'
 ----
 +
 A successful response shows the updated resource allocations with the `cpu_shares` value returned in milliCPU.
