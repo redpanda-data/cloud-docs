@@ -95,6 +95,12 @@ The following functionality is supported in the Cloud API but not in the Redpand
 * Kafka Connect
 * Redpanda Connect
 
+
+[WARNING]
+====
+Do not modify `throughput_tier` after it is set. When `allow_deletion` is set to `true`, modifying `throughput_tier` forces replacement of the cluster: Terraform will destroy the existing cluster and create a new one, causing data loss. 
+====
+
 == Prerequisites
 
 . Install at least version 1.0.0 of Terraform using the https://learn.hashicorp.com/tutorials/terraform/install-cli[official guide^].
@@ -255,7 +261,7 @@ resource "redpanda_cluster" "test" {
 
 === Create a Dedicated cluster
 
-A Dedicated cluster is fully managed by Redpanda and ensures consistent performance. This example provisions a cluster on AWS with specific zones and throughput tiers.
+A Dedicated cluster is fully managed by Redpanda and ensures consistent performance. This example provisions a cluster on AWS with specific zones and usage tiers.
 
 [source,hcl]
 ----
