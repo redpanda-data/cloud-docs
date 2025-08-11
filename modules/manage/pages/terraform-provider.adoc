@@ -95,6 +95,12 @@ The following functionality is supported in the Cloud API but not in the Redpand
 * Kafka Connect
 * Redpanda Connect
 
+
+[WARNING]
+====
+Do not modify `throughput_tier` after it is set. Modifying it will tear down the cluster and build a new one.
+====
+
 == Prerequisites
 
 . Install at least version 1.0.0 of Terraform using the https://learn.hashicorp.com/tutorials/terraform/install-cli[official guide^].
@@ -255,7 +261,7 @@ resource "redpanda_cluster" "test" {
 
 === Create a Dedicated cluster
 
-A Dedicated cluster is fully managed by Redpanda and ensures consistent performance. This example provisions a cluster on AWS with specific zones and throughput tiers.
+A Dedicated cluster is fully managed by Redpanda and ensures consistent performance. This example provisions a cluster on AWS with specific zones and usage tiers.
 
 [source,hcl]
 ----
