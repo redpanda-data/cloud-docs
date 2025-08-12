@@ -49,6 +49,9 @@ Make a request to the `POST /v1/networks` endpoint and store the ID of the netwo
 
 * For standard BYOC clusters, run: 
 +
+.Show BYOC network creation example
+[%collapsible]
+====
 [,bash]
 ----
 NETWORK_POST_BODY=`cat << EOF
@@ -69,9 +72,13 @@ export NETWORK_ID=$(curl -vv -X POST \
 -H "Authorization: Bearer $AUTH_TOKEN" \
 -d "$NETWORK_POST_BODY" https://api.redpanda.com/v1/networks | jq -r '.operation.metadata.network_id')
 ----
+====
 
 * For BYOVPC clusters, you also make a request to the `POST /v1/networks` endpoint, with a different request body:
 +
+.Show BYOVPC network creation example
+[%collapsible]
+====
 [,bash]
 ----
 NETWORK_POST_BODY=`cat << EOF
@@ -107,6 +114,7 @@ Replace the following placeholder variables for the request body:
 - `<byovpc-network-name>`: The name of your VPC.
 - `<byovpc-management-bucket>`: The name of the Google Storage bucket you created for the cluster.
 --
+====
 
 Note that this endpoint returns a long-running operation. To check the operation state, use the `GET /v1/operations/\{operation_id}` endpoint.
 
@@ -116,6 +124,9 @@ Note that this endpoint returns a long-running operation. To check the operation
 
 * For BYOC clusters, run:
 +
+.Show BYOC cluster creation example
+[%collapsible]
+====
 [,bash]
 ----
 CLUSTER_POST_BODY=`cat << EOF
@@ -149,9 +160,13 @@ Replace the following placeholder variables for the request body:
 - `<gcp-zones>`: Provide the list of GCP zones where the brokers will be deployed. Format: `["<zone 1>", "<zone 2>", "<zone N>"]`
 - `<usage-tier>`: Choose a Redpanda Cloud cluster tier. For example, `tier-1-gcp-v2-x86`.
 --
+====
 
 * For BYOVPC clusters, you also make a request to the `POST /v1/clusters` endpoint, with a different request body:
 +
+.Show BYOVPC cluster creation example
+[%collapsible]
+====
 [,bash]
 ----
 CLUSTER_POST_BODY=`cat << EOF
@@ -229,6 +244,7 @@ Replace the following placeholders for the request body. Variables with a `byovp
 - `<byovpc-gke-service-acc-email>`: The email for the GKE service account.
 - `<byovpc-tiered-storage-bucket>`: The name of the Google Storage bucket to use for Tiered Storage.
 --
+====
 
 . Run `rpk cloud byoc gcp apply`:
 +
