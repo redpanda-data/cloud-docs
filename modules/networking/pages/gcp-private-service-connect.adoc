@@ -119,6 +119,8 @@ export CLUSTER_POST_BODY=`cat << EOF
         "zones": <zones>,
         "throughput_tier": "<throughput-tier>",
         "redpanda_version": "<redpanda-version>",
+        # Uncomment out the following line to enable global access
+        # "gcp_enable_global_access": true,
         "gcp_private_service_connect": {
             "enabled": true,
             "consumer_accept_list": <consumer-accept-list>
@@ -149,6 +151,7 @@ curl -vv -X POST \
 -H "Authorization: Bearer $AUTH_TOKEN" \
 -d "$CLUSTER_POST_BODY" $PUBLIC_API_ENDPOINT/v1/clusters
 ----
+NOTE: To also enable global access on the seed load balancer for the new cluster, you must set `"gcp_enable_global_access": true` during cluster creation. See xref:networking:pages:byoc:gcp:enable-global-access.adoc[Enable Global Access] for more information.
 +
 Replace the following placeholders for the request body. Variables with a `byovpc_` prefix represent xref:get-started:cluster-types/byoc/gcp/vpc-byo-gcp.adoc[customer-managed resources] that should have been created previously:
 +

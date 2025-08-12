@@ -1,7 +1,9 @@
 = Create a BYOC Cluster Enabled with Global Access 
 :description: Learn how to enable global access for new BYOC and BYOVPC clusters on GCP.
 
-You can enable https://cloud.google.com/load-balancing/docs/l7-internal/setting-up-l7-internal#global-access[global access^] when you create a new BYOC or BYOVPC cluster on GCP. Global access lets clients outside your cluster's region or VPC connect to your Redpanda cluster. This is useful for providing access to Redpanda for users and services distributed across different geographic locations.
+By default, the seed load balancer for your GCP cluster only accepts connections from the same region where the cluster is deployed. In Redpanda Cloud, the seed load balancer is the bootstrap server address you configure in your clients. If your Redpanda Cloud clients and BYOC or BYOVPC cluster are not all in the same GCP region, you must enable global access.
+
+Global access lets the seed load balancer accept connections from clients outside your cluster's region then route them to the appropriate broker addresses for producing and consuming data. You can enable https://cloud.google.com/load-balancing/docs/l7-internal/setting-up-l7-internal#global-access[global access^] when you create a new BYOC or BYOVPC cluster on GCP.
 
 You can only enable global access as part of cluster creation, and not for running clusters.
 
@@ -233,3 +235,7 @@ Replace the following placeholders for the request body. Variables with a `byovp
 ```bash
 rpk cloud byoc gcp apply --redpanda-id="${CLUSTER_ID}" --project-id='<gcp-service-project-id>'
 ```
+
+== Test global access
+
+To test if global access is successfully enabled, follow the steps in the GCP documentation to https://cloud.google.com/load-balancing/docs/internal/setting-up-internal#gcloud_17[test global access with a VM client^].

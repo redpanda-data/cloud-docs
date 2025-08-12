@@ -16,6 +16,8 @@ gcloud compute addresses create <psc-endpoint-ip-name> --subnet=<psc-endpoint-su
 
 . Create the Private Service Connect endpoint forwarding rule:
 +
+NOTE: If you have enabled global access when creating the cluster, you must also include the `--allow-psc-global-access` flag to configure the endpoint to accept client connections from different regions.
++
 [,bash]
 ----    
 gcloud compute forwarding-rules create <psc-endpoint-forwarding-rule-name> --region=<region> --network=<consumer-vpc-name> --address=<psc-endpoint-ip> --target-service-attachment=<rp-psc-service-attachment-url>
