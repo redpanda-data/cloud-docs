@@ -152,12 +152,16 @@ curl -vv -X POST \
 +
 [NOTE] 
 ====
-To also enable global access on the seed load balancer for the new cluster, you must set `"gcp_enable_global_access": true` during cluster creation:
+To also enable global access on the seed load balancer for the Private Service Connect service, you must set `"gcp_private_service_connect.global_access_enabled"` to `true` during cluster creation:
 
 ```
 "cluster": {
     ...
-    "gcp_enable_global_access": true,
+    "gcp_private_service_connect": {
+        "enabled": true,
+        "consumer_accept_list": <consumer-accept-list>
+        "global_access_enabled": true
+    }
     ...
 }
 ```
