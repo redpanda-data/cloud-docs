@@ -150,21 +150,11 @@ curl -vv -X POST \
 -d "$CLUSTER_POST_BODY" $PUBLIC_API_ENDPOINT/v1/clusters
 ----
 +
-[NOTE] 
-====
-To also enable global access on the seed load balancer for the Private Service Connect service, you must set `"gcp_private_service_connect.global_access_enabled"` to `true` during cluster creation:
-
-```
-"cluster": {
-    ...
-    "gcp_private_service_connect": {
-        "enabled": true,
-        "consumer_accept_list": <consumer-accept-list>
-        "global_access_enabled": true
-    }
-    ...
-}
-```
+     "gcp_private_service_connect": {
+         "enabled": true,
+         "consumer_accept_list": <consumer-accept-list>,
+         "global_access_enabled": true
+     }
 
 See xref:networking:byoc/gcp/enable-global-access.adoc[Enable Global Access] for more information.
 ====
