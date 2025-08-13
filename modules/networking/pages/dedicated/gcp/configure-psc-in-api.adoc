@@ -21,17 +21,12 @@ export RESOURCE_GROUP_ID=<uuid>
 ----
 NETWORK_POST_BODY=`cat << EOF
 {
-    "cloud_provider": "CLOUD_PROVIDER_GCP",
-    "cluster_type": "TYPE_DEDICATED",
-    "name": "<shared-vpc-name>",
-    "resource_group_id": "$RESOURCE_GROUP_ID",
-    "region": "<region>",
-    "customer_managed_resources": {
-        "gcp": {
-            "network_name": "<network-name>",
-            "network_project_id": "<network-gcp-project-id>",
-            "management_bucket": { "name" : "<management-bucket>" }
-        }
+    "network": {
+        "cloud_provider": "CLOUD_PROVIDER_GCP",
+        "cluster_type": "TYPE_DEDICATED",
+        "name": "<shared-vpc-name>",
+        "resource_group_id": "$RESOURCE_GROUP_ID",
+        "region": "<region>"
     }
 }
 EOF`
@@ -66,19 +61,21 @@ export NETWORK_ID=<metadata.network_id>
 ----
 export CLUSTER_POST_BODY=`cat << EOF
 {
-    "cloud_provider": "CLOUD_PROVIDER_GCP",
-    "connection_type": "CONNECTION_TYPE_PRIVATE",
-    "type": "TYPE_DEDICATED",
-    "name": "<cluster-name>",
-    "resource_group_id": "$RESOURCE_GROUP_ID",
-    "network_id": "$NETWORK_ID",
-    "region": "<region>",
-    "zones": <zones>,
-    "throughput_tier": "<throughput-tier>",
-    "redpanda_version": "<redpanda-version>",
-    "gcp_private_service_connect": {
-        "enabled": true,
-        "consumer_accept_list": <consumer-accept-list>
+    "cluster": {
+        "cloud_provider": "CLOUD_PROVIDER_GCP",
+        "connection_type": "CONNECTION_TYPE_PRIVATE",
+        "type": "TYPE_DEDICATED",
+        "name": "<cluster-name>",
+        "resource_group_id": "$RESOURCE_GROUP_ID",
+        "network_id": "$NETWORK_ID",
+        "region": "<region>",
+        "zones": <zones>,
+        "throughput_tier": "<throughput-tier>",
+        "redpanda_version": "<redpanda-version>",
+        "gcp_private_service_connect": {
+            "enabled": true,
+            "consumer_accept_list": <consumer-accept-list>
+        }
     }
 }
 EOF`
