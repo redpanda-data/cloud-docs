@@ -1,21 +1,21 @@
 = Create a BYOC Cluster Enabled with Global Access 
 :description: Learn how to enable global access for new BYOC and BYOVPC clusters on GCP.
 
-By default, the seed load balancer for your GCP cluster only accepts connections from the same region where the cluster is deployed. In Redpanda Cloud, the seed load balancer is the bootstrap server address you configure in your clients. If your Redpanda Cloud clients and BYOC or BYOVPC cluster are not all in the same GCP region, you must enable global access.
+By default, the seed load balancer for a cluster on GCP only accepts connections from the same region where the cluster is deployed. In Redpanda Cloud, the seed load balancer is the bootstrap server address you configure in your clients. If your Redpanda Cloud clients and BYOC or BYOVPC cluster are not all in the same GCP region, you must enable global access.
 
-Global access lets the seed load balancer accept connections from clients outside your cluster's region then route them to the appropriate broker addresses for producing and consuming data. You can enable https://cloud.google.com/load-balancing/docs/l7-internal/setting-up-l7-internal#global-access[global access^] when you create a new BYOC or BYOVPC cluster on GCP.
+Global access lets the seed load balancer accept connections from clients outside your cluster's region, then route them to the appropriate broker addresses for producing and consuming data. You can enable https://cloud.google.com/load-balancing/docs/l7-internal/setting-up-l7-internal#global-access[global access^] when you create a new BYOC or BYOVPC cluster on GCP.
 
 You can only enable global access as part of cluster creation, and not for running clusters.
 
 == Prerequisites
 
-* In this guide, you use the xref:manage:api/cloud-api-overview.adoc[Redpanda Cloud API] to create a resource group, network, and cluster with global access enabled on GCP. Follow the steps on this page to <<get-a-cloud-api-access-token, get an access token>>.
+In this guide, you use the xref:manage:api/cloud-api-overview.adoc[Redpanda Cloud API] to create a resource group, network, and cluster with global access enabled on GCP. 
 
 == Get a Cloud API access token
 
 include::networking:partial$private-links-api-access-token.adoc[]
 
-== Create a new cluster with global access
+== Create a cluster with global access
 
 === Create a resource group
 
@@ -37,7 +37,7 @@ export RESOURCE_GROUP_ID=$(curl -X POST \
 
 If you're creating a BYOVPC cluster, continue to the next section. Otherwise, if you're creating a standard BYOC cluster, skip ahead to <<create-a-network>>.
 
-=== Configure customer-managed resources for BYOVPC
+=== BYOVPC only: Configure customer-managed resources
 
 . Before you proceed, check the xref:get-started:cluster-types/byoc/gcp/vpc-byo-gcp.adoc#prerequisites[prerequisites and limitations] for new BYOVPC clusters on GCP.
 . Follow the steps to xref:get-started:cluster-types/byoc/gcp/vpc-byo-gcp.adoc#configure-your-vpc[configure your VPC] with the required permissions and firewall rules.
@@ -49,7 +49,7 @@ Make a request to the `POST /v1/networks` endpoint and store the ID of the netwo
 
 * For standard BYOC clusters, run: 
 +
-.Show BYOC network creation example
+.Show BYOC network creation command
 [%collapsible]
 ====
 [,bash]
@@ -76,7 +76,7 @@ export NETWORK_ID=$(curl -vv -X POST \
 
 * For BYOVPC clusters, you also make a request to the `POST /v1/networks` endpoint, with a different request body:
 +
-.Show BYOVPC network creation example
+.Show BYOVPC network creation command
 [%collapsible]
 ====
 [,bash]
@@ -118,13 +118,13 @@ Replace the following placeholder variables for the request body:
 
 Note that this endpoint returns a long-running operation. To check the operation state, use the `GET /v1/operations/\{operation_id}` endpoint.
 
-=== Create a cluster with global access enabled
+=== Enable global access
 
 . Make a request to the `POST /v1/clusters` endpoint to create a new cluster with global access enabled.
 
 * For BYOC clusters, run:
 +
-.Show BYOC cluster creation example
+.Show BYOC cluster creation command
 [%collapsible]
 ====
 [,bash]
@@ -164,7 +164,7 @@ Replace the following placeholder variables for the request body:
 
 * For BYOVPC clusters, you also make a request to the `POST /v1/clusters` endpoint, with a different request body:
 +
-.Show BYOVPC cluster creation example
+.Show BYOVPC cluster creation command
 [%collapsible]
 ====
 [,bash]
