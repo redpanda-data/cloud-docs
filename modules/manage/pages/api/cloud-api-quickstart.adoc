@@ -3,7 +3,7 @@
 :page-aliases: deploy:deployment-option/cloud/api/cloud-api-quickstart.adoc
 :page-api: cloud
 
-The following steps describe how to authenticate with the Cloud API and create a new Redpanda cluster. For more information on the Cloud API, see the xref:manage:api/cloud-api-overview.adoc[Redpanda Cloud API Overview].
+The following steps describe how to authenticate with the Cloud API and create a new Redpanda cluster. For more information on the Cloud API, see the link:/api/doc/cloud-controlplane/topic/topic-cloud-api-overview[Redpanda Cloud API Overview].
 
 == Create a new cluster
 
@@ -12,10 +12,10 @@ The following steps describe how to authenticate with the Cloud API and create a
 BYOC or Dedicated::
 +
 --
-. In the Redpanda Cloud UI, create a https://cloud.redpanda.com/organization-iam?tab=service-accounts[service account (client)] and use the client ID and secret to request an API token. Use the token to xref:manage:api/cloud-api-authentication.adoc[authenticate to the API].
-. Create a resource group by making a xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1/resource-groups[`POST /v1/resource-groups`] request.
-. Create a network by making a xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1/networks[`POST /v1/networks`] request. Note that this operation may be long-running.
-. Create a cluster by making a xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1/clusters[`POST /v1/clusters`] request.
+. In the Redpanda Cloud UI, create a https://cloud.redpanda.com/organization-iam?tab=service-accounts[service account (client)] and use the client ID and secret to request an API token. Use the token to link:/api/doc/cloud-controlplane/authentication[authenticate to the API].
+. Create a resource group by making a link:/api/doc/cloud-controlplane/operation/operation-resourcegroupservice_createresourcegroup[`POST /v1/resource-groups`] request.
+. Create a network by making a link:/api/doc/cloud-controlplane/operation/operation-networkservice_createnetwork[`POST /v1/networks`] request. Note that this operation may be long-running.
+. Create a cluster by making a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_createcluster[`POST /v1/clusters`] request.
 . For BYOC, run `rpk cloud byoc`, passing the `metadata.cluster_id` from the Create Cluster response as a flag:
 +
 AWS:
@@ -40,7 +40,7 @@ rpk cloud byoc gcp apply --redpanda-id=<metadata.cluster_id> --project-id=<gcp-p
 Serverless::
 +
 --
-. In the Redpanda Cloud UI, create a https://cloud.redpanda.com/organization-iam?tab=service-accounts[service account (client)] and use the client ID and secret to request an API token. Use the token to xref:manage:api/cloud-api-authentication.adoc[authenticate to the API].
+. In the Redpanda Cloud UI, create a https://cloud.redpanda.com/organization-iam?tab=service-accounts[service account (client)] and use the client ID and secret to request an API token. Use the token to link:/api/doc/cloud-controlplane/authentication[authenticate to the API].
 . Make a GET request to the `/v1/resource-groups` endpoint to retrieve the default resource group ID.
 +
 [,bash]

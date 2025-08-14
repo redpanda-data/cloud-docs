@@ -1,7 +1,7 @@
 = Disable Kafka Connect
 :description: Learn how to disable Kafka Connect using the Cloud API.
 
-Kafka Connect is disabled by default on new clusters. If you previously enabled Kafka Connect on a cluster and want to disable it, you can use the xref:manage:api/cloud-api-overview.adoc[Cloud API]. 
+Kafka Connect is disabled by default on new clusters. If you previously enabled Kafka Connect on a cluster and want to disable it, you can use the link:/api/doc/cloud-controlplane/topic/topic-cloud-api-overview[Cloud API]. 
 
 NOTE: Redpanda Support does not manage or monitor Kafka Connect, but Support can enable the feature for your account.
 
@@ -30,13 +30,13 @@ If Kafka Connect is enabled, the response will show:
 == Prerequisites
 
 - You have the cluster ID of a cluster that has Kafka Connect enabled. 
-- You have a valid bearer token for the Cloud API. For details, see xref:manage:api/cloud-api-authentication.adoc[Authenticate to the API]. 
+- You have a valid bearer token for the Cloud API. For details, see link:/api/doc/cloud-controlplane/authentication[Authenticate to the API]. 
 
 IMPORTANT: Make sure to stop any active connectors gracefully before disabling Kafka Connect to avoid data loss or incomplete processing.
 
 == Disable Kafka Connect
 
-After you are authenticated to the Cloud API, make a xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1/clusters/-cluster.id-[`PATCH /v1/clusters/{cluster.id}`] request, replacing `{cluster.id}` with your actual cluster ID.
+After you are authenticated to the Cloud API, make a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_updatecluster[`PATCH /v1/clusters/{cluster.id}`] request, replacing `{cluster.id}` with your actual cluster ID.
 
 [,bash]
 ----
@@ -46,7 +46,7 @@ curl -X PATCH "https://api.redpanda.com/v1/clusters/{cluster.id}" \
   -d '{"kafka_connect":{"enabled":false}}'
 ----
 
-The `PATCH` request returns the ID of a long-running operation. You can check the status of the operation by polling the xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/operations/-id-[`GET /operations/{id}`] endpoint:
+The `PATCH` request returns the ID of a long-running operation. You can check the status of the operation by polling the link:/api/doc/cloud-controlplane/operation/operation-operationservice_getoperation[`GET /operations/{id}`] endpoint:
 
 [,bash]
 ----
