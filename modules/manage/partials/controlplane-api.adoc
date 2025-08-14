@@ -401,8 +401,8 @@ rpk cloud byoc gcp destroy --redpanda-id=<cluster-id> --project-id=<gcp-project-
 --
 ====
 
-. When the cluster is deleted, the delete operation’s state changes to `STATE_COMPLETED`. At this point, you may make a DELETE request to the xref:api:ROOT:cloud-controlplane-api.adoc#delete-/v1/networks/-id-[`/v1/networks/\{id}`] endpoint to delete the network. This is a long running operation.
-. Optional: After the network is deleted, make a request to xref:api:ROOT:cloud-controlplane-api.adoc#delete-/v1/resource-groups/-id-[`DELETE /v1/resource-groups/\{id}`] to delete the resource group. 
+. When the cluster is deleted, the delete operation’s state changes to `STATE_COMPLETED`. At this point, you may make a DELETE request to the link:/api/doc/cloud-controlplane/operation/operation-networkservice_deletenetwork[`/v1/networks/\{id}`] endpoint to delete the network. This is a long running operation.
+. Optional: After the network is deleted, make a request to link:/api/doc/cloud-controlplane/operation/operation-resourcegroupservice_deleteresourcegroup[`DELETE /v1/resource-groups/\{id}`] to delete the resource group.
 
 endif::[]
 endif::[]
@@ -415,7 +415,7 @@ To delete a cluster, make a request to the link:/api/doc/cloud-controlplane/oper
 curl -H "Authorization: Bearer <token>" -X DELETE https://api.redpanda.com/v1/serverless/clusters/<cluster-id>
 ```
 
-Optional: When the cluster is deleted, the delete operation’s state changes to `STATE_COMPLETED`. At this point, you may make a DELETE request to the xref:api:ROOT:cloud-controlplane-api.adoc#delete-/v1/resource-groups/-id-[`/v1/resource-groups/\{id}`] endpoint to delete the resource group. 
+Optional: When the cluster is deleted, the delete operation’s state changes to `STATE_COMPLETED`. At this point, you may make a DELETE request to the link:/api/doc/cloud-controlplane/operation/operation-resourcegroupservice_deleteresourcegroup[`/v1/resource-groups/\{id}`] endpoint to delete the resource group. 
 
 [[lro-serverless]]
 == Long-running operations
