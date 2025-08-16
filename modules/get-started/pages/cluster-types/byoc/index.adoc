@@ -4,13 +4,15 @@
 :page-aliases: deploy:deployment-option/cloud/provision-a-byoc-cluster/index.adoc
 
 
-Bring Your Own Cloud (BYOC) lets you run Redpanda in your own cloud environment while still getting managed services from Redpanda. With BYOC clusters, Redpanda deploys into your existing cloud network:
+Bring Your Own Cloud (BYOC) lets you run Redpanda in your own cloud environment while still using managed services provided by Redpanda. With BYOC clusters, Redpanda deploys into your existing cloud network:
 
-* AWS or GCP: Virtual Private Cloud (VPC)
+* AWS and GCP: Virtual Private Cloud (VPC)
 * Azure: Virtual Network (VNet)
 
-Your data never leaves your environment, giving you extra security and control. See xref:get-started:byoc-arch.adoc[BYOC architecture] for details. Redpanda manages provisioning, monitoring, upgrades, and security policies and resources for your VPC or VNet, including subnetworks, IAM roles, and storage buckets/accounts. You get hands-off operations with a 99.99% uptime guarantee while keeping full control of your data.
+Your data never leaves your environment, giving you extra security and control. See xref:get-started:byoc-arch.adoc[BYOC architecture] for details. Redpanda manages provisioning, monitoring, upgrades, and security policies, and it manages required resources in your VPC or VNet, including subnets (subnetworks in GCP), IAM roles, and object storage resources (for example, S3 buckets or Azure Storage accounts). 
 
-If you want to manage the networking infrastructure yourself, create a Bring Your Own Virtual Private Cloud (BYOVPC) or Bring Your Own Virtual Network (BYOVNet) cluster. With BYOVPC/BYOVNet, the Redpanda agent does not create or change any resources in your account. This is ideal for organizations with stringent compliance requirements or existing network configurations, when you need full control over the network lifecycle. Compared to standard BYOC, BYOVPC/BYOVNet provides more security, but the configuration is more complex. See the xref:get-started:cloud-overview.adoc#shared-responsibility-model[shared responsibility model] to understand what you manage versus what Redpanda manages.
+You get hands-off operations with a 99.99% uptime guarantee while keeping full control of your data. 
+
+If you want to manage the networking infrastructure yourself, create a Bring Your Own Virtual Private Cloud (BYOVPC) or Bring Your Own Virtual Network (BYOVNet) cluster. With BYOVPC/BYOVNet, the Redpanda agent does not create or change resources in your account. This is ideal for organizations with stringent compliance requirements or existing network configurations, when you need full control over the network lifecycle. Compared to standard BYOC, BYOVPC/BYOVNet provides more security, but the configuration is more complex. See the xref:get-started:cloud-overview.adoc#shared-responsibility-model[shared responsibility model] to understand what you manage versus what Redpanda manages.
 
 IMPORTANT: Don't deploy other workloads on the BYOC infrastructure that Redpanda manages.
