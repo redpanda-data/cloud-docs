@@ -8,9 +8,100 @@ Redpanda Cloud is a complete data streaming platform delivered as a fully-manage
 
 TIP: For more detailed information about the Redpanda platform, see xref:get-started:intro-to-events.adoc[], xref:get-started:architecture.adoc[], and xref:get-started:byoc-arch.adoc[].
 
+
 == Redpanda Cloud cluster types
 
 Redpanda offers fully-managed cloud clusters for Serverless, BYOC, and Dedicated. All products have access to unlimited storage and 300+ data connectors with xref:develop:connect/about.adoc[Redpanda Connect].
+
+[cols="1,1,1,1", options="header"]
+|===
+| 
+| BYOC
+| Dedicated
+| Serverless
+
+| Purpose
+| For production clusters requiring data sovereignty, the highest throughput, and added security.
+| For production clusters requiring expert cloud hosting, higher throughput, and extra isolation.
+| For starter projects and applications with low or variable traffic.
+
+| Where it runs
+| In your cloud 
+
+Single-tenant on AWS, Azure, and GCP
+| Redpanda VPC 
+
+Single-tenant on AWS, Azure, and GCP
+| Redpanda VPC 
+
+Multi-tenant on AWS
+
+| Networking
+| Public or Private
+| Public or Private
+| Public
+
+| SLA
+| 99.99%
+| 99.99%
+| 99.9%
+
+| Max write throughput
+| 2 GB/s  
+| 400 MB/s 
+| 100 MB/s 
+
+| Max read throughput
+| 4 GB/s 
+| 800 MB/s 
+| 300 MB/s 
+
+| Partition limit (pre-replication)
+| 112,500
+| 45,600
+| 5,000
+
+| Authentication to Cloud UI
+| SSO (GitHub, Google, OIDC)
+| SSO (GitHub, Google, OIDC)
+| SSO (GitHub, Google)
+
+| RBAC & audit logs (Cloud UI)
+| Supported
+| Supported
+| Not listed for Serverless (use Kafka ACLs)
+
+| Prometheus tab in Cloud UI (Overview → How to connect)
+| Available (copy scrape YAML)
+| Available (copy scrape YAML)
+| Not available (tab is documented only for BYOC/Dedicated)
+
+| Prometheus/OpenMetrics endpoint for cluster metrics
+| Exposed (single endpoint aggregating broker & services)
+| Exposed
+| Not exposed in Serverless docs
+
+| Consumer Lag metrics (Prometheus)
+| Supported via public metrics; can compute from offsets or enable dedicated gauges
+| Supported
+| Not supported in Cloud UI
+
+| Kafka Connect (managed)
+| Available, disabled by default (contact Support)
+| Available, disabled by default (contact Support)
+| Not offered
+
+| Redpanda Connect (managed pipelines)
+| Supported
+| Supported
+| Supported
+
+| Cluster properties editing
+| Supported on AWS/GCP (not Azure)
+| Supported on AWS/GCP (not Azure)
+| Not available
+|===
+
 |===
 | <<Serverless>> | <<Bring Your Own Cloud (BYOC)>> | <<Dedicated>>
 
