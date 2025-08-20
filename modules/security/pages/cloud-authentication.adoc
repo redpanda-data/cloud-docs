@@ -1,12 +1,13 @@
 = Authentication
 :description: Learn about Redpanda Cloud authentication.
 :page-aliases: deploy:deployment-option/cloud/security/cloud-authentication.adoc
+:page-toclevels: 3
 
-Redpanda Cloud ensures the highest level of authentication for both users and services.
+Redpanda Cloud provides secure authentication for both users accessing the platform and services connecting to your clusters.
 
 == User authentication
 
-Redpanda provides user authentication to your Redpanda organization through email or single sign-on. 
+Redpanda provides user authentication to your Redpanda organization through email/password or single sign-on. 
 
 === Email
 
@@ -26,6 +27,7 @@ CAUTION: Deleting an SSO connection also deletes all users attached to it.
 
 To integrate with Okta, follow the https://help.okta.com/en-us/Content/Topics/Apps/Apps_App_Integration_Wizard_OIDC.htm[Okta documentation^] to create an application within Okta for Redpanda. The Redpanda callback location (that is, the redirect location where Okta sends the user) is the following:
 
+
 ```
 https://auth.prd.cloud.redpanda.com/login/callback
 ```
@@ -39,28 +41,42 @@ https://<orgname>.okta.com/oauth2/<an_id>/.well-known/openid-configuration
 
 ==== Integrate with Microsoft Entra ID
 
-To integrate with Azure Entra ID, follow the https://learn.microsoft.com/en-us/entra/identity-platform/v2-protocols-oidc[Microsoft documentation^] to create an OIDC enterprise (web) application:
+To integrate with Microsoft Entra ID, create a Web application registration that uses the OIDC Authorization Code flow with PKCE:
 
-. In the https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id[Entra App Gallery^], on the Create your own application page: 
-.. Select *Register an application to integrate with Microsoft Entra ID*.
-.. For the name of your app, enter `Redpanda Cloud`. 
-.. Click *Create*.
-. On the Register an application page: 
-.. For Supported account types, select *Accounts in this organizational directory only (Redpanda only - Single tenant)*.
-.. For Redirect URI, select *Web* platform with the Callback URL found in Redpanda Cloud. In Redpanda Cloud, navigate to *Users*: *Single sign-on*, and click *Add connection*. Copy the *Callback URL*, and paste it into the Azure *Redirect URI* field. 
+. In the https://entra.microsoft.com/[Microsoft Entra admin center^], go to *App registrations* and click *New registration*.
+.. Name: `Redpanda Cloud`.
+.. Supported account types: *Accounts in this organizational directory only (Single tenant)*.
+.. Redirect URI: select *Web*, and paste the Callback URL from Redpanda Cloud. To find the Callback URL, go to *Users* > *Single sign-on* in Redpanda Cloud and click *Add connection*. Copy the *Callback URL*.
++
+IMPORTANT: The platform type must be *Web*. Because Redpanda Cloud uses the OIDC Authorization Code flow with PKCE and a server-side callback, the app must be configured as Web (not SPA or mobile).
 .. Click *Register*.
-. On the Azure Enterprise applications page, you can now search for the Redpanda Cloud app to assign users access to Redpanda Cloud.  
-. On the Azure app for Redpanda Cloud, click *Endpoints*, and copy the *OpenID Connect metadata document URL* endpoint.
-. In Redpanda Cloud, on *Users*: *Single sign-on*, paste that endpoint address into the *Discovery URI* field. Then, complete the SSO configuration:
+. After registration, a corresponding Enterprise application (service principal) appears under *Enterprise applications*. If your organization restricts access, assign users/groups to this Enterprise application to allow access to Redpanda Cloud.
+. On the application registration for Redpanda Cloud, click *Endpoints* and copy the *OpenID Connect metadata document* URL.
+. In Redpanda Cloud, on the *Users*: *Single sign-on* page, paste that endpoint address into the *Discovery URI* field. Then, complete the SSO configuration:
 .. For *Client ID*, copy and paste the *Application (client) ID* from the Azure app for Redpanda Cloud.
 .. For *Client secret*, copy and paste the secret you get from adding a client secret on the Certificates & secrets page for the Azure app for Redpanda Cloud.
-.. For *Realm*, enter your Azure Entra ID tenant domain name.
+.. For *Realm*, enter your Microsoft Entra ID tenant domain name.
 .. Click *Save*.
-.. On the Redpanda Cloud SSO page, edit your new Entra ID connection to enable SSO. 
+.. On the Redpanda Cloud Users: Single sign-on page, edit your new Entra ID connection to enable single sign-on. 
 +
 Users with an email address with that realm (domain) can now access your Redpanda Cloud account. 
 +
-NOTE: You can continue to configure your Azure Enterprise app page for Redpanda Cloud, but there is no need to configure JWT-based claims or API permissions.
+[NOTE]
+====
+
+* No additional claims required: Redpanda Cloud only relies on standard OIDC claims provided by your IdP. You do not need to configure optional claims or group claims in ID/Access tokens.
+* No API permissions required: You do not need Microsoft Graph or any other API permissions. Microsoft Graph `User.Read` may be listed (some tenants add it during app creation), but Redpanda Cloud performs OIDC sign-in only and does not call Microsoft Graph.
+* First-login consent only: On first sign-in, users are prompted to consent to the standard OIDC scopes `openid`, `profile`, and `email`. After the first consent, users should not be prompted again unless consent is revoked or the app configuration changes.
+====
+
+===== Tips for Integrating Entra ID
+
+If users are repeatedly prompted for consent or cannot sign in:
+
+* Ensure the app is configured as Web with the exact Redirect URI from Redpanda Cloud.
+* Remove any extra API permissions (for example, `Microsoft Graph: User.Read`).
+* Avoid adding non-standard claims or scopes.
+
 
 == Service authentication
 
@@ -212,7 +228,7 @@ NOTE: If you enable mTLS authentication, you cannot disable it later.
 
 ==== Create a new cluster with mTLS enabled
 
-. Follow the steps to to create a resource group and network for xref:manage:api/cloud-byoc-controlplane-api.adoc#create-a-resource-group[BYOC] or xref:manage:api/cloud-dedicated-controlplane-api.adoc#create-a-resource-group[Dedicated], if you haven't already. You'll need the resource group ID and network ID to create a cluster in the next step.
+. Follow the steps to create a resource group and network for xref:manage:api/cloud-byoc-controlplane-api.adoc#create-a-resource-group[BYOC] or xref:manage:api/cloud-dedicated-controlplane-api.adoc#create-a-resource-group[Dedicated], if you haven't already. You'll need the resource group ID and network ID to create a cluster in the next step.
 
 . Make a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_createcluster[`POST /v1/clusters`] request to create a new cluster with mTLS enabled.
 
@@ -248,7 +264,7 @@ EOF`
 curl -v -X POST \
 -H "Content-Type: application/json" \
 -H "Authorization: Bearer $AUTH_TOKEN" \
--d "$CLUSTER_CREATE_BODY" https://api.redpanda.com/v1/clusters/<cluster-id>`
+-d "$CLUSTER_CREATE_BODY" https://api.redpanda.com/v1/clusters/<cluster-id>
 ----
 
 Make sure to replace the following variables:
@@ -332,7 +348,7 @@ EOF`
 curl -v -X PATCH \
 -H "Content-Type: application/json" \
 -H "Authorization: Bearer $AUTH_TOKEN" \
--d "$CLUSTER_PATCH_BODY" https://api.redpanda.com/v1/clusters/<cluster-id>`
+-d "$CLUSTER_PATCH_BODY" https://api.redpanda.com/v1/clusters/<cluster-id>
 ----
 
 Make sure to replace the following variables:
@@ -375,7 +391,7 @@ You can choose to enable mTLS and SASL simultaneously for the Kafka API, and mTL
 
 ==== Create a new cluster with both mTLS and SASL enabled
 
-. Follow the steps to to create a resource group and network for xref:manage:api/cloud-byoc-controlplane-api.adoc#create-a-resource-group[BYOC] or xref:manage:api/cloud-dedicated-controlplane-api.adoc#create-a-resource-group[Dedicated], if you haven't already done so. You'll need the resource group ID and network ID to create a cluster in the next step.
+. Follow the steps to create a resource group and network for xref:manage:api/cloud-byoc-controlplane-api.adoc#create-a-resource-group[BYOC] or xref:manage:api/cloud-dedicated-controlplane-api.adoc#create-a-resource-group[Dedicated], if you haven't already done so. You'll need the resource group ID and network ID to create a cluster in the next step.
 
 . Make a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_createcluster[`POST /v1/clusters`] request to create a new cluster with both mTLS and SASL or Basic authentication enabled.
 +
@@ -593,7 +609,7 @@ EOF`
 curl -v -X PATCH \
 -H "Content-Type: application/json" \
 -H "Authorization: Bearer $AUTH_TOKEN" \
--d "$CLUSTER_PATCH_BODY" https://api.redpanda.com/v1/clusters/<cluster-id>`
+-d "$CLUSTER_PATCH_BODY" https://api.redpanda.com/v1/clusters/<cluster-id>
 ----
 ====
 
