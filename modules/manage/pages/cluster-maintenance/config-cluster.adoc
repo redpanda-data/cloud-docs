@@ -57,9 +57,9 @@ Cloud API::
 --
 Use the Cloud API to set cluster properties:
 
-* Create a cluster by making a xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1/clusters[`POST /v1/clusters`] request. Edit `cluster_configuration` in the request body with a key-value pair for `custom_properties`.
+* Create a cluster by making a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_createcluster[`POST /v1/clusters`] request. Edit `cluster_configuration` in the request body with a key-value pair for `custom_properties`.
 
-* Update a cluster by making a xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1/clusters/-cluster.id-[`PATCH /v1/clusters/{cluster.id}`] request, passing the cluster ID as a parameter. Include the properties to update in the request body.
+* Update a cluster by making a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_updatecluster[`PATCH /v1/clusters/{cluster.id}`] request, passing the cluster ID as a parameter. Include the properties to update in the request body.
 
 For example, to set xref:reference:properties/cluster-properties.adoc#audit_enabled[`audit_enabled`] to `true`:
 
@@ -83,7 +83,7 @@ curl -H "Authorization: Bearer ${RP_CLOUD_TOKEN}" -X PATCH \
  -d '{"cluster_configuration":{"custom_properties": {"audit_enabled":true}}}'
 ----
 
-The xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1/clusters/-cluster.id-[`PATCH /clusters/{cluster.id}`] request returns the ID of a long-running operation. You can check the status of the operation by polling the xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/operations/-id-[`GET /operations/\{id}`] endpoint.
+The link:/api/doc/cloud-controlplane/operation/operation-clusterservice_updatecluster[`PATCH /clusters/{cluster.id}`] request returns the ID of a long-running operation. You can check the status of the operation by polling the link:/api/doc/cloud-controlplane/operation/operation-operationservice_getoperation[`GET /operations/\{id}`] endpoint.
 
 To set a cluster property with a secret, you must use the following notation with the secret name:
 
@@ -131,7 +131,7 @@ Cloud API::
 --
 Use the Cloud API to get the current configuration property values for a cluster.
 
-Make a xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/clusters/-id-[`GET /clusters/{cluster.id}`] request, passing the cluster ID as a parameter. The response body contains the current `computed_properties` values. For example, to get the current value of xref:reference:properties/cluster-properties.adoc#audit_enabled[`audit_enabled`]:
+Make a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_getcluster[`GET /clusters/{cluster.id}`] request, passing the cluster ID as a parameter. The response body contains the current `computed_properties` values. For example, to get the current value of xref:reference:properties/cluster-properties.adoc#audit_enabled[`audit_enabled`]:
 
 [source,bash]
 ----
@@ -159,5 +159,5 @@ curl -H "Authorization: Bearer ${RP_CLOUD_TOKEN}" -X GET \
 == Suggested reading
 
 * xref:manage:rpk/intro-to-rpk.adoc[]
-* xref:manage:api/cloud-api-overview.adoc[Redpanda Cloud API Overview]
-* xref:manage:api/cloud-api-quickstart.adoc[Redpanda Cloud API Quickstart]
+* link:/api/doc/cloud-controlplane/topic/topic-cloud-api-overview[Redpanda Cloud API Overview]
+* link:/api/doc/cloud-controlplane/topic/topic-quickstart[Redpanda Cloud API Quickstart]
