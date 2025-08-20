@@ -2,7 +2,7 @@
 :description: Guidelines for choosing CIDR ranges when VPC peering.
 :page-aliases: deploy:deployment-option/cloud/cidr-ranges.adoc
 
-Choosing appropriate Classless Inter-Domain Routing (CIDR) ranges is essential for successful VPC peering between Redpanda and your cloud provider. Redpanda uses RFC 1918 private IP address ranges, which are not accessible from the internet.
+Choosing appropriate Classless Inter-Domain Routing (CIDR) ranges is essential for successful VPC peering between Redpanda and your cloud provider. 
 
 NOTE: These guidelines provide general recommendations for choosing non-conflicting CIDR ranges. If you have a complex networking setup, work with a networking engineer to identify Redpanda CIDRs that won't conflict with your existing VPCs.
 
@@ -12,6 +12,20 @@ NOTE: These guidelines provide general recommendations for choosing non-conflict
 * *Matching region*: VPC peering connections can only be established between networks created in the _same region_. Redpanda Cloud does not support inter-region VPC peering connections.
 
 TIP: Consider adding an `rp-` prefix to the VPC or VNet name to indicate that it is for deploying a Redpanda cluster.
+
+== Supported IP address ranges
+
+Redpanda Cloud uses private IPv4 address spaces for cluster CIDRs. These ranges are designed for internal networks and cannot be accessed directly from the internet. Choose a CIDR from one of the following RFC 1918 ranges:
+
+* *10.0.0.0/8* - Provides addresses from 10.0.0.0 through 10.255.255.255
+* *172.16.0.0/12* - Provides addresses from 172.16.0.0 through 172.31.255.255  
+* *192.168.0.0/16* - Provides addresses from 192.168.0.0 through 192.168.255.255
+
+For BYOC (Bring Your Own Cloud) clusters, Redpanda also supports the RFC 6598 Carrier-Grade NAT (CGNAT) address space:
+
+* *100.64.0.0/10* - Provides addresses from 100.64.0.0 through 100.127.255.255
+
+IMPORTANT: Redpanda's network infrastructure will only route traffic within these RFC 1918 and RFC 6598 address spaces. Redpanda does not route packets to other IP spaces. Traffic from public IP addresses or other private ranges outside these specifications are blocked by design.
 
 == What are CIDRs?
 
