@@ -27,6 +27,7 @@ CAUTION: Deleting an SSO connection also deletes all users attached to it.
 
 To integrate with Okta, follow the https://help.okta.com/en-us/Content/Topics/Apps/Apps_App_Integration_Wizard_OIDC.htm[Okta documentation^] to create an application within Okta for Redpanda. The Redpanda callback location (that is, the redirect location where Okta sends the user) is the following:
 
+
 ```
 https://auth.prd.cloud.redpanda.com/login/callback
 ```
@@ -40,24 +41,21 @@ https://<orgname>.okta.com/oauth2/<an_id>/.well-known/openid-configuration
 
 ==== Integrate with Microsoft Entra ID
 
-To integrate with Entra ID, follow the https://learn.microsoft.com/en-us/entra/identity-platform/v2-protocols-oidc[Microsoft documentation^] to create an OIDC enterprise (Web) application:
+To integrate with Microsoft Entra ID, create a Web application registration that uses the OIDC Authorization Code flow with PKCE:
 
-. In the https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id[Entra App Gallery^], on the Create your own application page: 
-.. Select *Register an application to integrate with Microsoft Entra ID*.
-.. For the name of your app, enter `Redpanda Cloud`. 
-.. Click *Create*.
-. On the Register an application page: 
-.. For Supported account types, select *Accounts in this organizational directory only (Redpanda only - Single tenant)*.
-.. For Redirect URI, select *Web* platform with the Callback URL from Redpanda Cloud. To find the Callback URL in Redpanda Cloud, navigate to the *Users*: *Single sign-on* page, and click *Add connection*. Copy the *Callback URL*, and paste it into the Azure *Redirect URI* field. 
+. In the https://entra.microsoft.com/[Microsoft Entra admin center^], go to *App registrations* and click *New registration*.
+.. Name: `Redpanda Cloud`.
+.. Supported account types: *Accounts in this organizational directory only (Single tenant)*.
+.. Redirect URI: select *Web*, and paste the Callback URL from Redpanda Cloud. To find the Callback URL, go to *Users* > *Single sign-on* in Redpanda Cloud and click *Add connection*. Copy the *Callback URL*.
 +
 IMPORTANT: The platform type must be *Web*. Because Redpanda Cloud uses the OIDC Authorization Code flow with PKCE and a server-side callback, the app must be configured as Web (not SPA or mobile).
 .. Click *Register*.
-. On the Azure Enterprise applications page, you can now search for the Redpanda Cloud app to assign users access to Redpanda Cloud.
-. On the Azure app for Redpanda Cloud, click *Endpoints*, and copy the *OpenID Connect metadata document URL* endpoint.
+. After registration, a corresponding Enterprise application (service principal) appears under *Enterprise applications*. If your organization restricts access, assign users/groups to this Enterprise application to allow access to Redpanda Cloud.
+. On the application registration for Redpanda Cloud, click *Endpoints* and copy the *OpenID Connect metadata document* URL.
 . In Redpanda Cloud, on the *Users*: *Single sign-on* page, paste that endpoint address into the *Discovery URI* field. Then, complete the SSO configuration:
 .. For *Client ID*, copy and paste the *Application (client) ID* from the Azure app for Redpanda Cloud.
 .. For *Client secret*, copy and paste the secret you get from adding a client secret on the Certificates & secrets page for the Azure app for Redpanda Cloud.
-.. For *Realm*, enter your Entra ID tenant domain name.
+.. For *Realm*, enter your Microsoft Entra ID tenant domain name.
 .. Click *Save*.
 .. On the Redpanda Cloud Users: Single sign-on page, edit your new Entra ID connection to enable single sign-on. 
 +
