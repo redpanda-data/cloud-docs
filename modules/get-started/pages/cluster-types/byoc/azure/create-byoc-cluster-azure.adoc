@@ -155,14 +155,14 @@ Optionally, click *Advanced settings* to specify up to five key-value custom tag
 +
 As part of agent deployment, Redpanda assigns the permissions required to run the agent. For details about these permissions, see xref:security:authorization/cloud-iam-policies-azure.adoc[Azure IAM policies].
 
-== Manage custom tags/labels
+== Manage custom resource tags
 
-You can manage custom Azure resource tags/labels on an existing BYOC cluster with the xref:manage:api/cloud-byoc-controlplane-api.adoc[Cloud Control Plane API].
+After cluster creation, you may need to update resource tags for compliance or organizational requirements. You can manage custom cloud provider tags and labels using the xref:manage:api/cloud-byoc-controlplane-api.adoc[Cloud Control Plane API].
 
 Make sure you have:
 
-* The cluster ID. You can find the cluster ID in the Redpanda Cloud UI. Look in the **Details** section of the cluster overview.
-* A valid bearer token for the Cloud API. For details, see link:/api/doc/cloud-controlplane/authentication[Authenticate to the API]. 
+* The cluster ID. You can find this in the Redpanda Cloud UI, in the **Details** section of the cluster overview.
+* A valid bearer token for the Cloud Control Plane API. For details, see link:/api/doc/cloud-controlplane/authentication[Authenticate to the API]. 
 
 include::shared:partial$feature-flag.adoc[]
 
@@ -173,9 +173,9 @@ include::shared:partial$feature-flag.adoc[]
 rpk cloud byoc azure apply --redpanda-id=$cluster_id --subscription-id=$subscription_id
 ----
 
-. To set or replace tags on an existing BYOC cluster, invoke the Cloud API.
+. To update tags, invoke the Cloud API.
 +
-The `PATCH` call sets the labels and tags specified under `"cloud_provider_tags"`. It replaces the existing labels and tags with the specified labels and tags. To remove a single entry, omit it from the map you send.
+The `PATCH` call sets the labels and tags specified under `"cloud_provider_tags"`. It replaces the existing labels and tags with the specified labels and tags. Include all desired tags in the request. To remove a single entry, omit it from the map you send.
 +
 [,bash]
 ----
@@ -195,7 +195,7 @@ curl -X PATCH "https://api.redpanda.com/v1/clusters/{cluster.id}" \
   -d "$cluster_patch_body" \
 ----
 +
-To remove all tags on an existing BYOC cluster, run:
+To remove all tags, send an empty `cloud_provider_tags` object:
 +
 [,bash]
 ----
@@ -207,10 +207,10 @@ curl -X PATCH "https://api.redpanda.com/v1/clusters/{cluster.id}" \
   -d "$cluster_patch_body" \
 ----
 
-=== Limitations 
+=== Limitations
 
-* Nodepool Application Security Groups (ASG): Custom tags are applied only during cluster creation and are not updated after.
-* Private Link–related network interfaces (Kubernetes API server, Tiered Storage, and Private Link service): Custom tags are applied only at cluster creation and are not updated after.
+* Nodepool Application Security Groups (ASG): Custom tags are set only when the cluster is created. Tags cannot be updated on these resources after cluster creation.
+* Private Link network interfaces (Kubernetes API server, Tiered Storage, and Private Link service): Custom tags are set only during cluster creation and cannot be changed later.
 
 == Next steps
 
