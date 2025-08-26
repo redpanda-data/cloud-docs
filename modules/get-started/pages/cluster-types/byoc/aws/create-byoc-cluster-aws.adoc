@@ -50,6 +50,72 @@ As part of agent deployment:
 
 include::get-started:partial$no-access.adoc[]
 
+== Manage custom tags/labels
+
+You can manage custom AWS resource tags/labels on an existing BYOC cluster with the xref:manage:api/cloud-byoc-controlplane-api.adoc[Cloud Control Plane API].
+
+Make sure you have:
+
+* The cluster ID. You can find the cluster ID in the Redpanda Cloud UI. Look in the **Details** section of the cluster overview.
+* A valid bearer token for the Cloud API. For details, see link:/api/doc/cloud-controlplane/authentication[Authenticate to the API]. 
+
+include::shared:partial$feature-flag.adoc[]
+
+. To refresh agent permissions so the Redpanda agent can update tags, run:
++
+[,bash]
+----
+rpk cloud byoc aws apply --redpanda-id=$cluster_id
+----
++
+This is because the following IAM actions are required for tag updates:
++
+* `ec2:DescribeTags`
+* `ec2:DescribeVolumes`
+* `ec2:DescribeNetworkInterfaces`
+* `ec2:CreateTags`
+* `ec2:DeleteTags`
+* `iam:TagPolicy`
+* `iam:UntagPolicy`
+* `iam:TagInstanceProfile`
+* `iam:UntagInstanceProfile`
++
+TIP: Re-applying BYOC is idempotent and (re)grants any newly required privileges to the agent instance profile.
++
+You can manage custom AWS resource tags/labels on an existing BYOC cluster with the link:/api/doc/cloud-controlplane/topic/topic-cloud-api-overview[Cloud API].
++
+The `PATCH` call sets the labels and tags specified under `"cloud_provider_tags"`. It replaces the existing labels and tags with the specified labels and tags. To remove a single entry, omit it from the map you send.
++
+[,bash]
+----
+cluster_patch_body=$(cat <<'JSON'
+{
+  "cloud_provider_tags": {
+    "custom-label-1": "true",
+    "custom-label-2": "123"
+  }
+}
+JSON
+)
+
+curl -X PATCH "https://api.redpanda.com/v1/clusters/{cluster.id}" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $AUTH_TOKEN" \
+  -d "$cluster_patch_body" \
+----
++
+To remove all tags on an existing BYOC cluster, run:
++
+[,bash]
+----
+cluster_patch_body='{"cloud_provider_tags": {}}'
+
+curl -X PATCH "https://api.redpanda.com/v1/clusters/{cluster.id}"\
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $AUTH_TOKEN" \
+  -d "$cluster_patch_body" \
+----
+
 == Next steps
 
 xref:networking:byoc/aws/index.adoc[Configure private networking]

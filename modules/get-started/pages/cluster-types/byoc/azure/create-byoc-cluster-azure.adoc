@@ -155,6 +155,63 @@ Optionally, click *Advanced settings* to specify up to five key-value custom tag
 +
 As part of agent deployment, Redpanda assigns the permissions required to run the agent. For details about these permissions, see xref:security:authorization/cloud-iam-policies-azure.adoc[Azure IAM policies].
 
+== Manage custom tags/labels
+
+You can manage custom Azure resource tags/labels on an existing BYOC cluster with the xref:manage:api/cloud-byoc-controlplane-api.adoc[Cloud Control Plane API].
+
+Make sure you have:
+
+* The cluster ID. You can find the cluster ID in the Redpanda Cloud UI. Look in the **Details** section of the cluster overview.
+* A valid bearer token for the Cloud API. For details, see link:/api/doc/cloud-controlplane/authentication[Authenticate to the API]. 
+
+include::shared:partial$feature-flag.adoc[]
+
+. To refresh agent permissions in the target subscription, run:
++
+[,bash]
+----
+rpk cloud byoc azure apply --redpanda-id=$cluster_id --subscription-id=$subscription_id
+----
+
+. To set or replace tags on an existing BYOC cluster, invoke the Cloud API.
++
+The `PATCH` call sets the labels and tags specified under `"cloud_provider_tags"`. It replaces the existing labels and tags with the specified labels and tags. To remove a single entry, omit it from the map you send.
++
+[,bash]
+----
+cluster_patch_body=$(cat <<'JSON'
+{
+  "cloud_provider_tags": {
+    "custom-label-1": "true",
+    "custom-label-2": "123"
+  }
+}
+JSON
+)
+
+curl -X PATCH "https://api.redpanda.com/v1/clusters/{cluster.id}" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $AUTH_TOKEN" \
+  -d "$cluster_patch_body" \
+----
++
+To remove all tags on an existing BYOC cluster, run:
++
+[,bash]
+----
+cluster_patch_body='{"cloud_provider_tags": {}}'
+
+curl -X PATCH "https://api.redpanda.com/v1/clusters/{cluster.id}" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $AUTH_TOKEN" \
+  -d "$cluster_patch_body" \
+----
+
+=== Limitations 
+
+* Nodepool Application Security Groups (ASG): Custom tags are applied only during cluster creation and are not updated after.
+* Private Link–related network interfaces (Kubernetes API server, Tiered Storage, and Private Link service): Custom tags are applied only at cluster creation and are not updated after.
+
 == Next steps
 
 * xref:networking:azure-private-link.adoc[Configure Azure Private Link]
