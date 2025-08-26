@@ -170,29 +170,39 @@ include::shared:partial$feature-flag.adoc[]
 +
 [,bash]
 ----
-rpk cloud byoc azure apply --redpanda-id=$cluster_id --subscription-id=$subscription_id
+export CLUSTER_ID="<cluster-id>"
+export SUBSCRIPTION_ID="<subscription-id>"
+
+rpk cloud byoc azure apply --redpanda-id="$CLUSTER_ID" --subscription-id="$SUBSCRIPTION_ID"
 ----
 
 . To update tags, invoke the Cloud API.
 +
-The `PATCH` call sets the labels and tags specified under `"cloud_provider_tags"`. It replaces the existing labels and tags with the specified labels and tags. Include all desired tags in the request. To remove a single entry, omit it from the map you send.
+First, set your authentication token:
++
+[,bash]
+----
+export AUTH_TOKEN="<your-bearer-token>"
+----
++
+The `PATCH` call sets the tags specified under `"cloud_provider_tags"`. It replaces the existing tags with the specified tags. Include all desired tags in the request. To remove a single entry, omit it from the map you send.
 +
 [,bash]
 ----
 cluster_patch_body=$(cat <<'JSON'
 {
   "cloud_provider_tags": {
-    "custom-label-1": "true",
-    "custom-label-2": "123"
+    "Environment": "production",
+    "CostCenter": "engineering"
   }
 }
 JSON
 )
 
-curl -X PATCH "https://api.redpanda.com/v1/clusters/{cluster.id}" \
+curl -X PATCH "https://api.redpanda.com/v1/clusters/$CLUSTER_ID" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $AUTH_TOKEN" \
-  -d "$cluster_patch_body" \
+  -d "$cluster_patch_body"
 ----
 +
 To remove all tags, send an empty `cloud_provider_tags` object:
@@ -201,10 +211,10 @@ To remove all tags, send an empty `cloud_provider_tags` object:
 ----
 cluster_patch_body='{"cloud_provider_tags": {}}'
 
-curl -X PATCH "https://api.redpanda.com/v1/clusters/{cluster.id}" \
+curl -X PATCH "https://api.redpanda.com/v1/clusters/$CLUSTER_ID" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $AUTH_TOKEN" \
-  -d "$cluster_patch_body" \
+  -d "$cluster_patch_body"
 ----
 
 === Limitations

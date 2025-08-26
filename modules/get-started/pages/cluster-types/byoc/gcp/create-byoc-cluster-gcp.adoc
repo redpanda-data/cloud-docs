@@ -49,7 +49,10 @@ include::shared:partial$feature-flag.adoc[]
 +
 [,bash]
 ----
-rpk cloud byoc gcp apply --redpanda-id=$redpanda_id --project_id=$project_id 
+export CLUSTER_ID="<cluster-id>"
+export PROJECT_ID="<gcp-project-id>"
+
+rpk cloud byoc gcp apply --redpanda-id="$CLUSTER_ID" --project-id="$PROJECT_ID"
 ----
 +
 This step is required because tag management requires additional IAM permissions that may not have been granted during initial cluster creation:
@@ -59,40 +62,47 @@ This step is required because tag management requires additional IAM permissions
 * `compute.disks.setLabels`
 * `compute.instances.setLabels`
 
-. To update tags, invoke the Cloud API.
+. To update labels and network tags, invoke the Cloud API.
 +
-The `PATCH` call sets the labels and tags specified under `"cloud_provider_tags"`. It replaces the existing labels and tags with the specified labels and tags. Include all desired tags in the request. To remove a single entry, omit it from the map you send.
+First, set your authentication token:
++
+[,bash]
+----
+export AUTH_TOKEN="<your-bearer-token>"
+----
++
+The `PATCH` call sets the labels and network tags specified under `"cloud_provider_tags"`. It replaces the existing labels and tags with the specified labels and tags. Include all desired labels and tags in the request. To remove a single entry, omit it from the map you send.
 +
 [,bash]
 ----
 cluster_patch_body=$(cat <<'JSON'
 {
   "cloud_provider_tags": {
-    "custom-label-1": "true",
-    "custom-label-2": "true",
-    "gcp.network-tag.custom-network-tag-1": "true",
-    "gcp.network-tag.custom-network-tag-2": "true"
+    "environment": "production",
+    "cost-center": "engineering",
+    "gcp.network-tag.web-servers": "true",
+    "gcp.network-tag.database-access": "true"
   }
 }
 JSON
 )
 
-curl -X PATCH "https://api.redpanda.com/v1/clusters/{cluster.id}" \
+curl -X PATCH "https://api.redpanda.com/v1/clusters/$CLUSTER_ID" \
    -H "Content-Type: application/json" \
    -H "Authorization: Bearer $AUTH_TOKEN" \
    -d "$cluster_patch_body"
 ----
 +
-To remove all tags, send an empty `cloud_provider_tags` object:
+To remove all labels and network tags, send an empty `cloud_provider_tags` object:
 +
 [,bash]
 ----
 cluster_patch_body='{"cloud_provider_tags": {}}'
 
-curl -X PATCH "https://api.redpanda.com/v1/clusters/{cluster.id}" \
+curl -X PATCH "https://api.redpanda.com/v1/clusters/$CLUSTER_ID" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $AUTH_TOKEN" \
-  -d "$cluster_patch_body" \
+  -d "$cluster_patch_body"
 ----
 
 == Next steps
