@@ -290,9 +290,48 @@ Dedicated::
 
 == Redpanda Connect and Kafka Connect
 
-xref:develop:connect/about.adoc[Redpanda Connect] is integrated into Redpanda Cloud and available as a fully-managed service. Choose from a range of connectors, processors, and other components to quickly build and deploy streaming data pipelines or AI applications from the Cloud UI or using the link:/api/doc/cloud-dataplane/group/endpoint-redpanda-connect-pipeline[Data Plane API]. Comprehensive metrics, monitoring, and per pipeline scaling are also available. To start using Redpanda Connect, xref:develop:connect/connect-quickstart.adoc[try this quickstart].
+xref:develop:connect/about.adoc[Redpanda Connect] lets you compose pipelines from a rich library of inputs, processors, and outputs with strong metrics, logging, and per-pipeline scaling. To try it, see the xref:develop:connect/connect-quickstart.adoc[quickstart].
 
-xref:develop:managed-connectors/index.adoc[Kafka Connect] is disabled by default on all new clusters. To unlock this feature for your BYOC or Dedicated clusters, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda Support^]. Note that when Kafka Connect is enabled, there is a node running for Kafka Connect, even if connectors are not used.
+xref:develop:managed-connectors/index.adoc[Kafka Connect] is disabled by default on all new clusters. To unlock this feature for your BYOC or Dedicated cluster, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda Support^]. When enabled, a Kafka Connect node runs even if no connectors are configured.
+
+=== Redpanda Connect vs data transforms
+
+xref:develop:data-transforms/how-transforms-work.adoc[Data transforms] (Wasm) provide lightweight, per-record changes between Redpanda topics with minimal latency. Transforms run inside the broker, map one input topic to one or more output topics, and are intentionally sandboxed (no external network or disk access). They're ideal for validation, redaction, format/schema conversion, and simple routing.
+
+[cols="1,2,2",options="header",stripes=none]
+|===
+|  | Data transforms | Redpanda Connect
+
+| Best for
+| Simple, stateless, per-record normalization inside Redpanda
+| Enrichment/lookup with external services; multi-stage flows
+
+| External I/O
+| Not permitted (sandboxed)
+| Native (HTTP/database/object storage)
+
+| Topology
+| 1:1 or 1:N (no cross-topic fan-in)
+| Fan-in and fan-out; multi-step pipelines
+
+| Ordering
+| Preserves per-partition order
+| Per-partition order can be preserved; configure parallelism and batching accordingly
+
+| Scale & isolation
+| Shares broker CPU/memory; best for lightweight operations
+| Scales independently; isolates heavy work from brokers
+
+| Failure handling
+| You code routing/error behavior
+| Built-in retries/backoff and DLQ patterns
+|===
+
+[TIP]
+====
+* Use data transforms for simple, in-broker, per-record changes with minimal latency.
+* Use Redpanda Connect if your pipeline must talk to external systems (HTTP services, databases, cloud storage), or when you need advanced flow control, such as batching and windowed processing. 
+====
 
 == Redpanda Cloud vs Self-Managed feature compatibility
 
