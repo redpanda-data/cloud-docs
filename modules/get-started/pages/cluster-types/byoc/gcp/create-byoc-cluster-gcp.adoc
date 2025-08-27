@@ -20,7 +20,8 @@ Enter a cluster name, then select the resource group, provider (GCP), xref:refer
 * If you plan to create a private network in your own VPC, select the region where your VPC is located.
 * Three availability zones provide two backups in case one availability zone goes down.
 ====
-. Optionally, click *Advanced settings* to specify up to five key-value custom GCP labels. If a label key starts with `gcp.network-tag.<tag>`, the agent interprets it as a request to apply the `<tag>` network tag to GCE instances in the cluster. Use labels for organization/metadata; use network tags to target firewall rules and routes. After the cluster is created, labels are applied to applicable GCP resources (for example, instances and disks), and network tags are applied to instances. For more details on labels, see the https://cloud.google.com/compute/docs/labeling-resources[GCP documentation^].
++
+Optionally, click *Advanced settings* to specify up to five key-value custom GCP labels. If a label key starts with `gcp.network-tag.<tag>`, the agent interprets it as a request to apply the `<tag>` https://cloud.google.com/vpc/docs/add-remove-network-tags[network tag^] to GCE instances in the cluster. Use labels for organization/metadata; use network tags to target firewall rules and routes. After the cluster is created, labels are applied to applicable GCP resources (for example, instances and disks), and network tags are applied to instances. For more information, see the https://cloud.google.com/compute/docs/labeling-resources[GCP documentation^]. After the cluster is created, you can <<manage-custom-resource-labels-and-network-tags,specify more labels with the Cloud API>>. 
 . Click *Next*.
 . On the Network page, enter the connection type: either *Public* or *Private*. For BYOC clusters, *Private* is best-practice.
 ** Your network name is used to identify this network.
@@ -32,78 +33,9 @@ Note that `rpk` configures the permissions required by the agent to provision an
 
 include::get-started:partial$no-access.adoc[]
 
-== Manage custom resource tags
+== Manage custom resource labels and network tags
 
-After cluster creation, you may need to update resource tags for compliance or organizational requirements. You can manage custom cloud provider tags and labels using the xref:manage:api/cloud-byoc-controlplane-api.adoc[Cloud Control Plane API].
-
-Redpanda Cloud allows up to 16 custom labels and network tags in GCP. 
-
-Make sure you have:
-
-* The cluster ID. You can find this in the Redpanda Cloud UI, in the **Details** section of the cluster overview.
-* A valid bearer token for the Cloud Control Plane API. For details, see link:/api/doc/cloud-controlplane/authentication[Authenticate to the API]. 
-
-include::shared:partial$feature-flag.adoc[]
-
-. To refresh agent permissions so the Redpanda agent can update tags, run:
-+
-[,bash]
-----
-export CLUSTER_ID="<cluster-id>"
-export PROJECT_ID="<gcp-project-id>"
-
-rpk cloud byoc gcp apply --redpanda-id="$CLUSTER_ID" --project-id="$PROJECT_ID"
-----
-+
-This step is required because tag management requires additional IAM permissions that may not have been granted during initial cluster creation:
-+
-* `compute.disks.get`
-* `compute.disks.list`
-* `compute.disks.setLabels`
-* `compute.instances.setLabels`
-
-. To update labels and network tags, invoke the Cloud API.
-+
-First, set your authentication token:
-+
-[,bash]
-----
-export AUTH_TOKEN="<your-bearer-token>"
-----
-+
-The `PATCH` call sets the labels and network tags specified under `"cloud_provider_tags"`. It replaces the existing labels and tags with the specified labels and tags. Include all desired labels and tags in the request. To remove a single entry, omit it from the map you send.
-+
-[,bash]
-----
-cluster_patch_body=$(cat <<'JSON'
-{
-  "cloud_provider_tags": {
-    "environment": "production",
-    "cost-center": "engineering",
-    "gcp.network-tag.web-servers": "true",
-    "gcp.network-tag.database-access": "true"
-  }
-}
-JSON
-)
-
-curl -X PATCH "https://api.redpanda.com/v1/clusters/$CLUSTER_ID" \
-   -H "Content-Type: application/json" \
-   -H "Authorization: Bearer $AUTH_TOKEN" \
-   -d "$cluster_patch_body"
-----
-+
-To remove all labels and network tags, send an empty `cloud_provider_tags` object:
-+
-[,bash]
-----
-cluster_patch_body='{"cloud_provider_tags": {}}'
-
-curl -X PATCH "https://api.redpanda.com/v1/clusters/$CLUSTER_ID" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $AUTH_TOKEN" \
-  -d "$cluster_patch_body"
-----
+include::get-started:partial$custom-tags-gcp.adoc[]
 
 == Next steps
 

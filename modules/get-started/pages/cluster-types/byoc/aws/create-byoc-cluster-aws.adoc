@@ -19,7 +19,7 @@ Before you deploy a BYOC cluster on AWS, check that the user creating the cluste
 ** `AWS_PROFILE` or
 ** `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
 
-To verify access, you should be able to successfully run `aws sts get-caller-identity` for your region. See the https://awscli.amazonaws.com/v2/documentation/api/latest/reference/sts/get-caller-identity.html[AWS CLI reference^].
+To verify access, you should be able to successfully run `aws sts get-caller-identity` for your region. For more information, see the https://awscli.amazonaws.com/v2/documentation/api/latest/reference/sts/get-caller-identity.html[AWS CLI reference^].
 --
 
 == Create a BYOC cluster
@@ -33,8 +33,8 @@ To verify access, you should be able to successfully run `aws sts get-caller-ide
 * If you plan to create a private network in your own VPC, select the region where your VPC is located.
 * Three availability zones provide two backups in case one availability zone goes down.
 ====
-+ 
-Optionally, click *Advanced settings* to specify up to five key-value custom tags. After the cluster is created, the tags are applied to all AWS resources associated with this cluster. For more information, see the https://docs.aws.amazon.com/mediaconnect/latest/ug/tagging-restrictions.html[AWS documentation^].
++
+Optionally, click *Advanced settings* to specify up to five key-value custom tags. After the cluster is created, the tags are applied to all AWS resources associated with this cluster. For more information, see the https://docs.aws.amazon.com/mediaconnect/latest/ug/tagging-restrictions.html[AWS documentation^]. After the cluster is created, you can <<manage-custom-tags,specify more tags with the Cloud API>>.
 
 . Click *Next*.
 . On the Network page, enter the connection type: either *Public* or *Private*. For BYOC clusters, *Private* is best-practice.
@@ -50,78 +50,9 @@ As part of agent deployment:
 
 include::get-started:partial$no-access.adoc[]
 
-== Manage custom resource tags
+== Manage custom tags
 
-After cluster creation, you may need to update resource tags for compliance or organizational requirements. You can manage custom cloud provider tags and labels using the xref:manage:api/cloud-byoc-controlplane-api.adoc[Cloud Control Plane API].
-
-Make sure you have:
-
-* The cluster ID. You can find this in the Redpanda Cloud UI, in the **Details** section of the cluster overview.
-* A valid bearer token for the Cloud Control Plane API. For details, see link:/api/doc/cloud-controlplane/authentication[Authenticate to the API]. 
-
-include::shared:partial$feature-flag.adoc[]
-
-. To refresh agent permissions so the Redpanda agent can update tags, run:
-+
-[,bash]
-----
-export CLUSTER_ID="<cluster-id>"
-
-rpk cloud byoc aws apply --redpanda-id="$CLUSTER_ID"
-----
-+
-This step is required because tag management requires additional IAM permissions that may not have been granted during initial cluster creation:
-+
-* `ec2:DescribeTags`
-* `ec2:DescribeVolumes`
-* `ec2:DescribeNetworkInterfaces`
-* `ec2:CreateTags`
-* `ec2:DeleteTags`
-* `iam:TagPolicy`
-* `iam:UntagPolicy`
-* `iam:TagInstanceProfile`
-* `iam:UntagInstanceProfile`
-
-. To update tags, invoke the Cloud API.
-+
-First, set your authentication token:
-+
-[,bash]
-----
-export AUTH_TOKEN="<your-bearer-token>"
-----
-+
-The `PATCH` call sets the tags specified under `"cloud_provider_tags"`. It replaces the existing tags with the specified tags. Include all desired tags in the request. To remove a single entry, omit it from the map you send.
-+
-[,bash]
-----
-cluster_patch_body=$(cat <<'JSON'
-{
-  "cloud_provider_tags": {
-    "Environment": "production",
-    "CostCenter": "engineering"
-  }
-}
-JSON
-)
-
-curl -X PATCH "https://api.redpanda.com/v1/clusters/$CLUSTER_ID" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $AUTH_TOKEN" \
-  -d "$cluster_patch_body"
-----
-+
-To remove all tags, send an empty `cloud_provider_tags` object:
-+
-[,bash]
-----
-cluster_patch_body='{"cloud_provider_tags": {}}'
-
-curl -X PATCH "https://api.redpanda.com/v1/clusters/$CLUSTER_ID" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $AUTH_TOKEN" \
-  -d "$cluster_patch_body"
-----
+include::get-started:partial$custom-tags-aws.adoc[]
 
 == Next steps
 

@@ -1,0 +1,64 @@
+After cluster creation, you may need to update resource tags for compliance or organizational requirements. You can manage this with the xref:manage:api/cloud-byoc-controlplane-api.adoc[Cloud Control Plane API]. The Control Plane API allows up to 16 custom tags in Azure. 
+
+Make sure you have:
+
+* The cluster ID. You can find this in the Redpanda Cloud UI, in the **Details** section of the cluster overview.
+* A valid bearer token for the Cloud Control Plane API. For details, see link:/api/doc/cloud-controlplane/authentication[Authenticate to the API]. 
+
+include::shared:partial$feature-flag.adoc[]
+
+. To refresh agent permissions in the target subscription, run:
++
+[,bash]
+----
+export CLUSTER_ID="<cluster-id>"
+export SUBSCRIPTION_ID="<subscription-id>"
+
+rpk cloud byoc azure apply --redpanda-id="$CLUSTER_ID" --subscription-id="$SUBSCRIPTION_ID"
+----
+
+. To update tags, invoke the Cloud API.
++
+First, set your authentication token:
++
+[,bash]
+----
+export AUTH_TOKEN="<your-bearer-token>"
+----
++
+The `PATCH` call sets the tags specified under `"cloud_provider_tags"`. It replaces the existing tags with the specified tags. Include all desired tags in the request. To remove a single entry, omit it from the map you send.
++
+[,bash]
+----
+cluster_patch_body=$(cat <<'JSON'
+{
+  "cloud_provider_tags": {
+    "Environment": "production",
+    "CostCenter": "engineering"
+  }
+}
+JSON
+)
+
+curl -X PATCH "https://api.redpanda.com/v1/clusters/$CLUSTER_ID" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $AUTH_TOKEN" \
+  -d "$cluster_patch_body"
+----
++
+To remove all tags, send an empty `cloud_provider_tags` object:
++
+[,bash]
+----
+cluster_patch_body='{"cloud_provider_tags": {}}'
+
+curl -X PATCH "https://api.redpanda.com/v1/clusters/$CLUSTER_ID" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $AUTH_TOKEN" \
+  -d "$cluster_patch_body"
+----
+
+=== Limitations
+
+* Nodepool Application Security Groups (ASG): Custom tags are set only when the cluster is created. Tags cannot be updated on these resources after cluster creation.
+* Private Link network interfaces (Kubernetes API server, Tiered Storage, and Private Link service): Custom tags are set only during cluster creation and cannot be changed later.
