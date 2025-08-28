@@ -1,0 +1,70 @@
+Your organization might require custom tags for cost allocation, audit compliance, or governance policies. After cluster creation, you can manage tags with the xref:manage:api/cloud-byoc-controlplane-api.adoc[Cloud Control Plane API]. The Control Plane API allows up to 16 custom tags in AWS. 
+
+Make sure you have:
+
+* The cluster ID. You can find this in the Redpanda Cloud UI, in the **Details** section of the cluster overview.
+* A valid bearer token for the Cloud Control Plane API. For details, see link:/api/doc/cloud-controlplane/authentication[Authenticate to the API]. 
+
+include::shared:partial$feature-flag.adoc[]
+
+. To refresh agent permissions so the Redpanda agent can update tags, run:
++
+[,bash]
+----
+export CLUSTER_ID="<cluster-id>"
+
+rpk cloud byoc aws apply --redpanda-id="$CLUSTER_ID"
+----
++
+This step is required because tag management requires additional IAM permissions that may not have been granted during initial cluster creation:
++
+* `ec2:DescribeTags`
+* `ec2:DescribeVolumes`
+* `ec2:DescribeNetworkInterfaces`
+* `ec2:CreateTags`
+* `ec2:DeleteTags`
+* `iam:TagPolicy`
+* `iam:UntagPolicy`
+* `iam:TagInstanceProfile`
+* `iam:UntagInstanceProfile`
+
+. To update tags, invoke the Cloud API.
++
+First, set your authentication token:
++
+[,bash]
+----
+export AUTH_TOKEN="<your-bearer-token>"
+----
++
+The `PATCH` call sets the tags specified under `"cloud_provider_tags"`. It replaces the existing tags with the specified tags. Include all desired tags in the request. To remove a single entry, omit it from the map you send.
++
+[,bash]
+----
+cluster_patch_body=$(cat <<'JSON'
+{
+  "cloud_provider_tags": {
+    "Environment": "production",
+    "CostCenter": "engineering"
+  }
+}
+JSON
+)
+
+curl -X PATCH "https://api.redpanda.com/v1/clusters/$CLUSTER_ID" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $AUTH_TOKEN" \
+  -d "$cluster_patch_body"
+----
++
+To remove all tags, send an empty `cloud_provider_tags` object:
++
+[,bash]
+----
+cluster_patch_body='{"cloud_provider_tags": {}}'
+
+curl -X PATCH "https://api.redpanda.com/v1/clusters/$CLUSTER_ID" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $AUTH_TOKEN" \
+  -d "$cluster_patch_body"
+----

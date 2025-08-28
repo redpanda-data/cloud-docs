@@ -87,9 +87,6 @@ Confirm that the Azure subscription has enough virtual CPUs (vCPUs) per instance
 
 See the https://learn.microsoft.com/en-us/azure/quotas/view-quotas[Microsoft documentation^].
 
-include::shared:partial$kafka-connect.adoc[]
-
-
 === Check Azure SKU restrictions
 
 Ensure your subscription has access to the required VM sizes in the region where you will use Redpanda. For example, using the Azure CLI or in the Azure Cloud Shell, run:
@@ -144,7 +141,7 @@ To create a Redpanda cluster in your Azure VNet, follow the <<prerequisites,prer
 * Multi-AZ is the default configuration. Three AZs provide two backups in case one availability zone goes down.
 ====
 + 
-Optionally, click *Advanced settings* to specify up to five key-value custom tags. After the cluster is created, the tags are applied to all Azure resources associated with this cluster. For details, see the https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/tag-resources[Microsoft documentation^].
+Optionally, click *Advanced settings* to specify up to five key-value custom tags. After the cluster is created, the tags are applied to all Azure resources associated with this cluster. For details, see the https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/tag-resources[Microsoft documentation^]. After the cluster is created, you can <<manage-custom-tags,specify more tags with the Cloud API>>. 
 
 . Click *Next*.
 . On the Network page, enter the connection type: either *Public* or *Private*. For BYOC clusters, *Private* using Azure Private Link is best-practice. 
@@ -155,8 +152,6 @@ Optionally, click *Advanced settings* to specify up to five key-value custom tag
 +
 As part of agent deployment, Redpanda assigns the permissions required to run the agent. For details about these permissions, see xref:security:authorization/cloud-iam-policies-azure.adoc[Azure IAM policies].
 
-== Next steps
+== Manage custom tags
 
-* xref:networking:azure-private-link.adoc[Configure Azure Private Link]
-* xref:security:authorization/cloud-iam-policies-azure.adoc[Review Azure IAM policies]
-* xref:reference:rpk/index.adoc[Learn about `rpk` commands]
+include::get-started:partial$custom-tags-azure.adoc[]

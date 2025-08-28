@@ -55,7 +55,7 @@ The https://github.com/redpanda-data/cloud-examples/blob/main/customer-managed/a
 
 == Configure Terraform
 
-NOTE: For simplicity, these instructions assume that Terraform is configured to use local state. You may want to configure https://developer.hashicorp.com/terraform/language/state/remote[remote state^]. 
+NOTE: For simplicity, the instructions are based on the assumption that Terraform is configured to use local state. You may want to configure https://developer.hashicorp.com/terraform/language/state/remote[remote state^]. 
 
 Define a JSON file called `byovnet.auto.tfvars.json` inside the Terraform directory that contains information about the VPC.
 
@@ -452,4 +452,8 @@ After that completes, run:
 rpk cloud byoc aws destroy --redpanda-id ${REDPANDA_ID}
 ```
 
-include::get-started:partial$no-access.adoc[]
+== Manage custom tags
+
+include::get-started:partial$custom-tags-aws.adoc[]
+
+NOTE: For BYOVPC clusters, custom tags are not applied to the customer-managed resources that are deployed by the customer.
