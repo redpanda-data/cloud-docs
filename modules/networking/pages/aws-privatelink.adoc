@@ -266,69 +266,38 @@ SECURITY_GROUP_ID=<security_group_id>
 
 === Add security group rules
 
-The example below to add security group rules is based on the assumption that the Redpanda broker count is three. If you are not using three brokers, modify the example:
+The following example adds security group rules that work for any broker count by opening the documented per-broker port ranges.
 
-* Replace `32094`,`32194`,`32294` with `32092 + <broker_count-1>`, `32192 + <broker_count-1>`, `32292 + <broker_count-1>`.
-* Replace `35084`,`35184`,`35284` with `35082 + <broker_count-1>`, `35182 + <broker_count-1>`, `35282 + <broker_count-1>`.
+NOTE: For PrivateLink, clients connect to individual ports for each broker in ranges 32000-32500 (Kafka API) and 35000-35500 (HTTP Proxy). Opening only a few ports by broker count can break producers/consumers for topics with many partitions. See xref:networking:cloud-security-network.adoc#private-service-connectivity-network-ports[Private service connectivity network ports].
 
 [,bash]
 ----
-# Allow Redpanda Kafka seed port
+# Allow Kafka API bootstrap (seed)
 aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
-    --group-id $SECURITY_GROUP_ID \
-    --protocol "tcp" \
-    --port 30292 \
-    --cidr 0.0.0.0/0
-# Allow Schema Registry port
+  --group-id $SECURITY_GROUP_ID --protocol tcp --port 30292 --cidr 0.0.0.0/0
+
+# Allow Schema Registry
 aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
-    --group-id $SECURITY_GROUP_ID --protocol "tcp" \
-    --port 30081 \
-    --cidr 0.0.0.0/0
-# Allow Panda Proxy port
+  --group-id $SECURITY_GROUP_ID --protocol tcp --port 30081 --cidr 0.0.0.0/0
+
+# Allow HTTP Proxy bootstrap
 aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
-    --group-id $SECURITY_GROUP_ID --protocol "tcp" \
-    --port 30282 \
-    --cidr 0.0.0.0/0
-# Allow Redpanda Console connection
+  --group-id $SECURITY_GROUP_ID --protocol tcp --port 30282 --cidr 0.0.0.0/0
+
+# Allow Redpanda Cloud Data Plane API / Prometheus (if needed)
 aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
-    --group-id $SECURITY_GROUP_ID \
-    --protocol "tcp" \
-    --port 443-443 \
-    --cidr 0.0.0.0/0
-# Redpanda Kafka broker port ranges
-#   There are three broker port ranges that alternate during normal system maintenance, and all three must be open. Adjust the end port number if the Redpanda broker count is not three.
+  --group-id $SECURITY_GROUP_ID --protocol tcp --port 443 --cidr 0.0.0.0/0
+
+# Private service connectivity broker port pools
+# Kafka API per-broker ports
 aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
-    --group-id $SECURITY_GROUP_ID \
-    --protocol "tcp" \
-    --port 32092-32094 \
-    --cidr 0.0.0.0/0
+  --group-id $SECURITY_GROUP_ID \
+  --ip-permissions 'IpProtocol=tcp,FromPort=32000,ToPort=32500,IpRanges=[{CidrIp=0.0.0.0/0}]'
+
+# HTTP Proxy per-broker ports
 aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
-    --group-id $SECURITY_GROUP_ID \
-    --protocol "tcp" \
-    --port 32192-32194 \
-    --cidr 0.0.0.0/0
-aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
-    --group-id $SECURITY_GROUP_ID \
-    --protocol "tcp" \
-    --port 32292-32294 \
-    --cidr 0.0.0.0/0
-# Redpanda Panda Proxy port ranges
-#   There are three port ranges that alternate during normal system maintenance, and all three must be open. Adjust the end port number if the Redpanda broker count is not three.
-aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
-    --group-id $SECURITY_GROUP_ID \
-    --protocol "tcp" \
-    --port 35082-35084 \
-    --cidr 0.0.0.0/0
-aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
-    --group-id $SECURITY_GROUP_ID \
-    --protocol "tcp" \
-    --port 35182-35184 \
-    --cidr 0.0.0.0/0
-aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
-    --group-id $SECURITY_GROUP_ID \
-    --protocol "tcp" \
-    --port 35282-35284 \
-    --cidr 0.0.0.0/0
+  --group-id $SECURITY_GROUP_ID \
+  --ip-permissions 'IpProtocol=tcp,FromPort=35000,ToPort=35500,IpRanges=[{CidrIp=0.0.0.0/0}]'
 ----
 
 === Create VPC subnet
