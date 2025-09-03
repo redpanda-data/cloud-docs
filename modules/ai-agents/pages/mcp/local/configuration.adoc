@@ -1,8 +1,8 @@
 = Configure Redpanda Cloud MCP
 :page-beta: true
-:description: Learn how to configure the Redpanda Cloud MCP Server for your AI assistant, including auto and manual client setup, environment selection, enabling deletes, and security considerations.
+:description: Learn how to configure the Redpanda Cloud MCP Server for your AI assistant, including auto and manual client setup, enabling deletes, and security considerations.
 
-This page explains how to configure the Redpanda Cloud MCP Server for your AI assistant, including auto and manual client setup, environment selection, enabling deletes, and security considerations.
+This page explains how to configure the Redpanda Cloud MCP Server for your AI assistant, including auto and manual client setup, enabling deletes, and security considerations.
 
 == Prerequisites
 
@@ -12,7 +12,8 @@ This page explains how to configure the Redpanda Cloud MCP Server for your AI as
 
 == Auto-configured clients (Claude and Claude Code)
 
-For some supported clients, `rpk` can install and configure the MCP integration for you.For Claude and Claude Code, run one of these commands:
+For some supported clients, you can install and configure the MCP integration using the xref:reference:rpk/rpk-cloud/rpk-cloud-mcp-install.adoc[`rpk cloud mcp install` command].
+For Claude and Claude Code, run one of these commands:
 
 ```bash
 # Choose one
@@ -92,7 +93,7 @@ Manual configuration example::
 
 == Update or remove the MCP server
 
-To update, re-run the `rpk cloud mcp install` command.
+To update, re-run the the xref:reference:rpk/rpk-cloud/rpk-cloud-mcp-install.adoc[`rpk cloud mcp install` command].
 To remove, delete or disable the `mcpServers.redpandaCloud` entry in your client's config. (Steps vary by client.)
 
 == Security considerations
@@ -127,7 +128,7 @@ rpk cloud mcp install --client claude-code
 ```
 . If using another MCP client, verify your `mcpServers.redpandaCloud` entry (paths, JSON syntax, and args order).
 
-. [[local]]Start the server manually (one-time login required) to make sure it can reach Redpanda Cloud endpoints:
+. [[local]]Start the server manually using the the xref:reference:rpk/rpk-cloud/rpk-cloud-mcp-stdio.adoc[`rpk cloud mcp stdio` command] (one-time login required) to make sure it can reach Redpanda Cloud endpoints:
 +
 [source,bash]
 ----

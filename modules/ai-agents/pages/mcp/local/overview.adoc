@@ -12,13 +12,6 @@ By speaking natural language to your assistant, you can ask it to perform Redpan
 
 image::shared:cloud-mcp.gif[A terminal window showing Claude Code invoking Redpanda Cloud MCP to list topics in a cluster.]
 
-== Why it's useful
-
-* Natural-language operations: Ask for outcomes and let the assistant handle API details.
-* Faster workflows: Automate repetitive actions (create cluster/topic, inspect state, read recent records).
-* Remote execution: All operations are executed by the MCP server on your Redpanda Cloud cluster.
-* Safe by default: Destructive endpoints are **not** exposed unless you explicitly enable them.
-
 == What you can do
 
 Typical requests you can make to your assistant once connected:
@@ -39,14 +32,14 @@ NOTE: The MCP server does **not** expose delete endpoints by default. You can en
 
 == How it works
 
-. **Authentication:** Authenticate to Redpanda Cloud and receive a token using the `rpk cloud login` command.
-. *Local MCP server*: Start the local MCP server using `rpk cloud mcp install`. This process authenticates using the token obtained from `rpk cloud login` and runs the MCP server on your machine.
+. **Authentication:** Authenticate to Redpanda Cloud and receive a token using the xref:reference:rpk/rpk-cloud/rpk-cloud-login.adoc[`rpk cloud login` command].
+. *Local MCP server*: Start the local MCP server using the xref:reference:rpk/rpk-cloud/rpk-cloud-mcp-install.adoc[`rpk cloud mcp install` command]. This process authenticates using the token obtained from `rpk cloud login` and runs the MCP server on your machine.
 . **Prompting:** After connecting, you can prompt your assistant to perform Redpanda operations, and the local MCP server executes them in your Redpanda Cloud account using your credentials.
 
 === Components
 
 * AI client (Claude, Claude Code, or any other MCP client)
-* Redpanda CLI (must be version 25.2.3+)
+* Redpanda CLI (`rpk`)
 * Redpanda Cloud (control plane and data plane)
 
 == Next steps
