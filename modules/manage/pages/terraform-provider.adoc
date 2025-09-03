@@ -25,7 +25,7 @@ Terraform configurations are written in link:https://developer.hashicorp.com/ter
 
 === Providers
 
-Providers tell Terraform how to communicate with the services you want to manage. For example, the Redpanda provider connects to the xref:redpanda-cloud:manage:api/index.adoc[Redpanda Cloud API] using client credentials.
+Providers tell Terraform how to communicate with the services you want to manage. For example, the Redpanda provider connects to the link:/api/doc/cloud-controlplane/topic/topic-cloud-api-overview[Redpanda Cloud API] using client credentials.
 
 [source,hcl]
 ----
@@ -95,6 +95,12 @@ The following functionality is supported in the Cloud API but not in the Redpand
 * Kafka Connect
 * Redpanda Connect
 
+
+[WARNING]
+====
+Do not modify `throughput_tier` after it is set. When `allow_deletion` is set to `true`, modifying `throughput_tier` forces replacement of the cluster: Terraform will destroy the existing cluster and create a new one, causing data loss. 
+====
+
 == Prerequisites
 
 . Install at least version 1.0.0 of Terraform using the https://learn.hashicorp.com/tutorials/terraform/install-cli[official guide^].
@@ -158,7 +164,7 @@ This section provides examples of using the Redpanda Terraform provider to creat
 
 For more information on the different cluster types mentioned in these examples, see xref:redpanda-cloud:get-started:cloud-overview.adoc#redpanda-cloud-cluster-types[Redpanda Cloud cluster types].
 
-TIP: See the full list of zones and tiers available with each cloud provider in the xref:api:ROOT:cloud-controlplane-api.adoc#api-description[Control Plane API reference].
+TIP: See the full list of zones and tiers available with each cloud provider in the link:/api/doc/cloud-controlplane/topic/topic-regions-and-usage-tiers[Control Plane API reference].
 
 === Create a BYOC cluster
 
@@ -255,7 +261,7 @@ resource "redpanda_cluster" "test" {
 
 === Create a Dedicated cluster
 
-A Dedicated cluster is fully managed by Redpanda and ensures consistent performance. This example provisions a cluster on AWS with specific zones and throughput tiers.
+A Dedicated cluster is fully managed by Redpanda and ensures consistent performance. This example provisions a cluster on AWS with specific zones and usage tiers.
 
 [source,hcl]
 ----

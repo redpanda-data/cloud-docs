@@ -6,11 +6,9 @@
 
 include::shared:partial$feature-flag-rpcn.adoc[]
 
-This topic explains how to create a Bring Your Own Virtual Private Cloud (BYOVPC) cluster. This setup allows you to deploy the Redpanda glossterm:data plane[] into your existing VPC and take full control of managing the networking lifecycle. See also: xref:get-started:byoc-arch.adoc[BYOC architecture]. 
+A Bring Your Own Virtual Private Cloud (BYOVPC) cluster allows you to deploy the Redpanda glossterm:data plane[] into your existing VPC and manage the networking lifecycle. Compared to a standard Bring Your Own Cloud (BYOC) setup, where Redpanda manages the networking lifecycle for you, BYOVPC provides more control. See also: xref:get-started:byoc-arch.adoc[BYOC architecture]. 
 
-Compared to a standard Bring Your Own Cloud (BYOC) setup, where Redpanda manages the networking lifecycle for you, BYOVPC provides more security.
-
-When you create a BYOCVPC cluster, you specify your VPC and service account. The Redpanda Cloud agent doesn't create any new resources or alter any settings in your account. With BYOVPC: 
+When you create a BYOVPC cluster, you specify your VPC and the IAM role (instance profile) that the Redpanda agent will assume. The Redpanda Cloud agent doesn't create any new resources or alter any settings in your account. With BYOVPC: 
 
 * You provide your own VPC in your AWS account.
 * You maintain more control over your account, because Redpanda requires fewer permissions than standard BYOC clusters.
@@ -30,7 +28,7 @@ For existing BYOVPC clusters, contact https://support.redpanda.com/hc/en-us/requ
 * Access to an AWS project in which you create your cluster.
 * Minimum permissions in that AWS project. For the actions required by the user who will create the cluster with `rpk cloud byoc aws apply`, see https://github.com/redpanda-data/cloud-examples/blob/main/customer-managed/aws/terraform/iam_rpk_user.tf[`iam_rpk_user.tf`^].
 * Each BYOVPC cluster requires one allocated Elastic IP (EIP) address in AWS.
-* Familiarity with the Redpanda Cloud API. For example, you should be familiar with how to use the Cloud API to xref:redpanda-cloud:manage:api/cloud-api-authentication.adoc[authenticate] and xref:redpanda-cloud:manage:api/cloud-byoc-controlplane-api.adoc[create a cluster].
+* Familiarity with the Redpanda Cloud API. For example, you should be familiar with how to use the Cloud API to link:/api/doc/cloud-controlplane/authentication[authenticate] and xref:redpanda-cloud:manage:api/cloud-byoc-controlplane-api.adoc[create a cluster].
 * https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli[Terraform^] version 1.8.5 or later.
 * https://jqlang.org/download/[jq^], which is used to parse JSON values from API responses.
 
@@ -57,7 +55,7 @@ The https://github.com/redpanda-data/cloud-examples/blob/main/customer-managed/a
 
 == Configure Terraform
 
-NOTE: For simplicity, these instructions assume that Terraform is configured to use local state. You may want to configure https://developer.hashicorp.com/terraform/language/state/remote[remote state^]. 
+NOTE: For simplicity, the instructions are based on the assumption that Terraform is configured to use local state. You may want to configure https://developer.hashicorp.com/terraform/language/state/remote[remote state^]. 
 
 Define a JSON file called `byovnet.auto.tfvars.json` inside the Terraform directory that contains information about the VPC.
 
@@ -141,7 +139,7 @@ export REDPANDA_RG_ID= #Retrieve the ID from the URL of the resource group when 
 [TIP]
 ====
 
-* To get the Redpanda authentication credentials and resource group, follow the xref:manage:api/cloud-api-quickstart.adoc[].
+* To get the Redpanda authentication credentials, follow the link:/api/doc/cloud-controlplane/topic/authentication[Cloud API authentication guide]. You can link:/api/doc/cloud-controlplane/group/endpoint-resource-groups[use the API] to create a new resource group or use an existing one.
 * To see sample Terraform code of the expected provisioned resources, see the https://github.com/redpanda-data/cloud-examples/tree/main/customer-managed/aws[BYOVPC on AWS README^].
 ====
 
@@ -252,7 +250,7 @@ export CLOUD_STORAGE_BUCKET="$(terraform output -raw cloud_storage_bucket_arn)"
 export PERMISSIONS_BOUNDARY_POLICY="$(terraform output -raw permissions_boundary_policy_arn)"
 ```
 +
-TIP: See the full list of zones and tiers available with each provider in the xref:api:ROOT:cloud-controlplane-api.adoc#api-description[Control Plane API reference].
+TIP: See the full list of zones and tiers available with each provider in the link:/api/doc/cloud-controlplane/topic/topic-regions-and-usage-tiers[Control Plane API reference].
 
 . Define a JSON file called `redpanda-cluster.json` that includes cluster information: 
 +
@@ -454,4 +452,8 @@ After that completes, run:
 rpk cloud byoc aws destroy --redpanda-id ${REDPANDA_ID}
 ```
 
-include::get-started:partial$no-access.adoc[]
+== Manage custom tags
+
+include::get-started:partial$custom-tags-aws.adoc[]
+
+NOTE: For BYOVPC clusters, custom tags are not applied to the customer-managed resources that are deployed by the customer.

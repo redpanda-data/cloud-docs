@@ -1,28 +1,102 @@
 = Redpanda Cloud Overview
 :description: Learn about Redpanda Serverless, Bring Your Own Cloud (BYOC), and Dedicated clusters.
-:tag-pipeline-service: api:ROOT:cloud-dataplane-api.adoc#tag--Redpanda-Connect-Pipeline
 :page-aliases: cloud:dedicated-byoc.adoc, deploy:deployment-option/cloud/dedicated-byoc.adoc, deploy:deployment-option/cloud/cloud-overview.adoc
 
+Redpanda Cloud is a complete data streaming platform delivered as a fully-managed service. It provides automated upgrades and patching, data balancing, and support while continuously monitoring your clusters and underlying infrastructure to meet strict performance, availability, reliability, and security requirements. All Redpanda Cloud clusters are deployed with an integrated glossterm:Redpanda Console[], and all clusters have access to unlimited retention and 300+ data connectors with xref:develop:connect/about.adoc[Redpanda Connect].
 
-Redpanda Cloud is a complete data streaming platform delivered as a fully-managed service with automated upgrades and patching, data and partition balancing, and 24x7 support. It continuously monitors and maintains your clusters along with the underlying infrastructure to meet strict performance, availability, reliability, and security requirements. All Redpanda Cloud clusters are deployed with an integrated glossterm:Redpanda Console[].
-
-TIP: For more detailed information about the Redpanda platform, see xref:get-started:intro-to-events.adoc[], xref:get-started:architecture.adoc[], and xref:get-started:byoc-arch.adoc[].
+TIP: For more detailed information about the Redpanda platform, see xref:get-started:intro-to-events.adoc[] and xref:get-started:architecture.adoc[].
 
 == Redpanda Cloud cluster types
 
-Redpanda offers fully-managed cloud clusters for Serverless, BYOC, and Dedicated. All products have access to unlimited storage and 300+ data connectors with xref:develop:connect/about.adoc[Redpanda Connect].
-|===
-| <<Serverless>> | <<Bring Your Own Cloud (BYOC)>> | <<Dedicated>>
+Redpanda Cloud offers three fully-managed cloud deployment options, each designed for different use cases:
 
-| For starter projects and applications with low or variable traffic. | For production clusters requiring data sovereignty, the highest throughput, and added security. | For production clusters requiring expert cloud hosting, higher throughput, and extra isolation.
-| Multi-tenant in Redpanda Cloud on AWS | In your cloud on AWS, Azure, or GCP | Single-tenant in Redpanda Cloud on AWS, Azure, or GCP
-| 100 MB/s max write throughput | 2 GB/s max write throughput | 400 MB/s max write throughput
-| 300 MB/s max read throughput | 4 GB/s max read throughput | 800 MB/s max read throughput
-| 5000 partitions | 112,500 partitions | 45,600 partitions
-| 99.9% SLA | 99.99% SLA | 99.99% SLA
-| Public networking | Public or private networking | Public or private networking
-| SSO (GitHub, Google), Kafka ACLs | SSO (GitHub, Google, OIDC), RBAC, audit logs | SSO (GitHub, Google, OIDC), RBAC, audit logs
-| Enterprise support with annual contracts | Enterprise support | Enterprise support
+* **<<Serverless>>**: Fastest way to get started with automatic scaling and pay-as-you-go billing
+* **<<Dedicated>>**: Production clusters in Redpanda's cloud with enhanced isolation
+* **<<Bring Your Own Cloud (BYOC)>>**: Maximum control and security by deploying in your own cloud environment
+
+=== Quick comparison
+
+[cols="1,1,1,1", options="header"]
+|===
+| 
+| Serverless
+| Dedicated
+| BYOC
+
+| *Best for*
+| Starter projects and applications with low or variable traffic
+| Production clusters requiring cloud hosting, higher throughput, and extra isolation
+| Production clusters requiring data sovereignty, the highest throughput, and added security
+
+| *Deployment*
+| Redpanda's cloud (currently AWS only)
+| Redpanda's cloud (AWS/Azure/GCP)
+| Your cloud account (AWS/Azure/GCP)
+
+| *Tenancy*
+| Multi-tenant
+| Single-tenant
+| Single-tenant
+
+| *https://www.redpanda.com/legal/redpanda-cloud-service-level-agreement[SLA]*
+| 99.9%
+| 99.99%, multi-AZ
+| 99.99%, multi-AZ
+
+| *Max throughput (write, read)*
+| Up to 100 MB/s, 300 MB/s
+| Up to 400 MB/s, 800 MB/s
+| Up to 2 GB/s, 4 GB/s
+
+| *Partitions, pre-replication*
+| Up to 5,000
+| Up to 45,600
+| Up to 112,500
+
+| *Private networking*
+| ✗
+| ✓
+| ✓
+
+| *SSO authentication*
+| ✓ (GitHub, Google)
+| ✓ (GitHub, Google, OIDC) 
+| ✓ (GitHub, Google, OIDC)
+
+| *Redpanda Connect*
+| ✓
+| ✓
+| ✓
+
+| *Kafka Connect*
+| ✗
+| ✓ (disabled by default)
+| ✓ (disabled by default)
+
+| *RBAC & audit logs*
+| ✗
+| ✓
+| ✓
+
+| *Prometheus/OpenMetrics endpoint for cluster metrics*
+| ✗
+| ✓
+| ✓
+
+| *Multiple availability zones (AZs)*
+| ✗
+| ✓
+| ✓
+
+| *Cluster properties editing*
+| ✗
+| ✓ (AWS/GCP)
+| ✓ (AWS/GCP)
+
+| *Redpanda Support*
+| Enterprise support with annual contracts 
+| Enterprise support 
+| Enterprise support 
 |===
 
 [NOTE]
@@ -30,6 +104,7 @@ Redpanda offers fully-managed cloud clusters for Serverless, BYOC, and Dedicated
 
 * The partition limit is the number of logical partitions before replication occurs. Redpanda Cloud uses a replication factor of three.
 * Enterprise support is staffed by streaming experts around the clock Monday through Friday, plus immediate escalation for production outages 24/7.
+* https://www.redpanda.com/legal/redpanda-cloud-service-level-agreement[SLA] (service level agreement).
 * See also: <<Serverless vs BYOC/Dedicated>>
 ==== 
 
@@ -42,23 +117,6 @@ NOTE: Serverless is currently in a limited availability (LA) release with xref:g
 ==== Sign up for Serverless
 
 include::get-started:partial$get-started-serverless.adoc[] 
-
-=== Bring Your Own Cloud (BYOC)
-
-With BYOC clusters, you deploy Redpanda in your own cloud (AWS, Azure, or GCP), and all data is
-contained in your own environment. This provides an additional layer of security and isolation. (See xref:get-started:byoc-arch.adoc[].) When you create a BYOC cluster, you select the supported xref:reference:tiers/byoc-tiers.adoc[tier] that meets your compute and storage needs. Redpanda handles provisioning, operations, and maintenance. 
-
-NOTE: With standard BYOC clusters, Redpanda manages security policies and resources for your VPC or VNet, including subnetworks, IAM roles, and storage buckets/accounts. 
-
-==== Bring Your Own Network (BYOVPC/BYOVNet) 
-
-BYOVPC or BYOVNet clusters allow you to deploy the Redpanda glossterm:data plane[] into your existing VPC (for AWS or GCP) or VNet (for Azure) and take full control of the networking lifecycle. Compared to standard BYOC, BYOVPC/BYOVNet provides more security, but the configuration is more complex. See <<Shared responsibility model>>.
-
-The BYOC infrastructure that Redpanda manages should not be used to deploy any other workloads.
-
-==== Sign up for BYOC
-
-To start using BYOC, contact https://redpanda.com/try-redpanda?section=enterprise-trial[Redpanda sales^] to request a private offer with possible discounts. You are billed directly or through Google Cloud Marketplace or AWS Marketplace. 
 
 === Dedicated
 
@@ -85,21 +143,36 @@ Redpanda creates a cloud organization for you and sends you a welcome email.
 --
 =====
 
-== Serverless vs BYOC/Dedicated
+=== Bring Your Own Cloud (BYOC)
+
+With BYOC clusters, you deploy the Redpanda glossterm:data plane[] into your existing VPC (for AWS and GCP) or VNet (for Azure), and all data is
+contained in your own environment. This provides an additional layer of security and isolation. (See xref:get-started:byoc-arch.adoc[].) Redpanda manages provisioning, monitoring, upgrades, and security policies, and it manages required resources in your VPC or VNet, including subnets (subnetworks in GCP), IAM roles, and object storage resources (for example, S3 buckets or Azure Storage accounts). 
+
+==== Bring Your Own VPC/VNet (BYOVPC/BYOVNet) 
+
+With BYOVPC/BYOVNet clusters, you take full control of the networking lifecycle. Compared to standard BYOC, BYOVPC/BYOVNet provides more security, but the configuration is more complex. See the xref:get-started:cloud-overview.adoc#shared-responsibility-model[shared responsibility model] to understand what you manage versus what Redpanda manages.
+
+The BYOC infrastructure that Redpanda manages should not be used to deploy any other workloads.
+
+==== Sign up for BYOC
+
+To start using BYOC, contact https://redpanda.com/try-redpanda?section=enterprise-trial[Redpanda sales^] to request a private offer with possible discounts. You are billed directly or through Google Cloud Marketplace or AWS Marketplace. 
+
+=== Serverless vs BYOC/Dedicated
 
 Serverless clusters are a good fit for the following use cases:
 
-* Starter and growing workloads
-* Spiky workloads (that is, development environments, systems that only occasionally get busy, or workloads that come and go)
-* Fast and dynamic cluster creation: you can use a Serverless cluster as an isolated container for topics
-
-With Serverless (and for Dedicated when procured through the AWS Marketplace), you only pay for what you consume, without any commitment. A cluster is created instantly, so you can surface it in your applications (for example, for tenant isolation). If your workload increases, you can migrate it to a BYOC or Dedicated cluster.
+* Quick setup for development or testing
+* Variable or unpredictable traffic patterns
+* No upfront cost commitment
+* Isolated environments for different applications
 
 Consider BYOC or Dedicated if you need more control over the deployment or if you have workloads with consistently-high throughput. BYOC and Dedicated clusters offer the following features:
 
 * Private networking
 * Multiple availability zones (AZs). A multi-AZ cluster provides higher resiliency in the event of a failure in one of the zones. 
-* Ability to export metrics to a 3rd-party monitoring system
+* Ability to export Redpanda metrics to a third-party monitoring system
+* Role-based access control (RBAC) in the data plane
 * Kafka Connect
 * Higher limits and quotas. See xref:reference:tiers/byoc-tiers.adoc[BYOC usage tiers] and xref:reference:tiers/dedicated-tiers.adoc[Dedicated usage tiers] compared to xref:get-started:cluster-types/serverless.adoc#serverless-usage-limits[Serverless limits].
 
@@ -218,9 +291,48 @@ Dedicated::
 
 == Redpanda Connect and Kafka Connect
 
-xref:develop:connect/about.adoc[Redpanda Connect] is integrated into Redpanda Cloud and available as a fully-managed service. Choose from a range of connectors, processors, and other components to quickly build and deploy streaming data pipelines or AI applications from the Cloud UI or using the pass:a,m[xref:{tag-pipeline-service}[Data Plane API\]]. Comprehensive metrics, monitoring, and per pipeline scaling are also available. To start using Redpanda Connect, xref:develop:connect/connect-quickstart.adoc[try this quickstart].
+xref:develop:connect/about.adoc[Redpanda Connect] lets you compose pipelines from a rich library of inputs, processors, and outputs with strong metrics, logging, and per-pipeline scaling. To try it, see the xref:develop:connect/connect-quickstart.adoc[quickstart].
 
-xref:develop:managed-connectors/index.adoc[Kafka Connect] is automatically enabled on AWS and GCP clusters. With this, there is a node running for Kafka Connect even if connectors are not used. To enable Kafka Connect on Azure clusters, see xref:get-started:cluster-types/byoc/azure/create-byoc-cluster-azure.adoc#enable-kafka-connect[Enable Kafka Connect].
+xref:develop:managed-connectors/index.adoc[Kafka Connect] is disabled by default on all new clusters. To unlock this feature for your BYOC or Dedicated cluster, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda Support^]. When enabled, a Kafka Connect node runs even if no connectors are configured.
+
+=== Redpanda Connect vs data transforms
+
+xref:develop:data-transforms/how-transforms-work.adoc[Data transforms] (Wasm) provide lightweight, per-record changes between Redpanda topics with minimal latency. Transforms run inside the broker, map one input topic to one or more output topics, and are intentionally sandboxed (no external network or disk access). They're ideal for validation, redaction, format/schema conversion, and simple routing.
+
+[cols="1,2,2",options="header",stripes=none]
+|===
+|  | Data transforms | Redpanda Connect
+
+| Best for
+| Simple, stateless, per-record normalization inside Redpanda
+| Enrichment/lookup with external services; multi-stage flows
+
+| External I/O
+| Not permitted (sandboxed)
+| Native (HTTP/database/object storage)
+
+| Topology
+| 1:1 or 1:N (no cross-topic fan-in)
+| Fan-in and fan-out; multi-step pipelines
+
+| Ordering
+| Preserves per-partition order
+| Per-partition order can be preserved; configure parallelism and batching accordingly
+
+| Scale & isolation
+| Shares broker CPU/memory; best for lightweight operations
+| Scales independently; isolates heavy work from brokers
+
+| Failure handling
+| You code routing/error behavior
+| Built-in retries/backoff and DLQ patterns
+|===
+
+[TIP]
+====
+* Use data transforms for simple, in-broker, per-record changes with minimal latency.
+* Use Redpanda Connect if your pipeline must talk to external systems (HTTP services, databases, cloud storage), or when you need advanced flow control, such as batching and windowed processing. 
+====
 
 == Redpanda Cloud vs Self-Managed feature compatibility
 
@@ -230,13 +342,13 @@ New clusters in Redpanda Cloud generally include functionality added in Self-Man
 
 Redpanda Cloud deployments do not support the following functionality available in Redpanda Self-Managed deployments:
 
-- Remote Read Replicas. This is in beta for Redpanda Cloud on AWS and GCP.
 - Kafka API OIDC authentication. However, Redpanda Cloud does support xref:security:cloud-authentication.adoc#single-sign-on[SSO to the Redpanda Cloud UI].
 - Admin API.
 - FIPS-compliance mode.
 - Kerberos authentication.
 - Redpanda debug bundles.
 - Redpanda Console topic documentation.
+- Manual deserialization of Schema Registry
 - Configuring access to object storage with customer-managed encryption key.
 - Kubernetes Helm chart and Redpanda Operator functionality.
 - The following `rpk` commands:
@@ -264,8 +376,7 @@ Features in limited availability are production-ready and are covered by Redpand
 The following features are currently in limited availability in Redpanda Cloud:
 
 * Serverless
-* Dedicated and BYOC for Azure
-* BYOVPC for GCP
+* Dedicated for Azure
 
 == Features in beta
 
@@ -275,8 +386,10 @@ The following features are currently in beta in Redpanda Cloud:
 
 * BYOVPC for AWS  
 * BYOVNet for Azure
-* Integration with Apache Iceberg
-* Remote Read Replicas for AWS and GCP
+* Secrets Management for BYOVPC on GCP and AWS
+* Remote Read Replicas for AWS and GCP 
+* AI agents
+* Several Redpanda Connect components 
 
 == Next steps
 * xref:manage:maintenance.adoc[Learn about upgrades and maintenance]

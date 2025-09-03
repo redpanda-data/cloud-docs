@@ -19,7 +19,7 @@ Before you deploy a BYOC cluster on AWS, check that the user creating the cluste
 ** `AWS_PROFILE` or
 ** `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
 
-To verify access, you should be able to successfully run `aws sts get-caller-identity` for your region. See the https://awscli.amazonaws.com/v2/documentation/api/latest/reference/sts/get-caller-identity.html[AWS CLI reference^].
+To verify access, you should be able to successfully run `aws sts get-caller-identity` for your region. For more information, see the https://awscli.amazonaws.com/v2/documentation/api/latest/reference/sts/get-caller-identity.html[AWS CLI reference^].
 --
 
 == Create a BYOC cluster
@@ -33,8 +33,8 @@ To verify access, you should be able to successfully run `aws sts get-caller-ide
 * If you plan to create a private network in your own VPC, select the region where your VPC is located.
 * Three availability zones provide two backups in case one availability zone goes down.
 ====
-+ 
-Optionally, click *Advanced settings* to specify up to five key-value custom tags. After the cluster is created, the tags are applied to all AWS resources associated with this cluster. For more information, see the https://docs.aws.amazon.com/mediaconnect/latest/ug/tagging-restrictions.html[AWS documentation^].
++
+Optionally, click *Advanced settings* to specify up to five key-value custom tags. After the cluster is created, the tags are applied to all AWS resources associated with this cluster. For more information, see the https://docs.aws.amazon.com/mediaconnect/latest/ug/tagging-restrictions.html[AWS documentation^]. After the cluster is created, you can <<manage-custom-tags,specify more tags with the Cloud API>>.
 
 . Click *Next*.
 . On the Network page, enter the connection type: either *Public* or *Private*. For BYOC clusters, *Private* is best-practice.
@@ -49,6 +49,10 @@ As part of agent deployment:
 ** Redpanda allocates one Elastic IP (EIP) address in AWS for each BYOC cluster. 
 
 include::get-started:partial$no-access.adoc[]
+
+== Manage custom tags
+
+include::get-started:partial$custom-tags-aws.adoc[]
 
 == Next steps
 

@@ -3,4 +3,18 @@
 
 NOTE: Data transforms are supported on BYOC and Dedicated clusters running Redpanda version 24.3 and later.
 
+:tip-caption: When to use Redpanda Connect instead
+
+[TIP]
+====
+Data transforms do not access external networks or disks, and are best for lightweight data preparation (filtering, scrubbing, schema/format conversion). Use xref:develop:connect/about.adoc[Redpanda Connect] when you need any of the following:
+
+* External integration (HTTP services, databases, cloud storage) for enrichment or fan-out to third-party systems
+* Batching or windowed processing for grouping/aggregation
+* Prebuilt processors and connectors to reduce custom code
+
+====
+
+:tip-caption: Tip
+
 include::ROOT:develop:data-transforms/build.adoc[tag=single-source]

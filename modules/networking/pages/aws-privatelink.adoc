@@ -23,7 +23,7 @@ After <<get-a-cloud-api-access-token,getting an access token>>, you can <<create
 
 * Install `rpk`.
 * Your Redpanda cluster and <<create-client-vpc,VPC>> must be in the same region.
-* In this guide, you use the xref:manage:api/cloud-api-overview.adoc[Redpanda Cloud API] to enable the Redpanda endpoint service for your clusters. Follow the steps below to <<get-an-access-token,get an access token>>.
+* In this guide, you use the link:/api/doc/cloud-controlplane/topic/topic-cloud-api-overview[Redpanda Cloud API] to enable the Redpanda endpoint service for your clusters. Follow the steps below to <<get-an-access-token,get an access token>>.
 * Use the https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html[AWS CLI^] to create a new client VPC or modify an existing one to use the PrivateLink endpoint.
 
 TIP: In Kafka clients, set `connections.max.idle.ms` to a value less than 350 seconds. 
@@ -43,7 +43,7 @@ Copy and store the resource group ID (UUID) from the URL in the browser.
 export RESOURCE_GROUP_ID=<uuid>
 ----
 
-. Call xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1/networks[`POST /v1/networks`] to create a network.
+. Call link:/api/doc/cloud-controlplane/operation/operation-networkservice_createnetwork[`POST /v1/networks`] to create a network.
 +
 Make sure to supply your own values in the following example request. The example uses a BYOC cluster. For a Dedicated cluster, set `"cluster_type": "TYPE_DEDICATED"`. Store the network ID (`network_id`) after the network is created to check whether you can proceed to cluster creation.
 +
@@ -59,12 +59,14 @@ REGION=<aws_region>
 
 NETWORK_POST_BODY=`cat << EOF
 {
-    "cloud_provider": "CLOUD_PROVIDER_AWS",
-    "cluster_type": "TYPE_BYOC",
-    "name": "<my-private-link-network>",
-    "cidr_block": "<10.0.0.0/20>",
-    "resource_group_id": "$RESOURCE_GROUP_ID",
-    "region": "$REGION"
+    "network": {
+        "cloud_provider": "CLOUD_PROVIDER_AWS",
+        "cluster_type": "TYPE_BYOC",
+        "name": "<my-private-link-network>",
+        "cidr_block": "<10.0.0.0/20>",
+        "resource_group_id": "$RESOURCE_GROUP_ID",
+        "region": "$REGION"
+    }
 }
 EOF`
 
@@ -76,9 +78,9 @@ NETWORK_ID=`curl -vv -X POST \
 echo $NETWORK_ID
 ----
 +
-Wait for the network to be ready before creating the cluster in the next step. You can check the state of the network creation by calling xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/networks/-id-[`GET /v1/networks/\{id}`]. You can create the cluster when the state is `STATE_READY`.
+Wait for the network to be ready before creating the cluster in the next step. You can check the state of the network creation by calling link:/api/doc/cloud-controlplane/operation/operation-networkservice_getnetwork[`GET /v1/networks/\{id}`]. You can create the cluster when the state is `STATE_READY`.
 
-. Create a new cluster with the endpoint service enabled by calling xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1/clusters[`POST /v1/clusters`].
+. Create a new cluster with the endpoint service enabled by calling link:/api/doc/cloud-controlplane/operation/operation-clusterservice_createcluster[`POST /v1/clusters`].
 +
 In the example below, make sure to set your own values for the following fields:
 +
@@ -95,19 +97,21 @@ In the example below, make sure to set your own values for the following fields:
 ----
 CLUSTER_POST_BODY=`cat << EOF
 {
-    "cloud_provider": "CLOUD_PROVIDER_AWS",
-    "connection_type": "CONNECTION_TYPE_PRIVATE",
-    "name": "<my-private-link-cluster>",
-    "resource_group_id": "$RESOURCE_GROUP_ID",
-    "network_id": "$NETWORK_ID",
-    "region": "$REGION",
-    "zones": [ <zones> ],
-    "throughput_tier": "<tier>",
-    "type": "<type>",
-    "aws_private_link": {
-        "enabled": true,
-        "connect_console": true,
-        "allowed_principals": ["<principal_1>","<principal_2>"]
+    "cluster": {
+        "cloud_provider": "CLOUD_PROVIDER_AWS",
+        "connection_type": "CONNECTION_TYPE_PRIVATE",
+        "name": "<my-private-link-cluster>",
+        "resource_group_id": "$RESOURCE_GROUP_ID",
+        "network_id": "$NETWORK_ID",
+        "region": "$REGION",
+        "zones": [ <zones> ],
+        "throughput_tier": "<tier>",
+        "type": "<type>",
+        "aws_private_link": {
+            "enabled": true,
+            "connect_console": true,
+            "allowed_principals": ["<principal_1>","<principal_2>"]
+        }
     }
 }
 EOF`
@@ -120,7 +124,7 @@ CLUSTER_ID=`curl -vv -X POST \
 echo $CLUSTER_ID
 ----
 +
-**BYOC clusters only:** Check that the cluster operation is completed by calling xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/operations/-id-[`GET /v1/operations/\{id}`], and passing the operation ID returned from the Create Cluster call.
+**BYOC clusters only:** Check that the cluster operation is completed by calling link:/api/doc/cloud-controlplane/operation/operation-operationservice_getoperation[`GET /v1/operations/\{id}`], and passing the operation ID returned from the Create Cluster call.
 +
 When the Create Cluster operation is completed (`STATE_COMPLETED`), run the following `rpk cloud` command to finish setting up your BYOC cluster:
 +
@@ -140,7 +144,7 @@ CAUTION: As soon as PrivateLink is available on your VPC, all communication on e
 CLUSTER_ID=<cluster_id>
 ----
 
-. Make a xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1/clusters/-cluster.id-[`PATCH /v1/clusters/{cluster.id}`] request to update the cluster with the Redpanda Private Link Endpoint Service enabled.
+. Make a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_updatecluster[`PATCH /v1/clusters/{cluster.id}`] request to update the cluster with the Redpanda Private Link Endpoint Service enabled.
 +
 In the example below, make sure to set your own value for the following field:
 +
@@ -167,9 +171,9 @@ curl -vv -X PATCH \
   -d "$CLUSTER_PATCH_BODY" $PUBLIC_API_ENDPOINT/v1/clusters/$CLUSTER_ID
 ----
 
-. Before proceeding, check the state of the Update Cluster operation by calling xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/operations/-id-[`GET /v1/operations/\{id}`], and passing the operation ID returned from Update Cluster call. When the state is `STATE_READY`, proceed to the next step.
+. Before proceeding, check the state of the Update Cluster operation by calling link:/api/doc/cloud-controlplane/operation/operation-operationservice_getoperation[`GET /v1/operations/\{id}`], and passing the operation ID returned from Update Cluster call. When the state is `STATE_READY`, proceed to the next step.
 
-. Check the service state by calling xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/clusters/-id-[`GET /v1/clusters/\{id}`]. The `service_state` in the `aws_private_link.status` response object must be `Available` for you to <<access-redpanda-services-through-vpc-endpoint,connect to the service>>.
+. Check the service state by calling link:/api/doc/cloud-controlplane/operation/operation-clusterservice_getcluster[`GET /v1/clusters/\{id}`]. The `service_state` in the `aws_private_link.status` response object must be `Available` for you to <<access-redpanda-services-through-vpc-endpoint,connect to the service>>.
 +
 [,bash]
 ----
@@ -368,6 +372,6 @@ include::networking:partial$private-links-test-connection.adoc[]
 
 include::shared:partial$suggested-reading.adoc[]
 
-* xref:manage:api/cloud-api-overview.adoc[]
+* link:/api/doc/cloud-controlplane/topic/topic-cloud-api-overview[Cloud API Overview]
 * xref:networking:byoc/aws/vpc-peering-aws.adoc[]
 * xref:networking:dedicated/vpc-peering.adoc[]

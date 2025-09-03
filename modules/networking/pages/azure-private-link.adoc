@@ -1,7 +1,7 @@
 = Configure Azure Private Link with the Cloud API
 :description: Set up Azure Private Link with the Cloud API.
 
-NOTE: For UI-based configuration of Azure Private Link, see xref:networking:azure-private-link-in-ui.adoc[Configure Azure Private Link in the Cloud UI].
+NOTE: For UI-based configuration of Azure Private Link on new clusters, see xref:networking:azure-private-link-in-ui.adoc[Configure Azure Private Link in the Cloud UI].
 
 The Redpanda Azure Private Link service provides secure access to Redpanda Cloud from your own virtual network. Traffic over Azure Private Link does not go through the public internet, but instead through Microsoft's backbone network. While clients can initiate connections against the Redpanda Cloud cluster endpoints, Redpanda Cloud services cannot access your virtual networks directly.
 
@@ -21,7 +21,7 @@ After <<get-a-cloud-api-access-token,getting an access token>>, you can <<create
 * Install xref:manage:rpk/rpk-install.adoc[`rpk`].
 * Install https://jqlang.org/download/[`jq`^], which is used to parse JSON values from API responses. 
 * You will use the https://learn.microsoft.com/en-us/cli/azure/[Azure CLI^] to authenticate with Azure and configure resources in your Azure account.
-* You will use the xref:deploy:deployment-option/cloud/api/cloud-api-overview.adoc[Redpanda Cloud API] to enable the Redpanda Private Link service for your clusters. Follow the steps on this page to <<get-a-cloud-api-access-token, get an access token>>.
+* You will use the link:/api/doc/cloud-controlplane/[Redpanda Cloud API] to enable the Redpanda Private Link service for your clusters. Follow the steps on this page to <<get-a-cloud-api-access-token, get an access token>>.
 
 TIP: In Kafka clients, set `connections.max.idle.ms` to a value less than 240 seconds. 
 
@@ -63,7 +63,7 @@ Copy and store the resource group ID (UUID) from the URL in the browser.
 export RESOURCE_GROUP_ID=<uuid>
 ----    
 
-. Call xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1/networks[`POST /v1/networks`] to create a Redpanda Cloud network for the cluster.
+. Call link:/api/doc/cloud-controlplane/operation/operation-networkservice_createnetwork[`POST /v1/networks`] to create a Redpanda Cloud network for the cluster.
 +
 Make sure to supply your own values in the following example request. Store the network ID (`network_id`) after the network is created to check whether you can proceed to cluster creation.
 +
@@ -80,12 +80,14 @@ REGION=<azure-region>
 
 NETWORK_POST_BODY=`cat << EOF
 {
-    "cloud_provider": "CLOUD_PROVIDER_AZURE",
-    "cluster_type": "<cluster-type>",
-    "name": "<network-name>",
-    "cidr_block": "<10.0.0.0/20>",
-    "resource_group_id": "$RESOURCE_GROUP_ID",
-    "region": "$REGION"
+    "network": {
+        "cloud_provider": "CLOUD_PROVIDER_AZURE",
+        "cluster_type": "<cluster-type>",
+        "name": "<network-name>",
+        "cidr_block": "<10.0.0.0/20>",
+        "resource_group_id": "$RESOURCE_GROUP_ID",
+        "region": "$REGION"
+    }
 }
 EOF`
 
@@ -97,16 +99,16 @@ NETWORK_ID=`curl -vv -X POST \
 echo $NETWORK_ID
 ----
 +
-Wait for the network to be ready before creating the cluster in the next step. Check the state of the network creation by calling xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/networks/-id-[`GET /v1/networks/\{id}`]. You can create the cluster when the state is `STATE_READY`.
+Wait for the network to be ready before creating the cluster in the next step. Check the state of the network creation by calling link:/api/doc/cloud-controlplane/operation/operation-networkservice_getnetwork[`GET /v1/networks/\{id}`]. You can create the cluster when the state is `STATE_READY`.
 
-. Create a new cluster with the Private Link service enabled by calling xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1/clusters[`POST /v1/clusters`].
+. Create a new cluster with the Private Link service enabled by calling link:/api/doc/cloud-controlplane/operation/operation-clusterservice_createcluster[`POST /v1/clusters`].
 +
 In the following example, make sure to set your own values for the following fields:
 +
 --
 - `name`
 - `type`: `TYPE_BYOC` or `TYPE_DEDICATED`
-- `tier`: For example, `tier-1-azure`. See available Azure tiers in the xref:api:ROOT:cloud-controlplane-api.adoc#api-description[Control Plane API reference]. To learn more about tiers, see xref:reference:tiers/byoc-tiers.adoc[BYOC Tiers and Regions] or xref:reference:tiers/dedicated-tiers.adoc[Dedicated Tiers and Regions]. 
+- `tier`: For example, `tier-1-azure`. See available Azure tiers in the link:/api/doc/cloud-controlplane/topic/topic-regions-and-usage-tiers[Control Plane API reference]. To learn more about tiers, see xref:reference:tiers/byoc-tiers.adoc[BYOC Tiers and Regions] or xref:reference:tiers/dedicated-tiers.adoc[Dedicated Tiers and Regions]. 
 - `zones`: For example, `"uksouth-az1",  "uksouth-az2", "uksouth-az3"`
 --
 +
@@ -114,19 +116,21 @@ In the following example, make sure to set your own values for the following fie
 ----
 CLUSTER_POST_BODY=`cat << EOF
 {
-  "cloud_provider": "CLOUD_PROVIDER_AZURE",
-  "connection_type": "CONNECTION_TYPE_PRIVATE",
-  "name": "<name>",
-  "resource_group_id": "$RESOURCE_GROUP_ID",
-  "network_id": "$NETWORK_ID",
-  "region": "$REGION",
-  "throughput_tier": "<tier>",
-  "type": "<type>",
-  "zones": [ <zones> ],
-  "azure_private_link": { 
-      "allowed_subscriptions": ["$SOURCE_CONNECTION_SUBSCRIPTION_ID"],
-      "enabled": true,
-      "connect_console": true
+  "cluster": {
+    "cloud_provider": "CLOUD_PROVIDER_AZURE",
+    "connection_type": "CONNECTION_TYPE_PRIVATE",
+    "name": "<name>",
+    "resource_group_id": "$RESOURCE_GROUP_ID",
+    "network_id": "$NETWORK_ID",
+    "region": "$REGION",
+    "throughput_tier": "<tier>",
+    "type": "<type>",
+    "zones": [ <zones> ],
+    "azure_private_link": { 
+        "allowed_subscriptions": ["$SOURCE_CONNECTION_SUBSCRIPTION_ID"],
+        "enabled": true,
+        "connect_console": true
+    }
   }
 }
 EOF`
@@ -139,7 +143,7 @@ CLUSTER_ID=`curl -vv -X POST \
 echo $CLUSTER_ID
 ----
 
-. **BYOC clusters only:** Check that the cluster operation is completed by calling xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/operations/-id-[`GET /v1/operations/\{id}`], and passing the operation ID returned from the Create Cluster call.
+. **BYOC clusters only:** Check that the cluster operation is completed by calling link:/api/doc/cloud-controlplane/operation/operation-operationservice_getoperation[`GET /v1/operations/\{id}`], and passing the operation ID returned from the Create Cluster call.
 +
 When the Create Cluster operation is completed (`STATE_COMPLETED`), run the following `rpk cloud` command to finish setting up your BYOC cluster with Private Link enabled:
 +
@@ -161,7 +165,7 @@ CAUTION: As soon as Private Link is available on your virtual network, all commu
 CLUSTER_ID=<cluster_id>
 ----
 
-. Make a xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1/clusters/-cluster.id-[`PATCH /v1/clusters/{cluster.id}`] request to update the cluster with the service enabled.
+. Make a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_updatecluster[`PATCH /v1/clusters/{cluster.id}`] request to update the cluster with the service enabled.
 +
 [,bash]
 ----
@@ -181,13 +185,13 @@ curl -vv -X PATCH \
   -d "$CLUSTER_PATCH_BODY" $PUBLIC_API_ENDPOINT/v1/clusters/$CLUSTER_ID
 ----
 
-. Before proceeding, check the state of the Update Cluster operation by calling xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/operations/-id-[`GET /v1/operations/\{id}`], and passing the operation ID returned from the Update Cluster call. When the state is `STATE_READY`, continue to <<configure-azure-private-link-connection-to-redpanda-cloud,configure the Private Link connection to Redpanda>>.
+. Before proceeding, check the state of the Update Cluster operation by calling link:/api/doc/cloud-controlplane/operation/operation-operationservice_getoperation[`GET /v1/operations/\{id}`], and passing the operation ID returned from the Update Cluster call. When the state is `STATE_READY`, continue to <<configure-azure-private-link-connection-to-redpanda-cloud,configure the Private Link connection to Redpanda>>.
 
 == Configure Azure Private Link connection to Redpanda Cloud
 
 . In the Redpanda Cloud UI, go to https://cloud.redpanda.com/users?tab=users[**Users**^] and create a new user to authenticate the Private Link endpoint connections with the service. You will need the username and password to <<connect-to-redpanda-services-through-private-link-endpoints,access Redpanda services>> or <<test-the-connection,test the connection>> using `rpk` or cURL.
 
-. Call the xref:api:ROOT:cloud-controlplane-api.adoc#get-/v1/clusters/-id-[`GET /v1/clusters/\{id}`] endpoint to check the service status and retrieve the service ID, DNS name, and Redpanda Console URL to use.
+. Call the link:/api/doc/cloud-controlplane/operation/operation-clusterservice_getcluster[`GET /v1/clusters/\{id}`] endpoint to check the service status and retrieve the service ID, DNS name, and Redpanda Console URL to use.
 +
 [,bash]
 ----

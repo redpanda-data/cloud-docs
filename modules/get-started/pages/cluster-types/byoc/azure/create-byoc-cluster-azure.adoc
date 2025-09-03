@@ -2,7 +2,6 @@
 :description: Use the Redpanda Cloud UI to create a BYOC cluster on Azure.
 :page-aliases: deploy:deployment-option/cloud/create-byoc-cluster-azure.adoc, get-started:cluster-types/byoc/create-byoc-cluster-azure.adoc
 
-include::shared:partial$feature-flag.adoc[]
 
 To create a Redpanda cluster in your virtual network (VNet), follow the instructions in the Redpanda Cloud UI. The UI contains the parameters necessary to successfully run `rpk cloud byoc apply`. See also: xref:get-started:byoc-arch.adoc[BYOC architecture].
 
@@ -88,9 +87,6 @@ Confirm that the Azure subscription has enough virtual CPUs (vCPUs) per instance
 
 See the https://learn.microsoft.com/en-us/azure/quotas/view-quotas[Microsoft documentation^].
 
-NOTE: If you run Redpanda Connect pipelines, or if you <<enable-kafka-connect,enable Kafka Connect>>, Redpanda also deploys an additional node pool.
-
-
 === Check Azure SKU restrictions
 
 Ensure your subscription has access to the required VM sizes in the region where you will use Redpanda. For example, using the Azure CLI or in the Azure Cloud Shell, run:
@@ -145,7 +141,7 @@ To create a Redpanda cluster in your Azure VNet, follow the <<prerequisites,prer
 * Multi-AZ is the default configuration. Three AZs provide two backups in case one availability zone goes down.
 ====
 + 
-Optionally, click *Advanced settings* to specify up to five key-value custom tags. After the cluster is created, the tags are applied to all Azure resources associated with this cluster. For details, see the https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/tag-resources[Microsoft documentation^].
+Optionally, click *Advanced settings* to specify up to five key-value custom tags. After the cluster is created, the tags are applied to all Azure resources associated with this cluster. For details, see the https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/tag-resources[Microsoft documentation^]. After the cluster is created, you can <<manage-custom-tags,specify more tags with the Cloud API>>. 
 
 . Click *Next*.
 . On the Network page, enter the connection type: either *Public* or *Private*. For BYOC clusters, *Private* using Azure Private Link is best-practice. 
@@ -156,32 +152,6 @@ Optionally, click *Advanced settings* to specify up to five key-value custom tag
 +
 As part of agent deployment, Redpanda assigns the permissions required to run the agent. For details about these permissions, see xref:security:authorization/cloud-iam-policies-azure.adoc[Azure IAM policies].
 
-== Enable Kafka Connect
+== Manage custom tags
 
-To enable xref:develop:managed-connectors/index.adoc[Kafka Connect] for clusters on Azure:
-
-. Authenticate to the Redpanda Cloud API. Follow the steps in xref:manage:api/cloud-api-authentication.adoc[].
-
-. Enable Kafka Connect by making a xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1/clusters/-cluster.id-[`PATCH /v1/clusters`] request:
-+
-[,bash]
-----
-curl -X PATCH "https://api.redpanda.com/v1/clusters/<cluster-id>" \
- -H 'Accept: application/json' \
- -H 'Authorization: Bearer <token>' \
- -H 'Content-Type: application/json' \
- -d '{"kafka_connect": {"enabled": true}}'
-----
-+
-Replace the following placeholders:
-+
-- `<cluster-id>`: Enter the cluster ID listed in the Redpanda Cloud UI. Go to the Cluster Overview page, and look in the Details section.
-- `<token>`: Enter the API token you received in step 1.
-
-include::get-started:partial$no-access.adoc[]
-
-== Next steps
-
-* xref:networking:azure-private-link.adoc[Configure Azure Private Link]
-* xref:security:authorization/cloud-iam-policies-azure.adoc[Review Azure IAM policies]
-* xref:reference:rpk/index.adoc[Learn about `rpk` commands]
+include::get-started:partial$custom-tags-azure.adoc[]

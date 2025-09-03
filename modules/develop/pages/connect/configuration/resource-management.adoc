@@ -6,7 +6,7 @@
 
 == Prerequisites
 
-- A running xref:get-started:cluster-types/byoc/index.adoc[BYOC] (not BYOVPC/BYOVNet) or xref:get-started:cluster-types/dedicated/create-dedicated-cloud-cluster.adoc[Dedicated] cluster.
+- A running xref:get-started:cluster-types/byoc/index.adoc[BYOC] or xref:get-started:cluster-types/dedicated/create-dedicated-cloud-cluster.adoc[Dedicated] cluster.
 - An estimate of the throughput of your data pipeline. You can get some basic statistics by running your data pipeline locally using the xref:redpanda-connect:components:processors/benchmark.adoc[`benchmark` processor].
 
 === Understanding compute units
@@ -139,11 +139,11 @@ Cloud UI::
 Data Plane API::
 +
 --
-. xref:manage:api/cloud-api-quickstart.adoc#try-the-cloud-api[Authenticate and get the base URL] for the Data Plane API. 
-. Make a request to xref:api:ROOT:cloud-dataplane-api.adoc#get-/v1/redpanda-connect/pipelines[`GET /v1/redpanda-connect/pipelines`], which lists details of all pipelines on your cluster by ID. 
+. link:/api/doc/cloud-dataplane/topic/topic-quickstart[Authenticate and get the base URL] for the Data Plane API. 
+. Make a request to link:/api/doc/cloud-dataplane/operation/operation-redpandaconnectservice_listpipelines[`GET /v1/redpanda-connect/pipelines`], which lists details of all pipelines on your cluster by ID. 
 +
 * Memory (`memory_shares`) is displayed in megabytes. For example, `1` compute unit is `400M` or 400 MB.
-* CPU resources (`cpu_shares`) are displayed milliCPU. For example, `1` compute unit is `100m` or 0.1 CPU.
+* CPU resources (`cpu_shares`) are displayed in milliCPU. For example, `1` compute unit is `100m` or 0.1 CPU.
 
 --
 =====
@@ -167,9 +167,9 @@ Data Plane API::
 --
 You can only update CPU resources using the Data Plane API. For every 0.1 CPU that you allocate, Redpanda Cloud automatically reserves 400 MB of memory for the exclusive use of the pipeline.
 
-. xref:manage:api/cloud-api-quickstart.adoc#try-the-cloud-api[Authenticate and get the base URL] for the Data Plane API, if you haven't already.
-. Make a request to xref:api:ROOT:cloud-dataplane-api.adoc#get-/v1/redpanda-connect/pipelines/-id-[`GET /v1/redpanda-connect/pipelines/\{id}`], including the ID of the pipeline you want to update. You'll use the returned values in the next step.
-. Now make a request to xref:api:ROOT:cloud-dataplane-api.adoc#put-/v1/redpanda-connect/pipelines/-id-[`PUT /v1/redpanda-connect/pipelines/\{id}`], to update the pipeline resources:
+. link:/api/doc/cloud-dataplane/topic/topic-quickstart[Authenticate and get the base URL] for the Data Plane API, if you haven't already.
+. Make a request to link:/api/doc/cloud-dataplane/operation/operation-redpandaconnectservice_getpipeline[`GET /v1/redpanda-connect/pipelines/\{id}`], including the ID of the pipeline you want to update. You'll use the returned values in the next step.
+. Now make a request to link:/api/doc/cloud-dataplane/operation/operation-redpandaconnectservice_updatepipeline[`PUT /v1/redpanda-connect/pipelines/\{id}`], to update the pipeline resources:
 +
 * Reuse the values returned by your `GET` request to populate the request body. 
 * Replace the `cpu_shares` value with the resources you want to allocate, and enter any valid value for `memory_shares`.
@@ -182,17 +182,18 @@ curl -X PUT "https://<data-plane-api-url>/v1/redpanda-connect/pipelines/xxx..." 
  -H 'accept: application/json'\
  -H 'authorization: Bearer xxx...' \
  -H "content-type: application/json" \
- -d '{"config_yaml":"input:\n generate:\n   interval: 1s\n   mapping: |\n     root.id = uuid_v4()\n     root.   user.name = fake(\"name\")\n     root.user.email = fake(\"email\")\n     root.content = fake(\"paragraph\")\n\npipeline:\n processors:\n   - mutation: |\n       root.title = \"PRIVATE AND CONFIDENTIAL\"\n\noutput:\n kafka_franz:\n   seed_brokers:\n     - seed-j888.byoc.prd.cloud.redpanda.com:9092\n   sasl:\n     - mechanism: SCRAM-SHA-256\n       password: password\n       username: connect\n   topic: processed-emails\n   tls:\n     enabled: true\n", \
-    "description":"Email processor", \ 
-    "display_name":"emailprocessor-pipeline", \
-    "resources":{ \
-        "memory_shares":"800M" \
-        "cpu_shares":"200m", \
-        } \
-      }' 
+ -d '{
+   "config_yaml": "input:\n generate:\n   interval: 1s\n   mapping: |\n     root.id = uuid_v4()\n     root.user.name = fake(\"name\")\n     root.user.email = fake(\"email\")\n     root.content = fake(\"paragraph\")\n\npipeline:\n  processors:\n    - mutation: |\n        root.title = \"PRIVATE AND CONFIDENTIAL\"\n\noutput:\n  kafka_franz:\n    seed_brokers:\n      - seed-j888.byoc.prd.cloud.redpanda.com:9092\n    sasl:\n      mechanism: SCRAM-SHA-256\n      password: password\n      username: connect\n    topic: processed-emails\n    tls:\n      enabled: true\n",
+   "description": "Email processor",
+   "display_name": "emailprocessor-pipeline",
+   "resources": {
+     "memory_shares": "800M",
+     "cpu_shares": "200m"
+   }
+ }'
 ----
 +
 A successful response shows the updated resource allocations with the `cpu_shares` value returned in milliCPU.
-. Make a request to xref:api:ROOT:cloud-dataplane-api.adoc#get-/v1/redpanda-connect/pipelines[`GET /v1/redpanda-connect/pipelines`] to verify your pipeline resource updates.
+. Make a request to link:/api/doc/cloud-dataplane/operation/operation-redpandaconnectservice_listpipelines[`GET /v1/redpanda-connect/pipelines`] to verify your pipeline resource updates.
 --
 =====

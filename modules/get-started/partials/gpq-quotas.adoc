@@ -1,0 +1,10 @@
+=== GCP quotas
+
+Ensure at least three nodes of headroom in the relevant GCP quotas in the same region as your cluster. During maintenance, Redpanda may temporarily create extra nodes. Quotas such as vCPUs per VM family (for example, N2D) and Local SSD total per VM family (quota key: `LOCAL_SSD_TOTAL_GB_PER_VM_FAMILY`) are listed for each tier on the *Create BYOC cluster* page in the Redpanda Cloud UI.
+
+Headroom formulas:
+
+* vCPU spare = `3 x (vCPUs per node)`
+* Local SSD spare (GB) = `3 x (Storage size per node in GB)`
+
+For example, with per-node storage *1500 GB* (4 × 375 GB Local SSD) and instance type *n2d-standard-4* (4 vCPUs), keep *4500 GB* Local SSD and *12 vCPUs* of spare quota.

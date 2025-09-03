@@ -4,9 +4,7 @@
 
 include::shared:partial$feature-flag-rpcn.adoc[]
 
-This topic explains how to create a Bring Your Own Virtual Network (BYOVNet) cluster. This setup allows you to deploy the Redpanda glossterm:data plane[] into your existing VNet and take full control of managing the networking lifecycle. See also: xref:get-started:byoc-arch.adoc[BYOC architecture]. 
-
-Compared to a standard Bring Your Own Cloud (BYOC) setup, where Redpanda manages the networking lifecycle for you, BYOVNet provides more security.
+A Bring Your Own Virtual Network (BYOVNet) cluster allows you to deploy the Redpanda glossterm:data plane[] into your existing VNet and manage the networking lifecycle. Compared to a standard Bring Your Own Cloud (BYOC) setup, where Redpanda manages the networking lifecycle for you, BYOVNet provides more control. See also: xref:get-started:byoc-arch.adoc[BYOC architecture].
 
 When you create a BYOVNet cluster, you specify your VNet and managed identities. The Redpanda Cloud agent doesn't create any new resources or alter any settings in your account. With a customer-managed VNet: 
 
@@ -29,7 +27,7 @@ See the code for the complete list of resources required to create and deploy Re
 
 * Access to an Azure subscription where you want to create your cluster
 * Knowledge of your internal VNet and subnet configuration
-* Permission to call the xref:manage:api/cloud-api-overview.adoc[Redpanda Cloud API]
+* Permission to call the link:/api/doc/cloud-controlplane/topic/topic-cloud-api-overview[Redpanda Cloud API]
 * Permission to create, modify, and delete the resources described by Terraform
 * https://developer.hashicorp.com/terraform/install[Terraform^] version 1.8.5 or later
 * https://jqlang.org/download/[jq^], which is used to parse JSON values from API responses
@@ -317,7 +315,7 @@ export BEARER_TOKEN=$(curl --request POST \
 --data audience=cloudv2-production.redpanda.cloud | jq -r '.access_token')
 ```
 
-TIP: To get the Redpanda authentication credentials, follow the xref:manage:api/cloud-api-quickstart.adoc[].
+TIP: To get the Redpanda authentication credentials, follow the link:/api/doc/cloud-controlplane/topic/authentication[authentication guide].
 
 == Create network
 
@@ -446,7 +444,7 @@ EOF
 ```
 ====
 +
-TIP: See the full list of zones and tiers available with each provider in the xref:api:ROOT:cloud-controlplane-api.adoc#api-description[Control Plane API reference].
+TIP: See the full list of zones and tiers available with each provider in the link:/api/doc/cloud-controlplane/topic/topic-regions-and-usage-tiers[Control Plane API reference].
 
 . Make a Cloud API call to create a Redpanda cluster and get the network ID from the response in JSON `.operation.metadata.network_id`.
 +
@@ -516,3 +514,15 @@ rpk cloud byoc azure destroy --redpanda-id ${REDPANDA_ID}
 ```
 
 include::get-started:partial$no-access.adoc[]
+
+== Manage custom tags
+
+include::get-started:partial$custom-tags-azure.adoc[]
+
+NOTE: For BYOVNet clusters, custom tags are not applied to the customer-managed resources that are deployed by the customer.
+
+== Next steps
+
+* xref:networking:azure-private-link.adoc[Configure Azure Private Link]
+* xref:security:authorization/cloud-iam-policies-azure.adoc[Review Azure IAM policies]
+* xref:reference:rpk/index.adoc[Learn about `rpk` commands]

@@ -1,6 +1,11 @@
 = Enable Redpanda Connect on an Existing BYOVPC Cluster on GCP
 :description: Add Redpanda Connect to your existing BYOVPC cluster.
 
+[IMPORTANT]
+====
+BYOVPC is an add-on feature that may require an additional purchase. To unlock this feature for your account, contact your Redpanda account team or https://www.redpanda.com/price-estimator[Redpanda Sales^].
+==== 
+
 
 To enable Redpanda Connect on an existing BYOVPC cluster, you must update your configuration. You can also create xref:get-started:cluster-types/byoc/gcp/vpc-byo-gcp.adoc[a new BYOVPC cluster] with Redpanda Connect already enabled.
 
@@ -82,7 +87,7 @@ gcloud iam service-accounts add-iam-policy-binding <redpanda_connect-gcp-sa-acco
 ```
 ====
 
-. Make a xref:api:ROOT:cloud-controlplane-api.adoc#patch-/v1/clusters/-cluster.id-[`PATCH /v1/clusters/\{cluster-id}`] request to update the cluster configuration.
+. Make a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_updatecluster[`PATCH /v1/clusters/\{cluster-id}`] request to update the cluster configuration.
 +
 .Show request
 [%collapsible]
@@ -111,11 +116,11 @@ curl -v -X PATCH \
 
 . Check Redpanda Connect is available in the Cloud UI. 
 .. Log in to https://cloud.redpanda.com[Redpanda Cloud^].
-.. Go to the **Connect** page and you should see the **Redpanda Connect** tab alongside **Kafka Connect**. 
+.. Go to the **Connect** page and you should see Redpanda Connect. 
 
 == Next steps
 
-* Choose xref:develop:connect/components/catalog.adoc[connectors for your use case].
+* Choose xref:develop:connect/components/about.adoc[connectors for your use case].
 * Learn how to xref:redpanda-connect:guides:getting_started.adoc[configure, test, and run a data pipeline locally].
 * Try the xref:develop:connect/connect-quickstart.adoc[Redpanda Connect quickstart].
 * Try one of our xref:cookbooks:index.adoc[Redpanda Connect cookbooks].

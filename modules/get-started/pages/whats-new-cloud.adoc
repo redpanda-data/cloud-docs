@@ -1,13 +1,49 @@
 = What's New in Redpanda Cloud
 :description: Summary of new features in Redpanda Cloud.
-:tag-pipeline-service: api:ROOT:cloud-dataplane-api.adoc#tag--Redpanda-Connect-Pipeline
 :page-aliases: deploy:deployment-option/cloud/whats-new-cloud.adoc
 :page-toclevels: 1
 
 
 This page lists new features added to Redpanda Cloud.
 
+== August 2025
+
+=== Manage custom resource tags in BYOC
+
+After cluster creation, you can manage custom cloud provider tags and labels on BYOC and BYOVPC/BYOVNet clusters for xref:get-started:cluster-types/byoc/aws/create-byoc-cluster-aws.adoc#manage-custom-tags[AWS], xref:get-started:cluster-types/byoc/azure/create-byoc-cluster-azure.adoc#manage-custom-tags[Azure], and xref:get-started:cluster-types/byoc/gcp/create-byoc-cluster-gcp.adoc#manage-custom-resource-labels-and-network-tags[GCP] using the Cloud Control Plane API. This involves refreshing Redpanda agent permissions with `rpk cloud byoc` due to new IAM permissions. 
+
+=== Iceberg topics with AWS Glue
+
+A new xref:manage:iceberg/iceberg-topics-aws-glue.adoc[integration with AWS Glue Data Catalog] allows you to add Redpanda topics as Iceberg tables in your data lakehouse. The AWS Glue catalog integration is available in BYOC clusters with Redpanda version 25.2 and later.
+
+See xref:manage:iceberg/rest-catalog/index.adoc[] for supported Iceberg REST catalog integrations.
+
+=== Manage throughput
+
+Redpanda Cloud now lets you xref:manage:cluster-maintenance/manage-throughput.adoc[manage throughput] configuration at the broker and client levels. You can manage client quotas with xref:reference:rpk/rpk-cluster/rpk-cluster-quotas.adoc[`rpk cluster quotas`] or with the Kafka API. When no quotas apply, the client has unlimited throughput.
+
 == July 2025
+
+=== Iceberg topics in Redpanda Cloud: GA
+
+xref:manage:iceberg/about-iceberg-topics.adoc[Iceberg topics] are now generally available (GA) in Redpanda Cloud. 
+
+=== BYOC on Azure: GA
+
+xref:get-started:cluster-types/byoc/azure/create-byoc-cluster-azure.adoc[BYOC for Azure] is now generally available (GA).
+
+
+=== Schema Registry Authorization
+
+You can now use xref:manage:schema-reg/schema-reg-authorization.adoc[Schema Registry Authorization] to control access to Schema Registry subjects and operations. Schema Registry Authorization offers more granular control over who can do what with your Redpanda Schema Registry resources. ACLs used for Schema Registry access also support RBAC roles.
+
+=== Kafka Connect disabled on new clusters
+
+xref:develop:managed-connectors/index.adoc[Kafka Connect] is now disabled by default on all new clusters. To unlock this feature for your account, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda Support^]. If you previously enabled Kafka Connect on a cluster and want to xref:develop:managed-connectors/disable-kc.adoc[disable it], you can use the Cloud API.
+
+=== Allowlist NAT gateway IP 
+
+The xref:networking:cloud-security-network.adoc#nat-gateways[Redpanda NAT gateway IP address] is now provided in the Cloud UI and the Cloud API for BYOC and Dedicated clusters. If necessary, you can use this IP address to allowlist egress traffic from your Redpanda Connect data sources.
 
 === mTLS and SASL authentication for Kafka API on AWS
 
@@ -83,7 +119,7 @@ The deprecation timeline is:
 - End-of-support date: November 28, 2025
 - Retirement date: May 28, 2026
 
-See xref:manage:api/cloud-api-deprecation-policy.adoc[] for more information.
+See the link:/api/doc/cloud-controlplane/topic/topic-deprecation-policy[Cloud API Deprecation Policy] for more information.
 
 === Read-only cluster configuration properties
 
@@ -158,9 +194,9 @@ For a better customer experience, the Serverless Standard and Serverless Pro pro
 
 === Cloud API: GA
 
-The xref:manage:api/cloud-api-overview.adoc[Cloud API] is now generally available. It includes endpoints for xref:manage:api/cloud-serverless-controlplane-api.adoc[managing Serverless clusters], configuring RBAC in xref:manage:api/cloud-byoc-controlplane-api.adoc#manage-rbac[BYOC], xref:manage:api/cloud-serverless-controlplane-api.adoc#manage-rbac[Serverless], and xref:manage:api/cloud-dedicated-controlplane-api.adoc#manage-rbac[Dedicated] clusters, and xref:manage:api/cloud-dataplane-api.adoc#use-redpanda-connect[using Redpanda Connect]. 
+The Cloud API is now generally available. It includes endpoints for xref:manage:api/cloud-serverless-controlplane-api.adoc[managing Serverless clusters], configuring RBAC in xref:manage:api/cloud-byoc-controlplane-api.adoc#manage-rbac[BYOC], xref:manage:api/cloud-serverless-controlplane-api.adoc#manage-rbac[Serverless], and xref:manage:api/cloud-dedicated-controlplane-api.adoc#manage-rbac[Dedicated] clusters, and xref:manage:api/cloud-dataplane-api.adoc#use-redpanda-connect[using Redpanda Connect]. 
 
-To get started, try the xref:manage:api/cloud-api-quickstart.adoc[Cloud API Quickstart], or see the full xref:api:ROOT:cloud-controlplane-api.adoc[Control Plane API] and xref:api:ROOT:cloud-dataplane-api.adoc[Data Plane API] reference documentation.
+To get started, see the link:/api/doc/cloud-controlplane/topic/topic-cloud-api-overview[Redpanda Cloud API overview] or try the link:/api/doc/cloud-controlplane/topic/topic-quickstart[Cloud API Quickstart]. For full reference documentation, see link:/api/doc/cloud-controlplane/[Control Plane API] and link:/api/doc/cloud-dataplane/[Data Plane API].
 
 === Support for additional regions
 
@@ -188,7 +224,7 @@ Usage limits for Serverless Pro clusters increased to: ingress = 100 MBps, egres
 
 === Cloud API reference
 
-The Cloud API reference is now provided as separate references for the xref:api:ROOT:cloud-controlplane-api.adoc[Control Plane API] and xref:api:ROOT:cloud-dataplane-api.adoc[Data Plane APIs]. The Control Plane API and Data Plane APIs follow separate OpenAPI specifications, so the reference is updated to better reflect the structure of the Cloud APIs and to improve usability of the documentation. See also: xref:manage:api/cloud-api-overview.adoc[].
+The Cloud API reference is now provided as separate references for the link:/api/doc/cloud-controlplane/[Control Plane API] and link:/api/doc/cloud-dataplane/[Data Plane APIs]. The Control Plane API and Data Plane APIs follow separate OpenAPI specifications, so the reference is updated to better reflect the structure of the Cloud APIs and to improve usability of the documentation. See also: link:/api/doc/cloud-controlplane/topic/topic-cloud-api-overview[Cloud API Overview].
 
 == January 2025
 
@@ -257,7 +293,7 @@ Redpanda Cloud now offers greater flexibility to schedule upgrades to your clust
 
 === Redpanda Connect: LA for BYOC, beta for Serverless
 
-xref:develop:connect/about.adoc[Redpanda Connect] is now integrated into Redpanda Cloud and available as a fully-managed service. This is a limited availability (LA) release for BYOC and a beta release for Serverless. xref:develop:connect/components/catalog.adoc[Choose from a range of connectors, processors, and other components] to quickly build and deploy streaming data pipelines or AI applications from the xref:develop:connect/connect-quickstart.adoc[Cloud UI] or using the pass:a,m[xref:{tag-pipeline-service}[Data Plane API\]]. Comprehensive metrics, monitoring, and per pipeline scaling are also available. To start using Redpanda Connect, xref:develop:connect/connect-quickstart.adoc[try this quickstart].
+xref:develop:connect/about.adoc[Redpanda Connect] is now integrated into Redpanda Cloud and available as a fully-managed service. This is a limited availability (LA) release for BYOC and a beta release for Serverless. xref:develop:connect/components/about.adoc[Choose from a range of connectors, processors, and other components] to quickly build and deploy streaming data pipelines or AI applications from the xref:develop:connect/connect-quickstart.adoc[Cloud UI] or using the link:/api/doc/cloud-dataplane/group/endpoint-redpanda-connect-pipeline[Data Plane API]. Comprehensive metrics, monitoring, and per pipeline scaling are also available. To start using Redpanda Connect, xref:develop:connect/connect-quickstart.adoc[try this quickstart].
 
 For more detailed information about recent component updates, see xref:redpanda-connect:ROOT:whats_new_rpcn.adoc[What's New in Redpanda Connect].
 
@@ -311,7 +347,7 @@ Redpanda has increased the number of client connections in all xref:reference:ti
 
 === Cloud API: beta
 
-The Cloud API allows you to programmatically manage clusters and resources in your Redpanda Cloud organization. For more information, see the xref:manage:api/cloud-api-quickstart.adoc[Cloud API Quickstart], the xref:manage:api/cloud-api-overview.adoc[Cloud API Overview], and the full xref:api:ROOT:cloud-controlplane-api.adoc[Control Plane API] and xref:api:ROOT:cloud-dataplane-api.adoc[Data Plane API] reference documentation.
+The Cloud API allows you to programmatically manage clusters and resources in your Redpanda Cloud organization. For more information, see the link:/api/doc/cloud-controlplane/topic/topic-quickstart[Cloud API Quickstart], the link:/api/doc/cloud-controlplane/topic/topic-cloud-api-overview[Cloud API Overview], and the full link:/api/doc/cloud-controlplane/[Control Plane API] and link:/api/doc/cloud-dataplane/[Data Plane API] reference documentation.
 
 === mTLS authentication for Kafka API clients
 
@@ -345,7 +381,7 @@ When you create a BYOC or Dedicated cluster, you select a xref:reference:tiers/b
 
 === Serverless: limited availability
 
-xref:get-started:cluster-types/serverless.adoc[Redpanda Serverless] moved out of beta and into limited availability (LA). This means that it has usage limits and no public SLA. During LA, existing clusters can scale to the usage limits, but new clusters may need to wait for availability. Serverless is the fastest and easiest way to start data streaming. It is a production-ready deployment option with automatically-scaling clusters available instantly. To start using Serverless, https://redpanda.com/try-redpanda/cloud-trial#serverless[sign up for a free trial^]. This is no base cost, and with pay-as-you-go billing after the trial, you only pay for what you consume. 
+xref:get-started:cluster-types/serverless.adoc[Redpanda Serverless] moved out of beta and into limited availability (LA). This means that it has usage limits. During LA, existing clusters can scale to the usage limits, but new clusters may need to wait for availability. Serverless is the fastest and easiest way to start data streaming. It is a production-ready deployment option with automatically-scaling clusters available instantly. To start using Serverless, https://redpanda.com/try-redpanda/cloud-trial#serverless[sign up for a free trial^]. This is no base cost, and with pay-as-you-go billing after the trial, you only pay for what you consume. 
 
 === Authentication with SSO
 

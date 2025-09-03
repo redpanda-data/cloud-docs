@@ -1,34 +1,37 @@
 = Monitor Redpanda Cloud
-:description: Learn how to configure monitoring on your Dedicated or BYOC cluster to maintain system health and optimize performance.
+:description: Learn how to configure monitoring on your BYOC or Dedicated cluster to maintain system health and optimize performance.
 :page-aliases: manage:monitoring.adoc, deploy:deployment-option/cloud/monitor-cloud.adoc
 
-You can configure monitoring on your Redpanda Dedicated or BYOC cluster to maintain system health and optimize performance. Redpanda Cloud exports metrics for all brokers and Kafka Connect workers from a single Prometheus endpoint. This endpoint can be found on the *Overview* page for your cluster, under *How to connect*. 
+You can configure monitoring on your Redpanda BYOC or Dedicated cluster to maintain system health and optimize performance. You can monitor Redpanda with https://prometheus.io/[Prometheus^] or with any other monitoring and alerting tool, such as Datadog, New Relic, Elastic Cloud, Google Cloud, or Azure.
 
-You can monitor Redpanda with Prometheus or with any other monitoring and alerting tool, such as Datadog, New Relic, Elastic Cloud, Google, or Azure.
+Redpanda Cloud exports Redpanda metrics for all brokers and connectors from a single OpenMetrics endpoint. This endpoint can be found on the *Overview* page for your cluster, under *How to connect* and *Prometheus*.
+
 
 [NOTE]
 ====
-To maximize performance, Redpanda exports some metrics only when the underlying feature is in use. For example, a metric for consumer groups, xref:reference:public-metrics-reference.adoc#redpanda_kafka_consumer_group_committed_offset[`redpanda_kafka_consumer_group_committed_offset`], is only exported when groups are registered.
+
+- To maximize performance, Redpanda exports some metrics only when the underlying feature is in use. For example, a metric for consumer groups, xref:reference:public-metrics-reference.adoc#redpanda_kafka_consumer_group_committed_offset[`redpanda_kafka_consumer_group_committed_offset`], is only exported when groups are registered.
+- Operating system-level and node-level metrics (such as CPU, memory, disk, and network usage) are not available through this endpoint. For infrastructure monitoring, use your cloud provider's native monitoring tools (such as Azure Monitor, AWS CloudWatch, or Google Cloud Monitoring).
 ====
 
-== Configure Prometheus
+== Configure Redpanda monitoring
 
-To monitor a Dedicated or BYOC cluster in https://prometheus.io/[Prometheus^]:
+To monitor a BYOC or Dedicated cluster:
 
 . On the Redpanda Cloud *Overview* page for your cluster, under *How to connect*, click the *Prometheus* tab. 
 
 . Click the copy icon for *Prometheus YAML* to copy the contents to your clipboard. 
 +
-image::shared:cloud_metrics.png[How to connect screenshot]
-+
 The YAML contains the Prometheus scrape target configuration, as well as authentication, for the cluster.
++
+image::shared:cloud_metrics.png[How to connect screenshot]
 +
 [,yaml]
 ----
 - job_name: redpandaCloud-sample
   static_configs:
     - targets:
-        - console-<id>.<identifier>.fmc.cloud.redpanda.com
+        - console-<id>.<identifier>.byoc.cloud.redpanda.com
   metrics_path: /api/cloud/prometheus/public_metrics
   basic_auth:
     username: prometheus
@@ -36,15 +39,17 @@ The YAML contains the Prometheus scrape target configuration, as well as authent
   scheme: https
 ----
 
-. Save this information to Prometheus, and observe in Prometheus that metrics from Redpanda endpoints are scraped.
+. Save these settings to Prometheus or another monitoring tool, replacing the following placeholders:
++
+* `<id>.<identifier>`: ID and identifier from the HTTPS endpoint.
+* `<prom_pass>`: Copy and paste the onscreen Prometheus password.
+
 
 == Configure Datadog
 
-To monitor a Dedicated or BYOC cluster in https://www.datadoghq.com/[Datadog]:
+To monitor a Dedicated or BYOC cluster in https://www.datadoghq.com/[Datadog^]: 
 
-. On the Redpanda Cloud *Overview* page for your cluster, under *How to connect*, click the *Prometheus* tab.
-
-. Click the copy icon for *Prometheus YAML* to find scrape target configuration, as well as authentication, for the cluster.
+. Follow the steps to configure Redpanda monitoring.
 
 . In Datadog, define the `openmetrics_endpoint` URL for that monitored cluster. The integration configuration should look similar to the following:
 +
@@ -63,7 +68,7 @@ instances:
 
 . Restart the Datadog agent.
 
-NOTE: Because the Prometheus endpoint in Redpanda Cloud aggregates metrics for all cluster services, only a single Datadog agent is required. The agent must run in a container in your own container infrastructure. Redpanda does not support launching this container inside a Dedicated or BYOC Kubernetes cluster. For more information, see the https://docs.datadoghq.com/integrations/redpanda/?tab=host[Datadog documentation^] and https://github.com/DataDog/integrations-extras/tree/master/redpanda[Redpanda Datadog integration^].
+NOTE: Because the OpenMetrics endpoint in Redpanda Cloud aggregates Redpanda metrics for all cluster services, only a single Datadog agent is required. The agent must run in a container in your own container infrastructure. Redpanda does not support launching this container inside a Dedicated or BYOC Kubernetes cluster. For more information, see the https://docs.datadoghq.com/integrations/redpanda/?tab=host[Datadog documentation^] and https://github.com/DataDog/integrations-extras/tree/master/redpanda[Redpanda Datadog integration^].
 
 == Use Redpanda monitoring examples
 

@@ -4,9 +4,7 @@
 
 include::shared:partial$feature-flag-rpcn.adoc[]
 
-This topic explains how to create a Bring Your Own Virtual Private Cloud (BYOVPC) cluster. This setup allows you to deploy the Redpanda glossterm:data plane[] into your existing VPC and take full control of managing the networking lifecycle. See also: xref:get-started:byoc-arch.adoc[BYOC architecture]. 
-
-Compared to a standard Bring Your Own Cloud (BYOC) setup, where Redpanda manages the networking lifecycle for you, BYOVPC provides more security.
+A Bring Your Own Virtual Private Cloud (BYOVPC) cluster allows you to deploy the Redpanda glossterm:data plane[] into your existing VPC and manage the networking lifecycle. Compared to a standard Bring Your Own Cloud (BYOC) setup, where Redpanda manages the networking lifecycle for you, BYOVPC provides more control. See also: xref:get-started:byoc-arch.adoc[BYOC architecture].
 
 When you create a BYOVPC cluster, you specify your VPC and service account. The Redpanda Cloud agent doesn't create any new resources or alter any settings in your account. With BYOVPC: 
 
@@ -14,12 +12,16 @@ When you create a BYOVPC cluster, you specify your VPC and service account. The 
 * You maintain more control of your Google Cloud account, because Redpanda requires fewer permissions than standard BYOC clusters.
 * You control your security resources and policies, including subnets, service accounts, IAM roles, firewall rules, and storage buckets.
 
+If your clients need to connect from different GCP regions than where your cluster will be deployed, you must enable global access during cluster creation. To create a BYOVPC cluster with global access enabled, see xref:networking:byoc/gcp/enable-global-access.adoc[Enable Global Access].
+
 == Prerequisites
 
 * A standalone GCP project is recommended. If your host project (where your VPC project is created) and your service project (where your Redpanda cluster is created) are in different projects, you must first provision a shared VPC in Google Cloud. For more information, see the https://cloud.google.com/vpc/docs/provisioning-shared-vpc[Google shared VPC documentation^]. 
 * Redpanda creates a private Google Kubernetes Engine (GKE) cluster in your VPC. The subnet and secondary IP ranges you provide must allow public internet access. The configuration requires you to provide reserved CIDR ranges for the subnet and GKE Pods, Services, and master IP addresses. See the https://cloud.google.com/kubernetes-engine/docs/how-to/service-accounts[GKE service account documentation^] and <<Configure your VPC>>. 
 * Only primary CIDR ranges are supported for the VPC.
 * Redpanda requires access to certain Google APIs, storage buckets, and service accounts. See <<Configure the service project>>.
+
+include::partial$gpq-quotas.adoc[]
 
 == Limitations
 
@@ -737,6 +739,12 @@ You can delete the cluster in the Cloud UI.
 . Log in to https://cloud.redpanda.com[Redpanda Cloud^].
 . Select your cluster.
 . Go to the **Cluster settings** page and click **Delete**, then confirm your deletion. 
+
+== Manage custom resource labels and network tags
+
+include::get-started:partial$custom-tags-gcp.adoc[]
+
+NOTE: For BYOVPC clusters, custom labels are not applied to the customer-managed resources that are deployed by the customer.
 
 == Next steps
 
