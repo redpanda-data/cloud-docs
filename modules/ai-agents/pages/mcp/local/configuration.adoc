@@ -43,7 +43,7 @@ Add an MCP server entry to your client's configuration (example shown in JSON). 
   }
 }
 ```
-<1> The `--config` flag lets you target a specific `rpk.yaml`. Paths vary by OS and install method. Use an absolute path and ensure your user has read/write permissions.
+<1> The `--config` flag lets you target a specific `rpk.yaml`, which contains the profile for connecting to your cluster. Always use the same config path as you used for `rpk cloud login` to ensure it has your token. Paths vary by OS and install method. See the xref:reference:rpk/rpk-cloud/rpk-cloud-login.adoc[`rpk cloud login`] reference for the default paths.
 
 [TIP]
 ====
@@ -88,8 +88,25 @@ Manual configuration example::
 
 == Configuration locations and paths
 
-* The `--config` flag lets you target a specific `rpk.yaml`. Paths vary by OS and install method. Use an absolute path and ensure your user has read/write permissions.
-* For best results, keep your config files secure and never share them.
+Most `rpk` commands accept a `--config` flag, which lets you specify the exact `rpk.yaml` configuration file to use. This flag overrides the default search path and ensures that the command uses the credentials, profiles, and settings from the file you provide. Using `--config` is the best way to control which Redpanda Cloud account and cluster your commands operate on when working with multiple environments or service accounts.
+
+Always use the same config path for both `rpk cloud login` and any MCP server setup or install commands to avoid authentication issues. By default, `rpk` searches for config files in standard locations depending on your OS and install method—see the xref:reference:rpk/rpk-cloud/rpk-cloud-login.adoc[reference documentation] for details. Use an absolute path and make sure your user has read and write permissions. For best results, keep your config files secure and never share them.
+
+For example, if you want to use a custom config path, specify it for both login and the MCP install command:
+
+[source,bash]
+----
+rpk cloud login --config /Users/<user>/my-rpk-config.yaml
+rpk cloud mcp install --client claude --config /Users/<user>/my-rpk-config.yaml
+----
+
+Or for Claude Code:
+
+[source,bash]
+----
+rpk cloud login --config /Users/<user>/my-rpk-config.yaml
+rpk cloud mcp install --client claude-code --config /Users/<user>/my-rpk-config.yaml
+----
 
 == Update or remove the MCP server
 
