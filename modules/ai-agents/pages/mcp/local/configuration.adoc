@@ -1,0 +1,179 @@
+= Configure Redpanda Cloud MCP
+:page-beta: true
+:description: Learn how to configure the Redpanda Cloud MCP Server for your AI assistant, including auto and manual client setup, environment selection, enabling deletes, and security considerations.
+
+This page explains how to configure the Redpanda Cloud MCP Server for your AI assistant, including auto and manual client setup, environment selection, enabling deletes, and security considerations.
+
+== Prerequisites
+
+* At least version 25.2.3 of xref:manage:rpk/rpk-install.adoc[`rpk` installed on your computer]
+* Access to a Redpanda Cloud account
+* Supported AI client (Claude, Claude Code, or other MCP-compatible client)
+
+== Auto-configured clients (Claude and Claude Code)
+
+For some supported clients, `rpk` can install and configure the MCP integration for you.For Claude and Claude Code, run one of these commands:
+
+```bash
+# Choose one
+rpk cloud mcp install --client claude
+rpk cloud mcp install --client claude-code
+```
+
+If you need to update the integration, re-run the install command for your client.
+
+== Manual configuration for other MCP clients
+
+If you're using another MCP-compatible client, you can manually configure it to use Redpanda Cloud MCP Server. Follow these steps:
+
+Add an MCP server entry to your client's configuration (example shown in JSON). Adjust paths for your system.
+
+```json
+"mcpServers": {
+  "redpandaCloud": {
+    "command": "rpk",
+    "args": [
+      "--config",
+      "<path-to-rpk.yaml>", <1>
+      "cloud",
+      "mcp",
+      "stdio"
+    ]
+  }
+}
+```
+<1> The `--config` flag lets you target a specific `rpk.yaml`. Paths vary by OS and install method. Use an absolute path and ensure your user has read/write permissions.
+
+[TIP]
+====
+You can also <<local, start the server manually in a terminal to observe logs and troubleshoot>>.
+====
+
+== Enable delete operations
+
+Destructive operations are **disabled by default**. To allow delete operations, add `--allow-delete` to the MCP server invocation.
+
+CAUTION: Enabling delete operations permits actions like **deleting topics or clusters**. Restrict access to your AI client and double-check prompts.
+
+[tabs]
+====
+Auto-configured clients::
++
+--
+```bash
+# Choose one
+rpk cloud mcp install --client claude --allow-delete
+rpk cloud mcp install --client claude-code --allow-delete
+```
+--
+Manual configuration example::
++
+--
+```json
+"mcpServers": {
+  "redpandaCloud": {
+    "command": "rpk",
+    "args": [
+      "cloud",
+      "mcp",
+      "stdio",
+      "--allow-delete"
+    ]
+  }
+}
+```
+--
+====
+
+== Configuration locations and paths
+
+* The `--config` flag lets you target a specific `rpk.yaml`. Paths vary by OS and install method. Use an absolute path and ensure your user has read/write permissions.
+* For best results, keep your config files secure and never share them.
+
+== Update or remove the MCP server
+
+To update, re-run the `rpk cloud mcp install` command.
+To remove, delete or disable the `mcpServers.redpandaCloud` entry in your client's config. (Steps vary by client.)
+
+== Security considerations
+
+* Avoid enabling `--allow-delete` unless required.
+* For most local use cases (such as with Claude or Claude Code), log in with your personal Redpanda Cloud user account for better security and easier management.
+* If you are deploying the MCP server as part of an application or shared environment, consider using a xref:security:cloud-authentication.adoc#authenticate-to-the-cloud-api[service account] with tailored roles. To log in as a service account, use:
++
+[source,bash]
+----
+rpk cloud login --client-id <service-account-client-id> --client-secret <service-account-client-secret> --save
+----
++
+You can also use these additional flags as needed:
++
+** `--no-browser`: Prevents auto-opening the authentication URL.
+** `--no-profile`: Skips automatic profile creation and prompts.
+* Regularly review and rotate your credentials.
+
+== Troubleshooting
+
+=== Quick checks
+
+. Make sure you are using at least version 25.2.3 of `rpk`.
+. If you see authentication errors, run `rpk cloud login` again.
+. Ensure you installed for the right client:
++
+```bash
+rpk cloud mcp install --client claude
+# or
+rpk cloud mcp install --client claude-code
+```
+. If using another MCP client, verify your `mcpServers.redpandaCloud` entry (paths, JSON syntax, and args order).
+
+. [[local]]Start the server manually (one-time login required) to make sure it can reach Redpanda Cloud endpoints:
++
+[source,bash]
+----
+rpk cloud login
+rpk cloud mcp stdio
+----
++
+.. Send the following newline-delimited JSON-RPC messages (each on its own line):
++
+[source,json]
+----
+{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{"roots":{},"sampling":{},"elicitation":{}},"clientInfo":{"name":"ManualTest","version":"0.1.0"}}}
+{"jsonrpc":"2.0","method":"notifications/initialized"}
+{"jsonrpc":"2.0","id":2,"method":"tools/list"}
+----
++
+Expected response shapes (examples):
++
+[source,json]
+----
+{"jsonrpc":"2.0","id":1,"result":{"capabilities":{...}}}
+{"jsonrpc":"2.0","id":2,"result":{"tools":[{"name":"...","description":"..."}, ...]}}
+----
++
+.. Stop the server with `Ctrl+C`.
+
+== Common issues
+
+The server runs locally, but it must reach Redpanda Cloud endpoints to perform operations.
+
+=== Client can't find the MCP server
+
+* Re-run the install for your MCP client.
+* Confirm the path in `--config /path/to/rpk.yaml` exists and is readable.
+* Double-check your client's configuration format and syntax.
+
+=== Unauthorized errors or token errors
+
+Your capabilities depend on your Redpanda Cloud account permissions. If an operation fails with a permissions error, contact your account admin.
+
+* Run `rpk cloud login` to refresh the token.
+* Ensure your account has the necessary permissions for the requested operation.
+
+=== Deletes not working
+
+* By default, delete operations are **disabled**. Add `--allow-delete` to the server invocation (auto or manual configuration) and restart the client.
+* For auto-configured clients, you may need to edit the generated config or re-run the install command and adjust the entry.
+
+
