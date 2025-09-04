@@ -135,7 +135,12 @@ rpk cloud byoc aws apply --redpanda-id=$CLUSTER_ID
 
 == Enable PrivateLink endpoint service for existing clusters
 
-CAUTION: As soon as PrivateLink is available on your VPC, all communication on existing Redpanda bootstrap server and broker ports is interrupted due to the change on the private DNS resolution. Make sure all applications running in your VPC are ready to start using the corresponding PrivateLink ports.
+[CAUTION]
+====
+Enabling PrivateLink on your VPC interrupts all communication on existing Redpanda bootstrap server and broker ports due to the change of private DNS resolution.
+
+To avoid disruption, consider using a staged approach to enable PrivateLink. See: xref:networking:byoc/aws/vpc-peering-aws.adoc#switch-from-vpc-peering-to-privatelink[Switch from VPC peering to PrivateLink].
+====
 
 . In the Redpanda Cloud UI, go to the cluster overview and copy the cluster ID from the **Details** section.
 +
@@ -342,5 +347,5 @@ include::networking:partial$private-links-test-connection.adoc[]
 include::shared:partial$suggested-reading.adoc[]
 
 * link:/api/doc/cloud-controlplane/topic/topic-cloud-api-overview[Cloud API Overview]
-* xref:networking:byoc/aws/vpc-peering-aws.adoc[]
-* xref:networking:dedicated/vpc-peering.adoc[]
+* xref:networking:byoc/aws/vpc-peering-aws.adoc[Add a BYOC VPC Peering Connection]
+* xref:networking:dedicated/vpc-peering.adoc[Add a Dedicated VPC Peering Connection]

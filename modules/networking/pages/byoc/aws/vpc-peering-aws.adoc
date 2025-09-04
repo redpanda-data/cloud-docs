@@ -2,6 +2,8 @@
 :description: Use the Redpanda UI and AWS CLI to create a VPC peering connection for a BYOC cluster.
 :page-aliases: deploy:deployment-option/cloud/vpc-peering-aws.adoc
 
+A VPC peering connection is a networking connection between two VPCs. This connection allows the VPCs to communicate with each other as if they were within the same network. A route table routes traffic between the two VPCs using private IPv4 addresses.
+
 To start sending data to the Redpanda cluster, you must configure the VPC network connection by connecting your Redpanda VPC to your existing AWS VPC.
 
 == Prerequisites
@@ -56,3 +58,12 @@ There are two ways to test your connection:
 
 * Return to your cluster overview, and follow the directions in the *How to connect* panel.
 * Use the AWS https://docs.aws.amazon.com/vpc/latest/reachability/what-is-reachability-analyzer.html[Reachability Analyzer^]. Select your VM instance and a Redpanda instance as the source and destination, and test the connection between them.
+
+== Switch from VPC peering to PrivateLink
+
+VPC peering and PrivateLink use the same DNS hostnames (connection URLs) to connect to the Redpanda cluster. When you configure the PrivateLink DNS, those hostnames resolve to PrivateLink endpoints, which can interrupt existing VPC peering-based connections if clients aren't ready.
+
+To enable PrivateLink without disrupting VPC peering connections, do a controlled DNS switchover:
+
+. Enable PrivateLink on the existing cluster and configure the PrivateLink connection to Redpanda Cloud, but *do not modify VPC DNS attributes yet*. See: xref:networking:aws-privatelink.adoc#enable-privatelink-endpoint-service-for-existing-clusters[Enable PrivateLink on an existing cluster].
+. During a planned window, modify the VPC DNS attributes to switch the shared hostnames over to PrivateLink.
