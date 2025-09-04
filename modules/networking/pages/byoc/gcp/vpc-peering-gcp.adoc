@@ -2,6 +2,8 @@
 :description: Use the Redpanda and GCP UIs to create a VPC peering connection for a BYOC cluster.
 :page-aliases: deploy:deployment-option/cloud/vpc-peering-gcp.adoc
 
+A VPC peering connection is a networking connection between two VPCs. This connection allows the VPCs to communicate with each other as if they were within the same network. A route table routes traffic between the two VPCs using private IPv4 addresses.
+
 To start sending data to the Redpanda cluster, you must configure the VPC network connection by connecting your Redpanda VPC to your existing GCP VPC.
 
 == Prerequisites
@@ -39,3 +41,5 @@ To quickly test this quickly in GCP:
 * Create a virtual machine on your GCP network that has a firewall rule allowing ingress traffic from your IP (for example, `<your-ip>/32`)
 * Activate the Cloud Shell in your project, install `rpk` in the Cloud Shell, and run `rpk cluster info`.
 * If there is output from Redpanda, your connection is successful.
+
+include::networking:partial$switch-to-psc.adoc[]

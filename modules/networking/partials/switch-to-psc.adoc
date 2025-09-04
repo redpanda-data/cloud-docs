@@ -1,0 +1,11 @@
+== Switch from VPC peering to Private Service Connect
+
+VPC peering and Private Service Connect use the same seed endpoints (connection URLs) to connect to the Redpanda cluster. When Private Service Connect is enabled, these endpoints get resolved through DNS, potentially breaking existing VPC peering connections.  
+
+To enable Private Service Connect without disrupting VPC peering connections, do a controlled DNS switchover:
+
+. Follow the steps to enable Private Service Connect on an existing cluster.
+. Follow the next steps to deploy consumer-side resources *but stop before the DNS configuration in steps 6 and 7*. 
+. When you're ready to fully transition clients to Private Service Connect, follow the DNS configuration in steps 6 and 7.
+
+See xref:networking:gcp-private-service-connect.adoc#enable-private-service-connect-on-an-existing-byoc-or-byovpc-cluster[Enable Private Service Connect on an existing cluster].
