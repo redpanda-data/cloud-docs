@@ -8,7 +8,7 @@ Redpanda Cloud MCP Server lets AI assistants securely access and operate your Re
 * **Control plane** actions, such as create a Redpanda Cloud cluster, list clusters.
 * **Data plane** actions, such as list/create topics, read messages from topics.
 
-By speaking natural language to your assistant, you can ask it to perform Redpanda operations on your behalf. The MCP server runs locally on your machine and authenticates to Redpanda Cloud using a token.
+By speaking natural language to your assistant, you can ask it to perform Redpanda operations on your behalf. The MCP server runs locally on your machine and authenticates to Redpanda Cloud using a Redpanda Cloud token.
 
 image::shared:cloud-mcp.gif[A terminal window showing Claude Code invoking Redpanda Cloud MCP to list topics in a cluster.]
 
@@ -32,9 +32,10 @@ NOTE: The MCP server does **not** expose delete endpoints by default. You can en
 
 == How it works
 
-. **Authentication:** Authenticate to Redpanda Cloud and receive a token using the xref:reference:rpk/rpk-cloud/rpk-cloud-login.adoc[`rpk cloud login` command].
-. *Local MCP server*: Start the local MCP server using the xref:reference:rpk/rpk-cloud/rpk-cloud-mcp-install.adoc[`rpk cloud mcp install` command]. This process authenticates using the token obtained from `rpk cloud login` and runs the MCP server on your machine.
-. **Prompting:** After connecting, you can prompt your assistant to perform Redpanda operations, and the local MCP server executes them in your Redpanda Cloud account using your credentials.
+. *Authentication:* Authenticate to Redpanda Cloud and receive a token using the xref:reference:rpk/rpk-cloud/rpk-cloud-login.adoc[`rpk cloud login` command].
+. *Local MCP server:*: Configure your client using the xref:reference:rpk/rpk-cloud/rpk-cloud-mcp-install.adoc[`rpk cloud mcp install`] command. Your client then starts the server on-demand using xref:reference:rpk/rpk-cloud/rpk-cloud-mcp-stdio.adoc[`rpk cloud mcp stdio`], authenticating with the Redpanda Cloud token from `rpk cloud login`.
+
+. *Prompting:* After connecting, you can prompt your assistant to perform Redpanda operations, and the local MCP server executes them in your Redpanda Cloud account using your credentials.
 
 === Components
 
