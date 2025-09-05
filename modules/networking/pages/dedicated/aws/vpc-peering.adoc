@@ -22,10 +22,10 @@ To create a peering connection between your VPC and Redpanda's VPC:
 
 . In the Redpanda Cloud UI, go to the *Overview* page for your cluster.
 . In the Details section, click the name of the Redpanda network.
-. On the *Network* page, click *+ Add peering connection*.
-. In *Connection name*, enter a name. For example, the name might refer to the VPC ID of the VPC you created in AWS.
-. In *AWS account number*, enter the account number associated with the VPC you want to connect to.
-. In *AWS VPC ID*, enter the VPC ID by copying it from the AWS VPC Console.
+. On the Networks page, click *VPC peering walkthrough*.
+. For *Connection name*, enter a name. For example, the name might refer to the VPC ID of the VPC you created in AWS.
+. For *AWS account number*, enter the account number associated with the VPC you want to connect to.
+. For *AWS VPC ID*, enter the VPC ID by copying it from the AWS VPC Console.
 . Click *Create peering connection*.
 
 == Accept the peering connection request
@@ -42,3 +42,14 @@ The status should say "Pending acceptance".
 . Open the *Actions* menu and select *Accept Request*.
 . In the confirmation dialog box, verify that the requester owner ID corresponds to the Redpanda account, and select *Yes, Accept*.
 . In the next confirmation dialog box, select *Modify my route tables now*.
++
+Follow the steps in the dialog box to add routes to your route tables in the AWS console. This enables traffic to flow between the two VPCs.
+
+== Switch from VPC peering to PrivateLink
+
+VPC peering and PrivateLink use the same DNS hostnames (connection URLs) to connect to the Redpanda cluster. When you configure the PrivateLink DNS, those hostnames resolve to PrivateLink endpoints, which can interrupt existing VPC peering-based connections if clients aren't ready.
+
+To enable PrivateLink without disrupting VPC peering connections, do a controlled DNS switchover:
+
+. Enable PrivateLink on the existing cluster and configure the PrivateLink connection to Redpanda Cloud, but *do not modify VPC DNS attributes yet*. See: xref:networking:aws-privatelink.adoc#enable-privatelink-endpoint-service-for-existing-clusters[Enable PrivateLink on an existing cluster].
+. During a planned window, modify the VPC DNS attributes to switch the shared hostnames over to PrivateLink. 

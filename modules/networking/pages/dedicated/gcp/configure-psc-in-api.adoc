@@ -97,7 +97,12 @@ curl -vv -X POST \
 
 == Enable Private Service Connect on an existing cluster
 
-CAUTION: As soon as Private Service Connect is available on your VPC, all communication on existing Redpanda bootstrap server and broker ports is interrupted due to the change on the private DNS resolution. Make sure all applications running in your VPC are ready to start using the corresponding Private Service Connect ports.
+[CAUTION]
+====
+Enabling Private Service Connect on your VPC interrupts all communication on existing Redpanda bootstrap server and broker ports due to the change of private DNS resolution.
+
+To avoid disruption, consider using a staged approach. See: xref:networking:dedicated/gcp/vpc-peering-gcp.adoc#switch-from-vpc-peering-to-private-service-connect[Switch from VPC peering to Private Service Connect].
+====
 
 . In the Redpanda Cloud UI, go to the cluster overview and copy the cluster ID from the **Details** section.
 +

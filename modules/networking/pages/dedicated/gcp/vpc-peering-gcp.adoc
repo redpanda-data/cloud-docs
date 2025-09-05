@@ -17,30 +17,31 @@ TIP: Consider adding `rp` at the beginning of the VPC name to indicate that this
 
 == Create a peering connection
 
-To create a peering connection between your VPC and Redpanda's VPC:
+A peering becomes active after both Redpanda and GCP create a peering that targets the other project/network.
 
 . In the Redpanda Cloud UI, go to the *Overview* page for your cluster.
 . In the Details section, click the name of the Redpanda network.
-. On the *Network* page, click *+ Add peering connection*.
-. In *Connection name*, enter a name for the connection.
+. On the Networks page for your cluster, click *VPC peering walkthrough*.
+. For *Connection name*, enter a name for the connection.
 +
 For example, the name might refer to the VPC ID of the VPC you created in GCP.
 
-. In *GCP account number*, enter the account number associated with the VPC you want to connect to.
-. In *GCP VPC ID*, enter the VPC ID.
+. For *GCP project ID*, enter the ID of the project that contains the VPC network you want to connect to.
+. For *VPC network name*, enter the name of the VPC network.
 . Click *Create peering connection*.
 
-== Accept the peering connection request
+== Create the reciprocal peering connection
 
-Redpanda sends a peering request to the GCP. You must accept the request from the Redpanda VPC to set up the peering connection.
+. In the Google Cloud console, go to VPC network peering - Create peering connection.
+. For *Name*, enter a name for the connection (for example, `rp-peering`).
+. Select your VPC network, project, and VPC network name.
+. Click *Create*.
 
-. Log in to GCP.
-. Select the region where the VPC was created.
-. From the navigation menu, select *Peering Connections*.
-. Under *Requester VPC*, select the VPC you created for use with Redpanda.
-+
-The status should say "Pending acceptance".
+== Switch from VPC peering to Private Service Connect
 
-. Open the *Actions* menu and select *Accept Request*.
-. In the confirmation dialog box, verify that the requester owner ID corresponds to the Redpanda account, and select *Yes, Accept*.
-. In the next confirmation dialog box, select *Modify my route tables now*.
+VPC peering and Private Service Connect use the same DNS hostnames (connection URLs) to connect to the Redpanda cluster. When you configure the Private Service Connect DNS, those hostnames resolve to Private Service Connect endpoints, which can interrupt existing VPC peering-based connections if clients aren't ready.
+
+To enable Private Service Connect without disrupting VPC peering connections, do a controlled DNS switchover:
+
+. Enable Private Service Connect on the existing cluster and deploy consumer-side resources, but *do not create private DNS yet*. See: xref:networking:dedicated/gcp/configure-psc-in-api.adoc#enable-private-service-connect-on-an-existing-cluster[Enable Private Service Connect on an existing cluster].
+. During a planned window, create the private DNS zone and records in your VPC to switch the shared hostnames over to Private Service Connect.
