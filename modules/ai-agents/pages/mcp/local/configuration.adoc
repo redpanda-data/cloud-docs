@@ -12,7 +12,7 @@ This page explains how to configure the Redpanda Cloud MCP Server for your AI as
 
 == Endpoint availability
 
-The MCP server exposes Redpanda Cloud API endpoints through `rpk`. Available endpoints depend on your `rpk` version. Newer API features require updated versions of `rpk`.
+The MCP server exposes Redpanda Cloud API endpoints for both the link:https://docs.redpanda.com/api/doc/cloud-controlplane/[Control Plane] and the link:https://docs.redpanda.com/api/doc/cloud-dataplane/[Data Plane] through `rpk`. Available endpoints depend on your `rpk` version. Newer API features require updated versions of `rpk`.
 
 TIP: Keep `rpk` updated to the latest version to access new Redpanda Cloud features through the MCP server. New MCP endpoints are documented in Redpanda link:https://github.com/redpanda-data/redpanda/releases[release notes].
 
@@ -49,7 +49,7 @@ Add an MCP server entry to your client's configuration (example shown in JSON). 
   }
 }
 ```
-<1> The `--config` flag lets you target a specific `rpk.yaml`, which contains the configuration for connecting to your cluster. Always use the same config path as you used for `rpk cloud login` to ensure it has your token. Paths vary by OS and install method. See the xref:reference:rpk/rpk-cloud/rpk-cloud-login.adoc[`rpk cloud login`] reference for the default paths.
+<1> The `--config` flag lets you target a specific `rpk.yaml`, which contains the configuration for connecting to your cluster. Always use the same configuration path as you used for `rpk cloud login` to ensure it has your token. Default paths vary by operating system. See the xref:reference:rpk/rpk-cloud/rpk-cloud-login.adoc[`rpk cloud login`] reference for the default paths.
 
 [TIP]
 ====
@@ -94,9 +94,11 @@ Manual configuration example::
 
 == Configuration locations and paths
 
-Most `rpk` commands accept a `--config` flag, which lets you specify the exact `rpk.yaml` configuration file to use. This flag overrides the default search path and ensures that the command uses the credentials and settings from the file you provide. Using `--config` is the best way to control which Redpanda Cloud account and cluster your commands operate on when working with multiple environments or service accounts.
+All `rpk` commands accept a `--config` flag, which lets you specify the exact `rpk.yaml` configuration file to use for connecting to your Redpanda cluster. This flag overrides the default search path and ensures that the command uses the credentials and settings from the file you provide.
 
-Always use the same config path for both `rpk cloud login` and any MCP server setup or install commands to avoid authentication issues. By default, `rpk` searches for config files in standard locations depending on your OS and install method. See the xref:reference:rpk/rpk-cloud/rpk-cloud-login.adoc[reference documentation] for details. Use an absolute path and make sure your user has read and write permissions. For best results, keep your config files secure and never share them.
+Always use the same configuration path for both `rpk cloud login` and any MCP server setup or install commands to avoid authentication issues. By default, `rpk` searches for config files in standard locations depending on your operating system. See the xref:reference:rpk/rpk-cloud/rpk-cloud-login.adoc[reference documentation] for details. Use an absolute path and make sure your user has read and write permissions.
+
+CAUTION: The `rpk` configuration file contains your Redpanda Cloud token. Keep the file secure and never share it.
 
 For example, if you want to use a custom config path, specify it for both login and the MCP install command:
 
@@ -116,7 +118,7 @@ rpk cloud mcp install --client claude-code --config /Users/<user>/my-rpk-config.
 
 == Remove the MCP server
 
-To remove the MCP server, delete or disable the `mcpServers.redpandaCloud` entry in your client's config. (Steps vary by client.)
+To remove the MCP server, delete or disable the `mcpServers.redpandaCloud` entry in your client's config (steps vary by client).
 
 == Security considerations
 
