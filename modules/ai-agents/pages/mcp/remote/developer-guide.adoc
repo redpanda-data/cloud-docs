@@ -1,0 +1,919 @@
+= Build Remote MCP Servers in Redpanda Cloud
+:page-beta: true
+:description: Learn how to write and deploy remote MCP servers in Redpanda Cloud. This guide covers concepts, patterns, and best practices.
+
+include::ai-agents:partial$beta.adoc[]
+
+This guide provides a reference for building remote MCP servers that are managed in Redpanda Cloud. Remote MCP servers run inside your Redpanda Cloud cluster and expose tools that AI clients can call using MCP.
+
+== Prerequisites
+
+* Access to a Redpanda Cloud cluster
+* Ability to manage the xref:develop:connect/configuration/secret-management.adoc[Secrets Store] entries
+* (Optional) Claude / Claude Code for testing
+
+TIP: For a quickstart, see xref:ai-agents:mcp/remote/quickstart.adoc[].
+
+You should also be familiar with YAML, HTTP APIs, and basic event-stream processing concepts.
+
+== Concepts and architecture
+
+Remote MCP server:: A managed, hosted MCP service deployed to your cluster. You write tool logic as Redpanda Connect pipelines and annotate them with MCP metadata so clients can discover and invoke them.
+
+Redpanda Connect:: A framework for building event-driven data pipelines. Tools inside your remote MCP servers are implemented as Redpanda Connect pipelines that run inside your Redpanda Cloud cluster.
+
+Tool:: A single request/response operation exposed to MCP. Each tool is implemented as a Redpanda Connect pipeline and described to MCP with `meta.mcp`.
+
+Secrets:: Credentials and tokens must be stored in the Secrets Store and referenced as `${secrets.NAME}`. Use *UPPER_CASE snake_case* for secret names.
+
+== Development workflow
+
+. <<contract, Design the tool contract>>: Annotate MCP metadata with `meta.mcp.enabled: true`, provide a concise description, and declare parameters.
+. <<provision-secrets, Provision secrets (optional)>>: Create secrets in the Secrets Store for any credentials. Never inline secrets in YAML.
+. <<pipeline-patterns, Implement the pipeline>>: Build an MCP tool using Redpanda Connect pipelines. See <<pipeline-patterns, Pipeline patterns>> for examples of what is allowed in a pipeline.
+. <<lint, Lint and deploy>>: Validate your pipeline, catch schema errors, then deploy and test with the MCP Inspector.
+. <<test, Authenticate and connect your AI client>>: Install a proxy entry with `rpk cloud mcp proxy` in your AI assistant MCP configuration, or connect with your own MCP client.
+. <<observe, Observe and debug>>: Add temporary `log` processors, adjust timeouts/retries, and right-size resources.
+
+[[contract]]
+== Tool contract and MCP metadata
+
+Each MCP tool must declare its interface using `meta.mcp` metadata. This metadata allows AI clients to discover and invoke the tool correctly.
+
+Define a clear, stable interface for each tool. Keep the description task-oriented and keep parameters to a minimum.
+
+[source,yaml]
+----
+meta:
+  mcp:
+    enabled: true
+    description: "Fetches a compact summary from an external API using two optional parameters."
+    properties:
+      - name: parameter1
+        type: string
+        description: "Primary filter; defaults to provider standard when omitted."
+        required: false
+      - name: parameter2
+        type: number
+        description: "Limit of results (1-100)."
+        required: false
+----
+
+Property guidance:
+
+* Use `string`, `number`, or `boolean` types.
+* Validate ranges and enums using Bloblang inside the pipeline.
+* Mark only mandatory fields as required.
+* Document defaults in the `description` and enforce them in the pipeline.
+
+[[provision-secrets]]
+== Provision secrets
+
+All credentials and sensitive values must be stored in the Redpanda Cloud xref:develop:connect/configuration/secret-management.adoc[Secrets Store]. Follow these best practices:
+
+- Reference secrets as `${secrets.NAME}` in your pipeline YAML.
+- Never commit secrets to Git or reference them directly inline in configuration files.
+- Use `UPPER_CASE` snake_case for secret names (such as `DATAPLANE_TOKEN`).
+- Rotate secrets in the Secrets Store as needed.
+- Only request the scopes/roles required by your tool (principle of least privilege).
+
+See an example of using secrets in the <<secrets, Pipeline patterns>> section.
+
+[[pipeline-patterns]]
+== Pipeline patterns
+
+Remote MCP tools are implemented as Redpanda Connect pipelines. This section shows you how to build different types of MCP tools using various pipeline patterns, organized from basic to advanced.
+
+TIP: For detailed configuration options for any component, see the xref:develop:connect/components/about.adoc[Redpanda Connect components reference].
+
+=== Basic patterns
+
+These patterns cover the most common MCP tool use cases. Start with these if you're new to building remote MCP tools.
+
+==== Data generators (input patterns)
+
+Use xref:develop:connect/components/inputs/about.adoc[`inputs`] to create tools that read data from internal or external systems or generate sample data for testing and development.
+
+This example generates a realistic user event message:
+
+[source,yaml]
+----
+label: generate_input
+generate:
+  mapping: |
+    let event_type = ["login", "logout", "purchase", "view_page", "click_button"].index(random_int(max:4))
+    root = {
+      "id": uuid_v4(),
+      "timestamp": now().ts_format("2006-01-02T15:04:05.000Z"),
+      "user_id": random_int(min:1, max:10000),
+      "event_type": $event_type,
+      "data": {
+        "session_id": ksuid(),
+        "ip_address": "192.168.%v.%v".format(random_int(max:255), random_int(min:1, max:254)),
+        "user_agent": ["Chrome", "Firefox", "Safari", "Edge"].index(random_int(max:3)),
+        "amount": if $event_type == "purchase" { random_int(min:10, max:500) } else { null }
+      }
+    }
+
+meta:
+  mcp:
+    enabled: true
+    description: "Generate an example user event message with realistic data"
+    properties: []
+----
+
+    }
+
+See also: xref:develop:connect/components/inputs/generate.adoc[`generate` input component]
+
+==== External API calls (processor patterns)
+
+Use xref:develop:connect/components/processors/about.adoc[`processors`] to fetch data from external APIs, databases, or services and return formatted results. This is one of the most common patterns for MCP tools.
+
+[source,yaml]
+----
+label: http_processor
+processors:
+  - label: prepare_parameters
+    mutation: |
+      meta city_name = this.city_name
+  - label: fetch_weather
+    http:
+      url: 'https://wttr.in/${! @city_name }?format=j1'
+      verb: GET
+      headers:
+        Accept: "application/json"
+        User-Agent: "redpanda-mcp-server/1.0"
+  - label: format_response
+    mutation: |
+      root = {
+        "city": @city_name,
+        "temperature": this.current_condition.0.temp_C.number(),
+        "feels_like": this.current_condition.0.FeelsLikeC.number(),
+        "humidity": this.current_condition.0.humidity.number(),
+        "pressure": this.current_condition.0.pressure.number(),
+        "description": this.current_condition.0.weatherDesc.0.value,
+        "wind_speed": this.current_condition.0.windspeedKmph.number(),
+        "metadata": {
+          "source": "wttr.in",
+          "fetched_at": now().ts_format("2006-01-02T15:04:05.000Z")
+        }
+      }
+
+meta:
+  mcp:
+    enabled: true
+    description: "Fetch current weather information for a specified city"
+    properties:
+      - name: city_name
+        type: string
+        description: "Name of the city to get weather information for"
+        required: true
+----
+
+See also: xref:develop:connect/components/processors/http.adoc[`http` processor], xref:develop:connect/components/processors/mutation.adoc[`mutation` processor]
+
+==== Database queries (processor patterns)
+
+Query external databases and return structured results. This pattern is essential for tools that need to access business data.
+
+[source,yaml]
+----
+label: gcp_bigquery_select_processor
+processors:
+  - label: prepare_parameters
+    mutation: |
+      meta customer_id = this.customer_id.string().catch("12345")
+      meta limit = this.limit.number().catch(10)
+  - label: query_bigquery
+    gcp_bigquery_select:
+      project: my-gcp-project
+      credentials_json: |
+        ${secrets.BIGQUERY_CREDENTIALS}
+      table: my_dataset.customer_orders
+      columns:
+        - "order_id"
+        - "customer_id"
+        - "order_date"
+        - "total_amount"
+        - "status"
+      where: customer_id = ? AND order_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
+      suffix: "ORDER BY order_date DESC LIMIT ?"
+      args_mapping: root = [ @customer_id, @limit ]
+  - label: format_response
+    mutation: |
+      root = {
+        "orders": this,
+        "metadata": {
+          "source": "BigQuery",
+          "customer_id": @customer_id,
+          "fetched_at": now().ts_format("2006-01-02T15:04:05.000Z")
+        }
+      }
+
+meta:
+  mcp:
+    enabled: true
+    description: "Query customer orders from BigQuery"
+    properties:
+      - name: customer_id
+        type: string
+        description: "Customer ID to filter orders"
+        required: true
+      - name: limit
+        type: number
+        description: "Maximum number of orders to return"
+        required: false
+----
+
+See also: xref:develop:connect/components/processors/gcp_bigquery_select.adoc[`gcp_bigquery_select` processor], xref:develop:connect/components/processors/sql_select.adoc[`sql_select` processor] (for other databases)
+
+=== Intermediate patterns
+
+These patterns handle more complex scenarios like data publishing, caching, and topic inspection. Use these when you need to integrate with Redpanda infrastructure or handle stateful operations.
+
+==== Data publishers (output patterns)
+
+Use xref:develop:connect/components/outputs/about.adoc[`outputs`] to send data to external systems or build caching systems.
+
+This example publishes a message to a Redpanda topic:
+
+[source,yaml]
+----
+label: redpanda_output
+redpanda:
+  seed_brokers:
+    - ${REDPANDA_BROKERS}
+  topic: ${! this.topic_name.string().catch("default-topic") }
+  timeout: 30s
+  tls:
+    enabled: true
+  sasl:
+    - mechanism: SCRAM-SHA-256
+      username: ${secrets.REDPANDA_USERNAME}
+      password: ${secrets.REDPANDA_PASSWORD}
+meta:
+  mcp:
+    enabled: true
+    description: Publishes a message to a specified Redpanda topic
+    properties:
+      - name: message
+        type: string
+        description: The message content to publish
+        required: true
+      - name: topic_name
+        type: string
+        description: The Redpanda topic to publish to
+        required: true
+----
+
+See also: xref:develop:connect/components/outputs/redpanda.adoc[`redpanda` output]
+
+==== Caching systems (cache patterns)
+
+Use caching to store frequently accessed data, reduce latency, and minimize external API calls. You can implement caching using either Redpanda topics or in-memory stores.
+
+[source,yaml]
+----
+label: redpanda_cache
+redpanda:
+  seed_brokers: ["${REDPANDA_BROKERS}"]
+  topic: "mcp-cache-topic"
+  tls:
+    enabled: true
+  sasl:
+    - mechanism: "SCRAM-SHA-512"
+      username: "${secrets.MCP_REDPANDA_CREDENTIALS.username}"
+      password: "${secrets.MCP_REDPANDA_CREDENTIALS.password}"
+
+meta:
+  mcp:
+    enabled: true
+    description: "Redpanda-backed distributed cache using Kafka topics for persistence"
+----
+
+This example implements an in-memory cache for low-latency access to small datasets:
+
+[source,yaml]
+----
+label: memory_cache
+memory:
+  default_ttl: "5m"
+  init_values:
+    "user:1001": '{"name": "Alice", "role": "admin"}'
+    "user:1002": '{"name": "Bob", "role": "user"}'
+    "config:theme": "dark"
+    "config:language": "en"
+  shards: 4
+
+meta:
+  mcp:
+    enabled: true
+    description: "In-memory cache for storing user data, configuration, and temporary values"
+----
+
+See also: xref:develop:connect/components/caches/memory.adoc[`memory` cache], Redpanda-backed cache using xref:develop:connect/components/outputs/redpanda.adoc[`redpanda` output]
+
+=== Advanced patterns
+
+These patterns handle complex scenarios like multi-step workflows, production observability, and sophisticated error handling. Use these when building enterprise-grade tools.
+
+==== Parameter validation and type coercion
+
+Always validate and coerce input parameters to ensure your tools are robust:
+
+[source,yaml]
+----
+processors:
+  - label: validate_params
+    mutation: |
+      # Validate required parameters
+      root = if !this.exists("user_id") {
+        throw("user_id parameter is required")
+      } else { this }
+
+      # Type coercion with validation
+      meta user_id = this.user_id.string()
+      meta limit = this.limit.number().catch(10)
+      meta start_date = this.start_date.parse_timestamp("2006-01-02").catch(now() - duration("24h"))
+
+      # Range validation
+      meta validated_limit = if @limit < 1 || @limit > 1000 {
+        throw("limit must be between 1 and 1000")
+      } else { @limit }
+----
+
+==== Dynamic configuration
+
+Build tools that adapt their behavior based on input parameters:
+
+[source,yaml]
+----
+processors:
+  - label: dynamic_config
+    mutation: |
+      # Choose data source based on environment
+      meta env = this.environment | "production"
+      meta table_name = match @env {
+        "dev" => "dev_orders",
+        "staging" => "staging_orders",
+        "production" => "prod_orders",
+        _ => "dev_orders"
+      }
+
+      # Adjust query complexity based on urgency
+      meta columns = if this.detailed.bool().catch(false) {
+        ["order_id", "customer_id", "total", "items", "shipping_address"]
+      } else {
+        ["order_id", "customer_id", "total"]
+      }
+----
+
+==== Error handling and fallbacks
+
+Implement error handling to make your tools reliable:
+
+[source,yaml]
+----
+processors:
+  - label: primary_fetch
+    try:
+      - http:
+          url: "https://api.primary.com/data"
+          timeout: "10s"
+    catch:
+      - log:
+          message: "Primary API failed, trying fallback"
+      - label: fallback_fetch
+        http:
+          url: "https://api.fallback.com/data"
+          timeout: "15s"
+      - mutation: |
+          root.metadata.source = "fallback"
+          root.metadata.warning = "Primary source unavailable"
+----
+
+==== Conditional processing
+
+Build tools that branch based on input or data characteristics:
+
+[source,yaml]
+----
+processors:
+  - label: conditional_processing
+    switch:
+      - check: this.data_type == "json"
+        processors:
+          - json:
+              operator: "parse"
+          - mutation: 'root.parsed_data = this'
+      - check: this.data_type == "csv"
+        processors:
+          - csv:
+              parse: true
+          - mutation: 'root.parsed_data = this'
+      - processors:
+          - mutation: 'root.error = "Unsupported data type"'
+----
+
+[[secrets]]
+==== Secrets and credentials
+
+Securely handle multiple credentials and API keys.
+
+Here is an example of using an API key secret.
+
+. Create a secret in the xref:develop:connect/configuration/secret-management.adoc[Secrets Store] with name `EXTERNAL_API_KEY` and your API key as the value.
+
+. Reference the secret in your pipeline configuration:
++
+[source,yaml]
+----
+processors:
+  - label: call_external_api
+    http:
+      url: "https://api.example.com/data"
+      verb: GET
+      headers:
+        Authorization: "Bearer ${secrets.EXTERNAL_API_KEY}"  # <1>
+        Accept: "application/json"
+----
++
+<1> The secret is injected at runtime. Never store the actual API key in your YAML
+
+IMPORTANT: The `${secrets.NAME}` syntax is resolved by Redpanda Connect at runtime. The actual secret value never appears in your configuration files or logs.
+
+==== Monitoring, debugging, and observability
+
+Use structured logging, request tracing, and performance metrics to gain insights into tool execution.
+
+[source,yaml]
+----
+label: observable_tool
+processors:
+  - label: init_tracing
+    mutation: |
+      # Generate correlation ID for request tracing
+      meta req_id = uuid_v7()
+      meta start_time = now()
+
+      # Log request start with structured data
+      root.trace = {
+        "request_id": @req_id,
+        "timestamp": @start_time.ts_format("2006-01-02T15:04:05.000Z"),
+        "tool": "observable_tool",
+        "version": "1.0.0"
+      }
+
+  - label: log_request_start
+    log:
+      message: "MCP tool request started"
+      fields:
+        request_id: "${! @req_id }"
+        tool_name: "observable_tool"
+        input_params: "${! this.without(\"trace\") }"
+        user_agent: "${! meta(\"User-Agent\").catch(\"unknown\") }"
+      level: "INFO"
+
+  - label: finalize_response
+    mutation: |
+      # Calculate total execution time
+      meta duration = (now().ts_unix_nano() - @start_time.ts_unix_nano()) / 1000000
+
+      # Add trace information to response
+      root.metadata = {
+        "request_id": @req_id,
+        "execution_time_ms": @duration,
+        "timestamp": now().ts_format("2006-01-02T15:04:05.000Z"),
+        "tool": "observable_tool",
+        "success": !this.exists("error")
+      }
+
+  - label: log_completion
+    log:
+      message: "MCP tool request completed"
+      fields:
+        request_id: "${! @req_id }"
+        duration_ms: "${! this.metadata.execution_time_ms }"
+        success: "${! this.metadata.success }"
+        result_size: "${! content().length() }"
+      level: "INFO"
+
+meta:
+  mcp:
+    enabled: true
+    description: "Example tool with comprehensive observability and error handling"
+    properties:
+      - name: user_id
+        type: string
+        description: "User ID to fetch data for"
+        required: true
+----
+
+Observability features:
+
+* *Correlation IDs*: Use `uuid_v7()` to generate unique request identifiers for tracing
+* *Execution timing*: Track how long your tools take to execute using nanosecond precision
+* *Structured logging*: Include consistent fields like `request_id`, `duration_ms`, `tool_name`
+* *Request/response metadata*: Log input parameters and response characteristics
+* *Success tracking*: Monitor whether operations complete successfully
+
+You can test this pattern by invoking the tool with valid and invalid parameters, and observe the structured logs for tracing execution flow. For example, with a user ID of 1, you might see logs like:
+
+[source,json]
+----
+{
+  "metadata": {
+    "execution_time_ms": 0.158977,
+    "request_id": "019951ab-d07d-703f-aaae-7e1c9a5afa95",
+    "success": true,
+    "timestamp": "2025-09-16T08:37:18.589Z",
+    "tool": "observable_tool"
+  },
+  "trace": {
+    "request_id": "019951ab-d07d-703f-aaae-7e1c9a5afa95",
+    "timestamp": "2025-09-16T08:37:18.589Z",
+    "tool": "observable_tool",
+    "version": "1.0.0"
+  },
+  "user_id": "1"
+}
+----
+
+For more advanced observability, use Redpanda Connect's GCP Cloud Trace integration to track request flows across your MCP tools:
+
+[source,yaml]
+----
+# Configure tracer resource for GCP Cloud Trace
+tracer_resources:
+  - label: gcp_tracer
+    gcp_cloudtrace:
+      project: "${secrets.GCP_PROJECT_ID}"
+      sampling_ratio: 1.0
+      tags:
+        environment: "production"
+        cluster: "${CLUSTER_ID}"
+        service: "mcp-tools"
+      flush_interval: "5s"
+
+label: traced_tool
+processors:
+  - label: start_span
+    tracer:
+      resource: gcp_tracer
+      operation_name: "mcp_tool_execution"
+      tags:
+        tool.name: "user_data_fetcher"
+        tool.version: "1.2.0"
+        user.id: "${! this.user_id }"
+
+  - label: fetch_user_data
+    http:
+      url: "https://api.example.com/users/${! this.user_id }"
+      verb: GET
+      headers:
+        Authorization: "Bearer ${secrets.API_TOKEN}"
+      timeout: "10s"
+
+  - label: add_span_details
+    tracer:
+      resource: gcp_tracer
+      tags:
+        http.status_code: "${! meta(\"http_status_code\") }"
+        response.size: "${! content().length() }"
+        api.endpoint: "users"
+        success: "${! !error().exists() }"
+
+meta:
+  mcp:
+    enabled: true
+    description: "User data fetcher with GCP Cloud Trace integration"
+    properties:
+      - name: user_id
+        type: string
+        required: true
+----
+
+Tracer benefits for MCP tools:
+
+* *Request flow visualization*: See how requests flow through your MCP tools and external services
+* *Performance bottleneck identification*: Identify slow API calls or processing steps
+* *Cross-service correlation*: Trace requests that span multiple services and systems
+* *Error attribution*: Quickly identify which component caused a failure
+* *Dependency mapping*: Understand relationships between your MCP tools and external services
+
+See also: xref:develop:connect/components/tracers/gcp_cloudtrace.adoc[`gcp_cloudtrace` tracer], xref:develop:connect/components/processors/log.adoc[`log` processor], xref:develop:connect/components/processors/try.adoc[`try` processor], xref:develop:connect/guides/bloblang/functions.adoc[Bloblang functions] (for timing and ID generation)
+
+==== Multi-step data enrichment
+
+Build tools that combine data from multiple sources.
+
+This workflow fetches customer data from a SQL database, enriches it with recent order history, and computes summary metrics.
+
+[source,yaml]
+----
+label: customer_enrichment
+processors:
+  - label: fetch_customer_base
+    sql_select:
+      driver: "postgres"
+      dsn: "${secrets.POSTGRES_DSN}"
+      table: "customers"
+      where: "customer_id = ?"
+      args_mapping: 'root = [this.customer_id]'
+
+  - label: enrich_with_orders
+    sql_select:
+      driver: "postgres"
+      dsn: "${secrets.POSTGRES_DSN}"
+      table: "orders"
+      where: "customer_id = ? AND created_at >= NOW() - INTERVAL '30 days'"
+      args_mapping: 'root = [this.customer_id]'
+
+  - label: combine_data
+    mutation: |
+      root = {
+        "customer": this.customers.index(0),
+        "recent_orders": this.orders,
+        "metrics": {
+          "total_orders": this.orders.length(),
+          "total_spent": this.orders.map_each(o -> o.total).sum(),
+          "avg_order_value": this.orders.map_each(o -> o.total).mean()
+        }
+      }
+
+meta:
+  mcp:
+    enabled: true
+    description: "Get comprehensive customer profile with recent order history and metrics"
+    properties:
+      - name: customer_id
+        type: string
+        description: "Customer ID to analyze"
+        required: true
+----
+
+See also: xref:develop:connect/components/processors/sql_select.adoc[`sql_select` processor], xref:develop:connect/guides/bloblang/about.adoc[Bloblang functions] (for data manipulation and aggregations)
+
+==== Workflow orchestration
+
+Coordinate complex workflows with multiple steps and conditional logic.
+
+This workflow simulates a complete order processing pipeline with mock data for inventory and processing tiers. This allows you to test the full logic without needing real external systems.
+
+[source,yaml]
+----
+label: order_workflow
+processors:
+  - label: validate_order
+    mutation: |
+      # Validation logic
+      root = if this.total <= 0 {
+        throw("Invalid order total")
+      } else { this }
+
+  - label: mock_inventory_check
+    mutation: |
+      # Mock inventory data for testing
+      let inventory = {
+        "widget-001": {"quantity": 100, "name": "Standard Widget"},
+        "widget-premium": {"quantity": 25, "name": "Premium Widget"},
+        "widget-limited": {"quantity": 2, "name": "Limited Edition Widget"}
+      }
+
+      let product = $inventory.get(this.product_id)
+      root = if $product == null {
+        throw("Product not found: " + this.product_id)
+      } else if $product.quantity < this.quantity {
+        throw("Insufficient inventory. Available: " + $product.quantity.string())
+      } else {
+        this.merge({
+          "inventory_check": "passed",
+          "available_quantity": $product.quantity,
+          "product_name": $product.name
+        })
+      }
+
+  - label: route_by_priority
+    switch:
+      - check: 'this.total > 1000'
+        processors:
+          - label: mock_high_value_processing
+            mutation: |
+              # Mock premium processing
+              root = this.merge({
+                "processing_tier": "premium",
+                "processing_time_estimate": "2-4 hours",
+                "assigned_rep": "premium-team@company.com",
+                "priority_score": 95
+              })
+
+      - check: 'this.customer_tier == "vip"'
+        processors:
+          - label: mock_vip_processing
+            mutation: |
+              # Mock VIP processing
+              root = this.merge({
+                "processing_tier": "vip",
+                "processing_time_estimate": "1-2 hours",
+                "assigned_rep": "vip-team@company.com",
+                "priority_score": 90,
+                "perks": ["expedited_shipping", "white_glove_service"]
+              })
+
+      - processors:
+          - label: mock_standard_processing
+            mutation: |
+              # Mock standard processing
+              root = this.merge({
+                "processing_tier": "standard",
+                "processing_time_estimate": "24-48 hours",
+                "assigned_rep": "support@company.com",
+                "priority_score": 50
+              })
+
+  - label: finalize_order
+    mutation: |
+      # Add final processing metadata
+      # Calculate estimated fulfillment by parsing processing time
+      let max_hours = this.processing_time_estimate.split("-").index(1).split(" ").index(0).number()
+
+      root = this.merge({
+        "order_status": "processed",
+        "processed_at": now().ts_format("2006-01-02T15:04:05.000Z"),
+        "estimated_fulfillment": "TBD - calculated based on processing tier",
+        "processing_time_hours": $max_hours
+      })
+
+meta:
+  mcp:
+    enabled: true
+    description: "Process orders with validation, inventory check, and tiered routing (with mocks for testing)"
+    properties:
+      - name: order_id
+        type: string
+        description: "Unique order identifier"
+        required: true
+      - name: product_id
+        type: string
+        description: "Product ID (try: widget-001, widget-premium, widget-limited)"
+        required: true
+      - name: quantity
+        type: number
+        description: "Quantity to order"
+        required: true
+      - name: total
+        type: number
+        description: "Order total in dollars"
+        required: true
+      - name: customer_tier
+        type: string
+        description: "Customer tier (optional: vip, standard)"
+        required: false
+----
+
+For the input `{"order_id": "ORD001", "product_id": "widget-001", "quantity": 5, "total": 250, "customer_tier": "vip"}`, the workflow produces:
+
+[source,json]
+----
+{
+  "assigned_rep": "vip-team@company.com",
+  "available_quantity": 100,
+  "customer_tier": "vip",
+  "estimated_fulfillment": "TBD - calculated based on processing tier",
+  "inventory_check": "passed",
+  "order_id": "ORD001",
+  "order_status": "processed",
+  "perks": [
+    "expedited_shipping",
+    "white_glove_service"
+  ],
+  "priority_score": 90,
+  "processed_at": "2025-09-16T09:05:29.138Z",
+  "processing_tier": "vip",
+  "processing_time_estimate": "1-2 hours",
+  "processing_time_hours": 2,
+  "product_id": "widget-001",
+  "product_name": "Standard Widget",
+  "quantity": 5,
+  "total": 250
+}
+----
+
+Notice how the workflow:
+
+. Preserves original input: `order_id`, `product_id`, `quantity`, `total`, and `customer_tier` pass through unchanged.
+. Adds inventory data: `available_quantity`, `product_name`, and `inventory_check` status from the mock lookup.
+. Routes by customer tier: Since `customer_tier` is "vip", it gets VIP processing with special `perks` and priority.
+. Enriches with processing metadata: `assigned_rep`, `priority_score`, `processing_tier`, and time estimates.
+. Finalizes with timestamps: `order_status`, `processed_at`, and calculated `processing_time_hours`.
+
+[[lint]]
+== Deploy and test your MCP server
+
+When your pipeline is ready, deploy it as a remote MCP server in Redpanda Cloud and test it with the built-in MCP Inspector.
+
+=== Access MCP Servers in Redpanda Cloud
+
+. Log into your Redpanda Cloud Console at https://cloud.redpanda.com.
+. Select your cluster from the cluster list.
+. In the left sidebar, navigate to *Remote MCP*.
+. If this is your first MCP server, you'll see an empty list with a *Create MCP Server* button
+
+=== Create and deploy your MCP server
+
+. Click *Create MCP Server* to open the creation form.
+. Fill in the required fields:
++
+* *Name*: A unique identifier for your server (for example `weather-tool`, `customer-lookup`).
+* *Description*: Brief description of what your server does.
+* *Configuration*: Paste your YAML pipeline configuration.
+. Click *Lint* to check your YAML syntax and configuration.
+. Click *Create MCP Server* to deploy the server.
+. Monitor the *Status* column. It will show one of:
++
+* *Starting*: Server is being deployed.
+* *Running*: Server is active and ready to receive requests.
+* *Error*: Check logs for deployment issues.
+
+=== Test with MCP Inspector
+
+. When your server status shows *Running*, click on the server name.
+. Navigate to the *MCP Inspector* tab.
+. This built-in tool lets you:
++
+* View all available tools your server exposes.
+* Test tool calls with sample parameters.
+* See request/response data.
+* Debug issues without setting up external clients.
+
+=== Manage your MCP server
+
+From the MCP Servers list, you can:
+
+* *View logs*: Click the server name, then go to the *Logs* tab to see execution logs and errors.
+* *Update configuration*: Edit the YAML and redeploy.
+* *Start/Stop*: Control server lifecycle.
+* *Delete*: Remove the server and clean up resources.
+
+See xref:ai-agents:mcp/remote/admin-guide.adoc[].
+
+[[test]]
+== Authenticate and connect your AI client
+
+To connect your local AI client to your remote MCP server:
+
+. First, authenticate to Redpanda Cloud:
++
+[source,bash]
+----
+rpk cloud login
+----
++
+This opens a browser window for sign-in and stores your authentication token locally.
+
+. Install the MCP proxy for your client (Claude/Claude Code):
++
+[source,bash]
+----
+rpk cloud mcp proxy \
+  --cluster-id <cluster-id> \ <1>
+  --mcp-server-id <mcp-server-id> \ <2>
+  --install --client claude-code
+----
++
+<1> `--cluster-id`: The target Redpanda Cloud cluster ID where your remote MCP server is hosted.
+<2> `--mcp-server-id`: The unique ID of your deployed remote MCP server
++
+TIP: You can find this command and the IDs in the *Connection* tab of your MCP server in Redpanda Cloud.
++
+The proxy acts as a bridge between your local AI client and the remote MCP server running in your cluster. It:
++
+* Connects to your remote MCP server using your authentication token
+* Discovers and registers all tools from the remote server locally
+* Proxies MCP requests from your AI client to the remote server
+* Handles authentication by injecting your token into each request
+
+. Restart your client and invoke your tool.
+
+:note-caption: Building your own agent?
+
+[NOTE]
+====
+You can implement the auth workflow directly against Redpanda Cloud APIs and skip the use of `rpk`. The proxy is a convenience, not a requirement of remote MCP. For code examples, see the *Connection* tab in your MCP server in Redpanda Cloud.
+====
+
+:note-caption: Note
+
+[[observe]]
+== Observe and debug your MCP tools
+
+You can view execution logs in the Redpanda Cloud Console under your MCP server's *Logs* tab.
+
+== Suggested reading
+
+* xref:develop:connect/components/about.adoc[Redpanda Connect components reference]
+* xref:develop:connect/guides/bloblang/about.adoc[Bloblang language guide]
+* xref:develop:connect/configuration/secret-management.adoc[Secret management in Redpanda Connect]
+* xref:reference:rpk/rpk-cloud/rpk-cloud-login.adoc[`rpk cloud login` command reference]
+* xref:reference:rpk/rpk-cloud/rpk-cloud-mcp-proxy.adoc[`rpk cloud mcp proxy` command reference]

@@ -1,0 +1,79 @@
+= Remote MCP Servers for Redpanda Cloud
+:page-beta: true
+:description: Learn about remote MCP servers, which are managed, hosted Model Context Protocol servers that run inside your Redpanda Cloud cluster.
+
+include::ai-agents:partial$beta.adoc[]
+
+Remote MCP servers are managed, hosted Model Context Protocol servers that run inside your Redpanda Cloud cluster. Unlike the xref:ai-agents:mcp/local/overview.adoc[local MCP server for Redpanda Cloud], remote servers are deployed to your cluster and operated by Redpanda. Your server can include one or more tools that you write using Redpanda Connect pipelines.
+
+== Why use remote MCP?
+
+* *Always-on and centrally managed:* No need to run a local process. Your tools live with your data.
+* *Proximity to data:* Execute tools next to your cluster for lower latency and simpler networking.
+* *Secure by design:* Use the xref:develop:connect/configuration/secret-management.adoc[Secrets Store]. Never hardcode secrets in pipelines.
+
+== Architecture
+
+* *Build*: You describe tools as Redpanda Connect components with `meta.mcp` metadata.
+* *Host*: Redpanda Cloud runs your server within the target cluster using the resources you select.
+* *Access*: Clients such as Claude Code connect and authenticate using either the MCP proxy or direct connections.
+
+== Core concepts
+
+The remote MCP server is a managed service that runs inside your Redpanda Cloud cluster. You create and deploy the server using the Redpanda Cloud Console or the API.
+
+=== Redpanda Connect
+
+Remote MCP servers are implemented as Redpanda Connect pipelines. Your tools:
+
+* Use processors for request/response logic.
+* Can access brokers using the `$\{REDPANDA_BROKERS}` environment variable (the pipeline is hosted within the cluster).
+
+=== Secrets
+
+* Store secrets in the xref:develop:connect/configuration/secret-management.adoc[Secrets Store] and reference them in configs as `${secrets.MY_SECRET_NAME}`.
+* *Never* include secrets in plain text within pipelines or MCP server definitions.
+* Secret names should be *UPPER_CASE snake_case*.
+
+=== Linting and validation
+
+Always use the *Lint* action before deploying to ensure the configuration compiles and required parameters are present.
+
+== Use cases
+
+[cols="1,3a"]
+|===
+|Category |Example prompts
+
+|Operational monitoring
+|* Check partition lag for customer-events topic
+* Show me the top 10 producers by message volume today
+* Get schema registry health status
+
+|Data enrichment and analysis
+|* Fetch user profile data and recent orders for customer ID 12345
+* Get real-time stock prices for symbols in my portfolio topic
+* Analyze sentiment of latest product reviews
+
+|Team productivity
+|* Deploy my microservice to the staging environment
+* Generate load test data for the payments service
+* Create a summary dashboard of this week's incident reports
+
+|Business intelligence
+|* What are the trending products in the last 24 hours?
+* Show revenue impact of the latest feature deployment
+* Get customer satisfaction scores from support tickets
+|===
+
+== How it works
+
+. **Authentication:** The AI client (such as Claude Code) must authenticate to Redpanda Cloud and receive a token. You can do this by using either the MCP proxy or by implementing the MCP client flow yourself.
+.. *MCP proxy*: For tools with built-in MCP clients, first authenticate with `rpk cloud login`, then configure them to use the `rpk cloud mcp proxy` command. This command handles proxying requests to the remote MCP server running in your Redpanda Cloud cluster using your stored authentication token.
+.. **Direct option:** If you are building your own AI agent, you can implement the MCP client flow yourself and connect directly to the remote MCP server, handling authentication and requests without `rpk`.
+. **Prompting:** After connecting, you can prompt your assistant to perform operations using your remote MCP server.
+
+== Next steps
+
+* xref:ai-agents:mcp/remote/quickstart.adoc[]
+* xref:ai-agents:mcp/remote/developer-guide.adoc[]
