@@ -10,7 +10,7 @@ include::ai-agents:partial$beta.adoc[]
 
 * A Redpanda Cloud cluster and subscription with *Remote MCP* enabled
 * Access to the xref:develop:connect/configuration/secret-management.adoc[Secrets Store] for storing credentials (if needed)
-* At least version 25.2.3 of xref:manage:rpk/rpk-install.adoc[`rpk` installed on your computer]
+* At least version 25.2.5 of xref:manage:rpk/rpk-install.adoc[`rpk` installed on your computer]
 * link:https://docs.anthropic.com/en/docs/claude-code/setup[Claude Code] installed
 
 TIP: For a complete developer guide, see xref:ai-agents:mcp/remote/developer-guide.adoc[].
@@ -142,13 +142,22 @@ rpk cloud login
 +
 This opens a browser window to authenticate. The token is saved locally inside your `rpk` configuration file. It is valid for 4 hours. You can refresh it by running `rpk cloud login` again.
 
-. Open the *Connection* tab in Redpanda Cloud to get connection details and run the `rpk` command for Claude Code. It looks like this:
+. Open the *Connection* tab in Redpanda Cloud to get connection details and run the `rpk` command for Claude Code. It looks like this for BYOC and Dedicated clusters:
 +
 [,bash]
 ----
-# Add to your Claude Desktop configuration
 rpk cloud mcp proxy \
 --cluster-id <cluster-id>\
+--mcp-server-id <server-id> \
+--install --client claude-code
+----
++
+For Serverless clusters, use:
++
+[,bash]
+----
+rpk cloud mcp proxy \
+--serverless-cluster-id <cluster-id>\
 --mcp-server-id <server-id> \
 --install --client claude-code
 ----
@@ -180,7 +189,7 @@ If your server is not starting or shows an error state:
 If Claude Code can't connect to your server:
 
 - Verify you're logged in with `rpk cloud login`.
-- Check that your rpk version is 25.2.3 or later: `rpk version`.
+- Check that your rpk version is 25.2.5 or later: `rpk version`.
 - Ensure your server status shows *Running* in Redpanda Cloud.
 - Try restarting Claude Code after running the proxy command.
 

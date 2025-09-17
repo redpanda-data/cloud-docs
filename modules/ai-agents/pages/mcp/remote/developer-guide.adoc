@@ -10,6 +10,7 @@ This guide provides a reference for building remote MCP servers that are managed
 
 * Access to a Redpanda Cloud cluster
 * Ability to manage the xref:develop:connect/configuration/secret-management.adoc[Secrets Store] entries
+* At least version 25.2.5 of xref:manage:rpk/rpk-install.adoc[`rpk` installed on your computer]
 * (Optional) Claude / Claude Code for testing
 
 TIP: For a quickstart, see xref:ai-agents:mcp/remote/quickstart.adoc[].
@@ -863,18 +864,30 @@ rpk cloud login
 +
 This opens a browser window for sign-in and stores your authentication token locally.
 
-. Install the MCP proxy for your client (Claude/Claude Code):
+. Install the MCP proxy for your client (Claude/Claude Code).
 +
-[source,bash]
+For BYOC and Dedicated clusters, use:
++
+[,bash]
 ----
 rpk cloud mcp proxy \
-  --cluster-id <cluster-id> \ <1>
-  --mcp-server-id <mcp-server-id> \ <2>
-  --install --client claude-code
+--cluster-id <cluster-id> \ <1>
+--mcp-server-id <server-id> \ <2>
+--install --client claude-code
 ----
 +
-<1> `--cluster-id`: The target Redpanda Cloud cluster ID where your remote MCP server is hosted.
-<2> `--mcp-server-id`: The unique ID of your deployed remote MCP server
+For Serverless clusters, use:
++
+[,bash]
+----
+rpk cloud mcp proxy \
+--serverless-cluster-id <cluster-id> \ <1>
+--mcp-server-id <server-id> \ <2>
+--install --client claude-code
+----
++
+<1> The target Redpanda Cloud cluster ID where your remote MCP server is hosted.
+<2> The unique ID of your deployed remote MCP server
 +
 TIP: You can find this command and the IDs in the *Connection* tab of your MCP server in Redpanda Cloud.
 +
