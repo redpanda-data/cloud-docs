@@ -334,11 +334,6 @@ processors:
       meta user_id = this.user_id.string()
       meta limit = this.limit.number().catch(10)
       meta start_date = this.start_date.parse_timestamp("2006-01-02").catch(now() - duration("24h"))
-
-      # Range validation
-      meta validated_limit = if @limit < 1 || @limit > 1000 {
-        throw("limit must be between 1 and 1000")
-      } else { @limit }
 ----
 
 ==== Dynamic configuration
@@ -437,9 +432,7 @@ processors:
         Accept: "application/json"
 ----
 +
-<1> The secret is injected at runtime. Never store the actual API key in your YAML
-
-IMPORTANT: The `${secrets.NAME}` syntax is resolved by Redpanda Connect at runtime. The actual secret value never appears in your configuration files or logs.
+<1> The secret is injected at runtime. Never store the actual API key in your YAML. The actual secret value never appears in your configuration files or logs.
 
 ==== Monitoring, debugging, and observability
 
