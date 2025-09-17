@@ -18,27 +18,6 @@ Remote MCP servers are managed, hosted Model Context Protocol servers that run i
 * *Host*: Redpanda Cloud runs your server within the target cluster using the resources you select.
 * *Access*: Clients such as Claude Code connect and authenticate using either the MCP proxy or direct connections.
 
-== Core concepts
-
-The remote MCP server is a managed service that runs inside your Redpanda Cloud cluster. You create and deploy the server using the Redpanda Cloud Console or the API.
-
-=== Redpanda Connect
-
-Remote MCP servers are implemented as Redpanda Connect pipelines. Your tools:
-
-* Use processors for request/response logic.
-* Can access brokers using the `$\{REDPANDA_BROKERS}` environment variable (the pipeline is hosted within the cluster).
-
-=== Secrets
-
-* Store secrets in the xref:develop:connect/configuration/secret-management.adoc[Secrets Store] and reference them in configs as `${secrets.MY_SECRET_NAME}`.
-* *Never* include secrets in plain text within pipelines or MCP server definitions.
-* Secret names should be *UPPER_CASE snake_case*.
-
-=== Linting and validation
-
-Always use the *Lint* action before deploying to ensure the configuration compiles and required parameters are present.
-
 == Use cases
 
 [cols="1,3a"]
