@@ -4,19 +4,89 @@
 
 include::ai-agents:partial$beta.adoc[]
 
-Remote MCP servers are managed, hosted Model Context Protocol servers that run inside your Redpanda Cloud cluster. Unlike the xref:ai-agents:mcp/local/overview.adoc[local MCP server for Redpanda Cloud], remote servers are deployed to your cluster and operated by Redpanda. Your server can include one or more tools that you write using Redpanda Connect pipelines.
+Remote MCP servers are managed, hosted Model Context Protocol servers that run inside your Redpanda Cloud cluster. Unlike the xref:ai-agents:mcp/local/overview.adoc[local MCP server for Redpanda Cloud], remote servers are deployed to your cluster and operated by Redpanda.
+
+Remote MCP servers enable you to expose your custom data pipelines as MCP tools (AI-consumable endpoints). MCP provides a standardized way for AI systems to interact with tools and services. Learn more about MCP in the link:https://docs.anthropic.com/en/docs/mcp[official documentation^].
+
+== Understanding tools and pipelines
+
+In Redpanda Connect, pipelines are declarative YAML files composed of inputs, processors, and outputs. In MCP, these pipelines become *tools*, which are discrete units of functionality that AI systems can discover and execute through the MCP interface.
+
+AI agents can perform complex tasks, but they need actionable interfaces to interact with real systems. Remote MCP servers provide a simple way to expose your internal tools as endpoints that AI systems can understand and use.
+
+Each tool is defined as a small, independent unit with:
+
+* A unique `label` for identification
+* A plain-English `description` that LLMs can understand
+* Structured `properties` that define inputs and outputs
+* Pipeline logic using Redpanda Connect processors to perform the actual work
+
+For example, a system that fetches customer data, analyzes streaming metrics, or generates reports can be exposed as a tool that AI assistants can invoke using natural language with zero prompt engineering.
 
 == Why use remote MCP?
 
 * *Always-on and centrally managed:* No need to run a local process. Your tools live with your data.
 * *Proximity to data:* Execute tools next to your cluster for lower latency and simpler networking.
 * *Secure by design:* Use the xref:develop:connect/configuration/secret-management.adoc[Secrets Store]. Never hardcode secrets in pipelines.
+* *Fast iteration:* Define tools as YAML files, deploy your server, and your AI agents can use the new logic instantly.
 
-== Architecture
+== Key features
 
-* *Build*: You describe tools as Redpanda Connect components with `meta.mcp` metadata.
-* *Host*: Redpanda Cloud runs your server within the target cluster using the resources you select.
-* *Access*: Clients such as Claude Code connect and authenticate using either the MCP proxy or direct connections.
+[cols="1s,3"]
+|===
+|Feature |Description
+
+|Composable tools
+|Each tool runs independently. They can be composed by AI into chains or workflows.
+
+|Minimal surface area
+|Expose only the tools you want, reducing the risk of confusing your AI agents.
+
+|Cluster integration
+|Direct access to your cluster's topics, schemas, and metrics without external networking.
+
+|Managed hosting
+|Redpanda operates your MCP server with automatic scaling and monitoring.
+|===
+
+== Example: Customer analytics tool
+
+Here's how you might expose a customer analytics pipeline as an MCP tool:
+
+[source,yaml]
+----
+label: analyze_customer_orders
+processors:
+  - label: fetch_customer_data
+    sql_select:
+      driver: "postgres"
+      dsn: "${secrets.POSTGRES_DSN}"
+      table: "orders"
+      where: "customer_id = ? AND created_at >= NOW() - INTERVAL '30 days'"
+      args_mapping: 'root = [this.customer_id]'
+
+  - label: calculate_metrics
+    mutation: |
+      root = {
+        "customer_id": this.customer_id,
+        "total_orders": this.length(),
+        "total_spent": this.map_each(o -> o.total).sum(),
+        "avg_order_value": this.map_each(o -> o.total).mean(),
+        "last_order_date": this.map_each(o -> o.created_at).max()
+      }
+
+meta:
+  mcp:
+    enabled: true
+    description: "Analyze a customer's order history and spending patterns over the last 30 days"
+    properties:
+      - name: customer_id
+        type: string
+        description: "Customer ID to analyze"
+        required: true
+----
+
+This tool can be invoked by an AI assistant with prompts like "analyze the order history for customer ID 12345" without needing to know the underlying SQL or processing logic.
 
 == Use cases
 
@@ -47,10 +117,43 @@ Remote MCP servers are managed, hosted Model Context Protocol servers that run i
 
 == How it works
 
-. **Authentication:** The AI client (such as Claude Code) must authenticate to Redpanda Cloud and receive a token. You can do this by using either the MCP proxy or by implementing the MCP client flow yourself.
-.. *MCP proxy*: For tools with built-in MCP clients, first authenticate with `rpk cloud login`, then configure them to use the `rpk cloud mcp proxy` command. This command handles proxying requests to the remote MCP server running in your Redpanda Cloud cluster using your stored authentication token.
-.. **Direct option:** If you are building your own AI agent, you can implement the MCP client flow yourself and connect directly to the remote MCP server, handling authentication and requests without `rpk`.
-. **Prompting:** After connecting, you can prompt your assistant to perform operations using your remote MCP server.
+Remote MCP servers follow a three-step process:
+
+. Build your tools.
++
+Define tools as Redpanda Connect pipelines with `meta.mcp` metadata. Each tool specifies:
++
+* **Description**: Plain-English explanation of what the tool does.
+* **Properties**: Structured input parameters with types and validation.
+* **Pipeline logic**: Processors that handle the actual work (API calls, database queries, data transformations).
+
+. Deploy to your cluster.
++
+Redpanda Cloud hosts your MCP server inside your cluster with:
++
+* **Managed infrastructure**: Automatic scaling, monitoring, and updates.
+* **Resource allocation**: Choose CPU/memory based on your tool requirements.
+* **Secure execution**: Access to cluster resources and the Secrets Store.
+
+. Connect your AI client.
++
+AI assistants connect through authentication and discovery:
++
+* **Authentication**: Use `rpk cloud login` followed by `rpk cloud mcp proxy` for automatic setup.
+* **Tool discovery**: Your AI client automatically discovers available tools and their capabilities.
+* **Natural language execution**: Invoke tools through conversational prompts.
+
+== Authentication options
+
+- **MCP proxy (recommended)**: For tools with built-in MCP clients like Claude Code:
++
+[,bash]
+----
+rpk cloud login
+rpk cloud mcp proxy --install --client claude-code --cluster-id <cluster-id> --mcp-server-id <server-id>
+----
+
+- **Direct connection**: If building your own AI agent, implement the MCP client flow yourself and connect directly to the remote MCP server.
 
 == Next steps
 
