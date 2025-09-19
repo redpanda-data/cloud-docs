@@ -11,7 +11,7 @@ This guide provides a reference for building remote MCP servers that are managed
 * Access to a Redpanda Cloud cluster
 * Ability to manage the xref:develop:connect/configuration/secret-management.adoc[Secrets Store] entries
 * At least version 25.2.5 of xref:manage:rpk/rpk-install.adoc[`rpk` installed on your computer]
-* (Optional) Claude / Claude Code for testing
+* (Optional) An AI assistant like Claude or Claude Code for testing
 
 TIP: For a quickstart, see xref:ai-agents:mcp/remote/quickstart.adoc[].
 
@@ -29,12 +29,26 @@ Secrets:: Credentials and tokens must be stored in the Secrets Store and referen
 
 == Development workflow
 
+. <<access, Access your Redpanda Cloud cluster>>: Select a Redpanda Cloud cluster to host your MCP server.
 . <<contract, Design the tool contract>>: Annotate MCP metadata with `meta.mcp.enabled: true`, provide a concise description, and declare parameters.
 . <<provision-secrets, Provision secrets (optional)>>: Create secrets in the Secrets Store for any credentials. Never inline secrets in YAML.
 . <<pipeline-patterns, Implement the pipeline>>: Build an MCP tool using Redpanda Connect pipelines. See <<pipeline-patterns, Pipeline patterns>> for examples of what is allowed in a pipeline.
 . <<lint, Lint and deploy>>: Validate your pipeline, catch schema errors, then deploy and test with the MCP Inspector.
 . <<test, Authenticate and connect your AI client>>: Install a proxy entry with `rpk cloud mcp proxy` in your AI assistant MCP configuration, or connect with your own MCP client.
 . <<observe, Observe and debug>>: Add temporary `log` processors, adjust timeouts/retries, and right-size resources.
+
+[[access]]
+== Access MCP Servers in Redpanda Cloud
+
+. Log into your link:https://cloud.redpanda.com[Redpanda Cloud Console^].
+. Select your cluster from the cluster list.
+. In the left sidebar, navigate to *Remote MCP*.
+. If this is your first MCP server, you'll see an empty list with a *Create MCP Server* button.
+. Fill in the required fields:
++
+* *Name*: A unique identifier for your server (for example `weather-tool`, `customer-lookup`).
+* *Description*: Brief description of what your server does.
+* *Configuration*: This is where to put your YAML configuration to define the an MCP tool.
 
 [[contract]]
 == Tool contract and MCP metadata
@@ -67,6 +81,8 @@ Property guidance:
 * Mark only mandatory fields as required.
 * Document defaults in the `description` and enforce them in the pipeline.
 
+After defining the contract, implement the pipeline logic using Redpanda Connect processors, inputs, outputs, and caches.
+
 [[provision-secrets]]
 == Provision secrets
 
@@ -86,6 +102,83 @@ See an example of using secrets in the <<secrets, Pipeline patterns>> section.
 Remote MCP tools are implemented as Redpanda Connect pipelines. This section shows you how to build different types of MCP tools using various pipeline patterns, organized by common use cases and integration scenarios.
 
 TIP: For detailed configuration options for any component, see the xref:develop:connect/components/about.adoc[Redpanda Connect components reference].
+
+=== YAML configuration rules
+
+Each YAML configuration (tool) should contain exactly one component type. The component type is inferred from the type you choose in the dropdown when creating or editing the MCP server. Valid component types are:
+
+* `input` (for data sources)
+* `output` (for data sinks)
+* `processor` (for data transformations)
+* `cache` (for caching intermediate results)
+
+.Correct example for inputs
+[source,yaml]
+----
+label: my_input
+redpanda:
+  seed_brokers: [ "${REDPANDA_BROKERS}" ]
+  topics: [ "events" ]
+  consumer_group: "mcp-reader"
+
+meta:
+  mcp:
+    enabled: true
+    description: "Consume events from Redpanda"
+----
+
+.Correct example for processors
+[source,yaml]
+----
+processors:
+  - label: safe_operation
+    try:
+      - http:
+          url: "https://api.example.com/data"
+          timeout: "10s"
+      - mutation: |
+          root = this.merge({"processed": true})
+
+  - label: handle_errors
+    catch:
+      - mutation: |
+          root = {
+            "error": "Operation failed",
+            "details": error()
+          }
+----
+
+.Incorrect (do not include the input wrapper)
+[source,yaml]
+----
+label: my_input
+input:
+  redpanda:
+    seed_brokers: [ "${REDPANDA_BROKERS}" ]
+    topics: [ "events" ]
+----
+
+.Incorrect (multiple component types in one file)
+[source,yaml]
+----
+input:
+  redpanda: { ... }
+processors:
+  - mutation: { ... }
+output:
+  redpanda: { ... }
+----
+
+.Incorrect (try/catch as single processor)
+[source,yaml]
+----
+processors:
+  - label: operation
+    try:
+      - http: { ... }
+    catch:
+      - mutation: { ... }
+----
 
 === Data generation and simple requests
 
@@ -805,22 +898,8 @@ Notice how the workflow:
 
 When your pipeline is ready, deploy it as a remote MCP server in Redpanda Cloud and test it with the built-in MCP Inspector.
 
-=== Access MCP Servers in Redpanda Cloud
+=== Deploy your MCP server
 
-. Log into your Redpanda Cloud Console at https://cloud.redpanda.com.
-. Select your cluster from the cluster list.
-. In the left sidebar, navigate to *Remote MCP*.
-. If this is your first MCP server, you'll see an empty list with a *Create MCP Server* button.
-
-=== Create and deploy your MCP server
-
-. Click *Create MCP Server* to open the creation form.
-. Fill in the required fields:
-+
-* *Name*: A unique identifier for your server (for example `weather-tool`, `customer-lookup`).
-* *Description*: Brief description of what your server does.
-* *Configuration*: Paste your YAML pipeline configuration.
-. Click *Lint* to check your YAML syntax and configuration.
 . Click *Create MCP Server* to deploy the server.
 . Monitor the *Status* column. It will show one of:
 +

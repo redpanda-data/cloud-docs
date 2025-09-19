@@ -1,53 +1,54 @@
 = About Remote MCP Servers for Redpanda Cloud
 :page-beta: true
-:description: Learn about remote MCP servers, which are managed, hosted Model Context Protocol servers that run inside your Redpanda Cloud cluster.
+:description: Business value, use cases, and architecture for remote MCP servers in Redpanda Cloud.
 
 include::ai-agents:partial$beta.adoc[]
 
-Remote MCP servers are managed, hosted Model Context Protocol servers that run inside your Redpanda Cloud cluster. Unlike the xref:ai-agents:mcp/local/overview.adoc[local MCP server for Redpanda Cloud], remote servers are deployed to your cluster and operated by Redpanda.
+Remote MCP (Model Context Protocol) servers are managed, hosted MCP servers that you can write and run inside your Redpanda Cloud cluster. They let you expose your data, analytics, and automation pipelines as AI-consumable tools with no custom API code. MCP servers bridge your business logic to AI agents using the open MCP standard, so you can:
 
-Remote MCP servers enable you to expose your custom data pipelines as MCP tools (AI-consumable endpoints). MCP provides a standardized way for AI systems to interact with tools and services. Learn more about MCP in the link:https://docs.anthropic.com/en/docs/mcp[official documentation^].
+* Make your data and workflows accessible to AI assistants and LLMs, safely and on your terms.
+* Accelerate automation and insight by letting AI trigger real business actions.
+* Control exposure so that only the tools you tag are visible to AI.
 
-== Understanding tools and pipelines
+== Why use a remote MCP server?
 
-In Redpanda Connect, pipelines are declarative YAML files composed of inputs, processors, and outputs. In MCP, these pipelines become *tools*, which are discrete units of functionality that AI systems can discover and execute through the MCP interface.
+* *Always-on and centrally managed*: No need to run a local process. Your tools live with your data, managed by Redpanda.
+* *Proximity to data*: Execute tools next to your cluster for lower latency and simpler networking.
+* *Secure by design*: Use the xref:develop:connect/configuration/secret-management.adoc[Secrets Store]. Never hardcode secrets in pipelines.
+* *Fast iteration*: Define tools as YAML configuration, deploy your MCP server, and your AI agents can use the new logic instantly.
 
-AI agents can perform complex tasks, but they need actionable interfaces to interact with real systems. Remote MCP servers provide a simple way to expose your internal tools as endpoints that AI systems can understand and use.
+== Use cases
 
-Each tool is defined as a small, independent unit with:
-
-* A unique `label` for identification
-* A plain-English `description` that LLMs can understand
-* Structured `properties` that define inputs and outputs
-* Pipeline logic using Redpanda Connect processors to perform the actual work
-
-For example, a system that fetches customer data, analyzes streaming metrics, or generates reports can be exposed as a tool that AI assistants can invoke using natural language with zero prompt engineering.
-
-== Why use remote MCP?
-
-* *Always-on and centrally managed:* No need to run a local process. Your tools live with your data.
-* *Proximity to data:* Execute tools next to your cluster for lower latency and simpler networking.
-* *Secure by design:* Use the xref:develop:connect/configuration/secret-management.adoc[Secrets Store]. Never hardcode secrets in pipelines.
-* *Fast iteration:* Define tools as YAML files, deploy your server, and your AI agents can use the new logic instantly.
-
-== Key features
-
-[cols="1s,3"]
+[cols="1s,3a"]
 |===
-|Feature |Description
+|Category |Example prompts
 
-|Composable tools
-|Each tool runs independently. They can be composed by AI into chains or workflows.
+|Operational monitoring
+|* Check partition lag for customer-events topic
+* Show me the top 10 producers by message volume today
+* Get schema registry health status
 
-|Minimal surface area
-|Expose only the tools you want, reducing the risk of confusing your AI agents.
+|Data enrichment and analysis
+|* Fetch user profile data and recent orders for customer ID 12345
+* Get real-time stock prices for symbols in my portfolio topic
+* Analyze sentiment of latest product reviews
 
-|Cluster integration
-|Direct access to your cluster's topics, schemas, and metrics without external networking.
+|Team productivity
+|* Deploy my microservice to the staging environment
+* Generate load test data for the payments service
+* Create a summary dashboard of this week's incident reports
 
-|Managed hosting
-|Redpanda operates your MCP server with automatic scaling and monitoring.
+|Business intelligence
+|* What are the trending products in the last 24 hours?
+* Show revenue impact of the latest feature deployment
+* Get customer satisfaction scores from support tickets
 |===
+
+== How it works
+
+. Build your tools as Redpanda Connect pipelines with `meta.mcp` metadata (description, properties, and logic).
+. Deploy to your cluster. Redpanda Cloud hosts your MCP server with secure access.
+. Connect your AI client. AI assistants authenticate, discover available tools, and invoke them using natural language prompts.
 
 == Example: Customer analytics tool
 
@@ -88,64 +89,9 @@ meta:
 
 This tool can be invoked by an AI assistant with prompts like "analyze the order history for customer ID 12345" without needing to know the underlying SQL or processing logic.
 
-== Use cases
-
-[cols="1,3a"]
-|===
-|Category |Example prompts
-
-|Operational monitoring
-|* Check partition lag for customer-events topic
-* Show me the top 10 producers by message volume today
-* Get schema registry health status
-
-|Data enrichment and analysis
-|* Fetch user profile data and recent orders for customer ID 12345
-* Get real-time stock prices for symbols in my portfolio topic
-* Analyze sentiment of latest product reviews
-
-|Team productivity
-|* Deploy my microservice to the staging environment
-* Generate load test data for the payments service
-* Create a summary dashboard of this week's incident reports
-
-|Business intelligence
-|* What are the trending products in the last 24 hours?
-* Show revenue impact of the latest feature deployment
-* Get customer satisfaction scores from support tickets
-|===
-
-== How it works
-
-Remote MCP servers follow a three-step process:
-
-. Build your tools.
-+
-Define tools as Redpanda Connect pipelines with `meta.mcp` metadata. Each tool specifies:
-+
-* **Description**: Plain-English explanation of what the tool does.
-* **Properties**: Structured input parameters with types and validation.
-* **Pipeline logic**: Processors that handle the actual work (API calls, database queries, data transformations).
-
-. Deploy to your cluster.
-+
-Redpanda Cloud hosts your MCP server inside your cluster with:
-+
-* **Managed infrastructure**: Automatic scaling, monitoring, and updates.
-* **Resource allocation**: Choose CPU/memory based on your tool requirements.
-* **Secure execution**: Access to cluster resources and the Secrets Store.
-
-. Connect your AI client.
-+
-AI assistants connect through authentication and discovery:
-+
-* **Authentication**: Use `rpk cloud login` followed by `rpk cloud mcp proxy` for automatic setup.
-* **Tool discovery**: Your AI client automatically discovers available tools and their capabilities.
-* **Natural language execution**: Invoke tools through conversational prompts.
-
 == Authentication options
 
-- **MCP proxy (recommended)**: For tools with built-in MCP clients like Claude Code:
+- **MCP proxy (recommended):** For tools with built-in MCP clients like Claude Code:
 +
 [,bash]
 ----
@@ -153,9 +99,9 @@ rpk cloud login
 rpk cloud mcp proxy --install --client claude-code --cluster-id <cluster-id> --mcp-server-id <server-id>
 ----
 
-- **Direct connection**: If building your own AI agent, implement the MCP client flow yourself and connect directly to the remote MCP server.
+- **Direct connection:** If building your own AI agent, implement the MCP client flow yourself and connect directly to the remote MCP server.
 
-== Next steps
+== Next Steps
 
 * xref:ai-agents:mcp/remote/quickstart.adoc[]
 * xref:ai-agents:mcp/remote/developer-guide.adoc[]
