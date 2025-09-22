@@ -34,7 +34,7 @@ Secrets:: Credentials and tokens must be stored in the Secrets Store and referen
 . <<provision-secrets, Provision secrets (optional)>>: Create secrets in the Secrets Store for any credentials. Never inline secrets in YAML.
 . <<pipeline-patterns, Implement the pipeline>>: Build an MCP tool using Redpanda Connect pipelines.
 . <<lint, Lint and deploy>>: Validate your pipeline, catch schema errors, then deploy and test with the MCP Inspector.
-. <<test, Authenticate and connect your AI client>>: Install a proxy entry with `rpk cloud mcp proxy` in your AI assistant MCP configuration, or connect with your own MCP client.
+. <<test, Authenticate and connect your MCP client>>: Install a proxy entry with `rpk cloud mcp proxy` in your AI assistant MCP configuration, or connect with your own MCP client.
 . <<observe, Observe and debug>>: Add temporary `log` processors, adjust timeouts/retries, and right-size resources.
 
 [[access]]
@@ -225,9 +225,9 @@ From the MCP Servers list, you can:
 See xref:ai-agents:mcp/remote/admin-guide.adoc[].
 
 [[test]]
-== Authenticate and connect your AI client
+== Authenticate and connect your MCP client
 
-To connect your local AI client to your remote MCP server:
+To connect your local MCP client to your remote MCP server:
 
 . First, authenticate to Redpanda Cloud:
 +
@@ -267,11 +267,11 @@ rpk cloud mcp proxy \
 +
 TIP: You can find this command and the IDs in the *Connection* tab of your MCP server in Redpanda Cloud.
 +
-The proxy acts as a bridge between your local AI client and the remote MCP server running in your cluster. It:
+The proxy acts as a bridge between your local client and the remote MCP server running in your cluster. It:
 +
 * Connects to your remote MCP server using your authentication token
 * Discovers and registers all tools from the remote server locally
-* Proxies MCP requests from your AI client to the remote server
+* Proxies MCP requests from your client to the remote server
 * Handles authentication by injecting your token into each request
 
 . Restart your client and invoke your tool.
