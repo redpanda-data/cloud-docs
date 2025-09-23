@@ -70,7 +70,7 @@ Users with an email address with that realm (domain) can now access your Redpand
 
 ===== Tips for Integrating Entra ID
 
-If users are repeatedly prompted for consent or cannot sign in:
+If users are repeatedly prompted for consent or cannot log in:
 
 * Ensure the app is configured as Web with the exact Redirect URI from Redpanda Cloud.
 * Remove any extra API permissions (for example, `Microsoft Graph: User.Read`).
@@ -78,7 +78,9 @@ If users are repeatedly prompted for consent or cannot sign in:
 
 === Two-factor authentication (2FA)
 
-Improve account security by requiring a second verification step when signing in to Redpanda Cloud. Redpanda Cloud supports time-based one-time passwords (TOTP) using any compatible authenticator app (for example, Google Authenticator, Microsoft Authenticator, 1Password). If you enable 2FA, after password or SSO verification, users are prompted for a one-time code from their authenticator app when they sign in.
+Improve account security by requiring a second verification step when signing in to Redpanda Cloud. Redpanda Cloud supports time-based one-time passwords (TOTP) using any compatible authenticator app (for example, Google Authenticator, Microsoft Authenticator, 1Password). 
+
+With 2FA, after entering password or SSO verification at log in, you're prompted to scan the QR code to get a one-time code from your authenticator app. You can optionally select to remember the device to skip the 2FA prompt on that device for the next 30 days.
 
 ==== Enable 2FA (individual users)
 
@@ -86,25 +88,20 @@ Users can enable 2FA for their own accounts.
 
 . In the Cloud UI, select your profile avatar and choose *Manage user*.
 . Open the *Security* tab.
-. Click to *Enable* two-factor authentication.
-. When the QR code appears, open your authenticator app, add a new account, and scan the QR code.
-. Enter the verification code from your authenticator app to confirm setup.
-. *(Optional)* Select *Remember this device for 30 days* to skip the 2FA prompt on this device for the next 30 days.
+. Click *Enable* to set up two-factor authentication.
 
 ==== Enforce 2FA (organization admins)
 
 Administrators can require 2FA for all users in an organization.
 
 . In the Cloud UI, go to *Organization IAM*.
-. Select the *2FA* tab.
+. Open the *2FA* tab.
 . Click *Enable* to require 2FA for all members of this organization.
-
-The next time users sign in to Redpanda Cloud, they'll be guided to scan a QR code with their authenticator app and enter the verification code before continuing. Users who haven't enrolled will be prompted to do so. They can optionally select to remember the device for 30 days to skip the 2FA prompt on that device for the next 30 days.
 
 ==== Troubleshooting
 
 * *Code not accepted:* Ensure the code hasn't expired and that your phone's time is set automatically; time drift can cause invalid codes.
-* *New phone or lost access:* If you can't access your authenticator app, use your recovery codes or contact your organization admin to help you regain access.
+* *New phone or lost access:* If you can't access your authenticator app, contact your organization admin to help you regain access.
 * *Remembered device prompts again:* The 30-day trust is device- and browser-specific. Clearing cookies, switching browsers, or using a new device requires re-verification.
 
 == Service authentication
