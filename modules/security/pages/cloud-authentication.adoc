@@ -76,32 +76,34 @@ If users are repeatedly prompted for consent or cannot log in:
 * Remove any extra API permissions (for example, `Microsoft Graph: User.Read`).
 * Avoid adding non-standard claims or scopes.
 
-=== Two-factor authentication (2FA)
+=== Multi-factor authentication (MFA)
 
-Improve account security by requiring a second verification step when signing in to Redpanda Cloud. Redpanda Cloud supports time-based one-time passwords (TOTP) using any compatible authenticator app (for example, Google Authenticator, Microsoft Authenticator, 1Password). 
+Improve account security by requiring a second verification step when logging in to Redpanda Cloud. Redpanda Cloud supports time-based one-time passwords (TOTP) using an authenticator app (for example, Google Authenticator, Microsoft Authenticator, 1Password). You can enable MFA for your own account, and organization administrators can enable MFA for all members of the organization.
 
-With 2FA, after entering password or SSO verification at log in, you're prompted to scan the QR code to get a one-time code from your authenticator app. You can optionally select to remember the device to skip the 2FA prompt on that device for the next 30 days.
+With MFA enabled, after entering your login credentials, you're prompted to scan a QR code to get a TOTP code from an authenticator app. Enter that 6-digit code to access Redpanda Cloud. You can choose to remember the device to skip the MFA prompt on that device for the next 30 days.
 
-==== Enable 2FA (individual users)
+For the initial MFA setup, after entering that code, you're prompted to save a separate recovery code. Keep the recovery code offline and secure. You can use that recovery code to regain access to Redpanda Cloud, if necessary (for example, if your phone is lost). 
 
-Users can enable 2FA for their own accounts.
+==== Enable MFA (individual users)
+
+Users can enable MFA for their own accounts.
 
 . In the Cloud UI, select your profile avatar and choose *Manage user*.
 . Open the *Security* tab.
-. Click *Enable* to set up two-factor authentication.
+. Click *Enable* to set up multi-factor authentication.
 
-==== Enforce 2FA (organization admins)
+==== Enforce MFA (organization admins)
 
-Administrators can require 2FA for all users in an organization.
+Administrators can require MFA for all users in an organization.
 
 . In the Cloud UI, go to *Organization IAM*.
-. Open the *2FA* tab.
-. Click *Enable* to require 2FA for all members of this organization.
+. Open the *MFA* tab.
+. Click *Enable* to require MFA for all members of this organization.
 
 ==== Troubleshooting
 
-* *Code not accepted:* Ensure the code hasn't expired and that your phone's time is set automatically; time drift can cause invalid codes.
-* *New phone or lost access:* If you can't access your authenticator app, contact your organization admin to help you regain access.
+* *New phone or lost access:* If you can't access your authenticator app, select to try another access method and enter your recovery code. 
+* *TOTP code not accepted:* Ensure the code hasn't expired and that your phone's time is set automatically; time drift can cause invalid codes.
 * *Remembered device prompts again:* The 30-day trust is device- and browser-specific. Clearing cookies, switching browsers, or using a new device requires re-verification.
 
 == Service authentication
