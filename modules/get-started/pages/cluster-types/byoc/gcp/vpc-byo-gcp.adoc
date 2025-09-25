@@ -118,7 +118,7 @@ cat << EOT > redpanda-agent.role
     "compute.subnetworks.get",
     "resourcemanager.projects.get",
     "compute.networks.getRegionEffectiveFirewalls",
-    "compute.networks.getEffectiveFirewalls",
+    "compute.networks.getEffectiveFirewalls"
   ]
 }
 EOT
@@ -348,8 +348,8 @@ gcloud projects add-iam-policy-binding <service-project-id> \
 ```bash
 # Account used to check for and read secrets, which are required to create Redpanda Connect pipelines.
 
-gcloud iam service-accounts create redpanda-connect-api \ 
-  --display-name="Redpanda Connect API Service Account" 
+gcloud iam service-accounts create redpanda-connect-api \
+  --display-name="Redpanda Connect API Service Account"
 
 cat << EOT > redpanda-connect-api.role 
 {
@@ -396,14 +396,14 @@ gcloud projects add-iam-policy-binding <service-project-id> \
 ```
 ====
 
-* Redpanda Console service account
+* Redpanda Console secret manager service account
 +
 .Show commands
 [%collapsible]
 ====
 ```bash
 gcloud iam service-accounts create redpanda-console \
-  --display-name="Redpanda Console Service Account"
+  --display-name="Redpanda Console Secret Manager Service Account"
 
 cat << EOT > redpanda-console.role
 {
@@ -593,9 +593,9 @@ gcloud iam service-accounts add-iam-policy-binding <redpanda-cluster-gcp-sa-acco
 [%collapsible]
 ====
 ```bash
-gcloud iam service-accounts add-iam-policy-binding <redpanda_operator-gcp-sa-account-id>@<service-project-id>.iam.gserviceaccount.com \
+gcloud iam service-accounts add-iam-policy-binding <redpanda-operator-gcp-sa-account-id>@<service-project-id>.iam.gserviceaccount.com \
     --role roles/iam.workloadIdentityUser \
-    --member "serviceAccount:<service-project-id>.svc.id.goog[redpanda-system/<redpanda_operator-gcp-sa-account-id>]"
+    --member "serviceAccount:<service-project-id>.svc.id.goog[redpanda-system/<redpanda-operator-gcp-sa-account-id>]"
 ```
 ====
 
