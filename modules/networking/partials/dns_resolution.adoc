@@ -1,23 +1,22 @@
-PrivateLink changes how DNS resolution works for your cluster. When you query cluster hostnames from outside the VPC that contains your PrivateLink endpoint, DNS may return private IP addresses that aren't reachable from your location.
+PrivateLink changes how DNS resolution works for your cluster. When you query cluster hostnames outside the VPC/subnet DNS path that contains your PrivateLink endpoint, DNS may return private IP addresses that aren't reachable from your location.
 
 To resolve cluster hostnames from anywhere in your VPC (or through centralized DNS), configure DNS forwarding for your cluster's domain to the Amazon-provided DNS resolver.
 
 * *Cluster domain*: The suffix after the seed hostname.
 +
-For example, if your bootstrap server URL is: `seed-3da65a4a.cki01qgth38kk81ard3g.byoc.dev.cloud.redpanda.com:9092`, then the `cluster_domain` is: `cki01qgth38kk81ard3g.byoc.dev.cloud.redpanda.com`.
+For example, if your bootstrap server URL is: `seed-3da65a4a.cki01qgth38kk81ard3g.byoc.dev.cloud.redpanda.com:9092`, then `cluster_domain` is: `cki01qgth38kk81ard3g.byoc.dev.cloud.redpanda.com`.
 
-* *Amazon-provided DNS resolver*: Located at your VPC's base CIDR address + 2.
+* *Amazon-provided DNS*: Located at VPC base CIDR + 2.
 +
 For example, if your VPC CIDR is `10.30.0.0/16`, then the DNS resolver is at `10.30.0.2`.
 
 For cross-VPC or on-premises setups:
 
-. Create a Route 53 Resolver outbound endpoint in the VPC containing your PrivateLink endpoint.
-. Create a Route 53 Resolver forwarding rule for your `<cluster_domain>` that targets the outbound endpoint.
-. For VPC-to-VPC forwarding: Associate the forwarding rule with VPCs that need cluster access.
-. For on-premises access: Create a Route 53 Resolver inbound endpoint and configure your on-premises DNS to forward queries for `<cluster_domain>` to the inbound endpoint IP addresses.
+. In the VPC that contains your PrivateLink endpoint, create a Route 53 Resolver inbound endpoint.
+. In each other VPC that must resolve the cluster domain, create a Resolver outbound endpoint and a forwarding rule for `<cluster_domain>` with targets = the inbound endpoint IPs from the previous step. Associate the rule to those VPCs.
+. For on-premises DNS, create a conditional forwarder for `<cluster_domain>` that forwards to the inbound endpoint IPs from the earlier step (over VPN/DX).
 +
 [IMPORTANT]
 ====
-Do not configure forwarding rules to target the VPC's Amazon-provided DNS resolver address (VPC base CIDR + 2). This will not work correctly.
+Do not point Route 53 forwarding rules at the VPC's Amazon-provided DNS (VPC base + 2). The rule must target the IP addresses of resolvers, typically the inbound endpoint IPs.
 ====
