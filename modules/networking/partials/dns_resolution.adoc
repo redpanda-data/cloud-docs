@@ -12,6 +12,12 @@ For example, if your VPC CIDR is `10.30.0.0/16`, then the DNS resolver is at `10
 
 For cross-VPC or on-premises setups:
 
-. Create a Route 53 Resolver forwarding rule for your `<cluster_domain>`.
-. Configure the target IP as your VPC's Amazon-provided DNS resolver address.
-. Associate the rule with all VPCs that need cluster access.
+. Create a Route 53 Resolver outbound endpoint in the VPC containing your PrivateLink endpoint.
+. Create a Route 53 Resolver forwarding rule for your `<cluster_domain>` that targets the outbound endpoint.
+. For VPC-to-VPC forwarding: Associate the forwarding rule with VPCs that need cluster access.
+. For on-premises access: Create a Route 53 Resolver inbound endpoint and configure your on-premises DNS to forward queries for `<cluster_domain>` to the inbound endpoint IP addresses.
++
+[IMPORTANT]
+====
+Do not configure forwarding rules to target the VPC's Amazon-provided DNS resolver address (VPC base CIDR + 2). This will not work correctly.
+====
