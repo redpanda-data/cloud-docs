@@ -1,0 +1,17 @@
+PrivateLink changes how DNS resolution works for your cluster. When you query cluster hostnames from outside the VPC that contains your PrivateLink endpoint, DNS may return private IP addresses that aren't reachable from your location.
+
+To resolve cluster hostnames from anywhere in your VPC (or through centralized DNS), configure DNS forwarding for your cluster's domain to the Amazon-provided DNS resolver.
+
+* *Cluster domain*: The suffix after the seed hostname.
+
+For example, if your bootstrap server URL is: `seed-3da65a4a.cki01qgth38kk81ard3g.byoc.dev.cloud.redpanda.com:9092`, then the `cluster_domain` is: `cki01qgth38kk81ard3g.byoc.dev.cloud.redpanda.com`.
+
+* *Amazon-provided DNS resolver*: Located at your VPC's base CIDR address + 2.
++
+For example, if your VPC CIDR is `10.30.0.0/16`, then the DNS resolver is at `10.30.0.2`.
+
+For cross-VPC or on-premises setups:
+
+. Create a Route 53 Resolver forwarding rule for your `<cluster_domain>`.
+. Configure the target IP as your VPC's Amazon-provided DNS resolver address.
+. Associate the rule with all VPCs that need cluster access.
