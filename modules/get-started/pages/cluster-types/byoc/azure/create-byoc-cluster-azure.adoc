@@ -46,26 +46,32 @@ In the https://login.microsoftonline.com/[Azure Portal^], confirm that the dedic
 ** Microsoft.ContainerService
 --
 +
-To check if a resource provider is registered, run the following command using the Azure CLI or in the Azure Cloud Shell. For example, to check for Microsoft.Compute, run:
+To check if a resource provider is registered, run the following command using the Azure CLI or in the Azure Cloud Shell:
 +
-``` 
-az provider show -n Microsoft.Compute
-```
-+
-If it is not registered, run:
-```
-az provider register --namespace Microsoft.Compute
-```
-+
-To check the registration status, run:
 ```
 az provider show -n Microsoft.Compute --query registrationState -o tsv
+az provider show -n Microsoft.ManagedIdentity --query registrationState -o tsv
+az provider show -n Microsoft.Storage --query registrationState -o tsv
+az provider show -n Microsoft.KeyVault --query registrationState -o tsv
+az provider show -n Microsoft.Network --query registrationState -o tsv
+az provider show -n Microsoft.ContainerService --query registrationState -o tsv
 ```
-
++
+If a resource provider is not registered, run:
++
+```
+az provider register --namespace Microsoft.Compute
+az provider register --namespace Microsoft.ManagedIdentity
+az provider register --namespace Microsoft.Storage
+az provider register --namespace Microsoft.KeyVault
+az provider register --namespace Microsoft.Network
+az provider register --namespace Microsoft.ContainerService
+```
 
 * **Feature**: The subscription must be registered for Microsoft.Compute/EncryptionAtHost. See the https://learn.microsoft.com/en-us/azure/virtual-machines/linux/disks-enable-host-based-encryption-cli#prerequisites[Microsoft documentation^].
 +
 To register it, run:
++
 ```
 az feature register --namespace Microsoft.Compute --name EncryptionAtHost
 
