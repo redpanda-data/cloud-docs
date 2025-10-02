@@ -6,6 +6,7 @@ Redpanda Cloud uses various metrics to measure the consumption of resources.
 
 * All pricing is set in US dollars (USD). 
 * All billing computations are conducted in Coordinated Universal Time (UTC). Billing accrues at hourly intervals. Any usage that is less than an hour is billed for the full hour. 
+* You can view detailed billing activity for each cluster and edit payment methods on the *Billing* page.
 
 NOTE: Pricing information is available on https://www.redpanda.com/price-estimator[redpanda.com^]. For questions about billing, contact billing@redpanda.com.
 
@@ -75,13 +76,17 @@ Replication to object storage is implemented with glossterm:Tiered Storage[]. Al
 BYOC::
 +
 --
-Pricing for BYOC clusters depends on the time the instance is up, the data in, data out, and data stored.
+Pricing for BYOC clusters depends on compute, data in, data out, and data stored.
 
 
 |=== 
 | Metric | Description 
 
-| Uptime | Tracks the number of hours the instance is running. 
+| Compute | Tracks the amount of compute per hour (in vCPU and memory). 
+
+Compute is measured in Redpanda units (RPUs), where: 
+
+1 RPU = 2 vCPU + 8 GB RAM
 
 The cost varies based on the xref:reference:tiers/byoc-tiers.adoc[region and tier] you select for your cluster.   
 | Ingress | Tracks the data written into Redpanda (in GB). 
@@ -98,23 +103,12 @@ The cost varies based on the number of availability zones (AZ) you select for yo
 
 Replication to object storage is implemented with glossterm:Tiered Storage[]. All topics have a fixed replication factor of 3, but Redpanda counts each byte only once.
 
+| Iceberg topics | Optional: Tracks the data in Iceberg tables per hour (in GB).
+
 |=== 
 --
 ======
 
-
-== Iceberg pipeline metrics
-
-Pricing per pipeline depends on: 
-
-?
-
-|===
-| Metric | Description
-| ? | ?
-|===
-
-NOTE: Iceberg integration is supported only for BYOC clusters.
 
 == Redpanda Connect pipeline metrics
 
