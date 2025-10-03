@@ -1,16 +1,16 @@
 
-= About the Redpanda Cloud MCP Server
+= About the Local MCP server for Redpanda Cloud
 :page-beta: true
-:description: Learn about the Redpanda Cloud MCP Server, which lets AI assistants securely access and operate your Redpanda Cloud account and clusters.
+:description: Learn about the local MCP server for Redpanda Cloud, which lets AI assistants securely access and operate your Redpanda Cloud account and clusters.
 
-The Redpanda Cloud MCP Server lets AI assistants securely access and operate your Redpanda Cloud account and clusters. MCP provides controlled access to:
+The local MCP server for Redpanda Cloud lets AI assistants securely access and operate your Redpanda Cloud account and clusters. MCP provides controlled access to:
 
 * link:https://docs.redpanda.com/api/doc/cloud-controlplane/[Control Plane] actions, such as creating a Redpanda Cloud cluster or listing clusters.
 * link:https://docs.redpanda.com/api/doc/cloud-dataplane/[Data Plane] actions, such as creating topics or listing topics.
 
 By speaking natural language to your assistant, you can ask it to perform Redpanda operations on your behalf. The MCP server runs locally on your machine and authenticates to Redpanda Cloud using a Redpanda Cloud token.
 
-image::shared:cloud-mcp.gif[A terminal window showing Claude Code invoking Redpanda Cloud MCP to list topics in a cluster.]
+image::shared:cloud-mcp.gif[A terminal window showing Claude Code invoking the local MCP server for Redpanda Cloud to list topics in a cluster.]
 
 == What you can do
 
@@ -32,13 +32,21 @@ NOTE: The MCP server does **not** expose delete endpoints by default. You can en
 
 . Authenticate to Redpanda Cloud and receive a token using the xref:reference:rpk/rpk-cloud/rpk-cloud-login.adoc[`rpk cloud login` command].
 . Configure your MCP client using the xref:reference:rpk/rpk-cloud/rpk-cloud-mcp-install.adoc[`rpk cloud mcp install`] command. Your client then starts the server on-demand using xref:reference:rpk/rpk-cloud/rpk-cloud-mcp-stdio.adoc[`rpk cloud mcp stdio`], authenticating with the Redpanda Cloud token from `rpk cloud login`.
-. Prompt your assistant to perform Redpanda operations. The Redpanda Cloud MCP Server executes them in your Redpanda Cloud account using your Redpanda Cloud token.
+. Prompt your assistant to perform Redpanda operations. The local MCP server for Redpanda Cloud executes them in your Redpanda Cloud account using your Redpanda Cloud token.
 
 === Components
 
 * AI client (Claude, Claude Code, or any other MCP client) that connects to the MCP server.
 * Redpanda CLI (`rpk`) for obtaining a token and starting the local MCP server.
 * Redpanda Cloud account that the local MCP server can connect to and issue API requests.
+
+== Security considerations
+
+MCP servers authenticate to Redpanda Cloud using your personal or service account credentials. However, there is **no auditing or access control** that distinguishes between actions performed by MCP servers versus direct API calls:
+
+* All API actions appear in Redpanda Cloud's internal logs as coming from the authenticated user account, not the specific MCP server.
+* You cannot audit which MCP server performed which operations, as Redpanda Cloud logs are not accessible to users.
+* You cannot restrict specific MCP servers to only certain API endpoints or resources.
 
 == Next steps
 
