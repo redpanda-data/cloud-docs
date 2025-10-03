@@ -28,6 +28,8 @@ After <<get-a-cloud-api-access-token,getting an access token>>, you can <<create
 
 TIP: In Kafka clients, set `connections.max.idle.ms` to a value less than 350 seconds. 
 
+NOTE: Enabling PrivateLink changes private DNS behavior for your cluster. Before configuring connections, review <<dns-resolution-with-privatelink>>.
+
 == Get a Cloud API access token
 
 include::networking:partial$private-links-api-access-token.adoc[]
@@ -188,6 +190,10 @@ curl -X GET \
     $PUBLIC_API_ENDPOINT/v1/clusters/$CLUSTER_ID | jq '.cluster.aws_private_link.status | {service_name, service_state}'
 ----
 
+== DNS resolution with PrivateLink
+
+include::networking:partial$dns_resolution.adoc[]
+
 == Configure PrivateLink connection to Redpanda Cloud
 
 When you have a PrivateLink-enabled cluster, you can create an endpoint to connect your VPC and your cluster.
@@ -202,6 +208,8 @@ For example, if the bootstrap server URL is: `seed-3da65a4a.cki01qgth38kk81ard3g
 ----
 CLUSTER_DOMAIN=<cluster_domain>
 ----
+
+NOTE: Use `<cluster_domain>` as the domain you target with your DNS conditional forward (optionally also `*.<cluster_domain>` if your DNS platform requires a wildcard).
 
 === Get name of PrivateLink endpoint service
 
