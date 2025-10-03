@@ -19,21 +19,21 @@ You should also be familiar with YAML, HTTP APIs, and basic event-stream process
 
 == Concepts and architecture
 
-Remote MCP server:: A managed, hosted MCP service deployed to your cluster. You write tool logic as Redpanda Connect pipelines and annotate them with MCP metadata so clients can discover and invoke them.
+Remote MCP server:: A managed, hosted MCP service deployed to your cluster. You write each tool's logic using Redpanda Connect configuration and annotate them with MCP metadata so clients can discover and invoke them.
 
-Redpanda Connect:: A framework for building event-driven data pipelines. Tools inside your remote MCP servers are implemented as Redpanda Connect pipelines that run inside your Redpanda Cloud cluster.
+Redpanda Connect:: A framework for building event-driven data pipelines. Tools inside your remote MCP servers are implemented as Redpanda Connect configurations that run inside your Redpanda Cloud cluster.
 
-Tool:: A single request/response operation exposed to MCP. Each tool is implemented as a Redpanda Connect pipeline and described to MCP with `meta.mcp`.
+Tool:: A single request/response operation exposed to MCP.
 
-Secrets:: Credentials and tokens must be stored in the Secrets Store and referenced as `${secrets.NAME}`. Use uppercase snakecase for secret names (such as `DATAPLANE_TOKEN`).
+Secrets:: Credentials and tokens that you want to use in your tools. These values must be stored in the Secrets Store and referenced as `${secrets.NAME}`. Use uppercase snakecase for secret names (such as `DATAPLANE_TOKEN`).
 
 == Development workflow
 
 . <<access, Access your Redpanda Cloud cluster>>: Select a Redpanda Cloud cluster to host your MCP server.
 . <<contract, Design the tool contract>>: Annotate MCP metadata with `meta.mcp.enabled: true`, provide a concise description, and declare parameters.
 . <<provision-secrets, Provision secrets (optional)>>: Create secrets in the Secrets Store for any credentials. Never inline secrets in YAML.
-. <<pipeline-patterns, Implement the pipeline>>: Build an MCP tool using Redpanda Connect pipelines.
-. <<lint, Lint and deploy>>: Validate your pipeline, catch schema errors, then deploy and test with the MCP Inspector.
+. <<pipeline-patterns, Implement the logic>>: Build the logic for your MCP tool using Redpanda Connect configurations.
+. <<lint, Lint and deploy>>: Validate your configuration, catch schema errors, then deploy and test with the MCP Inspector.
 . <<test, Authenticate and connect your MCP client>>: Install a proxy entry with `rpk cloud mcp proxy` in your AI assistant MCP configuration, or connect with your own MCP client.
 . <<observe, Observe and debug>>: Add temporary `log` processors, adjust timeouts/retries, and right-size resources.
 
@@ -81,27 +81,26 @@ meta:
 Property guidance:
 +
 * Use `string`, `number`, or `boolean` types.
-* Validate ranges and enums using xref:guides:bloblang/about.adoc[Bloblang] inside the pipeline.
 * Mark only mandatory fields as required.
-* Document defaults in the `description` and enforce them in the pipeline.
+* Document defaults in the `description` and enforce them in the logic.
 
-After defining your tool contract, implement the pipeline logic to handle input validation, defaults, and the main processing steps.
+After defining your tool contract, implement the logic to handle input validation, defaults, and the main processing steps.
 
 [[provision-secrets]]
 == Provision secrets
 
 All credentials and sensitive values must be stored in the Redpanda Cloud xref:develop:connect/configuration/secret-management.adoc[Secrets Store]. Follow these best practices:
 
-- Reference secrets as `${secrets.NAME}` in your pipeline YAML.
+- Reference secrets as `${secrets.NAME}` in your YAML configuration.
 - Never commit secrets to Git or reference them directly inline in configuration files.
 - Use uppercase snakecase for secret names (such as `DATAPLANE_TOKEN`).
 - Rotate secrets in the Secrets Store as needed.
 - Only request the scopes/roles required by your tool (principle of least privilege).
 
-See an example of using secrets in xref:ai-agents:mcp/remote/pipeline-patterns.adoc#secrets[Pipeline patterns].
+See an example of using secrets in xref:ai-agents:mcp/remote/pipeline-patterns.adoc#secrets[MCP patterns].
 
 [[pipeline-patterns]]
-== Implement the pipeline
+== Implement the logic of your MCP tool
 
 Use Redpanda Connect components to implement the logic of your MCP tool. Here are some best practices:
 
@@ -191,7 +190,7 @@ output:
 [[lint]]
 == Deploy and test your MCP server
 
-When your pipeline is ready, deploy it as a remote MCP server in Redpanda Cloud and test it with the built-in MCP Inspector.
+When your tool is ready, deploy it as part of your remote MCP server in Redpanda Cloud and test it with the built-in MCP Inspector.
 
 === Deploy your MCP server
 

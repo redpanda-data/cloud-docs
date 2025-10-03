@@ -8,7 +8,7 @@ include::ai-agents:partial$beta.adoc[]
 
 == Prerequisites
 
-* A Redpanda Cloud cluster and subscription with *Remote MCP* enabled
+* A Redpanda Cloud cluster with *Remote MCP* enabled
 * Access to the xref:develop:connect/configuration/secret-management.adoc[Secrets Store] for storing credentials (if needed)
 * At least version 25.2.5 of xref:manage:rpk/rpk-install.adoc[`rpk` installed on your computer]
 * link:https://docs.anthropic.com/en/docs/claude-code/setup[Claude Code] installed
@@ -16,6 +16,8 @@ include::ai-agents:partial$beta.adoc[]
 TIP: For a complete developer guide, see xref:ai-agents:mcp/remote/developer-guide.adoc[].
 
 == Create a remote MCP Server in Redpanda Cloud
+
+. Log in to the link:https://cloud.redpanda.com/[Redpanda Cloud Console^].
 
 . Navigate to *Remote MCP*.
 +
@@ -34,7 +36,7 @@ This page shows a list of existing servers.
 
 . Paste the following example YAML into the editor. This tool fetches Bitcoin price history from the CryptoCompare API. It accepts two optional parameters: `days` (number of days of history, default 30) and `currency` (target currency, default USD).
 +
-.Reveal pipeline YAML
+.Reveal MCP configuration
 [%collapsible]
 ====
 [,yaml]
@@ -113,7 +115,7 @@ meta:
         description: "Target currency for price data (default: USD)"
         required: false
 ----
-<1> **label:** Names this processor config for identification.
+<1> **label:** Names your MCP tool for identification by clients.
 <2> **prepare_parameters:** Sets up parameters (`days`, `currency`) with defaults and builds the API endpoint URL.
 <3> **fetch_data:** Makes an HTTP GET request to the CryptoCompare API using the prepared endpoint.
 <4> **format_response:** Formats the API response into a structured JSON object, handling both success and error cases.
@@ -129,7 +131,7 @@ It may take a few seconds to start. the status changes from *Starting* to *Runni
 
 == Connect a client
 
-You can connect any MCP-compatible AI client to your remote MCP server. This example uses Claude Code.
+You can connect any MCP-compatible client to your remote MCP server. This example uses Claude Code.
 
 The Redpanda CLI (`rpk`) acts as a local proxy, forwarding requests from your AI client to your own remote MCP server running in the Redpanda Cloud cluster.
 
@@ -142,7 +144,9 @@ rpk cloud login
 +
 This opens a browser window to authenticate. The token is saved locally inside your `rpk` configuration file. It is valid for 4 hours. You can refresh it by running `rpk cloud login` again.
 
-. Open the *Connection* tab in Redpanda Cloud to get connection details and run the `rpk` command for Claude Code. It looks like this for BYOC and Dedicated clusters:
+. Open the *Connection* tab in Redpanda Cloud to get connection details and run the `rpk` command for Claude Code.
++
+For BYOC and Dedicated clusters, use:
 +
 [,bash]
 ----
