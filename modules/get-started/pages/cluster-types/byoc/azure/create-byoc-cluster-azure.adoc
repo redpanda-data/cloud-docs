@@ -35,7 +35,7 @@ In the https://login.microsoftonline.com/[Azure Portal^], confirm that the dedic
 
 * **Role**: The Azure user must have the _Owner_ role in the subscription.
 
-* **Resources**: The subscription must be registered for the following resource providers. See the https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/resource-providers-and-types[Microsoft documentation^]. 
+* **Resources**: The subscription must be registered for the following resource providers (AKS + common dependencies). See the https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/resource-providers-and-types[Microsoft documentation^]. 
 +
 --
 ** Microsoft.Compute
@@ -43,18 +43,29 @@ In the https://login.microsoftonline.com/[Azure Portal^], confirm that the dedic
 ** Microsoft.Storage
 ** Microsoft.KeyVault
 ** Microsoft.Network
+** Microsoft.ContainerService
 --
 +
-To check if a resource provider is registered, run the following command using the Azure CLI or in the Azure Cloud Shell. For example, to check for Microsoft.Compute, run:
-+
-``` 
-az provider show -n Microsoft.Compute
-```
-+ 
-If it is not registered, run: 
+To check if a resource provider is registered, run the following command using the Azure CLI or in the Azure Cloud Shell:
 +
 ```
-az provider register --namespace 'Microsoft.Compute'
+az provider show -n Microsoft.Compute --query registrationState -o tsv
+az provider show -n Microsoft.ManagedIdentity --query registrationState -o tsv
+az provider show -n Microsoft.Storage --query registrationState -o tsv
+az provider show -n Microsoft.KeyVault --query registrationState -o tsv
+az provider show -n Microsoft.Network --query registrationState -o tsv
+az provider show -n Microsoft.ContainerService --query registrationState -o tsv
+```
++
+If a resource provider is not registered, run:
++
+```
+az provider register --namespace Microsoft.Compute
+az provider register --namespace Microsoft.ManagedIdentity
+az provider register --namespace Microsoft.Storage
+az provider register --namespace Microsoft.KeyVault
+az provider register --namespace Microsoft.Network
+az provider register --namespace Microsoft.ContainerService
 ```
 
 * **Feature**: The subscription must be registered for Microsoft.Compute/EncryptionAtHost. See the https://learn.microsoft.com/en-us/azure/virtual-machines/linux/disks-enable-host-based-encryption-cli#prerequisites[Microsoft documentation^].
@@ -62,7 +73,13 @@ az provider register --namespace 'Microsoft.Compute'
 To register it, run:
 +
 ```
-az feature register --namespace Microsoft.Compute --name EncryptionAtHost  
+az feature register --namespace Microsoft.Compute --name EncryptionAtHost
+
+# (optional) Wait and verify it shows as Registered
+az feature show --namespace Microsoft.Compute --name EncryptionAtHost --query properties.state -o tsv
+
+# Refresh the provider after enabling a feature
+az provider register --namespace Microsoft.Compute
 ```
 
 * **Monitoring**: The subscription must have Azure Network Watcher enabled in the NetworkWatcherRG resource group and the region where you will use Redpanda. Network Watcher lets you monitor and diagnose conditions at a network level. See the https://learn.microsoft.com/en-us/azure/network-watcher/network-watcher-create?tabs=portaly[Microsoft documentation^]. 
