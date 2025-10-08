@@ -83,20 +83,17 @@ Pricing for BYOC clusters depends on compute, data in, data out, and data stored
 |=== 
 | Metric | Description 
 
-| Compute | Tracks the amount of compute per hour (in vCPU and memory). 
-
-Compute is measured in Redpanda units (RPUs), where: 
+| Compute | Tracks the amount of compute per hour in Redpanda units (RPUs), where: 
 
 1 RPU = 2 vCPU + 8 GB RAM
 
-The cost varies based on the xref:reference:tiers/byoc-tiers.adoc[region and tier] you select for your cluster.   
 | Ingress | Tracks the data written into Redpanda (in GB). 
 
 All Kafka protocol requests (_including_ message headers) are counted as ingress as soon as they are read by Redpanda's proxy process.
 
 | Ingress to Iceberg topics | Tracks the data written to Iceberg tables per hour (in GB).
 
-NOTE: This metric applies only if you write to Iceberg topics.
+NOTE: This metric applies only if you write to Iceberg topics. This charge is in addition to the standard ingress charge.
 
 | Egress | Tracks the data read out of Redpanda (in GB).
 
@@ -118,11 +115,11 @@ Replication to object storage is implemented with glossterm:Tiered Storage[]. Al
 Pricing per pipeline depends on:
 
 - The number of xref:develop:connect/configuration/resource-management.adoc[compute units] you allocate.
-- The cost of a compute unit, which varies based on the cloud provider and region you select for your cluster.
+- The cost of a compute unit, which can vary based on the cloud provider and region you select for your cluster.
 
 |=== 
 | Metric | Description
-| Compute | Tracks the server resources (CPU and memory) a pipeline uses in compute units per hour.
+| Compute | Tracks the server resources (vCPU and memory) a pipeline uses in compute units per hour.
 |=== 
 
 == Next steps
