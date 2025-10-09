@@ -161,9 +161,12 @@ To create a Redpanda cluster in your Azure VNet, follow the <<prerequisites,prer
 Optionally, click *Advanced settings* to specify up to five key-value custom tags. After the cluster is created, the tags are applied to all Azure resources associated with this cluster. For details, see the https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/tag-resources[Microsoft documentation^]. After the cluster is created, you can <<manage-custom-tags,specify more tags with the Cloud API>>. 
 
 . Click *Next*.
-. On the Network page, enter the connection type: either *Public* or *Private*. For BYOC clusters, *Private* using Azure Private Link is best-practice. 
+. On the Network page, select the connection type: either public or private. For BYOC clusters, private using Azure Private Link is best-practice.
 ** Your network name is used to identify this network.
 ** For a xref:networking:cidr-ranges.adoc[CIDR range], choose one that does not overlap with your existing VPCs or your Redpanda network.
+** For API gateway access, select either public or private. Public access exposes endpoints for Redpanda Console, the Data Plane API, and the MCP Server API, but they are still protected by authentication and authorization controls. Private access restricts endpoint access to your VNet only.
++
+NOTE: If you change from public access to private access after cluster creation, users without VPN access to your VNet will lose access to these services.
 . Click *Next*.
 . On the Deploy page, follow the steps to log in to Redpanda Cloud and deploy the agent.
 +

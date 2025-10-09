@@ -27,9 +27,12 @@ Enter a cluster name, then select the resource group, provider (GCP), xref:refer
 +
 Optionally, click *Advanced settings* to specify up to five key-value custom GCP labels. If a label key starts with `gcp.network-tag.<tag>`, then the agent interprets it as a request to apply the `<tag>` https://cloud.google.com/vpc/docs/add-remove-network-tags[network tag^] to GCE instances in the cluster. Use labels for organization/metadata; use network tags to target firewall rules and routes. After the cluster is created, labels are applied to applicable GCP resources (for example, instances and disks), and network tags are applied to instances. For more information, see the https://cloud.google.com/compute/docs/labeling-resources[GCP documentation^]. After the cluster is created, you can <<manage-custom-resource-labels-and-network-tags,specify more labels with the Cloud API>>. 
 . Click *Next*.
-. On the Network page, enter the connection type: either *Public* or *Private*. For BYOC clusters, *Private* is best-practice.
+. On the Network page, select the connection type: either public or private. For BYOC clusters, private is best-practice.
 ** Your network name is used to identify this network.
 ** For a xref:networking:cidr-ranges.adoc[CIDR range], choose one that does not overlap with your existing VPCs or your Redpanda network.
+** For API gateway access, select either public or private. Public access exposes endpoints for Redpanda Console, the Data Plane API, and the MCP Server API, but they are still protected by authentication and authorization controls. Private access restricts endpoint access to your VPC only.
++
+NOTE: If you change from public access to private access after cluster creation, users without VPN access to your VPC will lose access to these services.
 . Click *Next*.
 . On the Deploy page, follow the steps to log in to Redpanda Cloud and deploy the agent.
 +
