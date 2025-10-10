@@ -8,10 +8,21 @@ This page lists new features added to Redpanda Cloud.
 
 == October 2025
 
-=== CyborgDB connector
+=== API Gateway access
+
+BYOC and Dedicated clusters with private networking now allow control of API Gateway network access, independent of the Redpanda cluster. When you create a cluster, you can choose either public or private access for the API Gateway:
+
+* Public access exposes Redpanda Console, Data Plane API, and MCP Server API endpoints over the internet, although they remain protected by your authentication and authorization controls.
+* Private access restricts endpoint access to your private network (VPC or VNet) only.
+
+After the cluster is created, you can change the API Gateway access on the cluster settings page. If you change from public to private access, users without VPN access to the Redpanda VPC will lose access to these services.
+
+=== Redpanda Connect updates
 
 The xref:develop:connect/components/outputs/cyborgdb.adoc[CyborgDB output connector] allows you to write vectors to a CyborgDB encrypted index. CyborgDB provides
 end-to-end encrypted vector storage with automatic dimension detection and index optimization.
+
+For detailed information about recent component updates, see xref:redpanda-connect:ROOT:whats_new_rpcn.adoc[What's New in Redpanda Connect].
 
 == September 2025
 
@@ -88,7 +99,7 @@ xref:develop:connect/about.adoc[Redpanda Connect] is now generally available (GA
 
 === Redpanda Connect updates
 
-Redpanda Connect includes the following updates for Redpanda Cloud:         
+Redpanda Connect includes the following updates:
 
 * The xref:develop:connect/components/inputs/gcp_spanner_cdc.adoc[GCP Spanner CDC] component lets you capture changes from Google Cloud Spanner and stream them into Redpanda. You can use it to ingest data from GCP Spanner databases, enabling real-time data processing and analytics.
 * The xref:develop:connect/components/outputs/slack_reaction.adoc[Slack Reaction] component lets you send messages to a Slack channel in response to events in Redpanda. You can use it to create alerts, notifications, or other automated responses based on data changes in Redpanda. 
