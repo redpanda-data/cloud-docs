@@ -22,9 +22,11 @@ Enter a cluster name, then select the resource group, cloud provider (AWS, GCP, 
 ** For a xref:networking:cidr-ranges.adoc[CIDR range], choose one that does not overlap with your existing VPCs or your Redpanda network.
 +
 Private networks require either a VPC peering connection or a private connectivity service, such as xref:networking:configure-privatelink-in-cloud-ui.adoc[AWS PrivateLink], xref:networking:configure-private-service-connect-in-cloud-ui.adoc[GCP Private Service Connect], or xref:networking:azure-private-link.adoc[Azure Private Link]. 
-** Clusters with private networking include a setting for API gateway access. Public access exposes endpoints for Redpanda Console, the Data Plane API, and the MCP Server API, but they are still protected by authentication and authorization controls. Private access restricts endpoint access to your VPC/VNet only.
+** Clusters with private networking include a setting for API Gateway network access. Public access exposes endpoints for Redpanda Console, the Data Plane API, and the MCP Server API, but they remain protected by your authentication and authorization controls. Private access restricts endpoint access to your VPC/VNet only.
 +
-NOTE: After the cluster is created, you can change the API gateway access setting on the cluster settings page. If you change from public to private access, users without VPN access to your VPC/VNet will lose access to these services.
+On Azure, private access incurs an additional cost, since it involves deploying two network load balancers, instead of one.
++
+NOTE: After the cluster is created, you can change the API Gateway access on the cluster settings page. If you change from public to private access, users without VPN access to your VPC/VNet will lose access to these services.
 
 . Click *Create*.
 +
