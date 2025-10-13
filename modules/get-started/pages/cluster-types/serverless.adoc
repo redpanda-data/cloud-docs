@@ -3,9 +3,14 @@
 :page-aliases: get-started:cluster-types/serverless-pro.adoc, ROOT:deploy:deployment-option/cloud/serverless.adoc 
 
 
-Serverless is the fastest and easiest way to start data streaming. With Serverless clusters, you host your data in Redpanda's VPC, and Redpanda handles automatic scaling, provisioning, operations, and maintenance. This is a production-ready deployment option with a cluster available instantly, and with pay-as-you-go billing, you only pay for what you consume. You can view detailed billing activity for each cluster and edit payment methods on the *Billing* page.
+Serverless is the fastest and easiest way to start data streaming. With Serverless clusters, you host your data in Redpanda's VPC, and Redpanda handles automatic scaling, provisioning, operations, and maintenance. This is a production-ready deployment option with a cluster available instantly, and you only pay for what you consume. You can view detailed billing activity for each cluster and edit payment methods on the *Billing* page.
 
-NOTE: Serverless is currently in a limited availability (LA) release. During LA, existing clusters can scale to the usage limits, but new clusters may need to wait for availability.
+[NOTE]
+====
+* Serverless on AWS is currently in a limited availability (LA) release. During LA, existing clusters can scale to the usage limits, but new clusters may need to wait for availability. 
+* Serverless on GCP is currently in a beta release. Features in beta are available for testing and feedback. They are not covered by Redpanda Support and should not be used in production environments. To unlock this feature, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda Support^].
+
+====
 
 == Prerequisites
 
@@ -61,9 +66,15 @@ To create a Serverless cluster:
 
 . Enter a cluster name, then select the resource group. If you don't have an existing resource group, you can create one. Refresh the page to see newly-created resource groups. 
 +
-Serverless clusters are available in the AWS regions listed in xref:reference:tiers/serverless-regions.adoc[Serverless regions]. Redpanda expects your applications to be deployed in the same AWS region. For best performance, select the region closest to your applications. Serverless is not guaranteed to be pinned to a particular availability zone within that region.
+Serverless clusters are available in the regions listed in xref:reference:tiers/serverless-regions.adoc[Serverless regions]. Redpanda expects your applications to be deployed in the same region. For best performance, select the region closest to your applications. Serverless is not guaranteed to be pinned to a particular availability zone within that region.
 
 . Go to the *Topics* page to create a topic. Under the *Actions* dropdown, you can produce messages to it. Add team members and grant them access with ACLs on the *Security* page. 
+
+After you create a Serverless cluster, you are guided to use xref:develop:connect/about.adoc[Redpanda Connect] to quickly build and deploy streaming data pipelines or AI applications. 
+
+=== Create a streaming pipeline
+
+TO-DO
 
 == Connect with your cluster
 
@@ -84,7 +95,6 @@ NOTE: Redpanda Serverless is opinionated about Kafka configurations. For example
 
 * Redpanda Serverless supports the Kafka API. Serverless clusters work with all Kafka clients. See xref:develop:kafka-clients.adoc[].
 * Serverless clusters support all major Apache Kafka messages for managing topics, producing/consuming data (including transactions), managing groups, managing offsets, and managing ACLs. (User management is available in the Redpanda Cloud UI or with `rpk security acl`.) 
-* Use xref:develop:connect/about.adoc[Redpanda Connect] to quickly build and deploy streaming data pipelines or AI applications. 
 
 === Unsupported features
 
