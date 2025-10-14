@@ -29,7 +29,7 @@ Redpanda Cloud offers three fully-managed cloud deployment options, each designe
 | Production clusters requiring data sovereignty, the highest throughput, and added security
 
 | *Deployment*
-| Redpanda's cloud (currently AWS only)
+| Redpanda's cloud (AWS/GCP in beta)
 | Redpanda's cloud (AWS/Azure/GCP)
 | Your cloud account (AWS/Azure/GCP)
 
@@ -109,9 +109,45 @@ Redpanda Cloud offers three fully-managed cloud deployment options, each designe
 
 === Serverless
 
-Serverless is the fastest and easiest way to start data streaming. With Serverless clusters, you host your data in Redpanda's VPC, and Redpanda handles automatic scaling, provisioning, operations, and maintenance. This is a production-ready deployment option with a cluster available instantly, and with pay-as-you-go billing after the free trial, you only pay for what you consume. You can view detailed billing activity for each cluster and edit payment methods on the *Billing* page. 
+Serverless is the fastest and easiest way to start data streaming. With Serverless clusters, you host your data in Redpanda's VPC, and Redpanda handles automatic scaling, provisioning, operations, and maintenance. This is a production-ready deployment option with a cluster available instantly, and you only pay for what you consume. 
 
-NOTE: Serverless is currently in a limited availability (LA) release with xref:get-started:cluster-types/serverless.adoc#serverless-usage-limits[usage limits].
+[NOTE]
+====
+* Serverless on AWS is currently in a glossterm:LA[,limited availability (LA)] release. During LA, existing clusters can scale to the usage limits, but new clusters may need to wait for availability.
+* Serverless on GCP is currently in a glossterm:beta[] release. To unlock this feature,// ...existing code...
+== Serverless supported regions
+
+[tabs]
+====
+Amazon Web Services (AWS)::
++
+--
+|=== 
+| Region 
+
+| ap-northeast-1
+| ap-south-1
+| ap-southeast-1
+| eu-central-1
+| eu-west-2
+| us-east-1
+| us-west-2
+|===
+--
+
+Google Cloud Platform (GCP)::
++
+--
+|=== 
+| Region 
+
+| us-central1
+|===
+--
+====
+// ...existing code... contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda Support^].
+
+====
 
 ==== Sign up for Serverless
 
@@ -383,7 +419,8 @@ Features in beta are available for testing and feedback. They are not covered by
 
 The following features are currently in beta in Redpanda Cloud:
 
-* BYOVPC for AWS  
+* Serverless on GCP
+* BYOVPC for AWS
 * BYOVNet for Azure
 * Secrets Management for BYOVPC on GCP and AWS
 * Remote Read Replicas for AWS and GCP 
