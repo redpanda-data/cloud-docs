@@ -3,7 +3,7 @@
 :page-aliases: get-started:cluster-types/serverless-pro.adoc, ROOT:deploy:deployment-option/cloud/serverless.adoc 
 
 
-Serverless is the fastest and easiest way to start data streaming. With Serverless clusters, you host your data in Redpanda's VPC, and Redpanda handles automatic scaling, provisioning, operations, and maintenance. This is a production-ready deployment option with a cluster available instantly, and you only pay for what you consume. You can view detailed billing activity for each cluster and edit payment methods on the *Billing* page.
+Serverless is the fastest and easiest way to start data streaming. With Serverless clusters, you host your data in Redpanda's VPC, and Redpanda handles automatic scaling, provisioning, operations, and maintenance. This is a production-ready deployment option with a cluster available instantly, and you only pay for what you consume. You can view detailed billing activity for each cluster and edit payment methods on the *Billing* page. 
 
 [NOTE]
 ====
@@ -12,51 +12,38 @@ Serverless is the fastest and easiest way to start data streaming. With Serverle
 
 ====
 
-== Prerequisites
-
-Make sure you have the latest version of `rpk`. See xref:get-started:rpk-install.adoc[].
-
 == Serverless usage limits
 
-Each Serverless cluster can handle:
+Each Serverless cluster has the following maximum usage limits:
 
-* **Ingress**: 100 MB/s
-* **Egress**: 300 MB/s
-* **Partitions**: 5,000 
-* **Message size**: 20 MB
-* **Retention**: unlimited
-* **Storage**: unlimited
-* **Users**: 30
-* **ACLs**: 120
-* **Consumer groups**: 200
-* **Connections**: 10,000 
+[cols="1,3",options="header"]
+|===
+| Metric | Limit
+
+| Ingress | 100 MB/s
+| Egress | 300 MB/s
+| Partitions | 5,000
+| Message size | 20 MB
+| Retention | unlimited
+| Storage | unlimited
+| Users | 30
+| ACLs | 120
+| Consumer groups | 200
+| Connections | 10,000
+|===
 
 
 NOTE: The partition limit is the number of logical partitions before replication occurs. Redpanda Cloud uses a replication factor of 3.
 
 == Get started with Serverless
 
+Choose the option that fits how you want to subscribe:
+
 include::get-started:partial$get-started-serverless.adoc[]
 
-== Explore your trial cluster
+== Prerequisites
 
-After you start a trial, Redpanda instantly prepares an account for you. Your account includes a `welcome` cluster with a `hello-world` demo topic you can explore. It includes sample data so you can see how real-time messaging works before sending your own data.
-
-Follow the steps in the UI to use `rpk` to interact with your cluster from the command line:
-
-. Log in:
-+
-```
-rpk cloud login
-```
-
-. Consume from the `hello-world` topic:
-+
-```
-rpk topic consume hello-world
-```
-
-In the https://cloud.redpanda.com[Redpanda Cloud UI^], you can navigate to the *Topics* page and open the `hello-world` topic to see the included messages. Under the *Actions* dropdown, you can produce messages to it. Add team members and grant them access with ACLs on the *Security* page. 
+Make sure you have the latest version of `rpk`, the Redpanda CLI. See xref:get-started:rpk-install.adoc[].
 
 == Create a Serverless cluster
 
@@ -66,23 +53,21 @@ To create a Serverless cluster:
 
 . Enter a cluster name, then select the resource group. If you don't have an existing resource group, you can create one. Refresh the page to see newly-created resource groups. 
 +
-Serverless clusters are available in the regions listed in xref:reference:tiers/serverless-regions.adoc[Serverless regions]. Redpanda expects your applications to be deployed in the same region. For best performance, select the region closest to your applications. Serverless is not guaranteed to be pinned to a particular availability zone within that region.
+TIP: Serverless clusters are available in the regions listed in xref:reference:tiers/serverless-regions.adoc[Serverless regions]. Redpanda expects your applications to be deployed in the same region. For best performance, select the region closest to your applications. Serverless is not guaranteed to be pinned to a particular availability zone within that region.
 
-. Go to the *Topics* page to create a topic. Under the *Actions* dropdown, you can produce messages to it. Add team members and grant them access with ACLs on the *Security* page. 
+=== Get started
 
-After you create a Serverless cluster, you are guided to use xref:develop:connect/about.adoc[Redpanda Connect] to quickly build and deploy streaming data pipelines or AI applications. 
+A Serverless cluster's *Overview* page provides a quick way to get started with a xref:develop:connect/about.adoc[Redpanda Connect] pipeline. Pipelines help you stream data into and out of Redpanda without writing producer/consumer code. If you skip the wizard, you can come back to it here later, or you can create a pipeline anytime on the *Connect* page. The get started wizard helps you:
 
-=== Create a streaming pipeline
+1. Select your data sources: Pick an input data source (to send data into Redpanda) or an output data source (to send data in Redpanda to an external system).
+2. Configure minimal settings. You can fine-tune the pipeline later.
+3. Verify data flow: Open the Redpanda glossterm:topic[] to see messages streaming.
 
-TO-DO
+=== Interact with your cluster
 
-== Connect with your cluster
+Explore the rest of the UI: Go to the *Topics* page to create new topics for data streams. Under the *Actions* dropdown, you can produce messages to topics. Add team members and grant them access with glossterm:ACL[,access control lists (ACLs)] on the *Security* page.
 
-Create a Kafka client to interact with your cluster. The *Overview* page lists your bootstrap server URL and security settings in the *How to connect - Kafka API* tab. 
-
-Or, Redpanda can generate a sample application to interact with your cluster. Run xref:reference:rpk/rpk-generate/rpk-generate-app.adoc[`rpk generate app`], and select your preferred programming language. Follow the commands in the terminal to run the application, create a demo topic, produce to the topic, and consume the data back.
-
-Follow the steps in the UI to use `rpk` to interact with your cluster from the command line. Here are some helpful  commands:
+Go to the *How to connect - CLI* part of the *Overview* page for steps on how to use `rpk` to interact with your cluster from the command line. Here are some helpful commands:
 
 * xref:reference:rpk/rpk-cloud/rpk-cloud-login.adoc[`rpk cloud login`]: Use this to log in to Redpanda Cloud or to refresh the session.
 * xref:reference:rpk/rpk-topic.adoc[`rpk topic`]: Use this to manage topics, produce data, and consume data. 
@@ -90,6 +75,10 @@ Follow the steps in the UI to use `rpk` to interact with your cluster from the c
 * xref:reference:rpk/rpk-security/rpk-security-user.adoc[`rpk security user`]: Use this to manage users and permissions. 
 
 NOTE: Redpanda Serverless is opinionated about Kafka configurations. For example, automatic topic creation is disabled. Some systems expect the Kafka service to automatically create topics when a message is produced to a topic that doesn't exist. Create topics on the *Topics* page or with `rpk topic create`.
+
+The *How to connect - Kafka API* tab lists your bootstrap server URL and security settings. This area includes code examples for creating a Kafka client to interact with your cluster.
+
+Or, Redpanda can generate a sample application to interact with your cluster. Run xref:reference:rpk/rpk-generate/rpk-generate-app.adoc[`rpk generate app`], and select your preferred programming language. Follow the commands in the terminal to run the application, create a demo topic, produce to the topic, and consume the data back.
 
 == Supported features
 
