@@ -35,10 +35,6 @@ Each Serverless cluster has the following maximum usage limits:
 
 NOTE: The partition limit is the number of logical partitions before replication occurs. Redpanda Cloud uses a replication factor of 3.
 
-== Prerequisites
-
-Make sure you have the latest version of `rpk`, the Redpanda CLI. See xref:get-started:rpk-install.adoc[].
-
 == Get started with Serverless
 
 Choose the option that fits how you want to subscribe:
@@ -72,7 +68,13 @@ The *How to connect - CLI* tab lists steps to use `rpk` to interact with your cl
 * xref:reference:rpk/rpk-profile/rpk-profile-print.adoc[`rpk profile print`]: Use this to view your `rpk` configuration and see the URL for your Serverless cluster.
 * xref:reference:rpk/rpk-security/rpk-security-user.adoc[`rpk security user`]: Use this to manage users and permissions. 
 
-NOTE: Redpanda Serverless is opinionated about Kafka configurations. For example, automatic topic creation is disabled. Some systems expect the Kafka service to automatically create topics when a message is produced to a topic that doesn't exist. Create topics on the *Topics* page or with `rpk topic create`.
+
+[NOTE]
+====
+* Make sure you have the latest version of `rpk`. See xref:get-started:rpk-install.adoc[].
+* Redpanda Serverless is opinionated about Kafka configurations. For example, automatic topic creation is disabled. Some systems expect the Kafka service to automatically create topics when a message is produced to a topic that doesn't exist. Create topics with `rpk topic create` or on the *Topics* page.
+
+====
 
 The *How to connect - Kafka API* tab lists your bootstrap server URL and security settings. This area includes code examples for creating a Kafka client to interact with your cluster. Or, Redpanda can generate a sample application to interact with your cluster. Run xref:reference:rpk/rpk-generate/rpk-generate-app.adoc[`rpk generate app`], and select your preferred programming language. Follow the commands in the terminal to run the application, create a demo topic, produce to the topic, and consume the data back.
 
