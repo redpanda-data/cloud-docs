@@ -1,19 +1,55 @@
 = Remote MCP Server Quickstart
 :page-beta: true
-:description: Create and host a managed MCP server inside your Redpanda Cloud cluster.
+:description: Create and host a managed MCP server inside your Redpanda Cloud cluster with tools for generating and publishing user event data.
 
 include::ai-agents:partial$beta.adoc[]
 
-{description}
+This quickstart guide shows you how to create and host a managed MCP server inside your Redpanda Cloud cluster. The server includes two tools: one for generating user event data and another for publishing that data to a Redpanda topic.
 
 == Prerequisites
 
 * A Redpanda Cloud cluster with *Remote MCP* enabled
-* Access to the xref:develop:connect/configuration/secret-management.adoc[Secrets Store] for storing credentials (if needed)
-* At least version 25.2.5 of xref:manage:rpk/rpk-install.adoc[`rpk` installed on your computer]
+* Access to the xref:develop:connect/configuration/secret-management.adoc[Secrets Store] for storing credentials.
+* At least version 25.2.5 of the xref:manage:rpk/rpk-install.adoc[Redpanda CLI (`rpk`)] installed on your computer
 * link:https://docs.anthropic.com/en/docs/claude-code/setup[Claude Code] installed
 
 TIP: For a complete developer guide, see xref:ai-agents:mcp/remote/developer-guide.adoc[].
+
+== Prepare your cluster
+
+Before creating the MCP server, you need to set up a topic and user for event publishing. Use the Redpanda CLI to perform these steps.
+
+. Log in to your Redpanda Cloud account:
++
+[,bash]
+----
+rpk cloud login
+----
++
+This opens a browser window to authenticate. The token is saved locally inside your `rpk` configuration file. It is valid for 4 hours. You can refresh it by running `rpk cloud login` again.
+
+. Create a topic called `events` for storing user event data:
++
+[,bash]
+----
+rpk topic create events --partitions 3 --replicas 3
+----
+
+. Create a user called `mcp` with a strong password:
++
+[,bash]
+----
+rpk acl user create mcp --password <your-secure-password>
+----
++
+Save the password securely. You need it later when configuring the MCP server.
+
+. Grant the `mcp` user permissions to produce and consume from the `events` topic:
++
+[,bash]
+----
+rpk acl create --allow-principal User:mcp --operation all --topic events
+----
 
 == Create a remote MCP Server in Redpanda Cloud
 
@@ -25,115 +61,45 @@ This page shows a list of existing servers.
 
 . Click *Create new MCP Server*. In *Metadata* add:
 +
-* *Display Name*: A human-friendly name such as `crypto-inspector`. This name is shown in the Redpanda Cloud Console. It is not the name of the MCP server itself.
-* *Description*: Explain what the server does. For example, `Fetches price history of cryptocurrencies from the CryptoCompare API`.
-* *Tags*: Add key/value tags such as `owner=platform` or `env=prod`.
+* *Display Name*: A human-friendly name such as `event-data-generator`. This name is shown in the Redpanda Cloud Console. It is not the name of the MCP server itself.
+* *Description*: Explain what the server does. For example, `Generates fake user event data and publishes it to Redpanda topics`.
+* *Tags*: Add key/value tags such as `owner=platform` or `env=demo`.
 * *Resources*: Choose a size (XSmall / Small / Medium / Large / XLarge). Larger sizes allow more concurrent requests and faster processing, but cost more. You can change this later.
 
-. Click *Next* to define a tool.
+. Click *Next* to define tools.
 
-. Add the name of the tool, such as `btc_price_fetcher`. This is the name clients will use to call the tool. Make it descriptive so clients can discover it.
+=== Add tools
 
-. Paste the following example YAML into the editor. This tool fetches Bitcoin price history from the CryptoCompare API. It accepts two optional parameters: `days` (number of days of history, default 30) and `currency` (target currency, default USD).
+Tools define the actions your MCP server can perform. In this example, you create two tools: one for generating user event data and another for publishing that data to Redpanda.
+
+. From the *Template* dropdown, select *Generate Input*.
 +
-.Reveal MCP configuration
-[%collapsible]
-====
-[,yaml]
-----
-label: btc_price_fetcher <1>
+The template populates the configuration with YAML for the tool definition.
 
-processors:
-  - label: prepare_parameters <2>
-    mutation: |
-      meta days = this.days.catch(30)
-      meta currency = this.currency.catch("USD")
-      meta api_endpoint = "https://min-api.cryptocompare.com/data/v2/histoday?fsym=BTC&tsym=" + @currency + "&limit=" + (@days).string()
+. Click *Add Tool* to create a second tool.
 
-  - label: fetch_data <3>
-    http:
-      url: '${! @api_endpoint }'
-      verb: GET
-      headers:
-        Accept: "application/json"
-        User-Agent: "redpanda-mcp-server/1.0"
-      timeout: "30s"
-      retries: 3
-      retry_period: "5s"
+. From the *Template* dropdown, select *Redpanda Output*.
++
+The template populates the configuration for publishing to Redpanda and a section for adding the required secrets is displayed.
 
-  - label: format_response <4>
-    mutation: |
-      root = if this.Response == "Success" {
-        {
-          "success": true,
-          "data": {
-            "symbol": "BTC",
-            "currency": @currency,
-            "period_days": @days.number(),
-            "total_records": this.Data.Data.length(),
-            "prices": if this.Data.Data != null {
-              this.Data.Data.map_each(entry -> {
-                "date": (entry.time.number() * 1000).ts_format("2006-01-02", "UTC"),
-                "timestamp": entry.time.number(),
-                "open": entry.open.number(),
-                "high": entry.high.number(),
-                "low": entry.low.number(),
-                "close": entry.close.number(),
-                "volume_from": entry.volumefrom.number(),
-                "volume_to": entry.volumeto.number()
-              })
-            } else { [] }
-          },
-          "metadata": {
-            "source": "CryptoCompare API",
-            "fetched_at": now().ts_format("2006-01-02T15:04:05.000Z", "UTC"),
-            "api_response": this.Response
-          }
-        }
-      } else {
-        {
-          "success": false,
-          "error": "API request failed: " + this.Response.format_json(),
-          "metadata": {
-            "source": "CryptoCompare API",
-            "fetched_at": now().ts_format("2006-01-02T15:04:05.000Z", "UTC")
-          }
-        }
-      }
-
-meta:
-  mcp:
-    enabled: true
-    description: "Fetches Bitcoin price history from CryptoCompare API for the specified number of days (default 30)"
-    properties:
-      - name: days
-        type: number
-        description: "Number of days of historical data to fetch (default: 30, max: 2000)"
-        required: false
-      - name: currency
-        type: string
-        description: "Target currency for price data (default: USD)"
-        required: false
-----
-<1> **label:** Names your MCP tool for identification by clients.
-<2> **prepare_parameters:** Sets up parameters (`days`, `currency`) with defaults and builds the API endpoint URL.
-<3> **fetch_data:** Makes an HTTP GET request to the CryptoCompare API using the prepared endpoint.
-<4> **format_response:** Formats the API response into a structured JSON object, handling both success and error cases.
-====
+. Enter the values for the `mcp` user's credentials in the *Add Required Secrets* section.
 
 . Click *Lint* to check the configuration. You should see no errors.
 
 . Click *Create MCP Server* to deploy the server.
 +
-It may take a few seconds to start. the status changes from *Starting* to *Running* when it's ready.
+It may take a few seconds to start. The status changes from *Starting* to *Running* when it's ready.
 
-. Open *MCP Inspector* tab to test the tool. Enter the request parameters such as `days=1` and `currency=USD`. Click *Run Tool*. You should see a response with Bitcoin price data.
+. Open the *MCP Inspector* tab to test the tools:
++
+* For the `generate_input` tool, click *Run Tool* to generate sample event data.
+* For the `redpanda_output` tool: Test with sample event data such as `user_id=user123`, `event_type=login`, and `timestamp=2025-10-21T10:30:00Z`.
 
 == Connect a client
 
 You can connect any MCP-compatible client to your remote MCP server. This example uses Claude Code.
 
-The Redpanda CLI (`rpk`) acts as a local proxy, forwarding requests from your AI client to your own remote MCP server running in the Redpanda Cloud cluster.
+The Redpanda CLI acts as a local proxy, forwarding requests from your AI client to your own remote MCP server running in the Redpanda Cloud cluster.
 
 . Log in to your Redpanda Cloud account:
 +
@@ -173,10 +139,20 @@ rpk cloud mcp proxy \
 claude
 ----
 
-. Ask Claude Code to run your tool. For example:
+. Ask Claude Code to use your tools. For example:
 +
-* "Fetch Bitcoin price history for the last 10 days in EUR."
-* "Get BTC price data for 60 days in USD."
+* "Generate 10 user events and then publish them to the events topic."
+* "Create sample login events for users user001, user002, and user003, then publish them to Redpanda."
+* "Generate purchase events with metadata and publish them to the events topic."
+
+You should see Claude Code calling your MCP server tools to generate and publish event data. You may need to respond to prompts for permissions to call the tools.
+
+When complete, you can verify the events were published by consuming from the `events` topic:
+
+[,bash]
+----
+rpk topic consume events --num 10
+----
 
 == Troubleshoot
 
@@ -186,7 +162,7 @@ If your server is not starting or shows an error state:
 
 - Check the *Logs* tab for specific error messages.
 - Verify your YAML syntax by clicking *Lint*.
-- Ensure all required secrets are created in the Secrets Store.
+- Verify that the `mcp` user exists and has the correct permissions.
 
 === Connection issues
 
@@ -197,13 +173,22 @@ If Claude Code can't connect to your server:
 - Ensure your server status shows *Running* in Redpanda Cloud.
 - Try restarting Claude Code after running the proxy command.
 
-=== API request failures
+=== Publishing failures
 
-If the Bitcoin price tool returns errors:
+If the publish tool returns errors:
 
-- The CryptoCompare API may be rate limiting requests. Wait a minute and try again.
-- Check your internet connection.
-- Use the MCP Inspector in Redpanda Cloud to test with different parameters.
+- Verify the `events` topic exists:
++
+```bash
+rpk topic list
+```
+- Check that the `mcp` user has the correct ACLs:
++
+```bash
+rpk acl list
+```
+- Use the MCP Inspector in Redpanda Cloud to test with different event data.
+- Check the MCP server logs for authentication or authorization errors.
 
 == Next steps
 
