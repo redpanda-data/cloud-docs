@@ -55,34 +55,43 @@ Secrets:: Credentials and tokens that you want to use in your tools. These value
 
 Each MCP tool must declare its interface using `meta.mcp` metadata. This metadata allows AI clients to discover and invoke the tool correctly.
 
-Define a clear, stable interface for each tool. Keep the description task-oriented and keep parameters to a minimum.
+Define a clear, stable interface for each tool. Keep the description task-oriented and keep properties to a minimum.
 
 [source,yaml]
 ----
 meta:
   mcp:
     enabled: true <1>
-    description: "Fetches a compact summary from an external API using two optional parameters." <2>
+    description: "Publishes a message to a specified Redpanda topic" <2>
     properties: <3>
-      - name: parameter1
+      - name: message
         type: string
-        description: "Primary filter; defaults to provider standard when omitted."
-        required: false
-      - name: parameter2
-        type: number
-        description: "Limit of results (1-100)."
-        required: false
+        description: "The message content to publish"
+        required: true
+      - name: topic_name
+        type: string
+        description: "The Redpanda topic to publish to"
+        required: true
 ----
 
 <1> Set `meta.mcp.enabled: true` to expose the tool using MCP.
 <2> A concise description that explains what the tool does. This should be understandable by an AI model.
-<3> List the input parameters (properties) for the tool.
+<3> Define the properties that AI clients can provide when calling this tool.
 +
+Properties define the inputs that AI clients can provide when calling your tool. Each property has:
+
+* **name**: The parameter name AI clients will use
+* **type**: Data type (`string`, `number`, or `boolean`)
+* **description**: Human-readable explanation of what this property does
+* **required**: Whether the property is mandatory (`true`) or optional (`false`)
+
 Property guidance:
 +
-* Use `string`, `number`, or `boolean` types.
-* Mark only mandatory fields as required.
-* Document defaults in the `description` and enforce them in the logic.
+* Use descriptive names that clearly indicate the property's purpose.
+* Provide clear descriptions that explain both the purpose and any constraints.
+* Mark only mandatory fields as required. Prefer optional properties with sensible defaults.
+* Document default values in the description and implement them in your tool logic.
+* Consider component type restrictions: `input` components only support a `count` property, `cache` components have no custom properties, and `output` components receive properties as arrays for batch operations.
 
 After defining your tool contract, implement the logic to handle input validation, defaults, and the main processing steps.
 
@@ -127,6 +136,33 @@ Each YAML configuration (tool) should contain exactly one component type. The co
 * xref:develop:connect/components/outputs/about.adoc[`output`] (for data sinks)
 * xref:develop:connect/components/processors/about.adoc[`processor`] (for data transformations and data access)
 * xref:develop:connect/components/caches/about.adoc[`cache`] (for caching intermediate results)
+
+=== Property restrictions by component type
+
+Different component types have different property capabilities when exposed as MCP tools:
+
+[cols="1,2,2"]
+|===
+| Component Type | Property Support | Details
+
+| `input`
+| Only supports `count` property
+| AI clients can specify how many messages to read, but you cannot define custom properties.
+
+| `cache`
+| No custom properties
+| Properties are hardcoded to `key` and `value` for cache operations.
+
+| `output`
+| Custom properties supported
+| AI sees properties as an array for batch operations: `[{prop1, prop2}, {prop1, prop2}]`.
+
+| `processor`
+| Custom properties supported
+| You can define any properties needed for data processing operations.
+|===
+
+=== Configuration examples
 
 .Correct example
 [source,yaml]
