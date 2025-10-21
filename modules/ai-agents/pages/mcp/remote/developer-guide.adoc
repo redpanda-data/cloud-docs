@@ -188,9 +188,25 @@ output:
 ----
 
 [[lint]]
-== Deploy and test your MCP server
+== Lint and deploy your MCP server
 
-When your tool is ready, deploy it as part of your remote MCP server in Redpanda Cloud and test it with the built-in MCP Inspector.
+=== Lint your configuration
+
+Before deploying, validate your YAML configuration to catch syntax errors and schema violations:
+
+. In the Redpanda Cloud Console, after entering your YAML configuration, click *Lint*.
+. The linter checks for:
++
+* Valid YAML syntax
+* Correct Redpanda Connect component schemas
+* Required MCP metadata fields
+* Secret reference formatting
+* Component configuration completeness
+
+. Fix any errors shown in the linting output before proceeding to deployment.
+. A successful lint shows no errors and confirms your configuration is ready to deploy.
+
+TIP: Always lint your configuration after making changes. This catches issues early and prevents deployment failures.
 
 === Deploy your MCP server
 
