@@ -16,7 +16,27 @@ Create custom AI tools using templates or write your own Redpanda Connect config
 
 Get started with the xref:ai-agents:mcp/remote/quickstart.adoc[quickstart guide] or explore advanced patterns in the xref:ai-agents:mcp/remote/developer-guide.adoc[developer guide].
 
+=== API Gateway access
+
+BYOC and Dedicated clusters with private networking now allow control of API Gateway network access, independent of the Redpanda cluster. When you create a cluster, you can choose either public or private access for the API Gateway:
+
+* Public access exposes Redpanda Console, Data Plane API, and MCP Server API endpoints over the internet, although they remain protected by your authentication and authorization controls.
+* Private access restricts endpoint access to your private network (VPC or VNet) only.
+
+After the cluster is created, you can change the API Gateway access on the cluster settings page. If you change from public to private access, users without VPN access to the Redpanda VPC will lose access to these services.
+
+=== Redpanda Connect updates
+
+The xref:develop:connect/components/outputs/cyborgdb.adoc[CyborgDB output connector] allows you to write vectors to a CyborgDB encrypted index. CyborgDB provides
+end-to-end encrypted vector storage with automatic dimension detection and index optimization.
+
+For detailed information about recent component updates, see xref:redpanda-connect:ROOT:whats_new_rpcn.adoc[What's New in Redpanda Connect].
+
 == September 2025
+
+=== Multi-factor authentication
+
+Enable multi-factor authentication (MFA) to add an extra layer of security to your Redpanda Cloud account. After you enable MFA, you'll enter your credentials, then be prompted for a one-time code from your authenticator app when you log in. Administrators can also xref:security:cloud-authentication.adoc#multi-factor-authentication-mfa[enforce MFA] for all members of an organization.
 
 === Redpanda Cloud MCP Server: beta
 
@@ -25,6 +45,12 @@ Connect AI assistants like Claude directly to your Redpanda Cloud account with t
 Ask your AI assistant to "Create a new topic called user-events" or "List all clusters in my account" and it will handle the technical details automatically. Get started with the xref:ai-agents:mcp/local/quickstart.adoc[quickstart guide].
 
 The Redpanda Cloud MCP Server uses the Model Context Protocol (MCP) to extend AI assistants with Redpanda-specific capabilities, making cloud operations more accessible through conversational interfaces.
+
+=== Automatic topic creation and topic limit
+
+For BYOC and Dedicated clusters, you can now configure the `auto_create_topics_enabled` cluster property to automatically create a topic if a client produces to a non-existent topic. 
+
+For all clusters: each cluster now has a limit of 40,000 topics.
 
 == August 2025
 
@@ -81,7 +107,7 @@ xref:develop:connect/about.adoc[Redpanda Connect] is now generally available (GA
 
 === Redpanda Connect updates
 
-Redpanda Connect includes the following updates for Redpanda Cloud:         
+Redpanda Connect includes the following updates:
 
 * The xref:develop:connect/components/inputs/gcp_spanner_cdc.adoc[GCP Spanner CDC] component lets you capture changes from Google Cloud Spanner and stream them into Redpanda. You can use it to ingest data from GCP Spanner databases, enabling real-time data processing and analytics.
 * The xref:develop:connect/components/outputs/slack_reaction.adoc[Slack Reaction] component lets you send messages to a Slack channel in response to events in Redpanda. You can use it to create alerts, notifications, or other automated responses based on data changes in Redpanda. 
