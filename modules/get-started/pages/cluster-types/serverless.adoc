@@ -16,7 +16,7 @@ Serverless is the fastest and easiest way to start data streaming. With Serverle
 
 Each Serverless cluster has the following maximum usage limits:
 
-[cols="1,3",options="header"]
+[cols="1,2",options="header"]
 |===
 | Metric | Limit
 
@@ -52,18 +52,16 @@ To create a Serverless cluster:
 . In the https://cloud.redpanda.com[Redpanda Cloud UI^], on the **Clusters** page, click **Create cluster**, then click **Create Serverless cluster**. 
 
 . Enter a cluster name, then select the resource group. If you don't have an existing resource group, you can create one. Refresh the page to see newly-created resource groups. 
+
+. Select a cloud provider and region. See available regions in xref:reference:tiers/serverless-regions.adoc[Serverless regions]. For best performance, select the region closest to your applications. Redpanda expects your applications to be deployed in the same cloud provider and region as your Serverless cluster. 
 +
-TIP: Serverless clusters are available in the regions listed in xref:reference:tiers/serverless-regions.adoc[Serverless regions]. Redpanda expects your applications to be deployed in the same region. For best performance, select the region closest to your applications. Serverless is not guaranteed to be pinned to a particular availability zone within that region.
+Serverless clusters are not guaranteed to be pinned to a particular availability zone within the selected region.
 
 == Interact with your cluster
 
-A Serverless cluster's *Overview* page provides various ways to interact with your cluster.
+A Serverless cluster's *Overview* page provides various ways to interact with your cluster:
 
-Follow the *Get Started* wizard to quickly create a xref:develop:connect/about.adoc[Redpanda Connect] pipeline. Pipelines help you stream data into and out of Redpanda without writing producer/consumer code. If you skip the wizard, you can come back to it here later, or you can create a pipeline anytime on the *Connect* page. The get started wizard helps you:
-
-1. Select your data sources: Connect an input data source (to stream data into Redpanda) or an output data sink (to stream data in Redpanda to an external system).
-2. Configure minimal settings. You can fine-tune the pipeline later.
-3. Open the Redpanda glossterm:topic[] to see messages streaming and verify the data flow.
+Follow the *Get Started* wizard to quickly create a Redpanda Connect glossterm:pipeline[]. Pipelines help you stream data into and out of Redpanda without writing producer/consumer code. You can come back to here later to add more producers or consumers, or you can create a pipeline anytime on the *Connect* page. The get started wizard helps you select an input data source (to stream data into Redpanda) or output data sink (to stream data in Redpanda to an external system), and configure minimal settings. Open the Redpanda glossterm:topic[] to see messages streaming and verify the data flow.
 
 The *How to connect - CLI* tab lists steps to use `rpk` to interact with your cluster from the command line. Here are some helpful commands:
 
