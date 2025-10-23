@@ -248,7 +248,7 @@ When you create a new cluster using the https://cloud.redpanda.com/[Cloud UI^], 
 To configure service authentication using the Cloud API, you must have:
 
 * A service account in your Redpanda organization with administrative privileges
-* Access to the xref:manage:api/cloud-api-overview.adoc[Cloud API]
+* Access to the link:/api/doc/cloud-controlplane/topic/topic-cloud-api-overview[Cloud API]
 
 ==== Configuration methods by interface
 
@@ -467,9 +467,9 @@ You can choose to enable mTLS and SASL simultaneously for the Kafka API, and mTL
 
 ==== Create a new cluster with both mTLS and SASL enabled
 
-. Follow the steps to create a resource group and network for xref:manage:api/cloud-byoc-controlplane-api.adoc#create-a-resource-group[BYOC] or xref:manage:api/cloud-dedicated-controlplane-api.adoc#create-a-resource-group[Dedicated], if you haven't already done so. You'll need the resource group ID and network ID to create a cluster in the next step.
+. Follow the steps to create a resource group and network for link:/api/doc/cloud-controlplane/operation/operation-clusterservice_createcluster[BYOC] or link:/api/doc/cloud-controlplane/operation/operation-clusterservice_createcluster[Dedicated], if you haven't already done so. You'll need the resource group ID and network ID to create a cluster in the next step.
 
-. Make a xref:api:ROOT:cloud-controlplane-api.adoc#post-/v1/clusters/-cluster.id-[`POST /v1/clusters/{cluster.id}`] request to create a new cluster with both mTLS and SASL or basic authentication enabled.
+. Make a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_createcluster[`POST /v1/clusters`] request to create a new cluster with both mTLS and SASL or basic authentication enabled.
 +
 You can enable mTLS and SASL or basic authentication for any combination of the three services. For example, if you want to enable mTLS and SASL simultaneously for Kafka API and mTLS and basic authentication simultaneously for Schema Registry only, leave out the entire `http_proxy` block from the request body. If you want to enable mTLS only for the Kafka API, and mTLS and basic authentication for HTTP Proxy and Schema Registry, leave out the `kafka_api.sasl` field.
 +
