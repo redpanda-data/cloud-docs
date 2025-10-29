@@ -53,17 +53,19 @@ To create a Serverless cluster:
 
 . Enter a cluster name, then select the resource group. If you don't have an existing resource group, you can create one. Refresh the page to see newly-created resource groups. 
 
-. Select a cloud provider and region. See available regions in xref:reference:tiers/serverless-regions.adoc[Serverless regions]. For best performance, select the region closest to your applications. Redpanda expects your applications to be deployed in the same cloud provider and region as your Serverless cluster. 
+. Select a cloud provider and xref:reference:tiers/serverless-regions.adoc[region]. For best performance, select the region closest to your applications. Redpanda expects your applications to be deployed in the same cloud provider and region as your Serverless cluster. 
 +
 Serverless clusters are not guaranteed to be pinned to a particular availability zone within the selected region.
 
+. Add team members and grant them access with glossterm:ACL[,access control lists (ACLs)] on the *Security* page.
+
 == Interact with your cluster
 
-A Serverless cluster's *Overview* page provides various ways to interact with your cluster:
+Create a Kafka client to interact with your cluster. The *Overview* page lists your bootstrap server URL and security settings in the *How to connect - Kafka API* tab.
 
-Follow the *Get Started* wizard to quickly create a xref:develop:connect/about.adoc[Redpanda Connect] pipeline. Pipelines help you stream data into and out of Redpanda without writing producer/consumer code. You can come back to here later to add more producers or consumers, or you can create a pipeline anytime on the *Connect* page. The get started wizard helps you select an input data source (to stream data into Redpanda) or output data sink (to stream data in Redpanda to an external system), and configure minimal settings. Open the Redpanda glossterm:topic[] to see messages streaming and verify the data flow.
+Or, Redpanda can generate a sample application to interact with your cluster. Run xref:reference:rpk/rpk-generate/rpk-generate-app.adoc[`rpk generate app`], and select Go as the language. Follow the commands in the terminal to run the application, create a demo topic, produce to the topic, and consume the data back.
 
-The *How to connect - CLI* tab lists steps to use `rpk` to interact with your cluster from the command line. Here are some helpful commands:
+Follow the steps in the UI to use `rpk` to interact with your cluster from the command line. Here are some helpful commands:
 
 * xref:reference:rpk/rpk-cloud/rpk-cloud-login.adoc[`rpk cloud login`]: Use this to log in to Redpanda Cloud or to refresh the session.
 * xref:reference:rpk/rpk-topic.adoc[`rpk topic`]: Use this to manage topics, produce data, and consume data. 
@@ -78,7 +80,7 @@ Explore the rest of the UI:
 
 * Go to the *Topics* page to create new topics for data streams. 
 * Under the *Actions* dropdown, produce messages to topics. 
-* Add team members and grant them access with glossterm:ACL[,access control lists (ACLs)] on the *Security* page.
+* Add team members with permissions on the *Security* page.
 
 == Supported features
 
