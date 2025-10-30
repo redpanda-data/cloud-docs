@@ -1,17 +1,11 @@
 = Redpanda Connect Quickstart
 :description: Learn how to quickly start building data pipelines with Redpanda Connect in Redpanda Cloud.
 
-Follow this quickstart to create a Redpanda Connect pipeline. Pipelines help you stream data into and out of Redpanda without writing producer/consumer code. 
+The *Connect* page provides a wizard that creates pipelines to stream data into and out of Redpanda. The wizard populates the required YAML configuration automatically, so you can get started quickly.
 
-NOTE: Advanced users can skip directly to the *Edit pipeline* step to configure the YAML file themselves. 
+TIP: Advanced users can skip directly to the *Edit pipeline* step to configure the YAML file themselves. 
 
-This quickstart builds a simple email processing pipeline that:
-
-. Generates sample email messages
-. Adds a "PRIVATE AND CONFIDENTIAL" title to each message  
-. Writes the processed messages to a topic in your cluster
-
-It uses the following Redpanda Connect components:
+Follow this quickstart to create a sample Redpanda Connect pipeline. This pipeline generates names, transforms them to capitalized format, and writes them to a topic in your cluster. It uses the following Redpanda Connect components:
 
 [cols="1,2,3"]
 |===
@@ -19,15 +13,15 @@ It uses the following Redpanda Connect components:
 
 |Input
 |xref:develop:connect/components/inputs/generate.adoc[`generate`]
-|Creates sample email messages for testing
-
-|Processor
-|xref:components:processors/mutation.adoc[`mutation`]
-|Adds a title field to each message
+|Creates fake names for testing
 
 |Output
 |xref:components:outputs/redpanda.adoc[`redpanda`]
 |Writes messages to your cluster topic
+
+|Processor
+|xref:components:processors/mapping.adoc[`mapping`]
+|Transforms the names to uppercase
 |===
 
 == Prerequisites
@@ -38,7 +32,7 @@ NOTE: Serverless supports up to 10 pipelines.
 
 == Build your data pipeline
 
-Follow these steps to create your email processing pipeline:
+Follow these steps to create your pipeline:
 
 . Go to the **Connect** page on your cluster, and click **Create pipeline**.
 
@@ -46,70 +40,73 @@ Follow these steps to create your email processing pipeline:
 
 . **Add an output**: Search for and select **redpanda** from the list of connectors. Click **Next**.
 
-. **Add a topic**: Select to create a new topic called **processed-emails**. This is where Redpanda will store the generated messages. Click **Next**.
+. **Add a topic**: Select to create a new topic called **sample-topic**. This is where Redpanda will store the generated messages. Click **Next**.
 
 . **Add permissions**: 
 .. Select to configure a new user called **connect**.
 .. Enter this password for the user: **connect-password**.
-.. Enable permissions for this user on your pipeline's topic. The user must have Read and Write permissions to interact with the topic.
+.. Select to enable topic-specific permissions for this user. This is required, because the user needs to have Read and Write permissions to interact with the topic.
 .. Click **Next**.
 
 . **Edit pipeline**:
-.. Set the pipeline name to **emailprocessor-pipeline**.
-.. In the **Configuration** section, paste the following YAML:
+.. Enter this name for the pipeline: **sample-pipeline**.
+.. The **Configuration** section automatically populates the YAML with your selected components. To enhance the pipeline, replace the entire configuration with the following YAML, which includes a `mapping` processor to convert the generated names to uppercase:
 +
 [source,yaml]
 ----
 input:
- generate:
-   interval: 1s
-   mapping: |
-     root.id = uuid_v4()
-     root.user.name = fake("name")
-     root.user.email = fake("email")
-     root.content = fake("paragraph")
-
-pipeline:
- processors:
-   - mutation: |
-       root.title = "PRIVATE AND CONFIDENTIAL"
+  generate:
+    mapping: |
+      let first_name = fake("first_name")
+      let last_name = fake("last_name")
+      root.user_id = counter()
+      root.name = $first_name + " " + $last_name
+      root.timestamp = now()
+    interval: 1s # Optional (default: "1s")
+    count: 0 # Optional (default: 0)
+    batch_size: 1 # Optional (default: 1)
+    auto_replay_nacks: true # Optional (default: true)
 
 output:
- redpanda:
-   seed_brokers:
-     - ${REDPANDA_BROKERS}
-   sasl:
-     - mechanism: SCRAM-SHA-256
-       password: connect-password
-       username: connect
-   topic: processed-emails
-   tls:
-     enabled: true
+  redpanda:
+    seed_brokers:
+      # Optional
+      - ${REDPANDA_BROKERS}
+    tls:
+      enabled: true # Optional (default: false)
+    topic: "" # Optional
+
+pipeline:
+  processors:
+    - mapping: |
+        root.name = this.name.uppercase()
+
+
 ----
 
 .. Click **Create** to start your pipeline.
 
 
-. Your pipeline details are displayed, and the status changes from **Starting** to **Running** (this may take a few minutes). If you don't see this change, refresh the page.
+. Your pipeline details are displayed, and after a few seconds, the status changes from **Starting** to **Running**. If you don't see this change, refresh the page.
 +
-Once running, your pipeline will:
-+
-* Generate a new email message every second.
-* Add "PRIVATE AND CONFIDENTIAL" to each message.
-* Write the processed messages to the **processed-emails** topic.
+Once running, your pipeline will generate new names every second and write the processed messages to the **sample-topic** topic.
 
 +
 After a minute, select the pipeline, and click **Stop** so you can examine the results.
 
-TIP: Notice the `$\{REDPANDA_BROKERS}` xref:develop:connect/configuration/contextual-variables.adoc[contextual variable] in the configuration. This automatically references your cluster's bootstrap server address, so you can use it in any pipeline without hardcoding connection details. 
+[NOTE]
+====
+* Notice the `$\{REDPANDA_BROKERS}` xref:develop:connect/configuration/contextual-variables.adoc[contextual variable] in the configuration. This automatically references your cluster's bootstrap server address, so you can use it in any pipeline without hardcoding connection details. 
+* The Brave browser does not fully support code snippets.
 
-NOTE: The Brave browser does not fully support code snippets. 
+====
 
 == View the processed messages
 
-. Go to the **Topics** page and select the **processed-emails** topic.
-. Click on any message to see the structure. Notice that the original fields from the `generate` input now include the `title` field added by the `mutation` processor:
-
+. Go to the **Topics** page and select the **sample-topic** topic.
+. Click any message to see the structure. Notice that the original fields from the `generate` input now include the capitalized names added by the `mapping` processor:
++
+<NEED TO REPLACE WHEN I CAN SEE MESSAGES>
 +
 [source,json]
 ----
@@ -126,7 +123,7 @@ NOTE: The Brave browser does not fully support code snippets.
 
 == Review the pipeline logs
 
-. Return to the **Connect** page and select your **emailprocessor-pipeline**.
+. Return to the **Connect** page and select your **sample-pipeline**.
 . Click the **Logs** tab to see the pipeline's activity log. 
 . Click through the log messages to see the startup sequence. For example, you'll see when the output becomes active:
 
@@ -146,18 +143,17 @@ NOTE: The Brave browser does not fully support code snippets.
 
 == Update your pipeline
 
-Now try adding custom logging and an extra data transformation to your configuration. You can make the updates while your data pipeline is running.
+Now try adding custom logging to your configuration. You can make the updates while your data pipeline is running.
 
 . On the **Configuration** tab of your pipeline, click **Start** and wait for it to reach **Running** status.
 . Click **Edit** and replace the entire `processors` section with this enhanced version: 
 
 +
 [source,yaml]
-----
+
   processors:
-    - mutation: |
-        root.title = "PRIVATE AND CONFIDENTIAL"
-        root.user.name = root.user.name.uppercase()
+    - mapping: |
+        root.name = this.name.uppercase()
     - log:
        level: INFO
        message: 'Processed email for ${!this.user.name}'
@@ -169,13 +165,14 @@ Now try adding custom logging and an extra data transformation to your configura
 +
 This enhanced configuration:
 
-* Converts each sender's name to uppercase
 * Adds custom logging with the xref:components:processors/log.adoc[`log` processor]
 * Records processing success for each message
 
 . Click **Update** to apply the changes.
 . Switch to the **Logs** tab and check the most recent log message. You'll see the custom logging fields and the uppercase sender name: 
 
++
+<NEED TO REPLACE WHEN I CAN SEE MESSAGES>
 +
 [source,json]
 ----
@@ -197,9 +194,9 @@ This enhanced configuration:
 
 When you've finished experimenting with your data pipeline, you can delete the pipeline, topic, and cluster you created for this quickstart.
 
-. On the **Connect** page, select the delete icon next to the **emailprocessor-pipeline**.
+. On the **Connect** page, select the delete icon next to the **sample-pipeline**.
 . Confirm your deletion to remove the data pipeline and associated logs.
-. On the **Topics** page, delete the **processed-emails** topic.
+. On the **Topics** page, delete the **sample-topic** topic.
 
 == Suggested reading
 
