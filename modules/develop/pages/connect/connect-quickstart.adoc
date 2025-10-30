@@ -26,7 +26,7 @@ It uses the following Redpanda Connect components:
 |Adds a title field to each message
 
 |Output
-|xref:components:outputs/kafka_franz.adoc[`kafka_franz`]
+|xref:components:outputs/redpanda.adoc[`redpanda`]
 |Writes messages to your cluster topic
 |===
 
@@ -44,7 +44,7 @@ Follow these steps to create your email processing pipeline:
 
 . **Add an input**: Search for and select **generate** from the list of connectors. Click **Next**.
 
-. **Add an output**: Search for and select **kafka_franz** from the list of connectors. Click **Next**.
+. **Add an output**: Search for and select **redpanda** from the list of connectors. Click **Next**.
 
 . **Add a topic**: Select to create a new topic called **processed-emails**. This is where Redpanda will store the generated messages. Click **Next**.
 
@@ -75,7 +75,7 @@ pipeline:
        root.title = "PRIVATE AND CONFIDENTIAL"
 
 output:
- kafka_franz:
+ redpanda:
    seed_brokers:
      - ${REDPANDA_BROKERS}
    sasl:
@@ -137,7 +137,7 @@ NOTE: The Brave browser does not fully support code snippets.
     "instance_id": "cr3j2rab2tks83v3gbh0",
     "label": "",
     "level": "INFO",
-    "message": "Output type kafka_franz is now active",
+    "message": "Output type redpanda is now active",
     "path": "root.output",
     "pipeline_id": "cr3j2r6hqokqcph9p4b0",
     "time": "2024-08-22T12:39:09.729899336Z"
