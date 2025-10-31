@@ -9,6 +9,8 @@ With the Redpanda Terraform provider, you can manage:
 * Clusters
 * Networks
 * Resource groups
+* Schema Registry schemas
+* Schema Registry ACLs
 * Topics
 * Users
 
@@ -422,6 +424,161 @@ resource "redpanda_topic" "example" {
 }
 ----
 
+=== Manage Schema Registry and Schema Registry ACLs
+
+You can also use Terraform to manage dataplane resources, such as schemas and access controls, through the Redpanda Schema Registry.
+
+The Redpanda Schema Registry provides centralized management of schemas for producers and consumers, ensuring compatibility and consistency of data serialized with formats such as Avro, Protobuf, or JSON Schema. Using the Redpanda Terraform provider, you can create, update, and delete schemas as well as manage fine-grained access control for Schema Registry resources.
+
+You can use the following Terraform resources:
+
+* `redpanda_schema`: Defines and manages schemas in the Schema Registry.
+* `redpanda_schema_registry_acl`: Defines access control policies for Schema Registry subjects or registry-wide operations.
+
+==== Create a schema
+
+The `redpanda_schema` resource registers a schema in the Redpanda Schema Registry. Each schema is associated with a subject, which serves as the logical namespace for schema versioning. When you create or update a schema, Redpanda validates its compatibility level.
+
+[source,hcl]
+----
+data "redpanda_cluster" "byoc" {
+  id = "byoc-cluster-id"
+}
+
+resource "redpanda_user" "schema_user" {
+  name            = "schema-user"
+  password        = "<password>"
+  mechanism       = "scram-sha-256"
+  cluster_api_url = data.redpanda_cluster.byoc.cluster_api_url
+  allow_deletion  = true
+}
+
+resource "redpanda_schema" "user_events" {
+  cluster_id  = data.redpanda_cluster.byoc.id
+  subject     = "user_events-value"
+  schema_type = "AVRO"
+
+  schema = jsonencode({
+    type = "record"
+    name = "UserEvent"
+    fields = [
+      { name = "user_id", type = "string" },
+      { name = "event_type", type = "string" },
+      { name = "timestamp", type = "long" }
+    ]
+  })
+
+  username = redpanda_user.schema_user.name
+  password = "<password>"
+}
+----
+
+In this example:
+
+* `cluster_id` identifies the Redpanda cluster where the schema is stored.
+* `subject` defines the logical name under which schema versions are registered.
+* `schema_type` specifies the serialization type (`AVRO`, `JSON`, or `PROTOBUF`).
+* `schema` provides the full schema definition, encoded with `jsonencode()`.
+* `username` and `password` authenticate the user to the Schema Registry.
+
+[TIP]
+====
+Store credentials securely using environment variables:
+
+[source,bash]
+----
+export REDPANDA_SR_USERNAME=schema-user
+export REDPANDA_SR_PASSWORD=<password>
+----
+====
+
+==== Manage Schema Registry ACLs
+
+The `redpanda_schema_registry_acl` resource configures fine-grained access control for Schema Registry subjects or registry-wide operations. Each ACL specifies which principal can perform specific operations on a subject or the registry.
+
+[source,hcl]
+----
+resource "redpanda_schema_registry_acl" "allow_user_read" {
+  cluster_id    = data.redpanda_cluster.byoc.id
+  principal     = "User:${redpanda_user.schema_user.name}"
+  resource_type = "SUBJECT"        # SUBJECT or REGISTRY
+  resource_name = "user_events-value"
+  pattern_type  = "LITERAL"        # LITERAL or PREFIXED
+  host          = "*"
+  operation     = "READ"           # READ, WRITE, DELETE, DESCRIBE, etc.
+  permission    = "ALLOW"          # ALLOW or DENY
+  username      = redpanda_user.schema_user.name
+  password      = "<password>"
+}
+----
+
+In this example:
+
+* `cluster_id` identifies the cluster that hosts the Schema Registry.
+* `principal` specifies the user or service account (for example, `User:alice`).
+* `resource_type` determines whether the ACL applies to a specific `SUBJECT` or the entire `REGISTRY`.
+* `resource_name` defines the subject name (use `*` for wildcard).
+* `pattern_type` controls how the resource name is matched (`LITERAL` or `PREFIXED`).
+* `operation` defines the permitted action (`READ`, `WRITE`, `DELETE`, etc.).
+* `permission` defines whether the operation is allowed or denied.
+* `host` specifies the host filter (typically `"*"` for all hosts).
+* `username` and `password` authenticate the principal to the Schema Registry.
+
+TIP: To manage Schema Registry ACLs, the user must have cluster-level `ALTER` permissions. This is typically configured with a Kafka ACL granting `ALTER` on the `CLUSTER` resource.
+
+==== Combine schema and ACLs
+
+You can define both the schema and its ACLs in a single configuration to automate schema registration and access setup.
+
+[source,hcl]
+----
+data "redpanda_cluster" "byoc" {
+  id = "byoc-cluster-id"
+}
+
+resource "redpanda_user" "schema_user" {
+  name            = "schema-user"
+  password        = "<password>"
+  mechanism       = "scram-sha-256"
+  cluster_api_url = data.redpanda_cluster.byoc.cluster_api_url
+  allow_deletion  = true
+}
+
+resource "redpanda_schema" "user_events" {
+  cluster_id  = data.redpanda_cluster.byoc.id
+  subject     = "user_events-value"
+  schema_type = "AVRO"
+
+  schema = jsonencode({
+    type = "record"
+    name = "UserEvent"
+    fields = [
+      { name = "user_id", type = "string" },
+      { name = "event_type", type = "string" },
+      { name = "timestamp", type = "long" }
+    ]
+  })
+
+  username = redpanda_user.schema_user.name
+  password = "<password>"
+}
+
+resource "redpanda_schema_registry_acl" "user_events_acl" {
+  cluster_id    = data.redpanda_cluster.byoc.id
+  principal     = "User:${redpanda_user.schema_user.name}"
+  resource_type = "SUBJECT"
+  resource_name = redpanda_schema.user_events.subject
+  pattern_type  = "LITERAL"
+  host          = "*"
+  operation     = "READ"
+  permission    = "ALLOW"
+  username      = redpanda_user.schema_user.name
+  password      = "<password>"
+}
+----
+
+This configuration registers an Avro schema for the `user_events` subject and grants a service account permission to read it through the Schema Registry.
+
 == Delete resources
 
 Terraform provides a way to clean up your infrastructure when resources are no longer needed. The `terraform destroy` command deletes all the resources defined in your configuration.
@@ -456,3 +613,6 @@ This will delete only the `redpanda_network.example` resource.
 
 * https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs[Redpanda Terraform Provider documentation^]
 * https://github.com/redpanda-data/terraform-provider-redpanda/tree/main/examples[Redpanda Terraform Provider Examples^]
+* https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs/resources/schema[Schema resource documentation^]
+* https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs/resources/schema_registry_acl[Schema Registry ACL resource documentation^]
+
