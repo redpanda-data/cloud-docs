@@ -447,7 +447,7 @@ data "redpanda_cluster" "byoc" {
 
 resource "redpanda_user" "schema_user" {
   name            = "schema-user"
-  password        = "<password>"
+  password        = var.schema_password
   mechanism       = "scram-sha-256"
   cluster_api_url = data.redpanda_cluster.byoc.cluster_api_url
   allow_deletion  = true
@@ -469,7 +469,7 @@ resource "redpanda_schema" "user_events" {
   })
 
   username = redpanda_user.schema_user.name
-  password = "<password>"
+  password = var.schema_password
 }
 ----
 
@@ -481,16 +481,36 @@ In this example:
 * `schema` provides the full schema definition, encoded with `jsonencode()`.
 * `username` and `password` authenticate the user to the Schema Registry.
 
-[TIP]
-====
-Store credentials securely using environment variables:
+==== Store credentials securely
+
+Store credentials using environment variables or sensitive Terraform variables.
+
+For short-lived credentials or CI/CD usage, use provider-level environment variables:
 
 [source,bash]
 ----
 export REDPANDA_SR_USERNAME=schema-user
-export REDPANDA_SR_PASSWORD=<password>
+export REDPANDA_SR_PASSWORD="your-secret-password"
 ----
-====
+
+Or, declare a sensitive Terraform variable and inject it at runtime:
+
+[source,hcl]
+----
+variable "schema_password" {
+  description = "Password for the Schema Registry user"
+  sensitive   = true
+}
+----
+
+Then, set the value securely using an environment variable before running Terraform:
+
+[source,bash]
+----
+export TF_VAR_schema_password="your-secret-password"
+----
+
+This avoids committing secrets to source control.
 
 ==== Manage Schema Registry ACLs
 
@@ -508,7 +528,7 @@ resource "redpanda_schema_registry_acl" "allow_user_read" {
   operation     = "READ"           # READ, WRITE, DELETE, DESCRIBE, etc.
   permission    = "ALLOW"          # ALLOW or DENY
   username      = redpanda_user.schema_user.name
-  password      = "<password>"
+  password      = var.schema_password
 }
 ----
 
@@ -538,7 +558,7 @@ data "redpanda_cluster" "byoc" {
 
 resource "redpanda_user" "schema_user" {
   name            = "schema-user"
-  password        = "<password>"
+  password        = var.schema_password
   mechanism       = "scram-sha-256"
   cluster_api_url = data.redpanda_cluster.byoc.cluster_api_url
   allow_deletion  = true
@@ -560,7 +580,7 @@ resource "redpanda_schema" "user_events" {
   })
 
   username = redpanda_user.schema_user.name
-  password = "<password>"
+  password = var.schema_password
 }
 
 resource "redpanda_schema_registry_acl" "user_events_acl" {
@@ -573,7 +593,7 @@ resource "redpanda_schema_registry_acl" "user_events_acl" {
   operation     = "READ"
   permission    = "ALLOW"
   username      = redpanda_user.schema_user.name
-  password      = "<password>"
+  password      = var.schema_password
 }
 ----
 
