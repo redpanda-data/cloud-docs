@@ -7,8 +7,8 @@ TIP: Advanced users can skip directly to the *Edit pipeline* step in the wizard 
 
 This quickstart shows how Redpanda Connect can generate, transform, and handle streaming data end-to-end. It creates the following pipelines: 
 
-* The first pipeline generates (produces) dad jokes every five seconds and writes them to a topic in your cluster. 
-* The second pipeline reads (consumes) those dad jokes and gives each one a random "cringe rating" from 1-10. The cringier the dad joke, the higher the rating.
+* The first pipeline generates (produces) dad jokes and writes them to a topic in your cluster. 
+* The second pipeline reads (consumes) those dad jokes and gives each one a random "cringe rating" from 1-10. 
 
 The *producer pipeline* uses the following Redpanda Connect components:
 
@@ -50,7 +50,7 @@ The *consumer pipeline* uses the following Redpanda Connect components:
 
 |Processor
 |xref:components:processors/bloblang.adoc[`bloblang`]
-|Processes messages
+|Processes ratings
 
 |Processor
 |xref:components:processors/log.adoc[`log`]
@@ -86,11 +86,9 @@ Follow these steps to create your producer pipeline:
 
 . **Edit pipeline**:
 .. Enter this name for the pipeline: `joke-generator`.
-.. The **Configuration** section automatically populates the YAML with your selected components. 
+.. The **Configuration** section automatically populates the YAML with your selected components. You can add the `log` and `catch` processors to log generated jokes and monitor for errors.
 +
-Here you could add the `log` and `catch` processors to monitor for errors and log generated jokes.
-+
-Copy and paste the following YAML, which includes the processors and the input `mapping` for the joke generation:
+For this quickstart, replace the entire configuration with the following YAML. This includes the processors and the input `mapping` for the joke generation:
 +
 [source,yaml]
 ----
@@ -164,7 +162,7 @@ output:
 
 . Your pipeline details are displayed, and after a few seconds, the status changes from **Starting** to **Running**. If you don't see this change, refresh the page.
 +
-Once running, your pipeline will generate new names every second and write the processed messages to your topic.
+Once running, your pipeline will generate new jokes every five seconds and write the joke to your topic.
 
 +
 After a minute, select the pipeline, and click **Stop** so you can examine the results.
