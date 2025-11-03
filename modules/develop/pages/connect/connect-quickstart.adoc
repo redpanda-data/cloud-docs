@@ -1,11 +1,16 @@
 = Redpanda Connect Quickstart
-:description: Learn how to quickly start building data pipelines with Redpanda Connect in Redpanda Cloud.
+:description: Learn how to quickly start building data pipelines with Redpanda Connect. 
 
-The *Connect* page provides a wizard that creates pipelines to stream data into and out of Redpanda. The wizard populates the required YAML configuration automatically, so you can get started quickly.
+The *Connect* page provides a wizard that creates pipelines to stream data into and out of Redpanda. The wizard populates the YAML configuration automatically, so you can get started quickly.
 
 TIP: Advanced users can skip directly to the *Edit pipeline* step in the wizard to configure the YAML file themselves. 
 
-Follow this quickstart to create a sample Redpanda Connect pipeline. This pipeline generates names, transforms them to capitalized format, and writes them to a topic in your cluster. It uses the following Redpanda Connect components:
+This quickstart shows how Redpanda Connect can generate, transform, and handle streaming data end-to-end. It creates the following pipelines: 
+
+* The first pipeline generates (produces) dad jokes every five seconds and writes them to a topic in your cluster. 
+* The second pipeline reads (consumes) those dad jokes and gives each one a random "cringe rating" from 1-10. The cringier the dad joke, the higher the rating.
+
+The *producer pipeline* uses the following Redpanda Connect components:
 
 [cols="1,2,3"]
 |===
@@ -13,16 +18,48 @@ Follow this quickstart to create a sample Redpanda Connect pipeline. This pipeli
 
 |Input
 |xref:develop:connect/components/inputs/generate.adoc[`generate`]
-|Creates fake names for testing
+|Creates jokes
 
 |Output
 |xref:components:outputs/redpanda.adoc[`redpanda`]
 |Writes messages to your cluster topic
 
 |Processor
-|xref:components:processors/mapping.adoc[`mapping`]
-|Transforms the names to uppercase
+|xref:components:processors/log.adoc[`log`]
+|Logs generated messages
+
+|Processor
+|xref:components:processors/catch.adoc[`catch`]
+|Catches errors 
 |===
+
+
+The *consumer pipeline* uses the following Redpanda Connect components:
+
+[cols="1,2,3"]
+|===
+|Component type |Component |Purpose
+
+|Input
+|xref:components:inputs/redpanda.adoc[`redpanda`]
+|Reads messages from your cluster topic 
+
+|Output
+|xref:components:outputs/drop.adoc[`drop`]
+|Drops the processed messages
+
+|Processor
+|xref:components:processors/bloblang.adoc[`bloblang`]
+|Processes messages
+
+|Processor
+|xref:components:processors/log.adoc[`log`]
+|Logs processed messages
+
+|Processor
+|xref:components:processors/catch.adoc[`catch`]
+|Catches errors 
+|===  
 
 == Prerequisites
 
@@ -30,9 +67,9 @@ You must have a Redpanda Cloud account with a Serverless, Dedicated, or standard
 
 NOTE: Serverless supports up to 10 pipelines.
 
-== Build your data pipeline
+== Build a producer pipeline
 
-Follow these steps to create your pipeline:
+Follow these steps to create your producer pipeline:
 
 . Go to the **Connect** page on your cluster, and click **Create pipeline**.
 
@@ -40,46 +77,84 @@ Follow these steps to create your pipeline:
 
 . **Add an output**: Search for and select `redpanda` from the list of connectors. Click **Next**.
 
-. **Add a topic**: Select to create a new topic called `sample-topic`. This is where Redpanda will store the generated messages. Click **Next**.
+. **Add a topic**: Select to create a new topic called `dad-jokes`. This is where Redpanda will store the generated messages. Click **Next**.
 
 . **Add permissions**: 
-.. Select to configure a new user called `connect`.
-.. Enter this password for the user: `connect-password`.
-.. Select to enable topic-specific permissions for this user. This is required, because the user needs to have read and write permissions to interact with the topic.
+.. Select to configure a new user called `connect`. 
+.. Select to enable topic-specific permissions for this user. This is required, because the user must have read and write permissions to interact with the topic.
 .. Click **Next**.
 
 . **Edit pipeline**:
-.. Enter this name for the pipeline: `sample-pipeline`.
-.. The **Configuration** section automatically populates the YAML with your selected components. To enhance the pipeline, replace the entire configuration with the following YAML, which adds names to the input and includes a `mapping` processor to convert the generated names to uppercase:
+.. Enter this name for the pipeline: `joke-generator`.
+.. The **Configuration** section automatically populates the YAML with your selected components. 
++
+Here you could add the `log` and `catch` processors to monitor for errors and log generated jokes.
++
+Copy and paste the following YAML, which includes the processors and the input `mapping` for the joke generation:
 +
 [source,yaml]
 ----
 input:
   generate:
+    interval: 5s
+    count: 0
     mapping: |
-      let first_name = fake("first_name")
-      let last_name = fake("last_name")
-      root.user_id = counter()
-      root.name = $first_name + " " + $last_name
+      let jokes = [
+        "Why don't scientists trust atoms? Because they make up everything!",
+        "I'm reading a book about anti-gravity. It's impossible to put down!",
+        "Why did the scarecrow win an award? He was outstanding in his field!",
+        "What do you call a fake noodle? An impasta!",
+        "Why don't eggs tell jokes? They'd crack each other up!",
+        "I used to play piano by ear, but now I use my hands.",
+        "What do you call a bear with no teeth? A gummy bear!",
+        "Why did the bicycle fall over? It was two tired!",
+        "What do you call a fish wearing a crown? A king fish!",
+        "Why don't skeletons fight each other? They don't have the guts!",
+        "What do you call cheese that isn't yours? Nacho cheese!",
+        "Why can't you hear a pterodactyl using the bathroom? Because the 'p' is silent!",
+        "What did the ocean say to the beach? Nothing, it just waved!",
+        "Why did the math book look sad? It had too many problems!",
+        "What do you call a sleeping bull? A bulldozer!",
+        "How do you organize a space party? You planet!",
+        "What's orange and sounds like a parrot? A carrot!",
+        "Why did the coffee file a police report? It got mugged!",
+        "What do you call a can opener that doesn't work? A can't opener!",
+        "Why don't oysters donate to charity? Because they're shellfish!"
+      ]
+      
+      let joke_index = random_int() % $jokes.length()
+      
+      root.joke = $jokes.index($joke_index)
+      root.id = uuid_v4()
       root.timestamp = now()
-    interval: 1s # Optional (default: "1s")
-    count: 0 # Optional (default: 0)
-    batch_size: 1 # Optional (default: 1)
-    auto_replay_nacks: true # Optional (default: true)
+      root.source = "dad-joke-generator"
+      root.joke_length = root.joke.length()
+
+
+pipeline:
+  processors:
+    - log:
+        level: INFO
+        message: "📝 Generating joke: ${! json(\"joke\") }"
+    
+    - catch:
+        - log:
+            level: ERROR
+            message: "❌ Error generating joke: ${! error() }"
+
 
 output:
   redpanda:
     seed_brokers:
-      # Optional
       - ${REDPANDA_BROKERS}
+    topic: dad-jokes
+    key: ${! json("id") }
     tls:
-      enabled: true # Optional (default: false)
-    topic: "" # Optional
-
-pipeline:
-  processors:
-    - mapping: |
-        root.name = this.name.uppercase()
+      enabled: true
+    sasl:
+      - mechanism: SCRAM-SHA-256
+        username: 
+        password: 
 
 
 ----
@@ -101,10 +176,11 @@ After a minute, select the pipeline, and click **Stop** so you can examine the r
 
 ====
 
-== View the processed messages
 
-. Go to the **Topics** page and select the `sample-topic` topic.
-. Click any message to see the structure. Notice that the original fields from the `generate` input now include the capitalized names added by the `mapping` processor:
+=== View the processed messages
+
+. Go to the **Topics** page and select the `dad-jokes` topic.
+. Click any message to see the structure.
 +
 <NEED TO REPLACE WHEN I CAN SEE MESSAGES>
 +
@@ -121,9 +197,9 @@ After a minute, select the pipeline, and click **Stop** so you can examine the r
 }
 ----
 
-== Review the pipeline logs
+=== Review the pipeline logs
 
-. Return to the **Connect** page and select your `sample-pipeline`.
+. Return to the **Connect** page and select your `joke-generator` pipeline.
 . Click the **Logs** tab to see the pipeline's activity log. 
 . Click through the log messages to see the startup sequence. For example, you'll see when the output becomes active:
 
@@ -131,72 +207,142 @@ After a minute, select the pipeline, and click **Stop** so you can examine the r
 [source,json]
 ----
 {
-    "instance_id": "cr3j2rab2tks83v3gbh0",
+    "instance_id": "d44h0bu39lps738ka4s0",
     "label": "",
     "level": "INFO",
-    "message": "Output type redpanda is now active",
-    "path": "root.output",
-    "pipeline_id": "cr3j2r6hqokqcph9p4b0",
-    "time": "2024-08-22T12:39:09.729899336Z"
+    "message": "Input type generate is now active",
+    "path": "root.input",
+    "pipeline_id": "d44h0avvvrpc73bjgfgg",
+    "time": "2025-11-03T20:27:28.166597505Z"
 }
 ----
 
-== Update your pipeline
-
-Now try adding custom logging to your configuration. You can make the updates while your data pipeline is running.
-
-. On the **Configuration** tab of your pipeline, click **Start** and wait for it to reach **Running** status.
-. Click **Edit** and replace the entire `processors` section with this enhanced version: 
-
 +
-[source,yaml]
-
-  processors:
-    - mapping: |
-        root.name = this.name.uppercase()
-    - log:
-       level: INFO
-       message: 'Processed email for ${!this.user.name}'
-       fields_mapping: |
-         root.reason = "SUCCESS"
-         root.id = this.id
-----
-
-+
-This enhanced configuration:
-
-* Adds custom logging with the xref:components:processors/log.adoc[`log` processor]
-* Records processing success for each message
-
-. Click **Update** to apply the changes.
-. Switch to the **Logs** tab and check the most recent log message. You'll see the custom logging fields and the uppercase sender name: 
-
-+
-<NEED TO REPLACE WHEN I CAN SEE MESSAGES>
+And when the processor generates a joke:
 +
 [source,json]
 ----
 {
-    "id": "f64d1f1a-2d76-47ad-a215-52410ab4e22f",
-    "instance_id": "cr3ncrvom8ofl3bn3rk0",
+    "custom_source": "true",
+    "instance_id": "d44h0bu39lps738ka4s0",
     "label": "",
     "level": "INFO",
-    "message": "Processed email for MISS IMELDA REICHERT",
-    "path": "root.pipeline.processors.1",
-    "pipeline_id": "cr3me2uhqokqcph9p4bg",
-    "reason": "SUCCESS",
-    "time": "2024-08-22T17:33:46.676903284Z"
+    "message": "📝 Generating joke: What did the ocean say to the beach? Nothing, it just waved!",
+    "path": "root.pipeline.processors.0",
+    "pipeline_id": "d44h0avvvrpc73bjgfgg",
+    "time": "2025-11-03T20:27:32.875101811Z"
 }
 ----
-. Click **Stop**.
+
+=== Build a consumer pipeline
+
+This pipeline reads from the same topic created in the first pipeline. Follow these steps to create your consumer pipeline:
+
+. Go to the **Connect** page on your cluster, and click **Create pipeline**.
+
+. **Add an input**: Search for and select `redpanda` from the list of connectors. Click **Next**.
+
+. **Add an output**: Search for and select `drop` from the list of connectors. (Because this quickstart is just for testing, this output drops the message instead of sending it anywhere else.) Click **Next**.
+
+. **Add a topic**: Select the existing topic called `dad-jokes`. This is where Redpanda stored the generated jokes in your producer pipeline. Click **Next**.
+
+. **Add permissions**: 
+.. Select to configure the existing user called `connect`.
+.. Select to enable topic-specific permissions for this user. This is required, because the user must have read and write permissions to interact with the topic.
+.. Add a consumer group: Enter `dad-joke-raters` as the name for the consumer group.
+.. Click **Next**.
+
+. **Edit pipeline**:
+.. Enter this name for the pipeline: `joke-generator-consumer`.
+.. The **Configuration** section automatically populates the YAML with your selected components. To enhance the pipeline, replace the entire configuration with the following YAML, which adds the `bloblang` processor. Bloblang is Redpanda Connect's scripting language used to add logic (for example, random ratings).
+
++
+[source,yaml]
+----
+input:
+  redpanda:
+    seed_brokers:
+      - ${REDPANDA_BROKERS}
+    topics:
+      - dad-jokes
+    consumer_group: dad-joke-raters
+    start_offset: earliest
+    auto_replay_nacks: true
+    tls:
+      enabled: true
+    sasl:
+      - mechanism: SCRAM-SHA-256
+        username: 
+        password: 
+
+
+pipeline:
+  processors:
+    - bloblang: |
+        root = this
+        
+        let rating = random_int(min: 1, max: 11)
+        root.cringe_rating = $rating
+        
+        root.cringe_level = if $rating <= 3 {
+          "Mild - Almost acceptable"
+        } else if $rating <= 6 {
+          "Medium - Classic dad joke territory"
+        } else if $rating <= 8 {
+          "High - Eye-roll inducing"
+        } else {
+          "EXTREME - Peak dad joke achievement"
+        }
+        
+        root.processed_at = now()
+        
+        root.rating_emoji = match {
+          $rating <= 3 => "😐",
+          $rating <= 6 => "😬",
+          $rating <= 8 => "🤦",
+          _ => "💀"
+        }
+        
+        let age_seconds = (timestamp_unix() - this.timestamp.ts_parse("2006-01-02T15:04:05Z07:00").ts_unix())
+        root.age_seconds = $age_seconds
+    
+    - log:
+        level: INFO
+        message: |
+          🎭 JOKE RATED! ${! json("rating_emoji") }
+          Joke: "${! json("joke") }"
+          Cringe Rating: ${! json("cringe_rating") }/10 - ${! json("cringe_level") }
+          Age: ${! json("age_seconds") } seconds old
+          Processed at: ${! json("processed_at") }
+    
+    - catch:
+        - log:
+            level: ERROR
+            message: "❌ Failed to process joke: ${! error() }"
+
+
+output:
+  drop: {}
+
+
+
+----
+
+.. Click **Create** to start your pipeline.
+
+
+. Your pipeline details are displayed, and after a few seconds, the status changes from **Starting** to **Running**. If you don't see this change, refresh the page.
+
++
+After a minute, select the pipeline, and click **Stop** so you can examine the results.
 
 == Clean up
 
 When you've finished experimenting with your data pipeline, you can delete the pipeline and topic you created for this quickstart.
 
-. On the **Connect** page, select the delete icon next to the `sample-pipeline`.
-. Confirm your deletion to remove the data pipeline and associated logs.
-. On the **Topics** page, delete the `sample-topic` topic.
+. On the **Connect** page, select the delete icon next to the `joke-generator` pipeline and the `joke-generator-consumer` pipeline.
+. Confirm your deletion to remove the pipelines and associated logs.
+. On the **Topics** page, delete the `dad-jokes` topic.
 
 == Suggested reading
 
