@@ -71,22 +71,22 @@ NOTE: Serverless clusters support up to 10 pipelines.
 
 Follow these steps to create the producer pipeline:
 
-. Go to the **Connect** page on your cluster, and click **Create pipeline**.
+. Go to the **Connect** page for your cluster to create a pipeline.
 
 . **Add an input**: Search for and select `generate` from the list of connectors. Click **Next**.
 
 . **Add an output**: Search for and select `redpanda` from the list of connectors. Click **Next**.
 
-. **Add a topic**: Select to create a new topic called `dad-jokes`. This is where Redpanda will store the generated messages. Click **Next**.
+. **Add a topic**: Create a new topic called `dad-jokes`. This is where Redpanda will store the generated messages. Click **Next**.
 
 . **Add permissions**: 
-.. Select to configure a new user called `connect`. 
+.. Create a new user called `connect`. 
 .. Copy and save the password generated for this user; you'll need it later.
-.. Select to enable topic-specific permissions for this user. This is required, because the user must have read and write permissions to interact with the topic.
+.. Leave the rest of the default settings. 
 .. Click **Next**.
 
 . **Edit pipeline**:
-.. Enter this name for the pipeline: `joke-generator`.
+.. Enter this name for the pipeline: `joke-generator-producer`.
 .. The **Configuration** section automatically populates the YAML with your selected components. Under *Connectors*, you can add the processors `log` and `catch` to log generated jokes and monitor for errors. However, for this quickstart, replace the entire configuration with the following YAML, which includes the processors and the input `mapping` for joke generation:
 +
 [source,yaml]
@@ -145,7 +145,6 @@ output:
     seed_brokers:
       - ${REDPANDA_BROKERS}
     topic: dad-jokes
-    key: ${! json("id") }
     tls:
       enabled: true
     sasl:
@@ -224,8 +223,8 @@ This pipeline reads the jokes generated in the `dad-jokes` topic that you create
 
 . **Add permissions**: 
 .. Select the existing user called `connect`.
-.. Select to enable topic-specific permissions for this user. This is required, because the user must have read and write permissions to interact with the topic.
 .. Add a consumer group: Enter `dad-joke-raters` as the name for the consumer group. It will be generated with the necessary permissions.
+.. Leave the rest of the default settings.
 .. Click **Next**.
 
 . **Edit pipeline**:
@@ -317,7 +316,7 @@ After a minute, select the pipeline and click **Stop** so you can examine the lo
 
 When you've finished experimenting with your data pipeline, you can delete the pipelines and the topic you created for this quickstart.
 
-. On the **Connect** page, select the delete icon next to the `joke-generator` pipeline and the `joke-generator-consumer` pipeline.
+. On the **Connect** page, select the delete icon next to the `joke-generator-producer` pipeline and the `joke-generator-consumer` pipeline.
 . Confirm your deletion to remove the pipelines and associated logs.
 . On the **Topics** page, delete the `dad-jokes` topic.
 
