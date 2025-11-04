@@ -22,7 +22,7 @@ The *producer pipeline* uses the following Redpanda Connect components:
 
 |Output
 |xref:components:outputs/redpanda.adoc[`redpanda`]
-|Writes messages to your cluster topic
+|Writes messages to your topic
 
 |Processor
 |xref:components:processors/log.adoc[`log`]
@@ -42,7 +42,7 @@ The *consumer pipeline* uses the following Redpanda Connect components:
 
 |Input
 |xref:components:inputs/redpanda.adoc[`redpanda`]
-|Reads messages from your cluster topic 
+|Reads messages from your topic 
 
 |Output
 |xref:components:outputs/drop.adoc[`drop`]
@@ -79,11 +79,11 @@ Follow these steps to create the producer pipeline:
 
 . **Add a topic**: Create a new topic called `dad-jokes`. This is where Redpanda will store the generated messages. Click **Next**.
 
-. **Add permissions**: Create a new user called `connect`. Leave the rest of the default settings. Click **Next**.
+. **Add permissions**: Create a new user called `connect`. Leave the rest of the default settings. The user will be created with the necessary permissions. Click **Next**.
 
 . **Edit pipeline**:
 .. Enter this name for the pipeline: `joke-generator-producer`.
-.. The **Configuration** section automatically populates the YAML with your selected components. Under *Connectors*, you can add the processors `log` and `catch` to log generated jokes and monitor for errors. However, for this simplicity in this quickstart, replace the entire configuration with the following YAML, which includes the processors and the `mapping` for joke generation:
+.. The **Configuration** section automatically populates the YAML with your selected components. Under *Connectors*, you can add the processors `log` and `catch` to log generated jokes and monitor for errors. However, for simplicity in this quickstart, replace the entire configuration with the following YAML, which includes the processors and the `mapping` for joke generation:
 +
 [source,yaml]
 ----
