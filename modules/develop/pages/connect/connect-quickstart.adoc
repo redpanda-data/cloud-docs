@@ -81,13 +81,12 @@ Follow these steps to create the producer pipeline:
 
 . **Add permissions**: 
 .. Create a new user called `connect`. 
-.. Copy and save the password generated for this user; you'll need it later.
 .. Leave the rest of the default settings. 
 .. Click **Next**.
 
 . **Edit pipeline**:
 .. Enter this name for the pipeline: `joke-generator-producer`.
-.. The **Configuration** section automatically populates the YAML with your selected components. Under *Connectors*, you can add the processors `log` and `catch` to log generated jokes and monitor for errors. However, for this quickstart, replace the entire configuration with the following YAML, which includes the processors and the input `mapping` for joke generation:
+.. The **Configuration** section automatically populates the YAML with your selected components. Under *Connectors*, you can add the processors `log` and `catch` to log generated jokes and monitor for errors. However, for this simplicity in this quickstart, replace the entire configuration with the following YAML, which includes the processors and the `mapping` for joke generation:
 +
 [source,yaml]
 ----
@@ -118,9 +117,9 @@ input:
         "What do you call a can opener that doesn't work? A can't opener!",
         "Why don't oysters donate to charity? Because they're shellfish!"
       ]
-      
+
       let joke_index = random_int() % $jokes.length()
-      
+
       root.joke = $jokes.index($joke_index)
       root.id = uuid_v4()
       root.timestamp = now()
@@ -133,36 +132,35 @@ pipeline:
     - log:
         level: INFO
         message: "📝 Generating joke: ${! json(\"joke\") }"
-    
+
     - catch:
         - log:
             level: ERROR
             message: "❌ Error generating joke: ${! error() }"
 
-
 output:
   redpanda:
-    seed_brokers:
+    seed_brokers: # Optional
       - ${REDPANDA_BROKERS}
-    topic: dad-jokes
     tls:
-      enabled: true
+      enabled: true # Optional (default: false)
+      client_certs: []
     sasl:
       - mechanism: SCRAM-SHA-256
-        username: connect
-        password: 
+        username: ${secrets.KAFKA_USER_CONNECT}
+        password: ${secrets.KAFKA_PASSWORD_CONNECT}
+    topic: dad-jokes # Optional
 
 
 ----
 
-.. In the YAML, add the saved password for the `connect` user on the last line.
 .. Click **Create** to start your pipeline.
 
 
 . Your pipeline details are displayed, and after a few seconds, the status changes from **Starting** to **Running**. If you don't see this change, refresh the page. Once running, your pipeline will generate new jokes every five seconds and write each joke to your topic.
 
 +
-After a minute, select the pipeline and click **Stop** so you can examine the results.
+After a minute, select the pipeline and click **Stop** so you can examine the results. You should see the active input and output types in the logs, and in your topic, you can view the generated jokes.
 
 [NOTE]
 ====
@@ -181,13 +179,13 @@ After a minute, select the pipeline and click **Stop** so you can examine the re
 [source,json]
 ----
 {
-    "instance_id": "d44h0bu39lps738ka4s0",
+    "instance_id": "d4548gl54smc73b65t0g",
     "label": "",
     "level": "INFO",
-    "message": "Input type generate is now active",
-    "path": "root.input",
-    "pipeline_id": "d44h0avvvrpc73bjgfgg",
-    "time": "2025-11-03T20:27:28.166597505Z"
+    "message": "Output type redpanda is now active",
+    "path": "root.output",
+    "pipeline_id": "d4548fihlips73dmcl80",
+    "time": "2025-11-04T18:21:55.223350785Z"
 }
 ----
 
@@ -200,11 +198,11 @@ After a minute, select the pipeline and click **Stop** so you can examine the re
 [source,json]
 ----
 {
-    "id": "6741cf84-f59a-43f8-a789-f1eac8a628f7",
-    "joke": "What do you call a can opener that doesn't work? A can't opener!",
-    "joke_length": 64,
+    "id": "cf653b9e-ce96-4790-888f-6a867bed56a5",
+    "joke": "I used to play piano by ear, but now I use my hands.",
+    "joke_length": 52,
     "source": "dad-joke-generator",
-    "timestamp": "2025-11-03T22:24:45.530180091Z"
+    "timestamp": "2025-11-04T18:21:55.020574506Z"
 }
 ----
 
@@ -213,7 +211,7 @@ After a minute, select the pipeline and click **Stop** so you can examine the re
 
 This pipeline reads the jokes generated in the `dad-jokes` topic that you created in the first pipeline. Follow these steps to create the consumer pipeline:
 
-. Go to the **Connect** page on your cluster, and click **Create pipeline**.
+. On the **Connect** page for your cluster, click **Create pipeline**.
 
 . **Add an input**: Search for and select `redpanda` from the list of connectors. Click **Next**.
 
@@ -224,31 +222,49 @@ This pipeline reads the jokes generated in the `dad-jokes` topic that you create
 . **Add permissions**: 
 .. Select the existing user called `connect`.
 .. Add a consumer group: Enter `dad-joke-raters` as the name for the consumer group. It will be generated with the necessary permissions.
-.. Leave the rest of the default settings.
 .. Click **Next**.
 
 . **Edit pipeline**:
 .. Enter this name for the pipeline: `joke-generator-consumer`.
-.. The **Configuration** section automatically populates the YAML with your selected components. To enhance the pipeline, replace the entire configuration with the following YAML, which adds the `bloblang` processor. Bloblang is Redpanda Connect's scripting language used to add logic (for example, random ratings).
+.. The **Configuration** section automatically populates the YAML with your selected components. To add the `bloblang`, `log`, and `catch` processors, replace the entire configuration with the following YAML. Bloblang is Redpanda Connect's scripting language used to add logic (for example, random ratings).
 
 +
 [source,yaml]
 ----
 input:
   redpanda:
-    seed_brokers:
+    seed_brokers: # Optional
       - ${REDPANDA_BROKERS}
-    topics:
-      - dad-jokes
-    consumer_group: dad-joke-raters
-    start_offset: earliest
-    auto_replay_nacks: true
+    client_id: benthos # Optional (default: "benthos")
     tls:
-      enabled: true
+      enabled: true # Optional (default: false)
+      client_certs: []
     sasl:
       - mechanism: SCRAM-SHA-256
-        username: connect
-        password: 
+        username: ${secrets.KAFKA_USER_CONNECT}
+        password: ${secrets.KAFKA_PASSWORD_CONNECT}
+    metadata_max_age: 5m # Optional (default: "5m")
+    request_timeout_overhead: 10s # Optional (default: "10s")
+    conn_idle_timeout: 20s # Optional (default: "20s")
+    topics: # Optional
+      - dad-jokes
+    regexp_topics: false # Optional (default: false)
+    rebalance_timeout: 45s # Optional (default: "45s")
+    session_timeout: 1m # Optional (default: "1m")
+    heartbeat_interval: 3s # Optional (default: "3s")
+    start_from_oldest: true # Optional (default: true)
+    start_offset: earliest # Optional (default: "earliest")
+    fetch_max_bytes: 50MiB # Optional (default: "50MiB")
+    fetch_max_wait: 5s # Optional (default: "5s")
+    fetch_min_bytes: 1B # Optional (default: "1B")
+    fetch_max_partition_bytes: 1MiB # Optional (default: "1MiB")
+    transaction_isolation_level: read_uncommitted # Optional (default: "read_uncommitted")
+    consumer_group: dad-joke-raters # Optional
+    commit_period: 5s # Optional (default: "5s")
+    partition_buffer_bytes: 1MB # Optional (default: "1MB")
+    topic_lag_refresh_period: 5s # Optional (default: "5s")
+    max_yield_batch_bytes: 32KB # Optional (default: "32KB")
+    auto_replay_nacks: true # Optional (default: true)
 
 
 pipeline:
@@ -303,7 +319,6 @@ output:
 
 ----
 
-.. In the YAML, add the saved password for the `connect` user after `password:`.
 .. Click **Create** to start your pipeline.
 
 
