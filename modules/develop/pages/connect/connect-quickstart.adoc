@@ -1,7 +1,7 @@
 = Redpanda Connect Quickstart
 :description: Learn how to quickly start building data pipelines with Redpanda Connect. 
 
-The *Connect* page provides a wizard that creates pipelines to stream data into and out of Redpanda. The wizard populates the YAML configuration automatically, so you can get started quickly.
+The *Connect* page provides a wizard to create pipelines for streaming data into and out of Redpanda. The wizard populates the YAML configuration automatically, so you can get started quickly.
 
 TIP: Advanced users can skip directly to the *Edit pipeline* step in the wizard to configure the YAML file themselves. 
 
@@ -65,11 +65,11 @@ The *consumer pipeline* uses the following Redpanda Connect components:
 
 You must have a Redpanda Cloud account with a Serverless, Dedicated, or standard BYOC cluster. If you don't already have an account, https://redpanda.com/try-redpanda/cloud-trial[sign up for a free trial^].
 
-NOTE: Serverless supports up to 10 pipelines.
+NOTE: Serverless clusters support up to 10 pipelines.
 
 == Build a producer pipeline
 
-Follow these steps to create your producer pipeline:
+Follow these steps to create the producer pipeline:
 
 . Go to the **Connect** page on your cluster, and click **Create pipeline**.
 
@@ -81,14 +81,13 @@ Follow these steps to create your producer pipeline:
 
 . **Add permissions**: 
 .. Select to configure a new user called `connect`. 
+.. Copy and save the password generated for this user; you'll need it later.
 .. Select to enable topic-specific permissions for this user. This is required, because the user must have read and write permissions to interact with the topic.
 .. Click **Next**.
 
 . **Edit pipeline**:
 .. Enter this name for the pipeline: `joke-generator`.
-.. The **Configuration** section automatically populates the YAML with your selected components. You can add the `log` and `catch` processors to log generated jokes and monitor for errors.
-+
-For this quickstart, replace the entire configuration with the following YAML. This includes the processors and the input `mapping` for the joke generation:
+.. The **Configuration** section automatically populates the YAML with your selected components. Under *Connectors*, you can add the processors `log` and `catch` to log generated jokes and monitor for errors. However, for this quickstart, replace the entire configuration with the following YAML, which includes the processors and the input `mapping` for joke generation:
 +
 [source,yaml]
 ----
@@ -151,21 +150,20 @@ output:
       enabled: true
     sasl:
       - mechanism: SCRAM-SHA-256
-        username: 
+        username: connect
         password: 
 
 
 ----
 
+.. In the YAML, add the saved password for the `connect` user on the last line.
 .. Click **Create** to start your pipeline.
 
 
-. Your pipeline details are displayed, and after a few seconds, the status changes from **Starting** to **Running**. If you don't see this change, refresh the page.
-+
-Once running, your pipeline will generate new jokes every five seconds and write the joke to your topic.
+. Your pipeline details are displayed, and after a few seconds, the status changes from **Starting** to **Running**. If you don't see this change, refresh the page. Once running, your pipeline will generate new jokes every five seconds and write each joke to your topic.
 
 +
-After a minute, select the pipeline, and click **Stop** so you can examine the results.
+After a minute, select the pipeline and click **Stop** so you can examine the results.
 
 [NOTE]
 ====
@@ -175,29 +173,8 @@ After a minute, select the pipeline, and click **Stop** so you can examine the r
 ====
 
 
-=== View the processed messages
-
-. Go to the **Topics** page and select the `dad-jokes` topic.
-. Click any message to see the structure.
-+
-<NEED TO REPLACE WHEN I CAN SEE MESSAGES>
-+
-[source,json]
-----
-{
-    "content": "Aliquam quidem tempore expedita debitis ab. Officiis optio eveniet ab magni commodi...",
-    "id": "35522c66-6fcd-47da-b97b-857b983477d1",
-    "title": "PRIVATE AND CONFIDENTIAL",
-    "user": {
-        "email": "oCcXPTh@RrKHZRQ.info",
-        "name": "King Francis Torphy"
-    }
-}
-----
-
 === Review the pipeline logs
 
-. Return to the **Connect** page and select your `joke-generator` pipeline.
 . Click the **Logs** tab to see the pipeline's activity log. 
 . Click through the log messages to see the startup sequence. For example, you'll see when the output becomes active:
 
@@ -215,26 +192,27 @@ After a minute, select the pipeline, and click **Stop** so you can examine the r
 }
 ----
 
-+
-And when the processor generates a joke:
+
+=== View the processed messages
+
+. Go to the **Topics** page and select the `dad-jokes` topic.
+. Click any message to see the structure. For example:
 +
 [source,json]
 ----
 {
-    "custom_source": "true",
-    "instance_id": "d44h0bu39lps738ka4s0",
-    "label": "",
-    "level": "INFO",
-    "message": "📝 Generating joke: What did the ocean say to the beach? Nothing, it just waved!",
-    "path": "root.pipeline.processors.0",
-    "pipeline_id": "d44h0avvvrpc73bjgfgg",
-    "time": "2025-11-03T20:27:32.875101811Z"
+    "id": "6741cf84-f59a-43f8-a789-f1eac8a628f7",
+    "joke": "What do you call a can opener that doesn't work? A can't opener!",
+    "joke_length": 64,
+    "source": "dad-joke-generator",
+    "timestamp": "2025-11-03T22:24:45.530180091Z"
 }
 ----
 
-=== Build a consumer pipeline
 
-This pipeline reads from the same topic created in the first pipeline. Follow these steps to create your consumer pipeline:
+== Build a consumer pipeline
+
+This pipeline reads the jokes generated in the `dad-jokes` topic that you created in the first pipeline. Follow these steps to create the consumer pipeline:
 
 . Go to the **Connect** page on your cluster, and click **Create pipeline**.
 
@@ -242,12 +220,12 @@ This pipeline reads from the same topic created in the first pipeline. Follow th
 
 . **Add an output**: Search for and select `drop` from the list of connectors. (Because this quickstart is just for testing, this output drops the message instead of sending it anywhere else.) Click **Next**.
 
-. **Add a topic**: Select the existing topic called `dad-jokes`. This is where Redpanda stored the generated jokes in your producer pipeline. Click **Next**.
+. **Add a topic**: Select the existing topic called `dad-jokes`. Click **Next**.
 
 . **Add permissions**: 
-.. Select to configure the existing user called `connect`.
+.. Select the existing user called `connect`.
 .. Select to enable topic-specific permissions for this user. This is required, because the user must have read and write permissions to interact with the topic.
-.. Add a consumer group: Enter `dad-joke-raters` as the name for the consumer group.
+.. Add a consumer group: Enter `dad-joke-raters` as the name for the consumer group. It will be generated with the necessary permissions.
 .. Click **Next**.
 
 . **Edit pipeline**:
@@ -270,7 +248,7 @@ input:
       enabled: true
     sasl:
       - mechanism: SCRAM-SHA-256
-        username: 
+        username: connect
         password: 
 
 
@@ -326,17 +304,18 @@ output:
 
 ----
 
+.. In the YAML, add the saved password for the `connect` user after `password:`.
 .. Click **Create** to start your pipeline.
 
 
 . Your pipeline details are displayed, and after a few seconds, the status changes from **Starting** to **Running**. If you don't see this change, refresh the page.
 
 +
-After a minute, select the pipeline, and click **Stop** so you can examine the results.
+After a minute, select the pipeline and click **Stop** so you can examine the logs and see the processed messages, similar to the first pipeline.
 
 == Clean up
 
-When you've finished experimenting with your data pipeline, you can delete the pipeline and topic you created for this quickstart.
+When you've finished experimenting with your data pipeline, you can delete the pipelines and the topic you created for this quickstart.
 
 . On the **Connect** page, select the delete icon next to the `joke-generator` pipeline and the `joke-generator-consumer` pipeline.
 . Confirm your deletion to remove the pipelines and associated logs.
