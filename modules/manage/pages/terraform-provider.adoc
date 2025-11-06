@@ -428,7 +428,7 @@ resource "redpanda_topic" "example" {
 
 === Manage Schema Registry and Schema Registry ACLs
 
-You can also use Terraform to manage dataplane resources, such as schemas and access controls, through the Redpanda Schema Registry.
+You can also use Terraform to manage data plane resources, such as schemas and access controls, through the Redpanda Schema Registry.
 
 The Redpanda Schema Registry provides centralized management of schemas for producers and consumers, ensuring compatibility and consistency of data serialized with formats such as Avro, Protobuf, or JSON Schema. Using the Redpanda Terraform provider, you can create, update, and delete schemas as well as manage fine-grained access control for Schema Registry resources.
 
@@ -546,7 +546,7 @@ In this example:
 * `host` specifies the host filter (typically `"*"` for all hosts).
 * `username` and `password` authenticate the principal to the Schema Registry.
 
-TIP: To manage Schema Registry ACLs, the user must have cluster-level `ALTER` permissions. This is typically configured with a Kafka ACL granting `ALTER` on the `CLUSTER` resource.
+TIP: To manage Schema Registry ACLs, the user must have cluster-level `ALTER` permissions. This is typically granted through a Kafka ACL with `ALTER` on the `CLUSTER` resource.
 
 ==== Combine schema and ACLs
 
@@ -599,7 +599,7 @@ resource "redpanda_schema_registry_acl" "user_events_acl" {
 }
 ----
 
-This configuration registers an Avro schema for the `user_events` subject and grants a service account permission to read it through the Schema Registry.
+This configuration registers an Avro schema for the `user_events` subject and grants a service account permission to read it from the Schema Registry.
 
 == Delete resources
 
@@ -634,7 +634,7 @@ This will delete only the `redpanda_network.example` resource.
 == Suggested reading
 
 * https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs[Redpanda Terraform Provider documentation^]
-* https://github.com/redpanda-data/terraform-provider-redpanda/tree/main/examples[Redpanda Terraform Provider Examples^]
+* https://github.com/redpanda-data/terraform-provider-redpanda/tree/main/examples[Redpanda Terraform Provider examples^]
 * https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs/resources/schema[Schema resource documentation^]
 * https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs/resources/schema_registry_acl[Schema Registry ACL resource documentation^]
 
