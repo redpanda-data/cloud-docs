@@ -1,11 +1,10 @@
 = Create Remote Read Replicas
 :description: Learn how to create a remote read replica topic with BYOC, which is a read-only topic that mirrors a topic on a different cluster.
 :page-aliases: deploy:deployment-option/cloud/remote-read-replicas.adoc, manage:remote-read-replicas.adoc
-:page-beta: true
 
-A remote read replica topic is a read-only topic that mirrors a topic on a different cluster. You can create a separate remote cluster just for consumers of this topic and populate its topics from object storage. A read-only topic on a remote cluster can serve any consumer, without increasing the load on the source cluster. Because these read-only topics access data directly from object storage, there's no impact to the performance of the cluster.
+A remote read replica topic is a read-only topic that mirrors a topic on a different cluster. You can create a separate remote cluster just for consumers of this topic and populate its topics from object storage. A read-only topic on a remote cluster can serve any consumer, without increasing the load on the source cluster. Because these read-only topics access data directly from object storage, there's no impact to the performance of the cluster. Remote read replica topics do not store any data. When a cluster running a remote read replica is terminated, the topic data only exists on the origin cluster.
 
-Redpanda Cloud supports remote read replicas in BYOC clusters on AWS or GCP. These clusters can be ephemeral; that is, created temporarily to handle specific or transient workloads, but they don't have to be. The ability to make clusters ephemeral provides flexibility and cost efficiency: you can scale resources up or down as needed and pay only for what you use.
+Redpanda Cloud supports remote read replica topics in BYOC clusters on AWS or GCP. These clusters can be ephemeral; that is, created temporarily to handle specific or transient workloads, but they don't have to be. The ability to make them ephemeral provides flexibility and cost efficiency: you can scale resources up or down as needed and pay only for what you use. 
 
 == Prerequisites
 
