@@ -153,19 +153,19 @@ output:
 
 .. Click **Create**.
 
++
+[NOTE]
+====
+* Notice the `$\{REDPANDA_BROKERS}` xref:develop:connect/configuration/contextual-variables.adoc[contextual variable] in the configuration. This automatically references your cluster's bootstrap server address, so you can use it in any pipeline without hardcoding connection details. 
+* Notice `${secrets.KAFKA_USER_CONNECT}` and `${secrets.KAFKA_PASSWORD_CONNECT}`. These were generated when you created the `connect` user.
+* The Brave browser does not fully support code snippets.
+
+====
 
 . Your pipeline details display, and after a few seconds, the status changes from **Starting** to **Running**. If you don't see this change, refresh the page. Once running, your pipeline generates a new joke every five seconds and writes the joke to your topic.
 
 +
 After a minute, select the pipeline and click **Stop** so you can examine the results. 
-
-[NOTE]
-====
-* Notice the `$\{REDPANDA_BROKERS}` xref:develop:connect/configuration/contextual-variables.adoc[contextual variable] in the configuration. This automatically references your cluster's bootstrap server address, so you can use it in any pipeline without hardcoding connection details. 
-* The Brave browser does not fully support code snippets.
-
-====
-
 
 === Review the pipeline logs
 
@@ -212,7 +212,7 @@ This pipeline rates the jokes that you generated in the first pipeline. Follow t
 
 . **Add an input**: Search for and select `redpanda` from the list of connectors. Click **Next**.
 
-. **Add an output**: Search for and select `drop` from the list of connectors. (Because this quickstart is just for testing, this output drops the message instead of sending it anywhere else.) Click **Next**.
+. **Add an output**: Search for and select `drop` from the list of connectors. (Because this quickstart is just for testing, this output drops the message instead of sending it anywhere else. In a real scenario you'd replace the `drop` connector with your real destination.) Click **Next**.
 
 . **Add a topic**: Select the existing topic called `dad-jokes`. Click **Next**.
 
@@ -316,7 +316,11 @@ output:
 
 ----
 
+
 .. Click **Create** to start your pipeline.
+
++
+NOTE: This example explicitly includes several optional configuration fields for the `redpanda` input. They're shown here for demonstration purposes, so you can see a range of available settings.
 
 
 . Your pipeline details display, and the status changes from **Starting** to **Running**. If you don't see this change, refresh the page.
