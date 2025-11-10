@@ -12,6 +12,10 @@ This page lists new features added to Redpanda Cloud.
 
 A cluster's *Overview* page now provides a *Get Started* wizard to quickly start streaming your own data with a Redpanda Connect pipeline. The wizard lets you stream data into and out of Redpanda without writing producer/consumer code. See also: xref:develop:connect/connect-quickstart.adoc[Redpanda Connect quickstart].
 
+=== Remote read replicas: GA
+
+xref:get-started:cluster-types/byoc/remote-read-replicas.adoc[Remote read replicas] are now generally available (GA) for BYOC clusters on AWS and GCP. This feature allows you to create read-only topics that mirror a topic on a different cluster, providing greater flexibility and scalability for your data streaming needs.
+
 == October 2025
 
 === Remote MCP: beta
@@ -40,15 +44,19 @@ After the cluster is created, you can change the API Gateway access on the clust
 ** xref:develop:connect/components/outputs/cyborgdb.adoc[CyborgDB]: Wite vectors to a CyborgDB encrypted index. CyborgDB provides
 end-to-end encrypted vector storage with automatic dimension detection and index optimization.
 
+* Processors:
+** xref:components:processors/jira.adoc[`jira`] (experimental): Executes Jira API queries based on input messages and returns structured results. The processor handles pagination, retries, and field expansion automatically.
+
 * Deprecated components:
 
-- `redpanda_migrator` input and output (renamed to `legacy_redpanda_migrator`)
-- `redpanda_migrator_offsets` input and output (renamed to `legacy_redpanda_migrator_offsets`)
-- `redpanda_migrator_bundle` input and output (these are part of the legacy migration architecture and internally depend on the deprecated `legacy_redpanda_migrator` and `legacy_redpanda_migrator_offsets` components)
-
-These components have been renamed from their previous versions (without the `legacy_` prefix) to preserve backward compatibility. The new `redpanda_migrator` components introduced in this release contain breaking changes. Existing configurations using the previous `redpanda_migrator` components should use these `legacy_` prefixed versions to maintain current functionality.
-
-Users should migrate from deprecated components to the new unified `redpanda_migrator` input/output pair. For detailed migration instructions, see xref:guides:migration/migrate-unified-redpanda-migrator.adoc[].
+** `redpanda_migrator` input and output (renamed to `legacy_redpanda_migrator`)
+** `redpanda_migrator_offsets` input and output (renamed to `legacy_redpanda_migrator_offsets`)
++
+Migrate from these deprecated components to the new unified `redpanda_migrator` input/output pair. For detailed migration instructions, see xref:guides:migration/migrate-unified-redpanda-migrator.adoc[].
+** `redpanda_migrator_bundle` input and output (these are part of the legacy migration architecture and internally depend on the deprecated `legacy_redpanda_migrator` and `legacy_redpanda_migrator_offsets` components)
+** `kafka`, `kafka_franz`, and `redpanda_common` inputs and outputs.
++
+These components have been consolidated into the unified `redpanda` input and output components. Migrate existing configurations to use the new `redpanda` components for continued support and access to the latest features.
 
 For detailed information about recent component updates, see xref:redpanda-connect:ROOT:whats_new_rpcn.adoc[What's New in Redpanda Connect].
 
