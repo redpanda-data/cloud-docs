@@ -1,0 +1,116 @@
+= About Remote MCP Servers for Redpanda Cloud
+:page-beta: true
+:description: Discover how AI assistants can interact with your streaming data and how to connect them to Redpanda Cloud.
+
+
+Remote MCP (Model Context Protocol) servers are managed, hosted MCP servers that you can write and run inside your Redpanda Cloud cluster. They let you expose your data, analytics, and automation pipelines as AI-consumable tools with no custom API code. MCP servers bridge your business logic to AI agents using the open MCP standard, so you can:
+
+* Make your data and workflows accessible to AI assistants and LLMs, safely and on your terms.
+* Accelerate automation and insight by letting AI trigger real business actions.
+* Control exposure so that only the tools you tag are visible to AI.
+
+== Why use a Remote MCP server?
+
+* *Always-on and centrally managed*: No need to run a local process. Your tools live with your data, managed by Redpanda.
+* *Proximity to data*: Execute tools next to your cluster for lower latency and simpler networking.
+* *Secure by design*: Use the xref:develop:connect/configuration/secret-management.adoc[Secrets Store]. Never hardcode secrets in your YAML configuration.
+* *Fast iteration*: Define tools as YAML configuration, deploy your MCP server, and your AI agents can use the new logic instantly.
+
+== Use cases
+
+[cols="1s,3a"]
+|===
+|Category |Example prompts
+
+|Operational monitoring
+|* Check partition lag for customer-events topic
+* Show me the top 10 producers by message volume today
+* Get schema registry health status
+
+|Data enrichment and analysis
+|* Fetch user profile data and recent orders for customer ID 12345
+* Get real-time stock prices for symbols in my portfolio topic
+* Analyze sentiment of latest product reviews
+
+|Team productivity
+|* Deploy my microservice to the staging environment
+* Generate load test data for the payments service
+* Create a summary dashboard of this week's incident reports
+
+|Business intelligence
+|* What are the trending products in the last 24 hours?
+* Show revenue impact of the latest feature deployment
+* Get customer satisfaction scores from support tickets
+|===
+
+== How it works
+
+. Build your tools as Redpanda Connect configurations with `meta.mcp` metadata (description, properties, and logic).
+. Deploy to your cluster. Redpanda Cloud hosts your MCP server with secure access.
+. Connect your AI client. AI assistants authenticate, discover available tools, and invoke them using natural language prompts.
+
+== Example: Customer analytics tool
+
+Here's how you might expose a customer analytics pipeline as an MCP tool:
+
+[source,yaml]
+----
+label: analyze_customer_orders
+processors:
+  - label: fetch_customer_data
+    sql_select:
+      driver: "postgres"
+      dsn: "${secrets.POSTGRES_DSN}"
+      table: "orders"
+      where: "customer_id = ? AND created_at >= NOW() - INTERVAL '30 days'"
+      args_mapping: 'root = [this.customer_id]'
+
+  - label: calculate_metrics
+    mutation: |
+      root = {
+        "customer_id": this.customer_id,
+        "total_orders": this.length(),
+        "total_spent": this.map_each(o -> o.total).sum(),
+        "avg_order_value": this.map_each(o -> o.total).mean(),
+        "last_order_date": this.map_each(o -> o.created_at).max()
+      }
+
+meta:
+  mcp:
+    enabled: true
+    description: "Analyze a customer's order history and spending patterns over the last 30 days"
+    properties:
+      - name: customer_id
+        type: string
+        description: "Customer ID to analyze"
+        required: true
+----
+
+This tool can be invoked by an AI assistant with prompts like "analyze the order history for customer ID 12345" without needing to know the underlying SQL or processing logic.
+
+== Authentication options
+
+- **MCP proxy (recommended):** For tools with built-in MCP clients like Claude Code:
++
+[,bash]
+----
+rpk cloud login
+rpk cloud mcp proxy --install --client claude-code --cluster-id <cluster-id> --mcp-server-id <server-id>
+----
+
+- **Direct connection:** If building your own AI agent, implement the MCP client flow yourself and connect directly to the Remote MCP server.
+
+== MCP specification support
+
+Remote MCP server implements the open MCP protocol for tool exposure. Only the tool concept from the MCP server specification is supported. Features such as MCP resources and prompts are not yet available.
+
+For full details, see the official MCP server specification: link:https://modelcontextprotocol.io/specification/2025-06-18/server[modelcontextprotocol.io/specification/2025-06-18/server^].
+
+== Get started
+
+* xref:ai-agents:mcp/remote/quickstart.adoc[]
+
+== Suggested reading
+
+* xref:ai-agents:mcp/remote/developer-guide.adoc[]
+* Learn more about MCP in the link:https://docs.anthropic.com/en/docs/mcp[official documentation^].

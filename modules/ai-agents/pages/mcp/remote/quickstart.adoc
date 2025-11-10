@@ -1,0 +1,194 @@
+= Remote MCP Server Quickstart
+:page-beta: true
+:description: Create and host a managed MCP server inside your Redpanda Cloud cluster with tools for generating and publishing user event data.
+
+
+This quickstart guide shows you how to create and host a managed MCP server inside your Redpanda Cloud cluster. The server includes two tools: one for generating user event data and another for publishing that data to a Redpanda topic.
+
+== Prerequisites
+
+* A Redpanda Cloud cluster with *Remote MCP* enabled
+* Access to the xref:develop:connect/configuration/secret-management.adoc[Secrets Store] for storing credentials.
+* At least version 25.2.5 of the xref:manage:rpk/rpk-install.adoc[Redpanda CLI (`rpk`)] installed on your computer
+* link:https://docs.anthropic.com/en/docs/claude-code/setup[Claude Code] installed
+
+TIP: For a complete developer guide, see xref:ai-agents:mcp/remote/developer-guide.adoc[].
+
+== Prepare your cluster
+
+Before creating the MCP server, you need to set up a topic and user for event publishing. Use the Redpanda CLI to perform these steps.
+
+. Log in to your Redpanda Cloud account:
++
+[,bash]
+----
+rpk cloud login
+----
++
+This opens a browser window to authenticate. The token is saved locally inside your `rpk` configuration file. It is valid for 4 hours. You can refresh it by running `rpk cloud login` again.
+
+. Create a topic called `events` for storing user event data:
++
+[,bash]
+----
+rpk topic create events --partitions 3 --replicas 3
+----
+
+. Create a user called `mcp` with a strong password:
++
+[,bash]
+----
+rpk acl user create mcp --password <your-secure-password>
+----
++
+Save the password securely. You need it later when configuring the MCP server.
+
+. Grant the `mcp` user permissions to produce and consume from the `events` topic:
++
+[,bash]
+----
+rpk acl create --allow-principal User:mcp --operation all --topic events
+----
+
+== Create a Remote MCP Server in Redpanda Cloud
+
+. Log in to the link:https://cloud.redpanda.com/[Redpanda Cloud Console^].
+
+. Navigate to *Remote MCP*.
++
+This page shows a list of existing servers.
+
+. Click *Create new MCP Server*. In *Metadata* add:
++
+* *Display Name*: A human-friendly name such as `event-data-generator`. This name is shown in the Redpanda Cloud Console. It is not the name of the MCP server itself.
+* *Description*: Explain what the server does. For example, `Generates fake user event data and publishes it to Redpanda topics`.
+* *Tags*: Add key/value tags such as `owner=platform` or `env=demo`.
+* *Resources*: Choose a size (XSmall / Small / Medium / Large / XLarge). Larger sizes allow more concurrent requests and faster processing, but cost more. You can change this later.
+
+. Click *Next* to define tools.
+
+=== Add tools
+
+Tools define the actions your MCP server can perform. In this example, you create two tools: one for generating user event data and another for publishing that data to Redpanda.
+
+. From the *Template* dropdown, select *Generate Input*.
++
+The template populates the configuration with YAML for the tool definition.
+
+. Click *Add Tool* to create a second tool.
+
+. From the *Template* dropdown, select *Redpanda Output*.
++
+The template populates the configuration for publishing to Redpanda and a section for adding the required secrets is displayed.
+
+. Enter the values for the `mcp` user's credentials in the *Add Required Secrets* section.
+
+. Click *Lint* to check the configuration. You should see no errors.
+
+. Click *Create MCP Server* to deploy the server.
++
+It may take a few seconds to start. The status changes from *Starting* to *Running* when it's ready.
+
+. Open the *MCP Inspector* tab to test the tools:
++
+* For the `generate_input` tool, click *Run Tool* to generate sample event data.
+* For the `redpanda_output` tool, enter some sample event data such as `user_id=user123`, `event_type=login`, and `timestamp=2025-10-21T10:30:00Z` then click *Run Tool* to publish it to the `events` topic.
+
+== Connect a client
+
+You can connect any MCP-compatible client to your Remote MCP server. This example uses Claude Code.
+
+The Redpanda CLI acts as a local proxy, forwarding requests from your AI client to your own Remote MCP server running in the Redpanda Cloud cluster.
+
+. Log in to your Redpanda Cloud account:
++
+[,bash]
+----
+rpk cloud login
+----
++
+This opens a browser window to authenticate. The token is saved locally inside your `rpk` configuration file. It is valid for 4 hours. You can refresh it by running `rpk cloud login` again.
+
+. Open the *Connection* tab in Redpanda Cloud to get connection details and run the `rpk` command for Claude Code.
++
+For BYOC and Dedicated clusters, use:
++
+[,bash]
+----
+rpk cloud mcp proxy \
+--cluster-id <cluster-id>\
+--mcp-server-id <server-id> \
+--install --client claude-code
+----
++
+For Serverless clusters, use:
++
+[,bash]
+----
+rpk cloud mcp proxy \
+--serverless-cluster-id <cluster-id>\
+--mcp-server-id <server-id> \
+--install --client claude-code
+----
+
+. Restart Claude Code and invoke your tool.
++
+[,bash]
+----
+claude
+----
+
+. Ask Claude Code to use your tools. For example:
++
+* "Generate 10 user events and then publish them to the events topic."
+* "Create sample login events for users user001, user002, and user003, then publish them to Redpanda."
+* "Generate purchase events with metadata and publish them to the events topic."
+
+You should see Claude Code calling your MCP server tools to generate and publish event data. You may need to respond to prompts for permissions to call the tools.
+
+When complete, you can verify the events were published by consuming from the `events` topic:
+
+[,bash]
+----
+rpk topic consume events --num 10
+----
+
+== Troubleshoot
+
+=== MCP server not starting
+
+If your server is not starting or shows an error state:
+
+- Check the *Logs* tab for specific error messages.
+- Verify your YAML syntax by clicking *Lint*.
+- Verify that the `mcp` user exists and has the correct permissions.
+
+=== Connection issues
+
+If Claude Code can't connect to your server:
+
+- Verify you're logged in with `rpk cloud login`.
+- Check that your rpk version is 25.2.5 or later: `rpk version`.
+- Ensure your server status shows *Running* in Redpanda Cloud.
+- Try restarting Claude Code after running the proxy command.
+
+=== Publishing failures
+
+If the publish tool returns errors:
+
+- Verify the `events` topic exists:
++
+```bash
+rpk topic list
+```
+- Check that the `mcp` user has the correct ACLs:
++
+```bash
+rpk acl list
+```
+- Use the MCP Inspector in Redpanda Cloud to test with different event data.
+- Check the MCP server logs for authentication or authorization errors.
+
+== Next steps
+
+Write your own tools to extend the MCP server functionality. For more information, see: xref:ai-agents:mcp/remote/developer-guide.adoc[]

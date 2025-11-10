@@ -1,0 +1,56 @@
+= Manage Remote MCP Servers
+:page-beta: true
+:description: Learn how to manage, edit, stop, resume, and delete Remote MCP servers in Redpanda Cloud.
+
+
+This guide is for Redpanda Cloud administrators who need to manage the lifecycle of Remote MCP servers.
+
+== Prerequisites
+
+You must have an existing MCP server. If you do not have one, see xref:ai-agents:mcp/remote/quickstart.adoc[].
+
+== Edit an existing MCP server
+
+You can update the configuration, resources, or metadata of a Remote MCP server at any time.
+
+. In the Redpanda Cloud Console, navigate to *Remote MCP*.
+. Find the MCP server you want to edit and click its name.
+. Click *Edit configuration*.
+. Make your changes.
+. Click *Save* to apply changes.
+
+[NOTE]
+====
+Editing a running MCP server may cause a brief interruption. Review changes before deploying to production.
+====
+
+== Stop (pause) an MCP server
+
+Pausing a server stops all tool execution and releases compute resources, but preserves configuration and state.
+
+. In the *Remote MCP* list, find the server you want to stop.
+. Click the three dots and select *Stop*.
+. Confirm the action.
+
+[NOTE]
+====
+While stopped, the server does not respond to MCP requests. Start it again to restore service.
+====
+
+== Resume a stopped MCP server
+
+. In the *Remote MCP* list, find the stopped server.
+. Click the three dots and select *Start*.
+. Wait for the status to show *Running* before reconnecting clients.
+
+== Delete an MCP server
+
+Deleting a server is permanent and cannot be undone.
+
+. In the *Remote MCP* list, find the server to delete.
+. Click the three dots and select *Delete*.
+. Confirm the deletion when prompted.
+
+== API and automation
+
+All of these actions can also be performed using the Redpanda Cloud API version v1alpha3. See the link:https://github.com/redpanda-data/console/blob/master/proto/gen/openapi/openapi.v1alpha3.yaml[OpenAPI specification file] for endpoints to manage MCP servers.
