@@ -50,9 +50,13 @@ To create a Serverless cluster:
 
 . Select a cloud provider and xref:reference:tiers/serverless-regions.adoc[region]. For best performance, select the region closest to your applications. Redpanda expects your applications to be deployed in the same cloud provider and region as your Serverless cluster. 
 +
-Serverless clusters are not guaranteed to be pinned to a particular availability zone within the selected region.
+Serverless clusters are available in the regions listed in xref:reference:tiers/serverless-regions.adoc[Serverless regions]. Redpanda expects your applications to be deployed in the same region. For best performance, select the region closest to your applications. Serverless is not guaranteed to be pinned to a particular availability zone within that region.
++
+Clusters on AWS can enable private access between their VPC and Redpanda, so data does not traverse the public internet. Private connectivity is implemented using AWS PrivateLink for secure ingress traffic. A Serverless cluster can have both public and private access enabled, although there is an additional charge for private networking. You can later enable or disable access on the cluster's *Settings* page.
 
-. Add team members and grant them access with glossterm:ACL[,access control lists (ACLs)] on the *Security* page.
+. Click **Create cluster**.
+
+. To start working with your cluster, go to the *Topics* page to create a topic. Under the *Actions* dropdown, you can produce messages to it. Add team members and grant them access with ACLs on the *Security* page. 
 
 == Interact with your cluster
 
@@ -89,7 +93,7 @@ Explore the rest of the UI:
 Not all features included in BYOC clusters are available in Serverless. For example, the following features are not supported:
 
 * HTTP Proxy API
-* Private networking (VPC peering or AWS PrivateLink)
+* Ability to export metrics to a third-party monitoring system
 * Multiple availability zones (AZs)
 * RBAC in the data plane and mTLS authentication for Kafka API clients
 * Kafka Connect 
