@@ -1,237 +1,356 @@
 = Redpanda Connect Quickstart
-:description: Learn how to quickly start building data pipelines with Redpanda Connect in Redpanda Cloud.
+:description: Learn how to quickly start building data pipelines with Redpanda Connect. 
 
-Learn how to build, run, and update a data pipeline on a Redpanda Cloud cluster using Redpanda Connect.
+The *Connect* page provides a wizard to create pipelines for streaming data into and out of Redpanda. The wizard populates the YAML configuration automatically, so you can get started quickly.
 
-This quickstart introduces you to Redpanda Connect for Redpanda Cloud. Using a single YAML configuration file, you can quickly build streaming data pipelines from scratch. No third-party connectors are required. 
+TIP: Advanced users can skip directly to the *Edit pipeline* step in the wizard to configure the YAML file themselves. 
+
+This quickstart shows how Redpanda Connect can generate, transform, and handle streaming data end-to-end. It creates the following pipelines: 
+
+* The first pipeline generates (produces) dad jokes and writes them to a topic in your cluster. 
+* The second pipeline reads (consumes) those dad jokes and gives each one a random "cringe rating" from 1-10. 
+
+The *producer pipeline* uses the following Redpanda Connect components:
+
+[cols="1,2,3"]
+|===
+|Component type |Component |Purpose
+
+|Input
+|xref:develop:connect/components/inputs/generate.adoc[`generate`]
+|Creates jokes
+
+|Output
+|xref:components:outputs/redpanda.adoc[`redpanda`]
+|Writes messages to your topic
+
+|Processor
+|xref:components:processors/log.adoc[`log`]
+|Logs generated messages
+
+|Processor
+|xref:components:processors/catch.adoc[`catch`]
+|Catches errors 
+|===
+
+
+The *consumer pipeline* uses the following Redpanda Connect components:
+
+[cols="1,2,3"]
+|===
+|Component type |Component |Purpose
+
+|Input
+|xref:components:inputs/redpanda.adoc[`redpanda`]
+|Reads messages from your topic 
+
+|Output
+|xref:components:outputs/drop.adoc[`drop`]
+|Drops the processed messages
+
+|Processor
+|xref:components:processors/bloblang.adoc[`bloblang`]
+|Processes ratings
+
+|Processor
+|xref:components:processors/log.adoc[`log`]
+|Logs processed messages
+
+|Processor
+|xref:components:processors/catch.adoc[`catch`]
+|Catches errors 
+|===  
 
 == Prerequisites
 
-A Redpanda Cloud account for Serverless, Dedicated, or standard BYOC. If you don't already have an account, https://redpanda.com/try-redpanda/cloud-trial[sign up for a free trial^].
+You must have a Redpanda Cloud account with a Serverless, Dedicated, or standard BYOC cluster. If you don't already have an account, https://redpanda.com/try-redpanda/cloud-trial[sign up for a free trial^].
 
-== Before you start
+NOTE: Serverless clusters support up to 10 pipelines.
 
-Create the cluster, topic, and user you need to build and run your data pipeline.
+== Build a producer pipeline
 
-NOTE: You can run up to 10 pipelines on a Serverless cluster.
+Follow these steps to create the producer pipeline:
 
-[tabs]
-=====
-Serverless::
+. Go to the **Connect** page for your cluster to create a pipeline.
+
+. **Add an input**: Search for and select `generate` from the list of connectors. Click **Next**.
+
+. **Add an output**: Search for and select `redpanda` from the list of connectors. Click **Next**.
+
+. **Add a topic**: Create a new topic called `dad-jokes`. This is where Redpanda will store the generated messages. Click **Next**.
+
+. **Add permissions**: Create a new user called `connect`. Leave the rest of the default settings. The user will be created with the necessary permissions. Click **Next**.
+
+. **Edit pipeline**:
+.. Enter this name for the pipeline: `joke-generator-producer`.
+.. The **Configuration** section automatically populates the YAML with your selected components. Under *Connectors*, you can add the processors `log` and `catch` to log generated jokes and monitor for errors. However, for simplicity in this quickstart, replace the entire configuration with the following YAML, which includes the processors and the `mapping` for joke generation:
 +
---
-. Log in to https://cloud.redpanda.com[Redpanda Cloud^].
-. [[step2-pro]]On the **Clusters** page, click **Create cluster**, then under **Serverless**, click **Create**.
-. For cluster settings, enter **connect-quickstart** for the cluster name.
-. Select a resource group. If you don't have an existing resource group, go to the **Resource groups** page to create one and then return to the <<step2-pro, step 2>>.
-. Select the default cloud provider, then click **Create**.
+[source,yaml]
+----
+input:
+  generate:
+    interval: 5s
+    count: 0
+    mapping: |
+      let jokes = [
+        "Why don't scientists trust atoms? Because they make up everything!",
+        "I'm reading a book about anti-gravity. It's impossible to put down!",
+        "Why did the scarecrow win an award? He was outstanding in his field!",
+        "What do you call a fake noodle? An impasta!",
+        "Why don't eggs tell jokes? They'd crack each other up!",
+        "I used to play piano by ear, but now I use my hands.",
+        "What do you call a bear with no teeth? A gummy bear!",
+        "Why did the bicycle fall over? It was two tired!",
+        "What do you call a fish wearing a crown? A king fish!",
+        "Why don't skeletons fight each other? They don't have the guts!",
+        "What do you call cheese that isn't yours? Nacho cheese!",
+        "Why can't you hear a pterodactyl using the bathroom? Because the 'p' is silent!",
+        "What did the ocean say to the beach? Nothing, it just waved!",
+        "Why did the math book look sad? It had too many problems!",
+        "What do you call a sleeping bull? A bulldozer!",
+        "How do you organize a space party? You planet!",
+        "What's orange and sounds like a parrot? A carrot!",
+        "Why did the coffee file a police report? It got mugged!",
+        "What do you call a can opener that doesn't work? A can't opener!",
+        "Why don't oysters donate to charity? Because they're shellfish!"
+      ]
 
---
-Dedicated::
+      let joke_index = random_int() % $jokes.length()
+
+      root.joke = $jokes.index($joke_index)
+      root.id = uuid_v4()
+      root.timestamp = now()
+      root.source = "dad-joke-generator"
+      root.joke_length = root.joke.length()
+
+
+pipeline:
+  processors:
+    - log:
+        level: INFO
+        message: "📝 Generating joke: ${! json(\"joke\") }"
+
+    - catch:
+        - log:
+            level: ERROR
+            message: "❌ Error generating joke: ${! error() }"
+
+output:
+  redpanda:
+    seed_brokers: # Optional
+      - ${REDPANDA_BROKERS}
+    tls:
+      enabled: true # Optional (default: false)
+      client_certs: []
+    sasl:
+      - mechanism: SCRAM-SHA-256
+        username: ${secrets.KAFKA_USER_CONNECT}
+        password: ${secrets.KAFKA_PASSWORD_CONNECT}
+    topic: dad-jokes # Optional
+
+
+----
+
+.. Click **Create**.
+
 +
---
-. Log in to https://cloud.redpanda.com[Redpanda Cloud^].
-. [[step2-dedicated]]On the **Clusters** page, click **Create cluster**, then under **Dedicated**, click **Create**.
-. On the **Cluster settings** page, enter **connect-quickstart** for the cluster name.
-. Select a resource group. If you don't have an existing resource group, go to the **Resource groups** page to create one and then return to the <<step2-dedicated, step 2>>.
-. Select your cloud provider, then use the default values for the remaining properties and click **Next**.
-. On the **Networking** page, use the default **Public** connection type, and click **Create**.
+[NOTE]
+====
+* Notice the `$\{REDPANDA_BROKERS}` xref:develop:connect/configuration/contextual-variables.adoc[contextual variable] in the configuration. This automatically references your cluster's bootstrap server address, so you can use it in any pipeline without hardcoding connection details. 
+* Notice `${secrets.KAFKA_USER_CONNECT}` and `${secrets.KAFKA_PASSWORD_CONNECT}`. These were generated when you created the `connect` user.
+* The Brave browser does not fully support code snippets.
+
+====
+
+. Your pipeline details display, and after a few seconds, the status changes from **Starting** to **Running**. If you don't see this change, refresh the page. Once running, your pipeline generates a new joke every five seconds and writes the joke to your topic.
+
 +
-Wait while your cluster is created.
---
+After a minute, select the pipeline and click **Stop** so you can examine the results. 
 
-BYOC::
+=== Review the pipeline logs
+
+. Click the **Logs** tab to see the pipeline's activity log. 
+. Click through the log messages to see the startup sequence. For example, you'll see when the output becomes active:
+
 +
---
-. Log in to https://cloud.redpanda.com[Redpanda Cloud^].
-. [[step2-byoc]]On the **Clusters** page, click **Create cluster**, then under **Bring Your Own Cloud**, click **Create**.
-. On the **Cluster settings** page, enter **connect-quickstart** for the cluster name.
-. Select a resource group. If you don't have an existing resource group, go to the **Resource groups** page to create one and then return to the <<step2-byoc, step 2>>.
-. Select your cloud provider, then use the default values for the remaining properties and click **Next**.
-. On the **Networking** page, select a **Private** connection type and choose a xref:networking:cidr-ranges.adoc[CIDR range], which does not overlap with your existing VPCs or your Redpanda network.
-. Click **Next**.
-. On the **Deploy** page, follow the steps to log in to Redpanda Cloud and deploy the agent.
---
-=====
+[source,json]
+----
+{
+    "instance_id": "d4548gl54smc73b65t0g",
+    "label": "",
+    "level": "INFO",
+    "message": "Output type redpanda is now active",
+    "path": "root.output",
+    "pipeline_id": "d4548fihlips73dmcl80",
+    "time": "2025-11-04T18:21:55.223350785Z"
+}
+----
 
-To complete your setup:
 
-. Go to the **Topics** page, click **Create topic** and enter **processed-emails** for the topic name. Use default values for the remaining properties and click **Create** and then **Close**.
-. Go to the **Security** page, and click **Create user**. Enter the username **connect** and take a note of the password. You will need to use this later. Use the default values for the remaining properties.
-. Click **Create** and **Done**. 
-. Stay on the **Access control** page and click the **ACLs** tab.
-. Select the **connect** user you have just created. Click **Allow all operations** and then scroll down to click **OK**. 
+=== View the processed messages
 
-== Build your data pipeline
+. Go to the **Topics** page and select the `dad-jokes` topic.
+. Click any message to see the structure. For example:
++
+[source,json]
+----
+{
+    "id": "cf653b9e-ce96-4790-888f-6a867bed56a5",
+    "joke": "I used to play piano by ear, but now I use my hands.",
+    "joke_length": 52,
+    "source": "dad-joke-generator",
+    "timestamp": "2025-11-04T18:21:55.020574506Z"
+}
+----
 
-Configure your first data pipeline on the **connect-quickstart** cluster. 
 
-All Redpanda Connect configurations use a YAML file split into three sections:
+== Build a consumer pipeline
 
-|===
-| Section | In this data pipeline
+This pipeline rates the jokes that you generated in the first pipeline. Follow these steps to create the consumer pipeline:
 
-| The `input` or data source
-| A xref:develop:connect/guides/bloblang/functions.adoc#fake-data-generation[fake data source] that generates a batch of email messages every second, populated with an ID, paragraph, email address, and a user name.
+. On the **Connect** page for your cluster, click **Create pipeline**.
 
-| The `pipeline` with one or more `processors`
-| A xref:components:processors/mutation.adoc[`mutation` processor] to add a title to every email message it processes.
+. **Add an input**: Search for and select `redpanda` from the list of connectors. Click **Next**.
 
-| The `output` or data sink
-| A xref:components:outputs/kafka_franz.adoc[`kafka_franz` output] that writes messages to the **connect-output** topic on your cluster.
-|===
+. **Add an output**: Search for and select `drop` from the list of connectors. (Because this quickstart is just for testing, this output drops the message instead of sending it anywhere else. In a real scenario you'd replace the `drop` connector with your real destination.) Click **Next**.
 
-. Go to the **Connect** page on your cluster and click **Create pipeline**.
-. In **Pipeline name**, enter **emailprocessor-pipeline** and add a short description. For example, **Transforms email data using a mutation processor**.
-. For **Compute units**, leave the default value of **1**. Compute units are used to allocate server resources to a pipeline. One compute unit is equivalent to 0.1 CPU and 400 MB of memory.
-. For **Configuration**, paste the following configuration.
+. **Add a topic**: Select the existing topic called `dad-jokes`. Click **Next**.
+
+. **Add permissions**: 
+.. Select the existing user called `connect`.
+.. Add a consumer group: Enter `dad-joke-raters` as the name for the consumer group. 
+.. Click **Next**.
+
+. **Edit pipeline**:
+.. Enter this name for the pipeline: `joke-generator-consumer`.
+.. The **Configuration** section automatically populates the YAML with your selected components. To add the `bloblang`, `log`, and `catch` processors, replace the entire configuration with the following YAML. Bloblang is Redpanda Connect's scripting language used to add logic (for example, random ratings).
 
 +
 [source,yaml]
 ----
 input:
- generate:
-   interval: 1s
-   mapping: |
-     root.id = uuid_v4()
-     root.user.name = fake("name")
-     root.user.email = fake("email")
-     root.content = fake("paragraph")
+  redpanda:
+    seed_brokers: # Optional
+      - ${REDPANDA_BROKERS}
+    client_id: benthos # Optional (default: "benthos")
+    tls:
+      enabled: true # Optional (default: false)
+      client_certs: []
+    sasl:
+      - mechanism: SCRAM-SHA-256
+        username: ${secrets.KAFKA_USER_CONNECT}
+        password: ${secrets.KAFKA_PASSWORD_CONNECT}
+    metadata_max_age: 5m # Optional (default: "5m")
+    request_timeout_overhead: 10s # Optional (default: "10s")
+    conn_idle_timeout: 20s # Optional (default: "20s")
+    topics: # Optional
+      - dad-jokes
+    regexp_topics: false # Optional (default: false)
+    rebalance_timeout: 45s # Optional (default: "45s")
+    session_timeout: 1m # Optional (default: "1m")
+    heartbeat_interval: 3s # Optional (default: "3s")
+    start_from_oldest: true # Optional (default: true)
+    start_offset: earliest # Optional (default: "earliest")
+    fetch_max_bytes: 50MiB # Optional (default: "50MiB")
+    fetch_max_wait: 5s # Optional (default: "5s")
+    fetch_min_bytes: 1B # Optional (default: "1B")
+    fetch_max_partition_bytes: 1MiB # Optional (default: "1MiB")
+    transaction_isolation_level: read_uncommitted # Optional (default: "read_uncommitted")
+    consumer_group: dad-joke-raters # Optional
+    commit_period: 5s # Optional (default: "5s")
+    partition_buffer_bytes: 1MB # Optional (default: "1MB")
+    topic_lag_refresh_period: 5s # Optional (default: "5s")
+    max_yield_batch_bytes: 32KB # Optional (default: "32KB")
+    auto_replay_nacks: true # Optional (default: true)
+
 
 pipeline:
- processors:
-   - mutation: |
-       root.title = "PRIVATE AND CONFIDENTIAL"
+  processors:
+    - bloblang: |
+        root = this
+        
+        let rating = random_int(min: 1, max: 11)
+        root.cringe_rating = $rating
+        
+        root.cringe_level = if $rating <= 3 {
+          "Mild - Almost acceptable"
+        } else if $rating <= 6 {
+          "Medium - Classic dad joke territory"
+        } else if $rating <= 8 {
+          "High - Eye-roll inducing"
+        } else {
+          "EXTREME - Peak dad joke achievement"
+        }
+        
+        root.processed_at = now()
+        
+        root.rating_emoji = match {
+          $rating <= 3 => "😐",
+          $rating <= 6 => "😬",
+          $rating <= 8 => "🤦",
+          _ => "💀"
+        }
+        
+        let age_seconds = (timestamp_unix() - this.timestamp.ts_parse("2006-01-02T15:04:05Z07:00").ts_unix())
+        root.age_seconds = $age_seconds
+    
+    - log:
+        level: INFO
+        message: |
+          🎭 JOKE RATED! ${! json("rating_emoji") }
+          Joke: "${! json("joke") }"
+          Cringe Rating: ${! json("cringe_rating") }/10 - ${! json("cringe_level") }
+          Age: ${! json("age_seconds") } seconds old
+          Processed at: ${! json("processed_at") }
+    
+    - catch:
+        - log:
+            level: ERROR
+            message: "❌ Failed to process joke: ${! error() }"
+
 
 output:
- kafka_franz:
-   seed_brokers:
-     - ${REDPANDA_BROKERS}
-   sasl:
-     - mechanism: SCRAM-SHA-256
-       password: <cluster-password>
-       username: connect
-   topic: processed-emails
-   tls:
-     enabled: true
+  drop: {}
+
+
+
 ----
 
-+
-* Replace `<cluster-password>` with the password of the connect user you set up in <<before-you-start,Before you start>>. To avoid exposing secrets, Redpanda Connect also supports secret variables. For more information, see xref:develop:connect/configuration/secret-management.adoc[Manage Secrets].
-* `$\{REDPANDA_BROKERS}` is a xref:develop:connect/configuration/contextual-variables.adoc[contextual variable] that references the bootstrap server address of your cluster. All Redpanda Cloud clusters automatically set this variable to the bootstrap server address so that you can add it to any of your pipelines. 
+
+.. Click **Create** to start your pipeline.
 
 +
-NOTE: The Brave browser does not fully support code snippets. 
+NOTE: This example explicitly includes several optional configuration fields for the `redpanda` input. They're shown here for demonstration purposes, so you can see a range of available settings.
 
-. Click **Create**. Your pipeline details are displayed and the pipeline state changes from **Starting** to **Running**, which may take a few minutes. If you don’t see this state change, refresh your page.
-+
-Redpanda Connect starts to ingest, process, and write transformed email messages to the **processed-emails** topic.
-. After a few seconds, select the pipeline and click **Stop**.
 
-== Explore the processed data and logs
+. Your pipeline details display, and the status changes from **Starting** to **Running**. If you don't see this change, refresh the page.
 
-Take a look at the data your pipeline has already processed, and the logs that are available for troubleshooting.
-
-To see the pipeline output:
-
-. Go to the **Topics** page and select the **processed-emails** topic.
-. Select any message to see the email message fields generated by the pipeline `input`, along with a `title` field added by the `mutation` processor. All messages have the following structure:
+. Open the logs to see a rated joke. For example: 
 
 +
 [source,json]
 ----
 {
-    "content": "Aliquam quidem tempore expedita debitis ab. Officiis optio eveniet ab magni commodi...",
-    "id": "35522c66-6fcd-47da-b97b-857b983477d1",
-    "title": "PRIVATE AND CONFIDENTIAL",
-    "user": {
-        "email": "oCcXPTh@RrKHZRQ.info",
-        "name": "King Francis Torphy"
-    }
-}
-----
-
-To view the logs:
-
-. Return to the **Connect** page on your cluster and select the **emailprocessor-pipeline**.
-. Click the **Logs** tab and select each of the four log messages. You can see the sequence of events that start the data pipeline. For example, you can see when Redpanda Connect starts to write data to the topic:
-
-+
-[source,json]
-----
-{
-    "instance_id": "cr3j2rab2tks83v3gbh0",
+    "custom_source": "true",
+    "instance_id": "d454dkn4u2is73ava480",
     "label": "",
     "level": "INFO",
-    "message": "Output type kafka_franz is now active",
-    "path": "root.output",
-    "pipeline_id": "cr3j2r6hqokqcph9p4b0",
-    "time": "2024-08-22T12:39:09.729899336Z"
-}
-----
-
-== Update your pipeline
-
-Now try adding custom logging and an extra data transformation step to your configuration. You can make the updates while your data pipeline is running.
-
-. Select the **Configuration** tab of your data pipeline.
-. Click **Start** and wait for your pipeline to start running.
-. Click **Edit** and overwrite the `processors` section of your configuration with the following snippet. 
-
-+
-[source,yaml]
-----
-  processors:
-    - mutation: |
-        root.title = "PRIVATE AND CONFIDENTIAL"
-        root.user.name = root.user.name.uppercase()
-    - log:
-       level: INFO
-       message: 'Processed email for ${!this.user.name}'
-       fields_mapping: |
-         root.reason = "SUCCESS"
-         root.id = this.id
-----
-
-
-+
-The snippet includes new configuration to:
-
-** Transform the name of each email sender to uppercase.
-** Change the logging level
-** Write a summary message and the reason for every email message processed, using the xref:components:processors/log.adoc[`log` processor].
-
-
-. Click **Update**.
-. Once the pipeline has started running, click the **Logs** tab and select the most recent (final) log message. You can see the custom logging fields along with the uppercase user's name. 
-
-+
-[source,json]
-----
-{
-    "id": "f64d1f1a-2d76-47ad-a215-52410ab4e22f",
-    "instance_id": "cr3ncrvom8ofl3bn3rk0",
-    "label": "",
-    "level": "INFO",
-    "message": "Processed email for MISS IMELDA REICHERT",
+    "message": "🎭 JOKE RATED! 💀\nJoke: \"I used to play piano by ear, but now I use my hands.\"\nCringe Rating: 9/10 - EXTREME - Peak dad joke achievement\nAge: 659 seconds old\nProcessed at: 2025-11-04T18:32:54.340229297Z\n",
     "path": "root.pipeline.processors.1",
-    "pipeline_id": "cr3me2uhqokqcph9p4bg",
-    "reason": "SUCCESS",
-    "time": "2024-08-22T17:33:46.676903284Z"
+    "pipeline_id": "d454djahlips73dmcll0",
+    "time": "2025-11-04T18:32:54.341137527Z"
 }
 ----
-. Click **Stop**.
 
 == Clean up
 
-When you've finished experimenting with your data pipeline, you can delete the pipeline, topic, and cluster you created for this quickstart.
+When you've finished experimenting with your data pipeline, you can delete the pipelines and the topic you created for this quickstart.
 
-. On the **Connect** page, select the delete icon next to the **emailprocessor-pipeline**.
-. Confirm your deletion to remove the data pipeline and associated logs.
-. On the **Topics** page, delete the **processed-emails** topic.
-. Go back to the **Clusters** page and delete the **connect-quickstart** cluster. 
+. On the **Connect** page, select the delete icon next to the `joke-generator-producer` pipeline and the `joke-generator-consumer` pipeline.
+. Confirm your deletion to remove the pipelines and associated logs.
+. On the **Topics** page, delete the `dad-jokes` topic.
 
-== Suggested reading
+== Next steps
 
 * Try one of our xref:cookbooks:index.adoc[Redpanda Connect cookbooks]. 
 * Choose xref:develop:connect/components/about.adoc[connectors for your use case].
