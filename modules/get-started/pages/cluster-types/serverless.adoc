@@ -51,7 +51,7 @@ rpk cloud login
 rpk topic consume hello-world
 ```
 
-In the https://cloud.redpanda.com[Redpanda Cloud UI^], you can navigate to the *Topics* page and open the `hello-world` topic to see the included messages. Under the *Actions* dropdown, you can produce messages to it. Add team members and grant them access with ACLs on the *Security* page. 
+In the https://cloud.redpanda.com[Redpanda Cloud UI^], you can navigate to the *Topics* page and open the `hello-world` topic to see the included messages. Under the *Actions* dropdown, you can produce messages to it. 
 
 == Create a Serverless cluster
 
@@ -63,15 +63,19 @@ To create a Serverless cluster:
 +
 Serverless clusters are available in the AWS regions listed in xref:reference:tiers/serverless-regions.adoc[Serverless regions]. Redpanda expects your applications to be deployed in the same AWS region. For best performance, select the region closest to your applications. Serverless is not guaranteed to be pinned to a particular availability zone within that region.
 
-. Go to the *Topics* page to create a topic. Under the *Actions* dropdown, you can produce messages to it. Add team members and grant them access with ACLs on the *Security* page. 
+. Go to the *Topics* page to create a topic. Under the *Actions* dropdown, you can produce messages to it. 
+
+. Add team members and grant them access with glossterm:ACL[,access control lists (ACLs)] on the *Security* page.
 
 == Connect with your cluster
 
-Create a Kafka client to interact with your cluster. The *Overview* page lists your bootstrap server URL and security settings in the *How to connect - Kafka API* tab. 
+include::get-started:partial$cloud-quickstart.adoc[]
 
-Or, Redpanda can generate a sample application to interact with your cluster. Run xref:reference:rpk/rpk-generate/rpk-generate-app.adoc[`rpk generate app`], and select your preferred programming language. Follow the commands in the terminal to run the application, create a demo topic, produce to the topic, and consume the data back.
+The *Overview* page lists your bootstrap server URL and security settings in the *How to connect - Kafka API* tab. Here you can add a Kafka client to interact with your cluster. 
 
-Follow the steps in the UI to use `rpk` to interact with your cluster from the command line. Here are some helpful  commands:
+Or, Redpanda can generate a sample application to interact with your cluster. Run xref:reference:rpk/rpk-generate/rpk-generate-app.adoc[`rpk generate app`], and select Go as the language. Follow the commands in the terminal to run the application, create a demo topic, produce to the topic, and consume the data back.
+
+Follow the steps in the UI to use `rpk` to interact with your cluster from the command line. Here are some helpful commands:
 
 * xref:reference:rpk/rpk-cloud/rpk-cloud-login.adoc[`rpk cloud login`]: Use this to log in to Redpanda Cloud or to refresh the session.
 * xref:reference:rpk/rpk-topic.adoc[`rpk topic`]: Use this to manage topics, produce data, and consume data. 
