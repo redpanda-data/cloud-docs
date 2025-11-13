@@ -110,11 +110,11 @@ Administrators can require MFA for all users in an organization.
 * *TOTP code not accepted:* Ensure the code hasn't expired and that your phone's time is set automatically; time drift can cause invalid codes.
 * *Remembered device prompts again:* The 30-day trust is device- and browser-specific. Clearing cookies, switching browsers, or using a new device requires re-verification.
 
-=== User impersonation badge::[label=beta, tooltip={page-beta-text}]
+=== User impersonation
 
 include::shared:partial$feature-flag.adoc[]
 
-BYOC and Dedicated clusters support unified authentication and authorization between the Redpanda Cloud UI and Redpanda with user impersonation. This means you can use the same credentials to authenticate to both Redpanda Cloud and the underlying Redpanda cluster, with consistent permissions across all interfaces. This ensures accurate audit logs and unified identity enforcement across all client applications, including the Cloud UI. With user impersonation enabled, the topics and resources users see in the UI match exactly what they can access with the Cloud API or `rpk`. 
+BYOC and Dedicated clusters support unified authentication and authorization between the Redpanda Cloud UI and Redpanda with user impersonation. With user impersonation enabled, the topics and resources users see in the UI match exactly what they can access with the Cloud API or `rpk`. You can use the same credentials to authenticate to both Redpanda Cloud and the underlying Redpanda cluster, with consistent permissions across all interfaces. This ensures accurate audit logs and unified identity enforcement across all client applications, including the Cloud UI. 
 
 * *Without user impersonation*: Redpanda Cloud uses a static service account to access your cluster. All UI requests appear to come from this generic admin user.
 * *With user impersonation*: Redpanda Cloud uses your individual user credentials and evaluates permissions using glossterm:ACL[,access control lists (ACLs)] and glossterm:RBAC[,role-based access control (RBAC)] in the data plane. Each user sees only the resources they have permission to access.  
