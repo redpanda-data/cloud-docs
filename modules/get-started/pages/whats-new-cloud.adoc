@@ -16,6 +16,12 @@ You can now create xref:get-started:cluster-types/serverless.adoc[Serverless clu
 
 You can view details about Kafka client connections using `rpk` or the Data Plane API. This allows you to view detailed information about active client connections on a cluster, and identify and troubleshoot problematic clients. For more information, see the xref:manage:cluster-maintenance/manage-throughput.adoc#view-connected-client-details[connected client details] example in the Manage Throughput guide.
 
+=== Increased message size limit
+
+Redpanda Cloud increased the xref:get-started:create-topic.adoc[message size limit] on newly-created topics. BYOC and Dedicated clusters have a default message size limit of 20 MiB with a maximum of 32 MiB. Serverless clusters have a default message size limit of 8 MiB with a maximum of 20 MiB. Configure the message size limit with the `max_message_bytes` topic property.
+
+The message size setting on existing topics is not changed, but the message size limit on existing topics can only be updated to the new maximum.
+
 === Redpanda Connect updates
 
 Redpanda Connect provides a simplified xref:develop:connect/connect-quickstart.adoc[quickstart] experience in the UI that helps you to start building data pipelines. The quickstart wizard creates pipelines to stream data into and out of Redpanda, populating the required YAML configuration automatically.
