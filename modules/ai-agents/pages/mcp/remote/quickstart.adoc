@@ -16,7 +16,7 @@ TIP: For a complete developer guide, see xref:ai-agents:mcp/remote/developer-gui
 
 == Prepare your cluster
 
-Before creating the MCP server, you need to set up a topic and user for event publishing. Use the Redpanda CLI to perform these steps.
+Before creating the MCP server, you need to set up a topic for event publishing. Use the Redpanda CLI to perform these steps.
 
 . Log in to your Redpanda Cloud account:
 +
@@ -34,22 +34,6 @@ This opens a browser window to authenticate. The token is saved locally inside y
 rpk topic create events --partitions 3 --replicas 3
 ----
 
-. Create a user called `mcp` with a strong password:
-+
-[,bash]
-----
-rpk acl user create mcp --password <your-secure-password>
-----
-+
-Save the password securely. You need it later when configuring the MCP server.
-
-. Grant the `mcp` user permissions to produce and consume from the `events` topic:
-+
-[,bash]
-----
-rpk acl create --allow-principal User:mcp --operation all --topic events
-----
-
 == Create a Remote MCP Server in Redpanda Cloud
 
 . Log in to the link:https://cloud.redpanda.com/[Redpanda Cloud Console^].
@@ -64,6 +48,12 @@ This page shows a list of existing servers.
 * *Description*: Explain what the server does. For example, `Generates fake user event data and publishes it to Redpanda topics`.
 * *Tags*: Add key/value tags such as `owner=platform` or `env=demo`.
 * *Resources*: Choose a size (XSmall / Small / Medium / Large / XLarge). Larger sizes allow more concurrent requests and faster processing, but cost more. You can change this later.
+* *Service Account*: A service account is automatically created for authenticating the MCP server to your cluster. The name is pre-filled. You can customize this name or keep the default.
++
+[NOTE]
+====
+Service accounts authenticate MCP server requests to your Redpanda cluster. The service account has editor permissions to the cluster, allowing it to perform operations like reading and writing data, managing topics, and accessing cluster resources. Service account credentials are stored in the xref:develop:connect/configuration/secret-management.adoc[Secrets Store] with the ID `SERVICE_ACCOUNT_<mcp-server-id>` and scope set to *MCP server*.
+====
 
 . Click *Next* to define tools.
 
@@ -79,9 +69,7 @@ The template populates the configuration with YAML for the tool definition.
 
 . From the *Template* dropdown, select *Redpanda Output*.
 +
-The template populates the configuration for publishing to Redpanda and a section for adding the required secrets is displayed.
-
-. Enter the values for the `mcp` user's credentials in the *Add Required Secrets* section.
+The template populates the configuration for publishing to Redpanda. Authentication is handled automatically by the MCP server's service account.
 
 . Click *Lint* to check the configuration. You should see no errors.
 
@@ -161,7 +149,6 @@ If your server is not starting or shows an error state:
 
 - Check the *Logs* tab for specific error messages.
 - Verify your YAML syntax by clicking *Lint*.
-- Verify that the `mcp` user exists and has the correct permissions.
 
 === Connection issues
 
@@ -180,11 +167,6 @@ If the publish tool returns errors:
 +
 ```bash
 rpk topic list
-```
-- Check that the `mcp` user has the correct ACLs:
-+
-```bash
-rpk acl list
 ```
 - Use the MCP Inspector in Redpanda Cloud to test with different event data.
 - Check the MCP server logs for authentication or authorization errors.
