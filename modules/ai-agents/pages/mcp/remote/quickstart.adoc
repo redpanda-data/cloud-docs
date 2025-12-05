@@ -1,23 +1,49 @@
 = Remote MCP Server Quickstart
 :page-beta: true
-:description: Create and host a managed MCP server inside your Redpanda Cloud cluster with tools for generating and publishing user event data.
+:description: Learn how to extend AI agents with custom tools that interact with your Redpanda data using the Model Context Protocol (MCP).
 
+Model Context Protocol (MCP) enables AI assistants like Claude to interact with external systems through custom tools. This quickstart teaches you how to create an MCP server in Redpanda Cloud with tools that generate and publish event data, then connect Claude Code to use those tools through natural language commands.
 
-This quickstart guide shows you how to create and host a managed MCP server inside your Redpanda Cloud cluster. The server includes two tools: one for generating user event data and another for publishing that data to a Redpanda topic.
+== What you'll learn
+
+By completing this quickstart, you'll understand:
+
+* What MCP is and how it extends AI capabilities
+* How MCP servers, tools, and clients work together
+* How to create and deploy custom tools in Redpanda Cloud
+* How to connect AI assistants to your Redpanda data infrastructure
+
+== How MCP works
+
+The Model Context Protocol defines a standard way for AI assistants to interact with external tools and data sources:
+
+* **MCP Server**: Hosts a collection of tools that perform specific actions. Remote MCP servers run as managed services in your Redpanda Cloud cluster.
+* **Tools**: Individual capabilities your AI can use, built with Redpanda Connect components. Tools can read from sources (inputs), transform data (processors), write to destinations (outputs), or cache results.
+* **Client**: An AI assistant (like Claude Code) that discovers available tools and calls them based on user requests.
+
+In this quickstart, you'll create a server with two tools:
+
+. **generate_input**: Creates fake user event data with randomized fields
+. **redpanda_output**: Publishes generated events to a Redpanda topic
+
+Once connected, you can ask Claude in natural language to "generate 10 events and publish them to Redpanda," and Claude will automatically call your tools to complete the task.
 
 == Prerequisites
 
-* A Redpanda Cloud cluster with *Remote MCP* enabled
+* A Redpanda Cloud cluster with *Remote MCP* enabled.
 * Access to the xref:develop:connect/configuration/secret-management.adoc[Secrets Store] for storing credentials.
-* At least version 25.2.5 of the xref:manage:rpk/rpk-install.adoc[Redpanda CLI (`rpk`)] installed on your computer
-* link:https://docs.anthropic.com/en/docs/claude-code/setup[Claude Code] installed
-
-TIP: For a complete developer guide, see xref:ai-agents:mcp/remote/developer-guide.adoc[].
+* At least version 25.2.5 of the xref:manage:rpk/rpk-install.adoc[Redpanda CLI (`rpk`)] installed on your computer.
+* link:https://docs.anthropic.com/en/docs/claude-code/setup[Claude Code] installed.
 
 == Prepare your cluster
 
-Before creating the MCP server, you need to set up a topic for event publishing. Use the Redpanda CLI to perform these steps.
+Before creating the MCP server, you need to set up a topic for event publishing.
 
+[tabs]
+======
+rpk::
++
+--
 . Log in to your Redpanda Cloud account:
 +
 [,bash]
@@ -33,9 +59,86 @@ This opens a browser window to authenticate. The token is saved locally inside y
 ----
 rpk topic create events --partitions 3 --replicas 3
 ----
+--
+
+Data Plane API::
++
+--
+. link:/api/doc/cloud-controlplane/authentication#topic-request-an-access-token[Authenticate to the Control Plane API] to get an access token.
++
+[NOTE]
+====
+Access tokens expire after 1 hour. To refresh, make the same authentication request again with your service account credentials. The same token works for both Control Plane and Data Plane API requests.
+====
+
+. Get the Data Plane API URL for your cluster:
++
+[tabs]
+====
+BYOC or Dedicated::
++
+Make a request to the link:/api/doc/cloud-controlplane/operation/operation-clusterservice_getcluster[`GET /v1/clusters/\{id}`] endpoint:
++
+[,bash,role="no-placeholders"]
+----
+curl "https://api.redpanda.com/v1/clusters/<cluster-id>" \
+  -H "Authorization: Bearer <control-plane-token>"
+----
+
+Serverless::
++
+Make a request to the link:/api/doc/cloud-controlplane/operation/operation-serverlessclusterservice_getserverlesscluster[`GET /v1/serverless/clusters/\{id}`] endpoint:
++
+[,bash]
+----
+curl "https://api.redpanda.com/v1/serverless/clusters/<cluster-id>" \
+  -H "Authorization: Bearer <control-plane-token>"
+----
+====
++
+The response includes a `dataplane_api.url` value:
++
+[.no-copy]
+----
+  "id": "....",
+  "name": "my-cluster",
+....
+  "dataplane_api": {
+    "url": "https://api-xyz.abc.fmc.ppd.cloud.redpanda.com"
+  },
+...
+----
++
+[NOTE]
+====
+The `dataplane_api.url` field might not be immediately available when a cluster reaches STATE_READY. If the field is missing or null, wait a few minutes and make the request again. The Data Plane API URL is typically available within 5-10 minutes after cluster creation completes.
+====
+
+. Make a request to link:/api/doc/cloud-dataplane/operation/operation-topicservice_createtopic[`POST /v1/topics`] to create the topic:
++
+[,bash]
+----
+curl -X POST "https://<dataplane-api-url>/v1/topics" \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "topic": {
+      "name": "events",
+      "partition_count": 3,
+      "replication_factor": 3
+    }
+  }'
+----
+--
+======
 
 == Create a Remote MCP Server in Redpanda Cloud
 
+[tabs]
+=====
+Cloud UI::
++
+--
 . Log in to the link:https://cloud.redpanda.com/[Redpanda Cloud Console^].
 
 . Navigate to *Remote MCP*.
@@ -56,9 +159,7 @@ Service accounts authenticate MCP server requests to your Redpanda cluster. The 
 ====
 
 . Click *Next* to define tools.
-
-=== Add tools
-
++
 Tools define the actions your MCP server can perform. In this example, you create two tools: one for generating user event data and another for publishing that data to Redpanda.
 
 . From the *Template* dropdown, select *Generate Input*.
@@ -81,12 +182,66 @@ It may take a few seconds to start. The status changes from *Starting* to *Runni
 +
 * For the `generate_input` tool, click *Run Tool* to generate sample event data.
 * For the `redpanda_output` tool, enter some sample event data such as `user_id=user123`, `event_type=login`, and `timestamp=2025-10-21T10:30:00Z` then click *Run Tool* to publish it to the `events` topic.
+--
 
-== Connect a client
+Data Plane API::
++
+--
+. Using the Data Plane API URL and token from the previous section, make a request to link:/api/doc/cloud-dataplane/operation/operation-mcpserverservice_createmcpserver[`POST /v1/redpanda-connect/mcp-servers`] to create the MCP server:
++
+[,bash]
+----
+curl -X POST "https://<dataplane-api-url>/v1/redpanda-connect/mcp-servers" \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "mcp_server": {
+      "display_name": "event-data-generator",
+      "description": "Generates fake user event data and publishes it to Redpanda topics",
+      "tags": {
+        "owner": "platform",
+        "env": "demo"
+      },
+      "resources": {
+        "memory_shares": "400M",
+        "cpu_shares": "100m"
+      },
+      "service_account": {
+        "client_id": "${secrets.redpanda_sa.client_id}",
+        "client_secret": "${secrets.redpanda_sa.client_secret}"
+      },
+      "tools": {
+        "generate_input": {
+          "component_type": "COMPONENT_TYPE_INPUT",
+          "config_yaml": "generate:\n  interval: 1s\n  mapping: |\n    root.user_id = \"user\" + random_int(min: 1, max: 1000).string()\n    root.event_type = [\"login\", \"logout\", \"purchase\", \"view\"].index(random_int(max: 3))\n    root.timestamp = now().ts_format(\"2006-01-02T15:04:05Z07:00\")"
+        },
+        "redpanda_output": {
+          "component_type": "COMPONENT_TYPE_OUTPUT",
+          "config_yaml": "kafka_franz:\n  seed_brokers: [ \"${REDPANDA_BROKERS}\" ]\n  topic: events\n  tls:\n    enabled: true\n  sasl:\n    mechanism: \"${REDPANDA_SASL_MECHANISM}\"\n    username: \"${REDPANDA_SASL_USERNAME}\"\n    password: \"${REDPANDA_SASL_PASSWORD}\""
+        }
+      }
+    }
+  }'
+----
++
+The response includes the MCP server ID. Wait for the status to show *Running* before testing the tools.
 
-You can connect any MCP-compatible client to your Remote MCP server. This example uses Claude Code.
+. To test the tools, use the link:/api/doc/cloud-dataplane/operation/operation-mcpserverservice_getmcpserver[`GET /v1/redpanda-connect/mcp-servers/{mcp_server_id}`] endpoint to verify the server is running.
+--
+=====
 
-The Redpanda CLI acts as a local proxy, forwarding requests from your AI client to your own Remote MCP server running in the Redpanda Cloud cluster.
+== Connect an AI client
+
+Now that your MCP server is running with two tools available, you'll connect Claude Code so it can discover and use them. You can connect any MCP-compatible AI client to your Remote MCP server.
+
+When you connect Claude Code:
+
+. Claude automatically discovers your `generate_input` and `redpanda_output` tools
+. You can ask Claude in natural language to perform tasks using these tools
+. Claude decides which tools to call and in what order based on your request
+. The Redpanda CLI acts as a secure proxy, forwarding Claude's tool requests to your MCP server in the cloud
+
+This example uses Claude Code, but the same pattern works with any MCP-compatible client.
 
 . Log in to your Redpanda Cloud account:
 +
@@ -126,20 +281,35 @@ rpk cloud mcp proxy \
 claude
 ----
 
-. Ask Claude Code to use your tools. For example:
+. Ask Claude Code to use your tools. Try these example requests:
 +
 * "Generate 10 user events and then publish them to the events topic."
 * "Create sample login events for users user001, user002, and user003, then publish them to Redpanda."
 * "Generate purchase events with metadata and publish them to the events topic."
++
+Watch what happens:
++
+--
+* Claude analyzes your natural language request
+* Claude identifies which tools to use (`generate_input` to create data, `redpanda_output` to publish)
+* Claude calls your tools via the MCP server running in Redpanda Cloud
+* You see the tool execution results in your Claude Code session
+--
++
+You may need to respond to prompts to grant Claude permission to call the tools.
 
-You should see Claude Code calling your MCP server tools to generate and publish event data. You may need to respond to prompts for permissions to call the tools.
-
-When complete, you can verify the events were published by consuming from the `events` topic:
-
+. Verify the events were published by consuming from the `events` topic:
++
 [,bash]
 ----
 rpk topic consume events --num 10
 ----
++
+You should see the generated event data in JSON format, confirming that Claude successfully used your custom tools to generate data and publish it to Redpanda.
+
+== Summary
+
+You extended Claude's capabilities with custom tools that interact with your Redpanda cluster. Claude can now generate and publish event data through natural language commands—no manual scripting required. This same pattern works for any workflow: reading from topics, transforming data, querying databases, or calling external APIs.
 
 == Troubleshoot
 
@@ -173,4 +343,11 @@ rpk topic list
 
 == Next steps
 
-Write your own tools to extend the MCP server functionality. For more information, see: xref:ai-agents:mcp/remote/developer-guide.adoc[]
+Now that you understand how MCP works, you can create custom tools for your specific use cases:
+
+* **Data ingestion**: Build tools that read from external APIs, databases, or file systems and publish to Redpanda topics
+* **Data processing**: Create tools that consume from topics, transform data, and write results back
+* **Monitoring and observability**: Add tools that query metrics, check system health, or analyze streaming data
+* **Integration workflows**: Connect Redpanda to other systems through custom tools that Claude can orchestrate
+
+See xref:ai-agents:mcp/remote/developer-guide.adoc[] to learn how to build custom tools using Redpanda Connect components.
