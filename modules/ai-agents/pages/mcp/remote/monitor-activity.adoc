@@ -1,0 +1,241 @@
+= Monitor Remote MCP Server Activity
+:description: Learn how to monitor Remote MCP servers using OpenTelemetry traces, track tool invocations, debug failures, and integrate with observability platforms.
+
+Every Remote MCP server automatically emits OpenTelemetry traces to a topic called `redpanda.otel_traces`. These traces provide detailed observability into your MCP server's operations, including tool invocations, processing times, errors, and resource usage.
+
+== Prerequisites
+
+You must have an existing MCP server. If you do not have one, see xref:ai-agents:mcp/remote/quickstart.adoc[].
+
+== Understanding the traces topic
+
+When you create an MCP server, Redpanda automatically creates the `redpanda.otel_traces` topic in your cluster. This topic stores OpenTelemetry span data in JSON format, following the https://opentelemetry.io/docs/specs/otel/protocol/[OpenTelemetry Protocol (OTLP)] specification.
+
+Each span represents a unit of work performed by your MCP server, such as:
+
+* Tool invocation requests
+* Data processing operations
+* External API calls
+* Error conditions
+* Performance metrics
+
+== Consume trace data
+
+You can consume traces from the `redpanda.otel_traces` topic using any Kafka-compatible client or the Redpanda Console.
+
+[tabs]
+=====
+Cloud UI::
++
+--
+. In the Redpanda Cloud Console, navigate to *Topics*.
+. Select `redpanda.otel_traces`.
+. Click *Messages* to view recent traces.
+. Use filters to search for specific trace IDs, span names, or time ranges.
+--
+
+rpk CLI::
++
+--
+Consume the most recent traces:
+
+[,bash]
+----
+rpk topic consume redpanda.otel_traces --offset end -n 10
+----
+
+Filter for specific MCP server activity by examining the span attributes.
+--
+
+Data Plane API::
++
+--
+Use the link:/api/doc/cloud-dataplane/topic/topic-quickstart[Data Plane API] to programmatically consume traces and integrate with your monitoring pipeline.
+--
+=====
+
+== Trace data structure
+
+Each trace message contains an OpenTelemetry span with the following structure:
+
+[,json]
+----
+{
+  "traceId": "ustSLaZz5ZAIUDRlGUUp9g==",
+  "spanId": "yrhA78Cfigg=",
+  "parentSpanId": "",
+  "name": "tool_invocation",
+  "kind": "SPAN_KIND_INTERNAL",
+  "startTimeUnixNano": "1764946399331666916",
+  "endTimeUnixNano": "1764946399431892103",
+  "attributes": [
+    {"key": "mcp.server.id", "value": {"stringValue": "d4pf2npsubec73f3fhbg"}},
+    {"key": "mcp.tool.name", "value": {"stringValue": "echo_processor"}},
+    {"key": "mcp.request.id", "value": {"stringValue": "req_123abc"}}
+  ],
+  "status": {
+    "code": "STATUS_CODE_OK"
+  }
+}
+----
+
+Key fields:
+
+* `traceId`: Unique identifier for the entire trace
+* `spanId`: Unique identifier for this specific span
+* `parentSpanId`: Links child spans to parent operations
+* `name`: Operation name (e.g., `tool_invocation`, `http_request`)
+* `startTimeUnixNano` / `endTimeUnixNano`: Timing information in nanoseconds
+* `attributes`: Key-value pairs with contextual information
+* `status`: Success or error status
+
+== Common monitoring scenarios
+
+=== Track tool invocations
+
+Monitor which tools are being called and how often:
+
+. Consume traces from `redpanda.otel_traces`
+. Filter spans where `name` contains `tool_invocation`
+. Examine the `mcp.tool.name` attribute to see which tools are being used
+. Calculate frequency by counting spans per tool name over time windows
+
+=== Measure performance
+
+Analyze tool execution times:
+
+. Find spans with `mcp.tool.name` attributes
+. Calculate duration: `(endTimeUnixNano - startTimeUnixNano) / 1000000` (milliseconds)
+. Track percentiles (p50, p95, p99) to identify performance issues
+. Set alerts for durations exceeding acceptable thresholds
+
+=== Debug failures
+
+Investigate errors and failures:
+
+. Filter spans where `status.code` is not `STATUS_CODE_OK`
+. Look for `STATUS_CODE_ERROR` in the status field
+. Examine `status.message` for error details
+. Use `traceId` to correlate related spans and understand the full error context
+
+=== Correlate distributed operations
+
+Link MCP server activity to downstream effects:
+
+. Extract `traceId` from tool invocation spans
+. Search for the same `traceId` in other application logs or traces
+. Follow `parentSpanId` relationships to build complete operation timelines
+. Identify bottlenecks across your entire system
+
+== Integration with observability platforms
+
+The `redpanda.otel_traces` topic uses standard OpenTelemetry format, making it compatible with popular observability platforms.
+
+=== Grafana and Tempo
+
+Export traces to Grafana Tempo for visualization:
+
+. Create a Redpanda Connect pipeline that consumes from `redpanda.otel_traces`.
+. Transform the JSON spans into OTLP format.
+. Send to Tempo's OTLP HTTP endpoint.
+. Query and visualize in Grafana.
+
+Example pipeline configuration:
+
+[,yaml]
+----
+input:
+  kafka:
+    addresses: [ "${REDPANDA_BROKERS}" ]
+    topics: [ "redpanda.otel_traces" ]
+    consumer_group: "tempo-exporter"
+
+pipeline:
+  processors:
+    - mapping: |
+        root = this
+
+output:
+  http_client:
+    url: "http://tempo:4318/v1/traces"
+    verb: POST
+    headers:
+      Content-Type: "application/json"
+----
+
+=== Grafana Cloud
+
+Export traces to Grafana Cloud's managed Tempo service:
+
+. Get your Grafana Cloud OTLP endpoint and credentials:
++
+* OTLP endpoint: `https://otlp-gateway-{region}.grafana.net/otlp/v1/traces`
+* Instance ID (from your Grafana Cloud portal)
+* API token or Access Policy token
+. Create a Redpanda Connect pipeline that consumes from `redpanda.otel_traces`.
+. Send traces to Grafana Cloud with authentication.
+. View and query traces in your Grafana Cloud instance.
+
+Example pipeline configuration:
+
+[,yaml]
+----
+input:
+  kafka:
+    addresses: [ "${REDPANDA_BROKERS}" ]
+    topics: [ "redpanda.otel_traces" ]
+    consumer_group: "grafana-cloud-exporter"
+
+pipeline:
+  processors:
+    - mapping: |
+        root = this
+
+output:
+  http_client:
+    url: "https://otlp-gateway-prod-us-central-0.grafana.net/otlp/v1/traces"
+    verb: POST
+    headers:
+      Content-Type: "application/json"
+      Authorization: "Basic ${GRAFANA_CLOUD_INSTANCE_ID}:${GRAFANA_CLOUD_API_TOKEN}"
+    basic_auth:
+      enabled: true
+      username: "${GRAFANA_CLOUD_INSTANCE_ID}"
+      password: "${GRAFANA_CLOUD_API_TOKEN}"
+----
+
+[TIP]
+====
+Store your Grafana Cloud credentials in the xref:develop:connect/configuration/secret-management.adoc[Secrets Store] and reference them using `${secrets.grafana_cloud.instance_id}` and `${secrets.grafana_cloud.api_token}` instead of environment variables.
+====
+
+=== Datadog
+
+Forward traces to Datadog APM:
+
+. Use Datadog Agent with OpenTelemetry support.
+. Configure a pipeline to consume `redpanda.otel_traces`.
+. Convert to Datadog trace format.
+. View in Datadog APM with full correlation.
+
+=== Custom dashboards
+
+Build custom monitoring dashboards:
+
+. Consume traces into your data warehouse (ClickHouse, PostgreSQL)
+. Aggregate metrics: request rates, error rates, latencies
+. Create alerts based on SLOs (Service Level Objectives)
+. Track MCP server health and usage patterns
+
+== Best practices
+
+* **Retention**: Configure appropriate retention for `redpanda.otel_traces` based on your compliance and debugging needs.
+* **Sampling**: For high-volume servers, implement sampling in your observability pipeline to reduce storage costs.
+* **Alerting**: Set up alerts for error rates, latency spikes, and unusual activity patterns.
+* **Correlation**: Tag traces with request IDs to correlate MCP activity with application behavior.
+* **Privacy**: Be aware that trace data may contain sensitive information from tool inputs and outputs.
+
+[TIP]
+====
+Start with a simple dashboard showing request rate and error rate. Gradually add more sophisticated metrics like latency percentiles and tool-specific performance breakdowns as you understand your MCP server's usage patterns.
+====

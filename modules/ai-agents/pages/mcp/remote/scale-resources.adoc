@@ -1,0 +1,63 @@
+= Scale Remote MCP Server Resources
+:description: Learn how to scale Remote MCP server resources up or down to match workload demands and optimize costs.
+
+You can scale your MCP server's resources up or down to match your workload needs. Resource allocation affects your xref:billing:billing.adoc#remote-mcp-billing-metrics[billing costs], which are charged per compute unit hour.
+
+== Prerequisites
+
+You must have an existing MCP server. If you do not have one, see xref:ai-agents:mcp/remote/quickstart.adoc[].
+
+== Scale resources
+
+[tabs]
+=====
+Cloud UI::
++
+--
+. In the Redpanda Cloud Console, navigate to *Remote MCP*.
+. Find the MCP server you want to scale and click its name.
+. Click *Edit configuration*.
+. Under *Resources*, select a new size:
++
+* *XSmall* - Lowest cost, suitable for development or light workloads
+* *Small* - Light production workloads
+* *Medium* - Standard production workloads
+* *Large* - High-throughput workloads
+* *XLarge* - Highest performance for demanding workloads
+
+. Click *Save* to apply the new resource allocation.
++
+The specified resources are available immediately.
+--
+
+Data Plane API::
++
+--
+. link:/api/doc/cloud-dataplane/topic/topic-quickstart[Authenticate and get the base URL] for the Data Plane API.
+. Make a request to link:/api/doc/cloud-dataplane/operation/operation-mcpserverservice_getmcpserver[`GET /v1/redpanda-connect/mcp-servers/{mcp_server_id}`] to retrieve the current configuration.
+. Make a request to link:/api/doc/cloud-dataplane/operation/operation-mcpserverservice_updatemcpserver[`PATCH /v1/redpanda-connect/mcp-servers/{mcp_server_id}`] to update the resources:
++
+[,bash]
+----
+curl -X PATCH "https://<dataplane-api-url>/v1/redpanda-connect/mcp-servers/<mcp-server-id>" \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "mcp_server": {
+      "resources": {
+        "memory_shares": "2Gi",
+        "cpu_shares": "1000m"
+      }
+    },
+    "update_mask": "resources"
+  }'
+----
++
+The updated resources are available immediately.
+--
+=====
+
+[TIP]
+====
+Monitor your MCP server's performance and adjust resources as needed. You can scale up during peak usage periods and scale down during quieter times to optimize costs. For compute unit definitions and pricing, see xref:billing:billing.adoc#remote-mcp-billing-metrics[Remote MCP billing metrics].
+====
