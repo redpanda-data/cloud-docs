@@ -42,12 +42,15 @@ Secrets:: Credentials and tokens that you want to use in your tools. These value
 . Select your cluster from the cluster list.
 . In the left sidebar, navigate to *Remote MCP*.
 . If this is your first MCP server, you'll see an empty list with a *Create MCP Server* button.
-. Fill in the required fields:
+. Click *Create MCP Server* and configure the *Server Metadata*:
 +
-* *Name*: A unique identifier for your server (for example `weather-tool`, `customer-lookup`).
+* *Display Name*: A human-friendly name for your server (for example `weather-tool`, `customer-lookup`).
 * *Description*: Brief description of what your server does.
 * *Tags*: Key-value pairs for organizing and categorizing your MCP servers. See <<tags>> for details.
-* *Configuration*: This is where to put your YAML configuration to define an MCP tool.
+* *Resources*: Choose the compute resources (XSmall through XLarge) based on your expected workload.
+* *Service Account*: A service account name is pre-filled and will be created automatically.
++
+. Click *Next* to define your tools using YAML configuration.
 
 [[tags]]
 == Organize servers with tags
@@ -65,10 +68,8 @@ Tags are key-value metadata that help you organize, categorize, and filter your 
 
 The following tag names are reserved and cannot be used. These tags are system-managed:
 
-* `service_account_id`: Automatically assigned to track the service account associated with the MCP server
-* `secret_id`: Automatically assigned to track secrets used by the MCP server
-
-If you attempt to use these reserved tag names when creating or updating an MCP server, the operation will fail with an error.
+* `service_account_id`: Automatically assigned to track the service account associated with the MCP server.
+* `secret_id`: Automatically assigned to track the service account secret used by the MCP server.
 
 === Best practices
 
