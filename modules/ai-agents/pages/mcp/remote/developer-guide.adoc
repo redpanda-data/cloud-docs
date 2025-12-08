@@ -27,7 +27,7 @@ Secrets:: Credentials and tokens that you want to use in your tools. These value
 
 == Development workflow
 
-. <<access, Access your Redpanda Cloud cluster>>: Select a Redpanda Cloud cluster to host your MCP server.
+. <<access, Create MCP server and configure metadata>>: Navigate to Remote MCP in Redpanda Cloud Console, create a new server, and configure server metadata (display name, description, tags, resources, service account).
 . <<contract, Design the tool contract>>: Annotate MCP metadata with `meta.mcp.enabled: true`, provide a concise description, and declare parameters.
 . <<provision-secrets, Provision secrets (optional)>>: Create secrets in the Secrets Store for any credentials. Never inline secrets in YAML.
 . <<pipeline-patterns, Implement the logic>>: Build the logic for your MCP tool using Redpanda Connect configurations.
@@ -36,7 +36,7 @@ Secrets:: Credentials and tokens that you want to use in your tools. These value
 . <<observe, Observe and debug>>: Add temporary `log` processors, adjust timeouts/retries, and right-size resources.
 
 [[access]]
-== Access MCP Servers in Redpanda Cloud
+== Create MCP server and configure metadata
 
 . Log into your link:https://cloud.redpanda.com[Redpanda Cloud Console^].
 . Select your cluster from the cluster list.
@@ -142,7 +142,20 @@ After defining your tool contract, implement the logic to handle input validatio
 [[provision-secrets]]
 == Provision secrets
 
-All credentials and sensitive values must be stored in the Redpanda Cloud xref:develop:connect/configuration/secret-management.adoc[Secrets Store]. Follow these best practices:
+All credentials and sensitive values must be stored in the Redpanda Cloud xref:develop:connect/configuration/secret-management.adoc[Secrets Store].
+
+=== Creating secrets in the Cloud Console
+
+When you reference secrets in your tool's YAML configuration using `${secrets.SECRET_NAME}`, the Cloud Console automatically detects these references and provides an interface next to the configuration editor where you can:
+
+. Enter the secret values directly
+. Create the secrets in the Secrets Store with a single click
+
+This inline secret creation workflow simplifies the development process by letting you configure secrets as you build your tools, without navigating away to the Secrets Store.
+
+Alternatively, you can manually create and manage secrets directly in the xref:develop:connect/configuration/secret-management.adoc[Secrets Store].
+
+=== Best practices
 
 - Reference secrets as `${secrets.NAME}` in your YAML configuration.
 - Never commit secrets to Git or reference them directly inline in configuration files.
