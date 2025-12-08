@@ -11,6 +11,8 @@ You must have an existing MCP server. If you do not have one, see xref:ai-agents
 
 When you create an MCP server, Redpanda automatically creates the `redpanda.otel_traces` topic in your cluster. This topic stores OpenTelemetry span data in JSON format, following the https://opentelemetry.io/docs/specs/otel/protocol/[OpenTelemetry Protocol (OTLP)] specification.
 
+A Protobuf schema named `redpanda.otel_traces-value` is also automatically registered with the topic, enabling clients to deserialize trace data correctly.
+
 Each span represents a unit of work performed by your MCP server, such as:
 
 * Tool invocation requests
@@ -61,31 +63,43 @@ Each trace message contains an OpenTelemetry span with the following structure:
 [,json]
 ----
 {
-  "traceId": "ustSLaZz5ZAIUDRlGUUp9g==",
-  "spanId": "yrhA78Cfigg=",
+  "traceId": "71cad555b35602fbb35f035d6114db54",
+  "spanId": "43ad6bc31a826afd",
   "parentSpanId": "",
-  "name": "tool_invocation",
-  "kind": "SPAN_KIND_INTERNAL",
-  "startTimeUnixNano": "1764946399331666916",
-  "endTimeUnixNano": "1764946399431892103",
+  "name": "http_processor",
+  "kind": 1,
+  "startTimeUnixNano": "1765198415253280028",
+  "endTimeUnixNano": "1765198424660663434",
   "attributes": [
-    {"key": "mcp.server.id", "value": {"stringValue": "d4pf2npsubec73f3fhbg"}},
-    {"key": "mcp.tool.name", "value": {"stringValue": "echo_processor"}},
-    {"key": "mcp.request.id", "value": {"stringValue": "req_123abc"}}
+    {
+      "key": "city_name",
+      "value": {"stringValue": "london"}
+    },
+    {
+      "key": "result_length",
+      "value": {"intValue": "198"}
+    }
   ],
   "status": {
-    "code": "STATUS_CODE_OK"
-  }
+    "code": 0,
+    "message": ""
+  },
+  "instrumentationScope": {
+    "name": "rpcn-mcp"
+  },
+  "flags": 1
 }
 ----
 
-* `traceId`: Unique identifier for the entire trace.
-* `spanId`: Unique identifier for this specific span.
-* `parentSpanId`: Links child spans to parent operations.
-* `name`: Descriptive name of the span.
-* `startTimeUnixNano` / `endTimeUnixNano`: Timing information in nanoseconds.
-* `attributes`: Key-value pairs with contextual information.
-* `status`: Success or error status.
+* `traceId`: Unique identifier for the entire trace (hex-encoded string).
+* `spanId`: Unique identifier for this specific span (hex-encoded string).
+* `parentSpanId`: Links child spans to parent operations (empty string if root span).
+* `name`: Descriptive name of the operation (typically the tool name in the case of MCP servers).
+* `kind`: Span kind as integer (see the `redpanda.otel_traces-value` schema for details).
+* `startTimeUnixNano` / `endTimeUnixNano`: Timing information in nanoseconds since Unix epoch.
+* `attributes`: Array of key-value pairs with contextual information about the operation.
+* `status`: Operation status with `code` (0 = OK, 2 = ERROR) and optional `message`.
+* `instrumentationScope`: Identifies the library or component that created the span.
 
 === Real trace examples
 
