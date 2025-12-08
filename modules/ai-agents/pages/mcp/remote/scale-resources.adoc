@@ -39,7 +39,7 @@ Data Plane API::
 +
 [,bash]
 ----
-curl -X PATCH "https://<dataplane-api-url>/v1/redpanda-connect/mcp-servers/<mcp-server-id>" \
+curl -X PATCH "https://<dataplane-api-url>/v1/redpanda-connect/mcp-servers/<mcp-server-id>?update_mask=resources" \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -d '{
@@ -48,8 +48,7 @@ curl -X PATCH "https://<dataplane-api-url>/v1/redpanda-connect/mcp-servers/<mcp-
         "memory_shares": "2Gi",
         "cpu_shares": "1000m"
       }
-    },
-    "update_mask": "resources"
+    }
   }'
 ----
 +
