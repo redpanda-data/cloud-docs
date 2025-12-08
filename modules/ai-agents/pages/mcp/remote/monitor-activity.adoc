@@ -79,15 +79,112 @@ Each trace message contains an OpenTelemetry span with the following structure:
 }
 ----
 
-Key fields:
+* `traceId`: Unique identifier for the entire trace.
+* `spanId`: Unique identifier for this specific span.
+* `parentSpanId`: Links child spans to parent operations.
+* `name`: Descriptive name of the span.
+* `startTimeUnixNano` / `endTimeUnixNano`: Timing information in nanoseconds.
+* `attributes`: Key-value pairs with contextual information.
+* `status`: Success or error status.
 
-* `traceId`: Unique identifier for the entire trace
-* `spanId`: Unique identifier for this specific span
-* `parentSpanId`: Links child spans to parent operations
-* `name`: Operation name (e.g., `tool_invocation`, `http_request`)
-* `startTimeUnixNano` / `endTimeUnixNano`: Timing information in nanoseconds
-* `attributes`: Key-value pairs with contextual information
-* `status`: Success or error status
+=== Real trace examples
+
+Here are actual traces from MCP tool executions showing the parent-child span relationships and detailed attributes.
+
+**Successful tool execution:**
+
+This trace shows an `http_processor` tool that fetched weather data for London. The parent span includes child spans for mutations, HTTP requests, and processing:
+
+[source,json]
+----
+{
+    "attributes": [
+        {
+            "key": "city_name",
+            "value": {"stringValue": "london"}
+        },
+        {
+            "key": "result_prefix",
+            "value": {"stringValue": "{\"city\":\"london\",\"description\":\"Partly cloudy\",\"feels_like\":12,\"humidity\":88,\"metadata\":{\"fetched_at\":\"2025-12-08T12:53:44.660Z\""}
+        },
+        {
+            "key": "result_length",
+            "value": {"intValue": "198"}
+        }
+    ],
+    "endTimeUnixNano": "1765198424660663434",
+    "flags": 1,
+    "instrumentationScope": {"name": "rpcn-mcp"},
+    "kind": 1,
+    "name": "http_processor",
+    "spanId": "43ad6bc31a826afd",
+    "startTimeUnixNano": "1765198415253280028",
+    "status": {"code": 0, "message": ""},
+    "traceId": "71cad555b35602fbb35f035d6114db54"
+}
+----
+
+The parent span (`http_processor`) has child spans showing the processing pipeline:
+
+[,json]
+----
+{
+    "attributes": [],
+    "endTimeUnixNano": "1765198424659619511",
+    "flags": 1,
+    "instrumentationScope": {"name": "benthos"},
+    "kind": 1,
+    "name": "http",
+    "parentSpanId": "43ad6bc31a826afd",
+    "spanId": "ed45544a7d7b08d4",
+    "startTimeUnixNano": "1765198415253319496",
+    "status": {"code": 0, "message": ""},
+    "traceId": "71cad555b35602fbb35f035d6114db54"
+}
+----
+
+* The parent span (`http_processor`) includes custom attributes like `city_name` and `result_length` that help debug and monitor tool behavior.
+* Child spans use the same `traceId` but different `spanId` values.
+* The `parentSpanId` in child spans matches the parent's `spanId`, creating the hierarchy.
+* Duration can be calculated: `(1765198424660663434 - 1765198415253280028) / 1000000 = 9407ms`.
+
+**Trace with error event:**
+
+This trace shows an HTTP request that encountered an error during execution:
+
+[,json]
+----
+{
+    "attributes": [],
+    "endTimeUnixNano": "1765198423080903265",
+    "events": [
+        {
+            "attributes": [
+                {
+                    "key": "error",
+                    "value": {"stringValue": "type"}
+                }
+            ],
+            "name": "event",
+            "timeUnixNano": "1765198420254169629"
+        }
+    ],
+    "flags": 1,
+    "instrumentationScope": {"name": "benthos"},
+    "kind": 1,
+    "name": "http_request",
+    "parentSpanId": "43ad6bc31a826afd",
+    "spanId": "ba332199f3af6d7f",
+    "startTimeUnixNano": "1765198415253325782",
+    "status": {"code": 0, "message": ""},
+    "traceId": "71cad555b35602fbb35f035d6114db54"
+}
+----
+
+* The span still shows `status.code: 0` (success) overall.
+* However, the `events` array contains error information with `error: type`.
+* This indicates a recoverable error or warning during execution.
+* The event's `timeUnixNano` shows exactly when the error occurred.
 
 == Common monitoring scenarios
 
@@ -131,37 +228,6 @@ Link MCP server activity to downstream effects:
 
 The `redpanda.otel_traces` topic uses standard OpenTelemetry format, making it compatible with popular observability platforms.
 
-=== Grafana and Tempo
-
-Export traces to Grafana Tempo for visualization:
-
-. Create a Redpanda Connect pipeline that consumes from `redpanda.otel_traces`.
-. Transform the JSON spans into OTLP format.
-. Send to Tempo's OTLP HTTP endpoint.
-. Query and visualize in Grafana.
-
-Example pipeline configuration:
-
-[,yaml]
-----
-input:
-  kafka:
-    addresses: [ "${REDPANDA_BROKERS}" ]
-    topics: [ "redpanda.otel_traces" ]
-    consumer_group: "tempo-exporter"
-
-pipeline:
-  processors:
-    - mapping: |
-        root = this
-
-output:
-  http_client:
-    url: "http://tempo:4318/v1/traces"
-    verb: POST
-    headers:
-      Content-Type: "application/json"
-----
 
 === Grafana Cloud
 
