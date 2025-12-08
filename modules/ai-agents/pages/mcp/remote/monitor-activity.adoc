@@ -263,16 +263,16 @@ output:
     verb: POST
     headers:
       Content-Type: "application/json"
-      Authorization: "Basic ${GRAFANA_CLOUD_INSTANCE_ID}:${GRAFANA_CLOUD_API_TOKEN}"
+      Authorization: "Basic ${secrets.GRAFANA_CLOUD_INSTANCE_ID}:${secrets.GRAFANA_CLOUD_API_TOKEN}"
     basic_auth:
       enabled: true
-      username: "${GRAFANA_CLOUD_INSTANCE_ID}"
-      password: "${GRAFANA_CLOUD_API_TOKEN}"
+      username: "${secrets.GRAFANA_CLOUD_INSTANCE_ID}"
+      password: "${secrets.GRAFANA_CLOUD_API_TOKEN}"
 ----
 
 [TIP]
 ====
-Store your Grafana Cloud credentials in the xref:develop:connect/configuration/secret-management.adoc[Secrets Store] and reference them using `${secrets.grafana_cloud.instance_id}` and `${secrets.grafana_cloud.api_token}` instead of environment variables.
+Store your Grafana Cloud credentials in the xref:develop:connect/configuration/secret-management.adoc[Secrets Store] and reference them using `${secrets.GRAFANA_CLOUD_INSTANCE_ID}` and `${secrets.GRAFANA_CLOUD_API_TOKEN}`.
 ====
 
 === Datadog
