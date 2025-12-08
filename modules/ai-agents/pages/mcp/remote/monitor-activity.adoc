@@ -7,7 +7,7 @@ Every Remote MCP server automatically emits OpenTelemetry traces to a topic call
 
 You must have an existing MCP server. If you do not have one, see xref:ai-agents:mcp/remote/quickstart.adoc[].
 
-== Understanding the traces topic
+== OpenTelemetry traces topic
 
 When you create an MCP server, Redpanda automatically creates the `redpanda.otel_traces` topic in your cluster. This topic stores OpenTelemetry span data in JSON format, following the https://opentelemetry.io/docs/specs/otel/protocol/[OpenTelemetry Protocol (OTLP)] specification.
 
@@ -228,7 +228,6 @@ Link MCP server activity to downstream effects:
 
 The `redpanda.otel_traces` topic uses standard OpenTelemetry format, making it compatible with popular observability platforms.
 
-
 === Grafana Cloud
 
 Export traces to Grafana Cloud's managed Tempo service:
@@ -284,24 +283,3 @@ Forward traces to Datadog APM:
 . Convert to Datadog trace format.
 . View in Datadog APM with full correlation.
 
-=== Custom dashboards
-
-Build custom monitoring dashboards:
-
-. Consume traces into your data warehouse (ClickHouse, PostgreSQL)
-. Aggregate metrics: request rates, error rates, latencies
-. Create alerts based on SLOs (Service Level Objectives)
-. Track MCP server health and usage patterns
-
-== Best practices
-
-* **Retention**: Configure appropriate retention for `redpanda.otel_traces` based on your compliance and debugging needs.
-* **Sampling**: For high-volume servers, implement sampling in your observability pipeline to reduce storage costs.
-* **Alerting**: Set up alerts for error rates, latency spikes, and unusual activity patterns.
-* **Correlation**: Tag traces with request IDs to correlate MCP activity with application behavior.
-* **Privacy**: Be aware that trace data may contain sensitive information from tool inputs and outputs.
-
-[TIP]
-====
-Start with a simple dashboard showing request rate and error rate. Gradually add more sophisticated metrics like latency percentiles and tool-specific performance breakdowns as you understand your MCP server's usage patterns.
-====
