@@ -46,7 +46,36 @@ Secrets:: Credentials and tokens that you want to use in your tools. These value
 +
 * *Name*: A unique identifier for your server (for example `weather-tool`, `customer-lookup`).
 * *Description*: Brief description of what your server does.
+* *Tags*: Key-value pairs for organizing and categorizing your MCP servers. See <<tags>> for details.
 * *Configuration*: This is where to put your YAML configuration to define an MCP tool.
+
+[[tags]]
+== Organize servers with tags
+
+Tags are key-value metadata that help you organize, categorize, and filter your MCP servers. Use tags to track ownership, environment, cost allocation, or any other organizational dimension relevant to your team.
+
+=== Common tagging strategies
+
+* **Ownership**: `owner=platform-team`, `team=data-engineering`
+* **Environment**: `env=production`, `env=staging`, `env=development`
+* **Cost allocation**: `cost-center=marketing`, `project=analytics`
+* **Purpose**: `purpose=customer-data`, `use-case=real-time-alerts`
+
+=== Reserved tag names
+
+The following tag names are reserved and cannot be used. These tags are system-managed:
+
+* `service_account_id`: Automatically assigned to track the service account associated with the MCP server
+* `secret_id`: Automatically assigned to track secrets used by the MCP server
+
+If you attempt to use these reserved tag names when creating or updating an MCP server, the operation will fail with an error.
+
+=== Best practices
+
+* Use consistent naming conventions across your organization (for example, always lowercase with hyphens or underscores)
+* Document your tagging strategy so all team members use tags consistently
+* Use tags for filtering and searching MCP servers in the console and API
+* Review and update tags periodically to keep them accurate as servers evolve
 
 [[contract]]
 == Design the tool contract and MCP metadata
