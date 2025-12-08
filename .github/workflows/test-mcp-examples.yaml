@@ -28,8 +28,11 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Install doc-tools and dependencies
-        run: npx doc-tools install-test-dependencies
+      - name: Install npm dependencies
+        run: npm install
+
+      - name: Install doc-tools dependencies
+        run: npx --no-install doc-tools install-test-dependencies
 
       - name: Make test script executable
         run: chmod +x modules/ai-agents/examples/test-mcp-examples.sh
