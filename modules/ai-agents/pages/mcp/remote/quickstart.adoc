@@ -187,7 +187,29 @@ It may take a few seconds to start. The status changes from *Starting* to *Runni
 Data Plane API::
 +
 --
-. Using the Data Plane API URL and token from the previous section, make a request to link:/api/doc/cloud-dataplane/operation/operation-mcpserverservice_createmcpserver[`POST /v1/redpanda-connect/mcp-servers`] to create the MCP server:
+. Create a service account using the link:/api/doc/cloud-controlplane/operation/operation-serviceaccountservice_createserviceaccount[Control Plane API]:
++
+[,bash]
+----
+curl -X POST "https://api.redpanda.com/v1/service-accounts" \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "service_account": {
+      "name": "mcp-server-demo",
+      "description": "Service account for MCP server demo"
+    }
+  }'
+----
++
+The response includes `client_id` and `client_secret`. Save these values.
+
+. Store the service account credentials in the xref:develop:connect/configuration/secret-management.adoc[Secrets Store]:
++
+* Create secret `REDPANDA_SA_CLIENT_ID` with the service account `client_id`.
+* Create secret `REDPANDA_SA_CLIENT_SECRET` with the service account `client_secret`.
+
+. Using the Data Plane API URL from the previous section, make a request to link:/api/doc/cloud-dataplane/operation/operation-mcpserverservice_createmcpserver[`POST /v1/redpanda-connect/mcp-servers`] to create the MCP server:
 +
 [,bash]
 ----
@@ -207,8 +229,8 @@ curl -X POST "https://<dataplane-api-url>/v1/redpanda-connect/mcp-servers" \
         "cpu_shares": "100m"
       },
       "service_account": {
-        "client_id": "${secrets.redpanda_sa.client_id}",
-        "client_secret": "${secrets.redpanda_sa.client_secret}"
+        "client_id": "${secrets.REDPANDA_SA_CLIENT_ID}",
+        "client_secret": "${secrets.REDPANDA_SA_CLIENT_SECRET}"
       },
       "tools": {
         "generate_input": {
@@ -217,7 +239,7 @@ curl -X POST "https://<dataplane-api-url>/v1/redpanda-connect/mcp-servers" \
         },
         "redpanda_output": {
           "component_type": "COMPONENT_TYPE_OUTPUT",
-          "config_yaml": "kafka_franz:\n  seed_brokers: [ \"${REDPANDA_BROKERS}\" ]\n  topic: events\n  tls:\n    enabled: true\n  sasl:\n    mechanism: \"${REDPANDA_SASL_MECHANISM}\"\n    username: \"${REDPANDA_SASL_USERNAME}\"\n    password: \"${REDPANDA_SASL_PASSWORD}\""
+          "config_yaml": "redpanda:\n  seed_brokers: [ \"${REDPANDA_BROKERS}\" ]\n  topic: events\n  tls:\n    enabled: true\n"
         }
       }
     }
