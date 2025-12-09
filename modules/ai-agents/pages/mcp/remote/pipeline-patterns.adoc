@@ -179,6 +179,21 @@ include::ai-agents:example$redpanda_output.yaml[]
 
 See also: xref:develop:connect/components/outputs/redpanda.adoc[`redpanda` output]
 
+==== Outputs with processors
+
+Output tools can include processors to transform data before publishing. This pattern is useful when you need to process data and save the result to a destination in a single tool.
+
+**When to use:** Processing user input with an LLM and saving the response, transforming data before publishing to a topic, enriching events before writing to external systems.
+
+**Example use cases:** Send a prompt to an LLM, then save the answer to a topic in Redpanda.
+
+[source,yaml]
+----
+include::ai-agents:example$redpanda_output_with_processors.yaml[]
+----
+
+You can use an output component type with processors, but you cannot use a processor component type with outputs. The `processors` field is available in all output components.
+
 === Caching systems
 
 Use caching to store frequently accessed data, reduce latency, and minimize external API calls. You can implement caching using either Redpanda topics or in-memory stores.
