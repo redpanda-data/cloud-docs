@@ -23,6 +23,33 @@ Each span represents a unit of work performed by your MCP server, such as:
 * Error conditions
 * Performance metrics
 
+=== Topic configuration and lifecycle
+
+The `redpanda.otel_traces` topic is managed automatically by Redpanda and follows a predefined retention policy. Configuration changes to this system-managed topic are not supported and will be reconciled back to the default settings.
+
+The topic persists in your cluster even after all MCP servers are deleted, allowing you to retain historical trace data for analysis.
+
+You can create xref:security:authorization/acl.adoc[ACLs] to control access to the `redpanda.otel_traces` topic using standard Redpanda ACL operations.
+
+Trace data may contain sensitive information from your tool inputs and outputs. Consider implementing appropriate access controls and review the data in traces before sharing or exporting to external systems.
+
+=== Traces compared to audit logs
+
+OpenTelemetry traces are designed for observability and debugging, not audit logging or compliance:
+
+Traces provide:
+
+* Hierarchical view of request flow through your system (parent-child span relationships)
+* Detailed timing information for performance analysis
+* Ability to reconstruct execution paths and identify bottlenecks
+* Insights into how operations flow through distributed systems
+
+Traces are not:
+
+* Immutable audit records for compliance purposes
+* Guaranteed to capture every action (traces can be sampled or dropped under load)
+* Designed for "who did what" accountability tracking
+
 == Consume trace data
 
 You can consume traces from the `redpanda.otel_traces` topic using any Kafka-compatible client or the Redpanda Console.
@@ -107,8 +134,8 @@ Each trace message contains an OpenTelemetry span with the following structure:
 
 All MCP servers in a cluster write traces to the same `redpanda.otel_traces` topic. Each trace has a unique `traceId`, and you can identify which tool created the trace by examining the span fields:
 
-* When `instrumentationScope.name` is `rpcn-mcp`, the span represents an MCP tool invocation
-* The `name` field contains the tool name (for example, `weather`, `http_processor`, `generate_input`)
+* When `instrumentationScope.name` is `rpcn-mcp`, the span represents an MCP tool invocation.
+* The `name` field contains the MCP tool name (for example, `weather`, `http_processor`, `generate_input`).
 * Child spans reference their parent via `parentSpanId` and share the same `traceId`
 
 For example, a span with `instrumentationScope.name: "rpcn-mcp"` and `name: "weather"` indicates the `weather` tool was invoked. Child spans created by Redpanda Connect components show `instrumentationScope.name: "benthos"` and represent internal processing steps.
