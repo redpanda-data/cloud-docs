@@ -7,44 +7,25 @@ This guide provides an overview of administrative tasks for Remote MCP servers. 
 
 You must have an existing MCP server. If you do not have one, see xref:ai-agents:mcp/remote/quickstart.adoc[].
 
-== Administrative tasks
-
-=== Server lifecycle management
+== Server lifecycle management
 
 Manage the basic lifecycle of your MCP servers, including editing configurations, pausing to save costs, and permanent deletion.
 
-See xref:ai-agents:mcp/remote/manage-servers.adoc[] to learn how to:
+See xref:ai-agents:mcp/remote/manage-servers.adoc[].
 
-* Edit an MCP server's configuration, metadata, or tools
-* Stop (pause) an MCP server to release compute resources while preserving configuration
-* Start a stopped MCP server to restore functionality
-* Delete an MCP server permanently
-
-=== Resource scaling
+== Resource scaling
 
 Adjust your MCP server's compute resources to match workload demands and optimize costs. Resource allocation directly affects your billing charges.
 
-See xref:ai-agents:mcp/remote/scale-resources.adoc[] to learn how to:
+See xref:ai-agents:mcp/remote/scale-resources.adoc[].
 
-* Scale resources up during peak usage periods
-* Scale resources down during quieter times to optimize costs
-* Choose the appropriate resource size for your workload (XSmall through XLarge)
-* Use the Cloud UI or Data Plane API to adjust resource allocation
+== Monitoring and observability
 
-=== Monitoring and observability
+Monitor your MCP server's activity using OpenTelemetry traces. Track tool invocations, measure performance, debug failures, and integrate with observability platforms.
 
-Monitor your MCP server's activity using OpenTelemetry traces automatically emitted to the `redpanda.otel_traces` topic. Track tool invocations, measure performance, debug failures, and integrate with observability platforms.
+See xref:ai-agents:mcp/remote/monitor-activity.adoc[].
 
-See xref:ai-agents:mcp/remote/monitor-activity.adoc[] to learn how to:
-
-* Consume and analyze trace data from the `redpanda.otel_traces` topic
-* Track which tools are being called and how often
-* Measure tool execution times and identify performance issues
-* Debug failures using error traces and status codes
-* Integrate with Grafana Tempo, Datadog, or custom dashboards
-* Follow best practices for retention, sampling, and alerting
-
-== Working with the Data Plane API
+== Data Plane API
 
 All administrative tasks can be performed through both the Redpanda Cloud Console UI and the Data Plane API. The Data Plane API is useful for:
 
@@ -58,10 +39,10 @@ To use the Data Plane API:
 . link:/api/doc/cloud-dataplane/topic/topic-quickstart[Authenticate and get the base URL] for the Data Plane API.
 . Use the appropriate endpoint for your task:
 +
-* link:/api/doc/cloud-dataplane/operation/operation-mcpserverservice_updatemcpserver[`PATCH /v1/redpanda-connect/mcp-servers/\{mcp_server_id}`] - Update configuration
-* link:/api/doc/cloud-dataplane/operation/operation-mcpserverservice_stopmcpserver[`POST /v1/redpanda-connect/mcp-servers/\{mcp_server_id}:stop`] - Stop server
-* link:/api/doc/cloud-dataplane/operation/operation-mcpserverservice_startmcpserver[`POST /v1/redpanda-connect/mcp-servers/\{mcp_server_id}:start`] - Start server
-* link:/api/doc/cloud-dataplane/operation/operation-mcpserverservice_deletemcpserver[`DELETE /v1/redpanda-connect/mcp-servers/\{mcp_server_id}`] - Delete server
+* link:/api/doc/cloud-dataplane/operation/operation-mcpserverservice_updatemcpserver[`PATCH /v1/redpanda-connect/mcp-servers/\{mcp_server_id}`]: Update configuration
+* link:/api/doc/cloud-dataplane/operation/operation-mcpserverservice_stopmcpserver[`POST /v1/redpanda-connect/mcp-servers/\{mcp_server_id}:stop`]: Stop server
+* link:/api/doc/cloud-dataplane/operation/operation-mcpserverservice_startmcpserver[`POST /v1/redpanda-connect/mcp-servers/\{mcp_server_id}:start`]: Start server
+* link:/api/doc/cloud-dataplane/operation/operation-mcpserverservice_deletemcpserver[`DELETE /v1/redpanda-connect/mcp-servers/\{mcp_server_id}`]: Delete server
 
 [NOTE]
 ====
