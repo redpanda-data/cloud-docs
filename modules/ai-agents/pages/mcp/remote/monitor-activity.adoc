@@ -103,6 +103,16 @@ Each trace message contains an OpenTelemetry span with the following structure:
 * `status`: Operation status with `code` (0 = OK, 2 = ERROR) and optional `message`.
 * `instrumentationScope`: Identifies the library or component that created the span.
 
+=== Identifying MCP servers and tools
+
+All MCP servers in a cluster write traces to the same `redpanda.otel_traces` topic. Each trace has a unique `traceId`, and you can identify which tool created the trace by examining the span fields:
+
+* When `instrumentationScope.name` is `rpcn-mcp`, the span represents an MCP tool invocation
+* The `name` field contains the tool name (for example, `weather`, `http_processor`, `generate_input`)
+* Child spans reference their parent via `parentSpanId` and share the same `traceId`
+
+For example, a span with `instrumentationScope.name: "rpcn-mcp"` and `name: "weather"` indicates the `weather` tool was invoked. Child spans created by Redpanda Connect components show `instrumentationScope.name: "benthos"` and represent internal processing steps.
+
 === Real trace examples
 
 Here are actual traces from MCP tool executions showing the parent-child span relationships and detailed attributes.
