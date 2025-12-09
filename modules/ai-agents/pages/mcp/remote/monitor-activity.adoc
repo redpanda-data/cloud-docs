@@ -13,6 +13,8 @@ When you create an MCP server, Redpanda automatically creates the `redpanda.otel
 
 A Protobuf schema named `redpanda.otel_traces-value` is also automatically registered with the topic, enabling clients to deserialize trace data correctly.
 
+The `redpanda.otel_traces` topic and its schema are managed automatically by Redpanda. If you delete either the topic or the schema, they are recreated automatically. However, deleting the topic permanently deletes all trace data, and the topic comes back empty. Do not produce your own data to this topic. It is reserved for OpenTelemetry traces.
+
 Each span represents a unit of work performed by your MCP server, such as:
 
 * Tool invocation requests
