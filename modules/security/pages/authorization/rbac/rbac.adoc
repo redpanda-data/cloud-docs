@@ -1,7 +1,7 @@
 = Configure RBAC in the Control Plane
 :description: Configure RBAC to manage access to organization-level resources like clusters, resource groups, and networks.
 
-Use Redpanda Cloud role-based access control (RBAC) in the glossterm:control plane[] to manage and restrict access to resources in your organization. For example, you could grant everyone access to clusters in a development resource group while limiting access to clusters in a production resource group. Or, you could limit access to geographically-dispersed clusters in accordance with data residency laws.
+Use Redpanda Cloud role-based access control (RBAC) in the glossterm:control plane[] to manage and restrict access to resources in your organization. For example, you could grant everyone in your organization access to clusters in a development resource group while limiting access to clusters in a production resource group. Or, you could limit access to geographically-dispersed clusters in accordance with data residency laws.
 
 The following resources can be assigned as the scope of a role: 
 
@@ -11,7 +11,7 @@ The following resources can be assigned as the scope of a role:
 - Network peerings
 - Clusters (Serverless clusters have a different set of permissions from BYOC and Dedicated clusters.) 
 
-NOTE: Topics are not included.
+NOTE: Topics are not included. For topic-level access control, see xref:security:authorization/rbac/rbac_dp[Configure RBAC in the Data Plane].
 
 You can manage these RBAC configurations with the https://cloud.redpanda.com[Redpanda Cloud UI^] or with the link:/api/doc/cloud-controlplane/[Control Plane API].
 
@@ -25,7 +25,11 @@ You can manage these RBAC configurations with the https://cloud.redpanda.com[Red
 
 == Manage access for organization
 
-In the Redpanda Cloud UI, the *Organization IAM* page lists your organization's existing users and service accounts and their associated roles. You can edit a user's access, invite new users, and create service accounts. When you add a user, you define their permissions with role binding. Service accounts are assigned the Admin role for all resources in the organization. 
+In the Redpanda Cloud UI, the *Organization IAM* page lists your organization's existing users and service accounts and their associated roles. You can edit a user's access, invite new users, and create service accounts. 
+
+Click the *Roles* tab to see the permissions included with each of the predefined roles: Admin, Writer, and Reader. These predefined roles cannot be edited or deleted. However, you can create custom roles with specific permissions on your organization's resources. For example, you could add a custom role in the control plane that allows certain users in your organization write access on resources groups. In the data plane for a BYOC or Dedicated cluster, you could then enable fine-grained access for that role; for example, enabling write access only on topics that start with `_team`.
+
+When you add a user, you define their permissions with role binding. Service accounts are assigned the Admin role for all resources in the organization. 
 
 On the *Organization IAM - Users* page, select a user to see their assigned roles. For example, for a user with Admin access on the organization, the user's _Resource_ is the organization name, the _Scope_ is organization, and the _Role_ is Admin.
 
