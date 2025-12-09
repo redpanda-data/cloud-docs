@@ -1,8 +1,8 @@
 = Build Remote MCP Servers in Redpanda Cloud
-:description: Learn how to write and deploy Remote MCP servers in Redpanda Cloud. This guide covers concepts, patterns, and best practices.
+:description: Learn how to write and deploy MCP servers in Redpanda Cloud. This guide covers concepts, patterns, and best practices.
 
 
-This guide teaches you how to build xref:ai-agents:mcp/remote/overview.adoc[Remote MCP servers] that are managed in Redpanda Cloud. Remote MCP servers run inside your Redpanda Cloud cluster and expose tools that AI clients can call using MCP.
+This guide teaches you how to build xref:ai-agents:mcp/remote/overview.adoc[Remote MCP servers] that are managed in Redpanda Cloud. MCP servers run inside your Redpanda Cloud cluster and expose tools that AI clients can call using MCP.
 
 == Prerequisites
 
@@ -19,7 +19,7 @@ You should also be familiar with YAML, HTTP APIs, and basic event-stream process
 
 Remote MCP server:: A managed, hosted MCP service deployed to your cluster. You write each tool's logic using Redpanda Connect configuration and annotate them with MCP metadata so clients can discover and invoke them.
 
-Redpanda Connect:: A framework for building event-driven data pipelines. Tools inside your Remote MCP servers are implemented as Redpanda Connect configurations that run inside your Redpanda Cloud cluster.
+Redpanda Connect:: A framework for building event-driven data pipelines. Tools inside your MCP servers are implemented as Redpanda Connect configurations that run inside your Redpanda Cloud cluster.
 
 Tool:: A single request/response operation exposed to MCP.
 
@@ -335,7 +335,7 @@ See xref:ai-agents:mcp/remote/admin-guide.adoc[].
 [[test]]
 == Authenticate and connect your MCP client
 
-To connect your local MCP client to your Remote MCP server:
+To connect your local MCP client to your MCP server:
 
 . First, authenticate to Redpanda Cloud:
 +
@@ -369,15 +369,15 @@ rpk cloud mcp proxy \
 ----
 +
 --
-<1> The target Redpanda Cloud cluster ID where your Remote MCP server is hosted.
-<2> The unique ID of your deployed Remote MCP server
+<1> The target Redpanda Cloud cluster ID where your MCP server is hosted.
+<2> The unique ID of your deployed MCP server
 --
 +
 TIP: You can find this command and the IDs in the *Connection* tab of your MCP server in Redpanda Cloud.
 
-The proxy acts as a bridge between your local client and the Remote MCP server running in your cluster. It:
+The proxy acts as a bridge between your local client and the MCP server running in your cluster. It:
 
-* Connects to your Remote MCP server using your authentication token
+* Connects to your MCP server using your authentication token
 * Discovers and registers all tools from the Remote server locally
 * Proxies MCP requests from your client to the Remote server
 * Handles authentication by injecting your token into each request
