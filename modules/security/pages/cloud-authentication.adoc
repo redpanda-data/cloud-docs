@@ -3,23 +3,26 @@
 :page-toclevels: 3
 :page-aliases: manage:security/authentication.adoc
 
-Redpanda Cloud provides secure authentication for both users accessing the platform and services connecting to your clusters.
+Redpanda Cloud uses authentication to verify who can access your clusters and perform actions. 
+
+* *User authentication*: How people access the Redpanda Cloud UI and manage resources
+* *Service authentication*: How applications and services connect to your Redpanda clusters
 
 == User authentication
 
-Redpanda provides user authentication to your Redpanda organization through email/password or single sign-on. 
+Redpanda provides user authentication to your Redpanda organization through email/password or single sign-on (SSO) with OIDC-based identity provider (IdP). 
 
-=== Email
+=== Email/password
 
-Redpanda Cloud can authenticate users with emails and passwords. Passwords are hashed (a one-way function that makes the original value unrecoverable, and effectively encrypted) and salted at rest using https://en.wikipedia.org/wiki/Bcrypt[bcrypt^].
+Passwords are hashed (a one-way function that makes the original value unrecoverable, and effectively encrypted) and salted at rest using https://en.wikipedia.org/wiki/Bcrypt[bcrypt^].
 
 === Single sign-on
 
-Redpanda Cloud can authenticate users with single sign-on (SSO) to an OIDC-based identity provider (IdP). Redpanda integrates with any OIDC-compliant IdP that supports discovery, including <<integrate-with-okta,Okta>>, <<integrate-with-microsoft-entra-id,Microsoft Entra ID>>, Auth0, Active Directory Federation Services (AD-FS), and JumpCloud. After SSO is enabled for an organization, new users in that organization can authenticate with SSO. 
+Redpanda integrates with any OIDC-compliant IdP that supports discovery, including <<integrate-with-okta,Okta>>, <<integrate-with-microsoft-entra-id,Microsoft Entra ID>>, Auth0, Active Directory Federation Services (AD-FS), and JumpCloud. After SSO is enabled for an organization, new users in that organization can authenticate with SSO. 
 
-You must integrate your IdP with Redpanda Cloud to use SSO. On the *Users* page, users with admin permission see a *Single sign-on* tab and can add connections for up to two different IdPs. Enter the client ID, client secret, and discovery URI for the IdP. (See your IdP documentation for these values. The discovery URI may be called something different, like the well known URL or the `issuer_url`.) 
+You must integrate your IdP with Redpanda Cloud to use SSO. On the *Users* page, users with the admin permissions see a *Single sign-on* tab and can add connections for up to two different IdPs. Enter the client ID, client secret, and discovery URI for the IdP. (See your IdP documentation for these values. The discovery URI may be called something different, like the well known URL or the `issuer_url`.) 
 
-By default, the connection is added in a disabled state. Edit the connection to enable it. You can choose to enable auto-enroll in the connection, which provides new users signing in from that IdP access to your Redpanda organization. When you enable auto-enroll, you select to assign a read, write, or admin role to users who log in with that IdP. Set up is different for most IdPs. 
+By default, the connection is added in a disabled state. Edit the connection to enable it. You can choose to enable auto-enroll in the connection, which provides new users signing in from that IdP access to your Redpanda organization. When you enable auto-enroll, you select to assign a Reader, Writer, or Admin role to users who log in with that IdP. Set up is different across IdPs. 
 
 NOTE: Before you can delete an SSO connection, an admin must manually delete all users associated with that connection.
 
@@ -107,20 +110,56 @@ Administrators can require MFA for all users in an organization.
 * *TOTP code not accepted:* Ensure the code hasn't expired and that your phone's time is set automatically; time drift can cause invalid codes.
 * *Remembered device prompts again:* The 30-day trust is device- and browser-specific. Clearing cookies, switching browsers, or using a new device requires re-verification.
 
+=== User impersonation
+
+include::shared:partial$feature-flag.adoc[]
+
+BYOC and Dedicated clusters support unified authentication and authorization between the Redpanda Cloud UI and Redpanda with user impersonation. With user impersonation enabled, the topics and resources users see in the UI match exactly what they can access with the Cloud API or `rpk`. You can use the same credentials to authenticate to both Redpanda Cloud and the underlying Redpanda cluster, with consistent permissions across all interfaces. This ensures accurate audit logs and unified identity enforcement across all client applications, including the Cloud UI. 
+
+* *Without user impersonation*: Redpanda Cloud uses a static service account to access your cluster. All UI requests appear to come from this generic admin user.
+* *With user impersonation*: Redpanda Cloud uses your individual user credentials and evaluates permissions using glossterm:ACL[,access control lists (ACLs)] and glossterm:RBAC[,role-based access control (RBAC)] in the data plane. Each user sees only the resources they have permission to access.  
+
+To enable user impersonation:
+
+. Go to the *Cluster settings* page and select the option to enable user impersonation.
+. Configure permissions for your users on the cluster *Security* page using ACLs or RBAC roles.
+
+[IMPORTANT]
+====
+After enabling user impersonation:
+
+* *Admin users* continue to have full access as before
+* *Reader and Writer users* will lose access to the cluster until you explicitly grant them permissions through ACLs or RBAC roles on the *Security* page
+
+Plan to configure user permissions before or immediately after enabling this feature to avoid access disruption.
+==== 
+
 == Service authentication
 
-Each Redpanda Cloud data plane runs its own dedicated agent,
-which authenticates and connects against the control plane over a single TLS 1.2
-encrypted TCP connection.
+Your applications and tools need to authenticate when connecting to Redpanda APIs. Redpanda Cloud supports different authentication methods depending on which API you're using and your cloud provider. 
 
-Different Redpanda APIs support different authentication methods: 
+* *SASL* (Simple Authentication and Security Layer): Username and password authentication over encrypted connections
+* *mTLS* (Mutual TLS): Certificate-based authentication where both client and server verify each other's identity  
+* *Basic authentication*: Username and password sent in HTTP headers over encrypted connections
 
-* Kafka API: Redpanda Cloud supports both SASL (over TLS 1.2) and <<mtls,mTLS>> authentication for Kafka clients connecting to Redpanda clusters over the TCP endpoint or listener.
-* HTTP Proxy and Schema Registry: Redpanda Cloud supports HTTP Basic Authentication (encrypted over TLS 1.2) and <<mtls,mTLS>> for client authentication.
+NOTE: mTLS authentication is supported on AWS and GCP clusters only. Azure clusters currently support SASL and basic authentication only. 
 
-For AWS and GCP, you can simultaneously enable mTLS and SASL for Kafka API, and mTLS and Basic authentication for the HTTP APIs (HTTP Proxy and Schema Registry). If you enable both mTLS and SASL, Redpanda creates two distinct listeners: an mTLS listener operating on one port and a SASL listener operating on a different port.
+=== Authentication methods by API
 
-.Redpanda API authentication methods
+Different APIs support different authentication methods:
+
+* *Kafka API*: Redpanda Cloud supports both SASL (over TLS 1.2) and <<mtls,mTLS>> authentication for Kafka clients connecting to Redpanda clusters over the TCP endpoint or listener.
+* *HTTP Proxy API* and *Schema Registry API*: Redpanda Cloud supports HTTP basic authentication (encrypted over TLS 1.2) and <<mtls,mTLS>> for client authentication.
+
+For AWS and GCP, you can simultaneously enable mTLS and SASL for the Kafka API, and mTLS and basic authentication for the HTTP APIs (HTTP Proxy and Schema Registry). 
+
+When you enable both authentication methods, Redpanda creates separate listeners:
+
+* One mTLS listener on a specific port
+* One SASL/basic authentication listener on a different port
+
+This allows clients to choose which authentication method to use when connecting.
+
 [%collapsible]
 |===
 |Cloud provider |API |Supported authentication methods
@@ -136,12 +175,12 @@ a|
 ** SASL/PLAIN
 * mTLS
 
-|HTTP Proxy
+|HTTP Proxy API
 a|
 * Basic authentication
 * mTLS
 
-|Schema Registry
+|Schema Registry API
 a|
 * Basic authentication
 * mTLS
@@ -157,12 +196,12 @@ a|
 ** SASL/PLAIN
 * mTLS
 
-|HTTP Proxy
+|HTTP Proxy API
 a|
 * Basic authentication
 * mTLS
 
-|Schema Registry
+|Schema Registry API
 a|
 * Basic authentication
 * mTLS
@@ -174,14 +213,19 @@ a|
 ** SASL/SCRAM
 ** SASL/PLAIN
 
-|HTTP Proxy
+|HTTP Proxy API
 a|
 * Basic authentication
 
-|Schema Registry
+|Schema Registry API
 a|
 * Basic authentication
 |===
+
+
+NOTE: Each Redpanda Cloud glossterm:data plane[] runs its own dedicated agent,
+which authenticates and connects against the control plane over a single TLS 1.2
+encrypted TCP connection.
 
 The following features use IAM policies to generate
 dynamic and short-lived credentials to interact with cloud provider APIs:
@@ -195,31 +239,28 @@ xref:security:authorization/cloud-iam-policies.adoc[IAM policies] have constrain
 access or manage its own data plane-scoped resources, following the principle of
 least privilege.
 
-== Configure service authentication
+=== Configure service authentication
 
-Redpanda Cloud supports mTLS or SASL authentication for Kafka API, HTTP Proxy, and Schema Registry.
-
-When you create a new cluster using the https://cloud.redpanda.com/[Cloud UI^], the cluster is enabled by default with SASL for Kafka API, and Basic authentication for HTTP Proxy and Schema Registry.
+When you create a new cluster using the https://cloud.redpanda.com/[Cloud UI^], the cluster is enabled by default with SASL for the Kafka API and basic authentication for the HTTP Proxy API and Schema Registry API.
 
 === Requirements
 
-NOTE: mTLS authentication is supported on AWS and GCP clusters only.
+To configure service authentication using the Cloud API, you must have:
 
-If you want to enable mTLS authentication:
+* A service account in your Redpanda organization with administrative privileges
+* Access to the link:/api/doc/cloud-controlplane/topic/topic-cloud-api-overview[Cloud API]
 
-* You must use the Cloud API to create a new mTLS-enabled cluster. 
-* You must also use the Cloud API to update an existing cluster to switch to mTLS authentication for Kafka API.
-* You can use the Cloud UI to update an existing cluster to switch to mTLS authentication for HTTP Proxy and Schema Registry only.
-* To enable mTLS and SASL (or Basic authentication) simultaneously, you must use the Cloud API to create a new cluster or update an existing cluster.
+==== Configuration methods by interface
 
-To configure service authentication in your cluster using the Cloud API, you must have the following:
-
-* A service account in your Redpanda organization. You must have administrative privileges to create a service account.
-* Access to the link:/api/doc/cloud-controlplane/topic/topic-cloud-api-overview[Cloud API] to enable mTLS or both SASL and mTLS. You use the service account to obtain an access token. You then make a request to the Control Plane API, passing the access token in the authorization header.
+* *Cloud UI*: Create clusters with default SASL/basic authentication, or enable mTLS for HTTP Proxy and Schema Registry on existing clusters
+* *Cloud API*: Required to:
+** Create mTLS-enabled clusters
+** Enable mTLS for the Kafka API on existing clusters  
+** Enable both mTLS and SASL/basic authentication simultaneously
 
 === Authenticate to the Cloud API
 
-. Create a service account in your organization, if you haven't already. Go to the Service account tab of the https://cloud.redpanda.com/organization-iam?tab=service-accounts[Organization IAM^] page in the Redpanda Cloud UI and click *Create service account* to create a service account. Enter a name and description.
+. Create a service account in your organization, if you haven't already. In the Redpanda Cloud UI, go to the *Service account* tab of the https://cloud.redpanda.com/organization-iam?tab=service-accounts[Organization IAM^] page to create a service account. 
 . Retrieve the client ID and secret by clicking *Copy ID* and *Copy Secret*. 
 . Obtain an access token by making a `POST` request to `\https://auth.prd.cloud.redpanda.com/oauth/token` with the ID and secret in the request body. 
 +
@@ -253,7 +294,13 @@ Make sure to replace the following variables:
 
 For clusters with mTLS authentication, Redpanda creates a dedicated mTLS-enabled listener for each API service (Kafka API, HTTP Proxy, or Schema Registry) where you've enabled this authentication method. After you enable mTLS, <<retrieve-api-endpoints,get the API endpoints>> and <<verify-mtls,verify that mTLS authentication is in effect>>. 
 
-NOTE: If you enable mTLS authentication, you cannot disable it later.
+[NOTE]
+====
+
+* mTLS authentication is supported on AWS and GCP clusters only.
+* If you enable mTLS authentication, you cannot disable it later.
+==== 
+
 
 ==== Create a new cluster with mTLS enabled
 
@@ -261,7 +308,7 @@ NOTE: If you enable mTLS authentication, you cannot disable it later.
 
 . Make a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_createcluster[`POST /v1/clusters`] request to create a new cluster with mTLS enabled.
 
-NOTE: The following example enables mTLS for Kafka API. To enable mTLS for HTTP Proxy and Schema Registry, add the `http_proxy.mtls` and `schema_registry.mtls` fields to the request body. You can choose to enable mTLS for any combination of the three services.
+NOTE: The following example enables mTLS for the Kafka API. To enable mTLS for HTTP Proxy and Schema Registry, add the `http_proxy.mtls` and `schema_registry.mtls` fields to the request body. You can choose to enable mTLS for any combination of the three services.
 
 .Show example request to enable mTLS for Kafka API
 [%collapsible]
@@ -356,7 +403,7 @@ When the operation state is `COMPLETED`, you can <<verify-mtls,verify that mTLS 
 
 Make a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_updatecluster[`PATCH /v1/clusters/{cluster.id}`] request to enable mTLS for the Kafka API on a cluster.
 
-The following code block shows a request to enable mTLS for Kafka API. To enable mTLS for HTTP Proxy and Schema Registry, add the `http_proxy.mtls` and `schema_registry.mtls` fields to the request body:
+The following code block shows a request to enable mTLS for the Kafka API. To enable mTLS for HTTP Proxy and Schema Registry, add the `http_proxy.mtls` and `schema_registry.mtls` fields to the request body:
 
 .Show example request
 [%collapsible]
@@ -416,15 +463,15 @@ When the operation state is `COMPLETED`, you can <<verify-mtls,verify that mTLS 
 
 NOTE: You can enable mTLS and SASL simultaneously for AWS and GCP clusters only. To unlock this feature for your account, contact your Customer Success Manager.
 
-You can choose to enable mTLS and SASL simultaneously for the Kafka API, and mTLS and Basic authentication for HTTP Proxy and Schema Registry. The `sasl` field in the API request examples toggle both SASL and Basic authentication. 
+You can choose to enable mTLS and SASL simultaneously for the Kafka API, and mTLS and Basic authentication for HTTP Proxy and Schema Registry. The `sasl` field in the API request examples toggle both SASL and basic authentication. 
 
 ==== Create a new cluster with both mTLS and SASL enabled
 
-. Follow the steps to create a resource group and network for xref:manage:api/cloud-byoc-controlplane-api.adoc#create-a-resource-group[BYOC] or xref:manage:api/cloud-dedicated-controlplane-api.adoc#create-a-resource-group[Dedicated], if you haven't already done so. You'll need the resource group ID and network ID to create a cluster in the next step.
+. Follow the steps to create a resource group and network for link:/api/doc/cloud-controlplane/operation/operation-clusterservice_createcluster[BYOC] or link:/api/doc/cloud-controlplane/operation/operation-clusterservice_createcluster[Dedicated], if you haven't already done so. You'll need the resource group ID and network ID to create a cluster in the next step.
 
-. Make a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_createcluster[`POST /v1/clusters`] request to create a new cluster with both mTLS and SASL or Basic authentication enabled.
+. Make a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_createcluster[`POST /v1/clusters`] request to create a new cluster with both mTLS and SASL or basic authentication enabled.
 +
-You can enable mTLS and SASL or Basic authentication for any combination of the three services. For example, if you want to enable mTLS and SASL simultaneously for Kafka API and mTLS and Basic authentication simultaneously for Schema Registry only, leave out the entire `http_proxy` block from the request body. If you want to enable mTLS only for Kafka API, and mTLS and Basic authentication for HTTP Proxy and Schema Registry, leave out the `kafka_api.sasl` field.
+You can enable mTLS and SASL or basic authentication for any combination of the three services. For example, if you want to enable mTLS and SASL simultaneously for Kafka API and mTLS and basic authentication simultaneously for Schema Registry only, leave out the entire `http_proxy` block from the request body. If you want to enable mTLS only for the Kafka API, and mTLS and basic authentication for HTTP Proxy and Schema Registry, leave out the `kafka_api.sasl` field.
 +
 .Show example request
 [%collapsible]
@@ -540,7 +587,7 @@ When the operation state is `COMPLETED`, you can <<verify-mtls,verify that mTLS 
 
 Make a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_updatecluster[`PATCH /v1/clusters/{cluster.id}`] request to enable mTLS and SASL on an existing cluster.
 
-You can choose to enable mTLS and SASL or Basic authentication for any combination of the three services. For example, if you want to enable mTLS and SASL simultaneously for Kafka API and mTLS and Basic authentication simultaneously for Schema Registry only, leave out the entire `http_proxy` block from the request body. If you want to enable mTLS only for Kafka API, and mTLS and Basic authentication for HTTP Proxy and Schema Registry, leave out the `kafka_api.sasl` field.
+You can choose to enable mTLS and SASL or basic authentication for any combination of the three services. For example, if you want to enable mTLS and SASL simultaneously for Kafka API and mTLS and basic authentication simultaneously for Schema Registry only, leave out the entire `http_proxy` block from the request body. If you want to enable mTLS only for the Kafka API, and mTLS and basic authentication for HTTP Proxy and Schema Registry, leave out the `kafka_api.sasl` field.
 
 .Show example request
 [%collapsible]
@@ -680,9 +727,9 @@ a|
 |===
 
 [[verify-mtls]]
-=== Verify mTLS for Kafka API connections
+=== Verify mTLS for Kafka API
 
-To verify that mTLS is enabled for Kafka API, run the following `rpk` command without providing a security certificate or private key:
+To verify that mTLS is enabled for the Kafka API, run the following `rpk` command without providing a security certificate or private key:
 
 [,bash]
 ----
@@ -732,7 +779,7 @@ curl -u test:12345 -k --cert cert.pem --key key.pem https://schema-registry-15d2
 
 === Verify SASL
 
-To verify that SASL is enabled for Kafka API, run the following `rpk` command:
+To verify that SASL is enabled for the Kafka API, run:
 
 [,bash]
 ----
