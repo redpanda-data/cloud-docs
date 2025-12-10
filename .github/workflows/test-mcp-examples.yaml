@@ -34,6 +34,11 @@ jobs:
       - name: Install doc-tools dependencies
         run: npx --no-install doc-tools install-test-dependencies
 
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
       - name: Make test script executable
         run: chmod +x modules/ai-agents/examples/test-mcp-examples.sh
 
