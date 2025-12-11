@@ -4,20 +4,19 @@
 
 You can configure monitoring on your cluster to maintain system health and optimize performance. You can monitor Redpanda with https://prometheus.io/[Prometheus^] or with any other monitoring and alerting tool, such as Datadog, New Relic, Elastic Cloud, Google Cloud, or Azure.
 
-Redpanda Cloud exports Redpanda metrics for all brokers and connectors from a single OpenMetrics endpoint. This endpoint can be found on the *Overview* page for your BYOC or Dedicated cluster, under *How to connect* and *Prometheus*.
+Redpanda Cloud exports Redpanda metrics for all brokers and connectors from a single OpenMetrics endpoint. This endpoint can be found on the *Overview* page for your cluster, under *How to connect* and *Prometheus*.
 
 
 [NOTE]
 ====
 
-- BYOC and Dedicated clusters can export Redpanda metrics to a third-party monitoring system. Serverless clusters _cannot_ export Redpanda metrics.
 - To maximize performance, Redpanda exports some metrics only when the underlying feature is in use. For example, a metric for consumer groups, xref:reference:public-metrics-reference.adoc#redpanda_kafka_consumer_group_committed_offset[`redpanda_kafka_consumer_group_committed_offset`], is only exported when groups are registered.
 - Operating system-level and node-level metrics (such as CPU, memory, disk, and network usage) are not available through this endpoint. For infrastructure monitoring, use your cloud provider's native monitoring tools (such as Azure Monitor, AWS CloudWatch, or Google Cloud Monitoring).
 ====
 
 == Configure Redpanda monitoring
 
-To monitor a BYOC or Dedicated cluster:
+To monitor a Redpanda Cloud cluster:
 
 . On the Redpanda Cloud *Overview* page for your cluster, under *How to connect*, click the *Prometheus* tab. 
 
@@ -48,7 +47,7 @@ image::shared:cloud_metrics.png[How to connect screenshot]
 
 == Configure Datadog
 
-To monitor a Dedicated or BYOC cluster in https://www.datadoghq.com/[Datadog^]: 
+To monitor a BYOC or Dedicated cluster in https://www.datadoghq.com/[Datadog^]: 
 
 . Follow the steps to configure Redpanda monitoring.
 
@@ -78,6 +77,18 @@ For hands-on learning, Redpanda provides a repository with examples of monitorin
 image::https://github.com/redpanda-data/observability/blob/main/docs/images/Ops%20Dashboard.png?raw=true[Example Redpanda Ops Dashboard^]
 
 It includes https://github.com/redpanda-data/observability#grafana-dashboards[example Grafana dashboards^] and a https://github.com/redpanda-data/observability#sandbox-environment[sandbox environment^] in which you launch a Dockerized Redpanda cluster and create a custom workload to monitor with dashboards.
+
+[TIP]
+====
+Use xref:reference:rpk/rpk-generate/rpk-generate-grafana-dashboard.adoc[`rpk generate grafana-dashboard`] to generate a sample dashboard from the examples repository that you can import into a Grafana instance.
+
+For example, to generate the sample Serverless dashboard, run:
+
+[,bash]
+----
+rpk generate grafana-dashboard --dashboard serverless
+----
+====
 
 == Monitor health and performance
 
