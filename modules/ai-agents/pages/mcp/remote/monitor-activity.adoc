@@ -9,7 +9,7 @@ You must have an existing MCP server. If you do not have one, see xref:ai-agents
 
 == OpenTelemetry traces topic
 
-When you create an MCP server, Redpanda automatically creates the `redpanda.otel_traces` topic in your cluster. This topic stores OpenTelemetry span data in JSON format, following the https://opentelemetry.io/docs/specs/otel/protocol/[OpenTelemetry Protocol (OTLP)^] specification.
+When you create an MCP server, Redpanda automatically creates the `redpanda.otel_traces` topic in your cluster. This topic stores OpenTelemetry span data in JSON format with 100% sampling rate (also known as an execution log), following the https://opentelemetry.io/docs/specs/otel/protocol/[OpenTelemetry Protocol (OTLP)^] specification.
 
 A Protobuf schema named `redpanda.otel_traces-value` is also automatically registered with the topic, enabling clients to deserialize trace data correctly.
 
@@ -47,7 +47,6 @@ Traces provide:
 Traces are not:
 
 * Immutable audit records for compliance purposes
-* Guaranteed to capture every action (traces can be sampled or dropped under load)
 * Designed for "who did what" accountability tracking
 
 == Consume trace data
@@ -279,60 +278,7 @@ Link MCP server activity to downstream effects:
 
 == Integration with observability platforms
 
-The `redpanda.otel_traces` topic uses standard OpenTelemetry format, making it compatible with popular observability platforms.
+The `redpanda.otel_traces` topic stores trace data in OpenTelemetry format. Direct export to platforms like Grafana Cloud and Datadog is not supported due to format compatibility limitations. Redpanda produces one span per topic message, whereas these platforms expect traces in batch format.
 
-=== Grafana Cloud
-
-Export traces to Grafana Cloud's managed Tempo service:
-
-. Get your Grafana Cloud OTLP endpoint and credentials:
-+
-* OTLP endpoint: `https://otlp-gateway-{region}.grafana.net/otlp/v1/traces`
-* Instance ID (from your Grafana Cloud portal)
-* API token or Access Policy token
-. Create a Redpanda Connect pipeline that consumes from `redpanda.otel_traces`.
-. Send traces to Grafana Cloud with authentication.
-. View and query traces in your Grafana Cloud instance.
-
-Example pipeline configuration:
-
-[,yaml]
-----
-input:
-  kafka:
-    addresses: [ "${REDPANDA_BROKERS}" ]
-    topics: [ "redpanda.otel_traces" ]
-    consumer_group: "grafana-cloud-exporter"
-
-pipeline:
-  processors:
-    - mapping: |
-        root = this
-
-output:
-  http_client:
-    url: "https://otlp-gateway-prod-us-central-0.grafana.net/otlp/v1/traces"
-    verb: POST
-    headers:
-      Content-Type: "application/json"
-      Authorization: "Basic ${secrets.GRAFANA_CLOUD_INSTANCE_ID}:${secrets.GRAFANA_CLOUD_API_TOKEN}"
-    basic_auth:
-      enabled: true
-      username: "${secrets.GRAFANA_CLOUD_INSTANCE_ID}"
-      password: "${secrets.GRAFANA_CLOUD_API_TOKEN}"
-----
-
-[TIP]
-====
-Store your Grafana Cloud credentials in the xref:develop:connect/configuration/secret-management.adoc[Secrets Store] and reference them using `${secrets.GRAFANA_CLOUD_INSTANCE_ID}` and `${secrets.GRAFANA_CLOUD_API_TOKEN}`.
-====
-
-=== Datadog
-
-Forward traces to Datadog APM:
-
-. Use Datadog Agent with OpenTelemetry support.
-. Configure a pipeline to consume `redpanda.otel_traces`.
-. Convert to Datadog trace format.
-. View in Datadog APM with full correlation.
+You can consume traces directly from the `redpanda.otel_traces` topic using any Kafka-compatible consumer for custom analysis and processing.
 
