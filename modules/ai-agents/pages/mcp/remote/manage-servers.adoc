@@ -1,0 +1,154 @@
+= Manage Remote MCP Servers
+:description: Learn how to edit, stop, start, and delete MCP servers in Redpanda Cloud.
+
+This guide shows you how to manage the lifecycle of MCP servers, including editing configurations, pausing servers to save costs, and permanent deletion.
+
+== Prerequisites
+
+You must have an existing MCP server. If you do not have one, see xref:ai-agents:mcp/remote/quickstart.adoc[].
+
+== Edit an MCP server
+
+You can update the configuration, resources, or metadata of an MCP server at any time.
+
+[tabs]
+=====
+Cloud UI::
++
+--
+. In the Redpanda Cloud Console, navigate to *Remote MCP*.
+. Find the MCP server you want to edit and click its name.
+. Click *Edit configuration*.
+. Make your changes.
+. Click *Save* to apply changes.
+
+[NOTE]
+====
+Editing a running MCP server may cause a brief interruption. Review changes before deploying to production.
+====
+--
+
+Data Plane API::
++
+--
+. link:/api/doc/cloud-dataplane/topic/topic-quickstart[Authenticate and get the base URL] for the Data Plane API.
+. Make a request to link:/api/doc/cloud-dataplane/operation/operation-mcpserverservice_getmcpserver[`GET /v1/redpanda-connect/mcp-servers/\{mcp_server_id}`] to retrieve the current configuration.
+. Make a request to link:/api/doc/cloud-dataplane/operation/operation-mcpserverservice_updatemcpserver[`PATCH /v1/redpanda-connect/mcp-servers/\{mcp_server_id}`] to update the configuration:
++
+[,bash]
+----
+curl -X PATCH "https://<dataplane-api-url>/v1/redpanda-connect/mcp-servers/<mcp-server-id>?update_mask=display_name,description" \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "mcp_server": {
+      "display_name": "updated-name",
+      "description": "Updated description"
+    }
+  }'
+----
+--
+=====
+
+== Stop an MCP server
+
+Stopping a server pauses all tool execution and releases compute resources, but preserves configuration and state. This is useful for temporarily disabling a server to save costs while retaining the ability to restart it later.
+
+[tabs]
+=====
+Cloud UI::
++
+--
+. In the Redpanda Cloud Console, navigate to *Remote MCP*.
+. Find the server you want to stop.
+. Click the three dots and select *Stop*.
+. Confirm the action.
+--
+
+Data Plane API::
++
+--
+. link:/api/doc/cloud-dataplane/topic/topic-quickstart[Authenticate and get the base URL] for the Data Plane API.
+. Make a request to link:/api/doc/cloud-dataplane/operation/operation-mcpserverservice_stopmcpserver[`POST /v1/redpanda-connect/mcp-servers/\{mcp_server_id}:stop`]:
++
+[,bash]
+----
+curl -X POST "https://<dataplane-api-url>/v1/redpanda-connect/mcp-servers/<mcp-server-id>:stop" \
+  -H "Authorization: Bearer <token>"
+----
+--
+=====
+
+
+While stopped, the server does not respond to MCP requests. Start it again to restore service.
+
+== Start a stopped MCP server
+
+Resume a stopped server to restore its functionality.
+
+[tabs]
+=====
+Cloud UI::
++
+--
+. In the Redpanda Cloud Console, navigate to *Remote MCP*.
+. Find the stopped server.
+. Click the three dots and select *Start*.
+. Wait for the status to show *Running* before reconnecting clients.
+--
+
+Data Plane API::
++
+--
+. link:/api/doc/cloud-dataplane/topic/topic-quickstart[Authenticate and get the base URL] for the Data Plane API.
+. Make a request to link:/api/doc/cloud-dataplane/operation/operation-mcpserverservice_startmcpserver[`POST /v1/redpanda-connect/mcp-servers/\{mcp_server_id}:start`]:
++
+[,bash]
+----
+curl -X POST "https://<dataplane-api-url>/v1/redpanda-connect/mcp-servers/<mcp-server-id>:start" \
+  -H "Authorization: Bearer <token>"
+----
++
+. Wait for the status to show *Running* before reconnecting clients.
+--
+=====
+
+== Delete an MCP server
+
+Deleting a server is permanent and cannot be undone. All configuration, tools, and associated resources are removed.
+
+[tabs]
+=====
+Cloud UI::
++
+--
+. In the Redpanda Cloud Console, navigate to *Remote MCP*.
+. Find the server you want to delete.
+. Click the three dots and select *Delete*.
+. Confirm the deletion when prompted.
+--
+
+Data Plane API::
++
+--
+. link:/api/doc/cloud-dataplane/topic/topic-quickstart[Authenticate and get the base URL] for the Data Plane API.
+. Make a request to link:/api/doc/cloud-dataplane/operation/operation-mcpserverservice_deletemcpserver[`DELETE /v1/redpanda-connect/mcp-servers/\{mcp_server_id}`]:
++
+[,bash]
+----
+curl -X DELETE "https://<dataplane-api-url>/v1/redpanda-connect/mcp-servers/<mcp-server-id>" \
+  -H "Authorization: Bearer <token>"
+----
+--
+=====
+
+[WARNING]
+====
+Deletion is immediate and permanent. Make sure you have backed up any important configuration before deleting an MCP server.
+====
+
+== Next steps
+
+* xref:ai-agents:mcp/remote/scale-resources.adoc[Scale MCP server resources] to optimize performance and costs.
+* xref:ai-agents:mcp/remote/monitor-activity.adoc[Monitor MCP server activity] using OpenTelemetry traces.
+* xref:ai-agents:mcp/remote/developer-guide.adoc[Build custom tools] for your specific use cases.

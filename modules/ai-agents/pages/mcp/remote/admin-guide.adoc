@@ -1,56 +1,56 @@
-= Manage Remote MCP Servers
-:page-beta: true
-:description: Learn how to manage, edit, stop, resume, and delete Remote MCP servers in Redpanda Cloud.
+= Remote MCP Server Administration Guide
+:description: Overview of administrative tasks for managing MCP servers in Redpanda Cloud.
 
-
-This guide is for Redpanda Cloud administrators who need to manage the lifecycle of Remote MCP servers.
+This guide provides an overview of administrative tasks for MCP servers. Use these resources to manage your MCP servers throughout their lifecycle, from creation to deletion.
 
 == Prerequisites
 
 You must have an existing MCP server. If you do not have one, see xref:ai-agents:mcp/remote/quickstart.adoc[].
 
-== Edit an existing MCP server
+== Server lifecycle management
 
-You can update the configuration, resources, or metadata of a Remote MCP server at any time.
+Manage the basic lifecycle of your MCP servers, including editing configurations, pausing to save costs, and deleting.
 
-. In the Redpanda Cloud Console, navigate to *Remote MCP*.
-. Find the MCP server you want to edit and click its name.
-. Click *Edit configuration*.
-. Make your changes.
-. Click *Save* to apply changes.
+See xref:ai-agents:mcp/remote/manage-servers.adoc[].
+
+== Resource scaling
+
+Adjust your MCP server's compute resources to match workload demands and optimize costs. Resource allocation directly affects your billing charges.
+
+See xref:ai-agents:mcp/remote/scale-resources.adoc[].
+
+== Monitoring and observability
+
+Monitor your MCP server's activity using OpenTelemetry traces. Track tool invocations, measure performance, debug failures, and integrate with observability platforms.
+
+See xref:ai-agents:mcp/remote/monitor-activity.adoc[].
+
+== Data Plane API
+
+All administrative tasks can be performed through both the Redpanda Cloud Console UI and the Data Plane API. The Data Plane API is useful for:
+
+* Automation and Infrastructure as Code (IaC)
+* CI/CD pipeline integration
+* Custom tooling and scripts
+* Programmatic management at scale
+
+To use the Data Plane API:
+
+. link:/api/doc/cloud-dataplane/topic/topic-quickstart[Authenticate and get the base URL] for the Data Plane API.
+. Use the appropriate endpoint for your task:
++
+* link:/api/doc/cloud-dataplane/operation/operation-mcpserverservice_updatemcpserver[`PATCH /v1/redpanda-connect/mcp-servers/\{mcp_server_id}`]: Update configuration
+* link:/api/doc/cloud-dataplane/operation/operation-mcpserverservice_stopmcpserver[`POST /v1/redpanda-connect/mcp-servers/\{mcp_server_id}:stop`]: Stop server
+* link:/api/doc/cloud-dataplane/operation/operation-mcpserverservice_startmcpserver[`POST /v1/redpanda-connect/mcp-servers/\{mcp_server_id}:start`]: Start server
+* link:/api/doc/cloud-dataplane/operation/operation-mcpserverservice_deletemcpserver[`DELETE /v1/redpanda-connect/mcp-servers/\{mcp_server_id}`]: Delete server
 
 [NOTE]
 ====
-Editing a running MCP server may cause a brief interruption. Review changes before deploying to production.
+Access tokens expire after 1 hour. To refresh, make the authentication request again with your service account credentials. The same token works for both Control Plane and Data Plane API requests.
 ====
 
-== Stop (pause) an MCP server
+== Next steps
 
-Pausing a server stops all tool execution and releases compute resources, but preserves configuration and state.
-
-. In the *Remote MCP* list, find the server you want to stop.
-. Click the three dots and select *Stop*.
-. Confirm the action.
-
-[NOTE]
-====
-While stopped, the server does not respond to MCP requests. Start it again to restore service.
-====
-
-== Resume a stopped MCP server
-
-. In the *Remote MCP* list, find the stopped server.
-. Click the three dots and select *Start*.
-. Wait for the status to show *Running* before reconnecting clients.
-
-== Delete an MCP server
-
-Deleting a server is permanent and cannot be undone.
-
-. In the *Remote MCP* list, find the server to delete.
-. Click the three dots and select *Delete*.
-. Confirm the deletion when prompted.
-
-== API and automation
-
-All of these actions can also be performed using the Redpanda Cloud API version v1alpha3. See the link:https://github.com/redpanda-data/console/blob/master/proto/gen/openapi/openapi.v1alpha3.yaml[OpenAPI specification file] for endpoints to manage MCP servers.
+* xref:ai-agents:mcp/remote/developer-guide.adoc[Build custom tools] for your specific use cases.
+* xref:develop:connect/configuration/secret-management.adoc[Manage secrets] used by MCP server tools.
+* xref:billing:billing.adoc#remote-mcp-billing-metrics[Understand MCP billing] to optimize costs.
