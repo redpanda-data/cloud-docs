@@ -256,37 +256,37 @@ This trace shows an HTTP request that encountered an error during execution:
 
 Monitor which tools are being called and how often:
 
-. Consume traces from `redpanda.otel_traces`
-. Filter spans where `name` contains `tool_invocation`
-. Examine the `mcp.tool.name` attribute to see which tools are being used
-. Calculate frequency by counting spans per tool name over time windows
+. Consume traces from `redpanda.otel_traces`.
+. Filter spans where `name` contains `tool_invocation`.
+. Examine the `mcp.tool.name` attribute to see which tools are being used.
+. Calculate frequency by counting spans per tool name over time windows.
 
 === Measure performance
 
 Analyze tool execution times:
 
-. Find spans with `mcp.tool.name` attributes
-. Calculate duration: `(endTimeUnixNano - startTimeUnixNano) / 1000000` (milliseconds)
-. Track percentiles (p50, p95, p99) to identify performance issues
-. Set alerts for durations exceeding acceptable thresholds
+. Find spans with `mcp.tool.name` attributes.
+. Calculate duration: `(endTimeUnixNano - startTimeUnixNano) / 1000000` (milliseconds).
+. Track percentiles (p50, p95, p99) to identify performance issues.
+. Set alerts for durations exceeding acceptable thresholds.
 
 === Debug failures
 
 Investigate errors and failures:
 
-. Filter spans where `status.code` is not `STATUS_CODE_OK`
-. Look for `STATUS_CODE_ERROR` in the status field
-. Examine `status.message` for error details
-. Use `traceId` to correlate related spans and understand the full error context
+. Filter spans where `status.code` is not `STATUS_CODE_OK`.
+. Look for `STATUS_CODE_ERROR` in the status field.
+. Examine `status.message` for error details.
+. Use `traceId` to correlate related spans and understand the full error context.
 
 === Correlate distributed operations
 
 Link MCP server activity to downstream effects:
 
-. Extract `traceId` from tool invocation spans
-. Search for the same `traceId` in other application logs or traces
-. Follow `parentSpanId` relationships to build complete operation timelines
-. Identify bottlenecks across your entire system
+. Extract `traceId` from tool invocation spans.
+. Search for the same `traceId` in other application logs or traces.
+. Follow `parentSpanId` relationships to build complete operation timelines.
+. Identify bottlenecks across your entire system.
 
 == Integration with observability platforms
 
