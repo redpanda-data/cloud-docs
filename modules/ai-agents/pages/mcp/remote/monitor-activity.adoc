@@ -7,15 +7,27 @@ Every MCP server automatically emits OpenTelemetry traces to a topic called `red
 
 You must have an existing MCP server. If you do not have one, see xref:ai-agents:mcp/remote/quickstart.adoc[].
 
-== OpenTelemetry traces topic
+== Execution log
 
-When you create an MCP server, Redpanda automatically creates the `redpanda.otel_traces` topic in your cluster. This topic stores OpenTelemetry span data in JSON format with 100% sampling rate (also known as an execution log), following the https://opentelemetry.io/docs/specs/otel/protocol/[OpenTelemetry Protocol (OTLP)^] specification.
+When you create an MCP server, Redpanda captures a complete execution log by recording all operations as OpenTelemetry traces with 100% sampling. This execution log is stored in the `redpanda.otel_traces` topic.
 
-A Protobuf schema named `redpanda.otel_traces-value` is also automatically registered with the topic, enabling clients to deserialize trace data correctly.
+=== Traces and spans
+
+OpenTelemetry traces provide a complete picture of how a request flows through your system:
+
+* A *trace* represents the entire lifecycle of a request (for example, a tool invocation from start to finish).
+* A *span* represents a single unit of work within that trace (such as a data processing operation or an external API call).
+* A trace contains one or more spans organized hierarchically, showing how operations relate to each other.
+
+With 100% sampling, every operation is captured, creating a complete execution log that you can use for debugging, monitoring, and performance analysis.
+
+=== How Redpanda stores traces
+
+The `redpanda.otel_traces` topic stores OpenTelemetry spans in JSON format, following the https://opentelemetry.io/docs/specs/otel/protocol/[OpenTelemetry Protocol (OTLP)^] specification. A Protobuf schema named `redpanda.otel_traces-value` is also automatically registered with the topic, enabling clients to deserialize trace data correctly.
 
 The `redpanda.otel_traces` topic and its schema are managed automatically by Redpanda. If you delete either the topic or the schema, they are recreated automatically. However, deleting the topic permanently deletes all trace data, and the topic comes back empty. Do not produce your own data to this topic. It is reserved for OpenTelemetry traces.
 
-Each span represents a unit of work performed by your MCP server, such as:
+Each span in the execution log represents a specific operation performed by your MCP server, such as:
 
 * Tool invocation requests
 * Data processing operations
@@ -25,11 +37,11 @@ Each span represents a unit of work performed by your MCP server, such as:
 
 === Topic configuration and lifecycle
 
-The `redpanda.otel_traces` topic is managed automatically by Redpanda and follows a predefined retention policy. Configuration changes to this topic are not supported. If you modify settings, Redpanda reverts them to the default values.
+The `redpanda.otel_traces` topic has a predefined retention policy. Configuration changes to this topic are not supported. If you modify settings, Redpanda reverts them to the default values.
 
 The topic persists in your cluster even after all MCP servers are deleted, allowing you to retain historical trace data for analysis.
 
-You can create xref:security:authorization/acl.adoc[ACLs] to control access to the `redpanda.otel_traces` topic using standard Redpanda ACL operations.
+You can create glossterm:ACL[,access control lists (ACLs)] to control access to the `redpanda.otel_traces` topic using standard Redpanda ACL operations.
 
 Trace data may contain sensitive information from your tool inputs and outputs. Consider implementing appropriate access controls and review the data in traces before sharing or exporting to external systems.
 
@@ -49,7 +61,7 @@ Traces are not:
 * Immutable audit records for compliance purposes
 * Designed for "who did what" accountability tracking
 
-== Consume trace data
+== Consume traces from the execution log
 
 You can consume traces from the `redpanda.otel_traces` topic using any Kafka-compatible client or the Redpanda Console.
 
