@@ -1,16 +1,15 @@
 = Build Remote MCP Servers in Redpanda Cloud
-:page-beta: true
-:description: Learn how to write and deploy Remote MCP servers in Redpanda Cloud. This guide covers concepts, patterns, and best practices.
+:description: Learn how to write and deploy MCP servers in Redpanda Cloud. This guide covers concepts, patterns, and best practices.
 
 
-This guide teaches you how to build xref:ai-agents:mcp/remote/overview.adoc[Remote MCP servers] that are managed in Redpanda Cloud. Remote MCP servers run inside your Redpanda Cloud cluster and expose tools that AI clients can call using MCP.
+This guide teaches you how to build xref:ai-agents:mcp/remote/overview.adoc[MCP servers] that are managed in Redpanda Cloud. MCP servers run inside your Redpanda Cloud cluster and expose tools that AI clients can call using MCP.
 
 == Prerequisites
 
-* Access to a Redpanda Cloud cluster
-* Ability to manage the xref:develop:connect/configuration/secret-management.adoc[Secrets Store] entries
-* At least version 25.2.5 of xref:manage:rpk/rpk-install.adoc[`rpk` installed on your computer]
-* (Optional) An AI assistant like Claude or Claude Code for testing
+* Access to a Redpanda Cloud cluster.
+* Ability to manage the xref:develop:connect/configuration/secret-management.adoc[Secrets Store] entries.
+* At least version 25.2.5 of xref:manage:rpk/rpk-install.adoc[`rpk` installed on your computer].
+* (Optional) An AI assistant like Claude or Claude Code for testing.
 
 TIP: For a quickstart, see xref:ai-agents:mcp/remote/quickstart.adoc[].
 
@@ -20,7 +19,7 @@ You should also be familiar with YAML, HTTP APIs, and basic event-stream process
 
 Remote MCP server:: A managed, hosted MCP service deployed to your cluster. You write each tool's logic using Redpanda Connect configuration and annotate them with MCP metadata so clients can discover and invoke them.
 
-Redpanda Connect:: A framework for building event-driven data pipelines. Tools inside your Remote MCP servers are implemented as Redpanda Connect configurations that run inside your Redpanda Cloud cluster.
+Redpanda Connect:: A framework for building event-driven data pipelines. Tools inside your MCP servers are implemented as Redpanda Connect configurations that run inside your Redpanda Cloud cluster.
 
 Tool:: A single request/response operation exposed to MCP.
 
@@ -28,26 +27,72 @@ Secrets:: Credentials and tokens that you want to use in your tools. These value
 
 == Development workflow
 
-. <<access, Access your Redpanda Cloud cluster>>: Select a Redpanda Cloud cluster to host your MCP server.
+. <<access, Create MCP server and configure metadata>>: Navigate to Remote MCP in Redpanda Cloud Console, create a new server, and configure server metadata (display name, description, tags, resources, service account).
 . <<contract, Design the tool contract>>: Annotate MCP metadata with `meta.mcp.enabled: true`, provide a concise description, and declare parameters.
 . <<provision-secrets, Provision secrets (optional)>>: Create secrets in the Secrets Store for any credentials. Never inline secrets in YAML.
-. <<pipeline-patterns, Implement the logic>>: Build the logic for your MCP tool using Redpanda Connect configurations.
+. <<pipeline-patterns, Build your MCP tool>>: Build your MCP tool using Redpanda Connect components.
 . <<lint, Lint and deploy>>: Validate your configuration, catch schema errors, then deploy and test with the MCP Inspector.
 . <<test, Authenticate and connect your MCP client>>: Install a proxy entry with `rpk cloud mcp proxy` in your AI assistant MCP configuration, or connect with your own MCP client.
 . <<observe, Observe and debug>>: Add temporary `log` processors, adjust timeouts/retries, and right-size resources.
 
 [[access]]
-== Access MCP Servers in Redpanda Cloud
+== Create MCP server and configure metadata
 
 . Log into your link:https://cloud.redpanda.com[Redpanda Cloud Console^].
 . Select your cluster from the cluster list.
 . In the left sidebar, navigate to *Remote MCP*.
 . If this is your first MCP server, you'll see an empty list with a *Create MCP Server* button.
-. Fill in the required fields:
+. Click *Create MCP Server* and configure the *Server Metadata*:
 +
-* *Name*: A unique identifier for your server (for example `weather-tool`, `customer-lookup`).
+* *Display Name*: A human-friendly name for your server (for example `weather-tool`, `customer-lookup`).
 * *Description*: Brief description of what your server does.
-* *Configuration*: This is where to put your YAML configuration to define an MCP tool.
+* *Tags*: Key-value pairs for organizing and categorizing your MCP servers. See <<tags>> for details.
+* *Resources*: Choose the compute resources (XSmall through XLarge) based on your expected workload.
+* *Service Account*: A service account name is pre-filled and will be created automatically.
++
+. Click *Next* to define your tools using YAML configuration. See <<contract>> to design your tool contract.
+
+[[tags]]
+== Organize servers with tags
+
+Tags are key-value metadata that help you organize, categorize, and filter your MCP servers. Use tags to track ownership, environment, cost allocation, or any other organizational dimension relevant to your team.
+
+=== Common tagging strategies
+
+[cols="1,2,2"]
+|===
+| Strategy | Description | Examples
+
+| Ownership
+| Track which team or individual owns the MCP server.
+| `owner=platform-team`, `team=data-engineering`
+
+| Environment
+| Identify the deployment environment.
+| `env=production`, `env=staging`, `env=development`
+
+| Cost allocation
+| Allocate costs to specific departments or projects.
+| `cost-center=marketing`, `project=analytics`
+
+| Purpose
+| Describe the use case or data domain.
+| `purpose=customer-data`, `use-case=real-time-alerts`
+|===
+
+=== Reserved tag names
+
+The following tag names are reserved and cannot be used. These tags are system-managed:
+
+* `service_account_id`: Automatically assigned to track the service account associated with the MCP server.
+* `secret_id`: Automatically assigned to track the service account secret used by the MCP server.
+
+=== Best practices
+
+* Use consistent naming conventions across your organization (for example, always lowercase with hyphens or underscores).
+* Document your tagging strategy so all team members use tags consistently.
+* Use tags for filtering and searching MCP servers in the Cloud Console and API.
+* Review and update tags periodically to keep them accurate as servers evolve.
 
 [[contract]]
 == Design the tool contract and MCP metadata
@@ -97,7 +142,20 @@ After defining your tool contract, implement the logic to handle input validatio
 [[provision-secrets]]
 == Provision secrets
 
-All credentials and sensitive values must be stored in the Redpanda Cloud xref:develop:connect/configuration/secret-management.adoc[Secrets Store]. Follow these best practices:
+All credentials and sensitive values must be stored in the Redpanda Cloud xref:develop:connect/configuration/secret-management.adoc[Secrets Store].
+
+=== Creating secrets in the Cloud Console
+
+When you reference secrets in your tool's YAML configuration using `${secrets.SECRET_NAME}`, the Cloud Console automatically detects these references and provides an interface next to the configuration editor where you can:
+
+. Enter the secret values directly
+. Create the secrets in the Secrets Store with a single click
+
+This inline secret creation workflow simplifies the development process by letting you configure secrets as you build your tools, without navigating away to the Secrets Store.
+
+Alternatively, you can manually create and manage secrets directly in the xref:develop:connect/configuration/secret-management.adoc[Secrets Store].
+
+=== Best practices
 
 - Reference secrets as `${secrets.NAME}` in your YAML configuration.
 - Never commit secrets to Git or reference them directly inline in configuration files.
@@ -108,7 +166,7 @@ All credentials and sensitive values must be stored in the Redpanda Cloud xref:d
 See an example of using secrets in xref:ai-agents:mcp/remote/pipeline-patterns.adoc#secrets[MCP patterns].
 
 [[pipeline-patterns]]
-== Implement the logic of your MCP tool
+== Build your MCP tool
 
 Use Redpanda Connect components to implement the logic of your MCP tool. Here are some best practices:
 
@@ -277,7 +335,7 @@ See xref:ai-agents:mcp/remote/admin-guide.adoc[].
 [[test]]
 == Authenticate and connect your MCP client
 
-To connect your local MCP client to your Remote MCP server:
+To connect your local MCP client to your MCP server:
 
 . First, authenticate to Redpanda Cloud:
 +
@@ -311,15 +369,15 @@ rpk cloud mcp proxy \
 ----
 +
 --
-<1> The target Redpanda Cloud cluster ID where your Remote MCP server is hosted.
-<2> The unique ID of your deployed Remote MCP server
+<1> The target Redpanda Cloud cluster ID where your MCP server is hosted.
+<2> The unique ID of your deployed MCP server
 --
 +
 TIP: You can find this command and the IDs in the *Connection* tab of your MCP server in Redpanda Cloud.
-
-The proxy acts as a bridge between your local client and the Remote MCP server running in your cluster. It:
-
-* Connects to your Remote MCP server using your authentication token
++
+The proxy acts as a bridge between your local client and the MCP server running in your cluster. It:
++
+* Connects to your MCP server using your authentication token
 * Discovers and registers all tools from the Remote server locally
 * Proxies MCP requests from your client to the Remote server
 * Handles authentication by injecting your token into each request
@@ -330,7 +388,7 @@ The proxy acts as a bridge between your local client and the Remote MCP server r
 
 [NOTE]
 ====
-You can implement the auth workflow directly against Redpanda Cloud APIs and skip the use of `rpk`. The proxy is a convenience, not a requirement of Remote MCP. For code examples, see the *Connection* tab in your MCP server in Redpanda Cloud.
+You can implement the auth workflow directly against Redpanda Cloud APIs and skip the use of `rpk`. The proxy is a convenience, not a requirement for MCP servers. For code examples, see the *Connection* tab in your MCP server in Redpanda Cloud.
 ====
 
 :note-caption: Note

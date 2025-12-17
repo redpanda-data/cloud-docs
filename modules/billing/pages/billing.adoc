@@ -112,17 +112,35 @@ Replication to object storage is implemented with glossterm:Tiered Storage[]. Al
 
 == Redpanda Connect billing metrics
 
-Pricing per pipeline depends on:
-
-- The number of xref:develop:connect/configuration/resource-management.adoc[compute units] you allocate.
-- The cost of a compute unit, which can vary based on the cloud provider and region you select for your cluster.
+Pricing per pipeline depends on the compute units you allocate. The cost of a compute unit can vary based on the cloud provider and region you select for your cluster.
 
 [cols="1,3",options="header"]
 |===
 | Metric | Description
 
-| Compute | Tracks the server resources (vCPU and memory) a pipeline uses in compute units per hour.
-|=== 
+| Compute | Tracks the server resources (vCPU and memory) a pipeline uses in compute units per hour. Where:
+
+1 compute unit = 0.1 CPU + 400 MB memory
+|===
+
+== Remote MCP billing metrics
+
+Remote MCP usage appears as a separate line item on your invoice and uses the same pricing structure as Redpanda Connect.
+
+Pricing per MCP server depends on the compute units you allocate. The cost of a compute unit can vary based on the cloud provider and region you select for your cluster.
+
+[cols="1,3",options="header"]
+|===
+| Metric | Description
+
+| Compute | Tracks the server resources (vCPU and memory) an MCP server uses in compute units per hour. Where:
+
+1 compute unit = 0.1 CPU + 400 MB memory
+|===
+
+NOTE: Compute units for Remote MCP use the same definition and rates as those for Redpanda Connect.
+
+MCP servers automatically emit OpenTelemetry traces to the xref:ai-agents:mcp/remote/monitor-activity.adoc#opentelemetry-traces-topic[`redpanda.otel_traces` topic]. For Serverless clusters, usage of this system-managed traces topic is not billed. You will not incur ingress, egress, storage, or partition charges for trace data. For Dedicated and BYOC clusters, standard billing metrics apply to the traces topic.
 
 == Support plans
 

@@ -1,0 +1,296 @@
+= Monitor Remote MCP Server Activity
+:description: Learn how to monitor MCP servers using OpenTelemetry traces, track tool invocations, debug failures, and integrate with observability platforms.
+
+Every MCP server automatically emits OpenTelemetry traces to a topic called `redpanda.otel_traces`. These traces provide detailed observability into your MCP server's operations, including tool invocations, processing times, errors, and resource usage.
+
+== Prerequisites
+
+You must have an existing MCP server. If you do not have one, see xref:ai-agents:mcp/remote/quickstart.adoc[].
+
+== Execution log
+
+When you create an MCP server, Redpanda captures a complete execution log by recording all operations as OpenTelemetry traces with 100% sampling. This execution log is stored in the `redpanda.otel_traces` topic.
+
+=== Traces and spans
+
+OpenTelemetry traces provide a complete picture of how a request flows through your system:
+
+* A *trace* represents the entire lifecycle of a request (for example, a tool invocation from start to finish).
+* A *span* represents a single unit of work within that trace (such as a data processing operation or an external API call).
+* A trace contains one or more spans organized hierarchically, showing how operations relate to each other.
+
+With 100% sampling, every operation is captured, creating a complete execution log that you can use for debugging, monitoring, and performance analysis.
+
+=== How Redpanda stores traces
+
+The `redpanda.otel_traces` topic stores OpenTelemetry spans in JSON format, following the https://opentelemetry.io/docs/specs/otel/protocol/[OpenTelemetry Protocol (OTLP)^] specification. A Protobuf schema named `redpanda.otel_traces-value` is also automatically registered with the topic, enabling clients to deserialize trace data correctly.
+
+The `redpanda.otel_traces` topic and its schema are managed automatically by Redpanda. If you delete either the topic or the schema, they are recreated automatically. However, deleting the topic permanently deletes all trace data, and the topic comes back empty. Do not produce your own data to this topic. It is reserved for OpenTelemetry traces.
+
+Each span in the execution log represents a specific operation performed by your MCP server, such as:
+
+* Tool invocation requests
+* Data processing operations
+* External API calls
+* Error conditions
+* Performance metrics
+
+=== Topic configuration and lifecycle
+
+The `redpanda.otel_traces` topic has a predefined retention policy. Configuration changes to this topic are not supported. If you modify settings, Redpanda reverts them to the default values.
+
+The topic persists in your cluster even after all MCP servers are deleted, allowing you to retain historical trace data for analysis.
+
+You can create glossterm:ACL[,access control lists (ACLs)] to control access to the `redpanda.otel_traces` topic using standard Redpanda ACL operations.
+
+Trace data may contain sensitive information from your tool inputs and outputs. Consider implementing appropriate access controls and review the data in traces before sharing or exporting to external systems.
+
+=== Traces compared to audit logs
+
+OpenTelemetry traces are designed for observability and debugging, not audit logging or compliance:
+
+Traces provide:
+
+* Hierarchical view of request flow through your system (parent-child span relationships)
+* Detailed timing information for performance analysis
+* Ability to reconstruct execution paths and identify bottlenecks
+* Insights into how operations flow through distributed systems
+
+Traces are not:
+
+* Immutable audit records for compliance purposes
+* Designed for "who did what" accountability tracking
+
+== Consume traces from the execution log
+
+You can consume traces from the `redpanda.otel_traces` topic using any Kafka-compatible client or the Redpanda Console.
+
+[tabs]
+=====
+Cloud UI::
++
+--
+. In the Redpanda Cloud Console, navigate to *Topics*.
+. Select `redpanda.otel_traces`.
+. Click *Messages* to view recent traces.
+. Use filters to search for specific trace IDs, span names, or time ranges.
+--
+
+rpk::
++
+--
+Consume the most recent traces:
+
+[,bash]
+----
+rpk topic consume redpanda.otel_traces --offset end -n 10
+----
+
+Filter for specific MCP server activity by examining the span attributes.
+--
+
+Data Plane API::
++
+--
+Use the link:/api/doc/cloud-dataplane/topic/topic-quickstart[Data Plane API] to programmatically consume traces and integrate with your monitoring pipeline.
+--
+=====
+
+== Trace data structure
+
+Each trace message contains an OpenTelemetry span with the following structure:
+
+[,json]
+----
+{
+  "traceId": "71cad555b35602fbb35f035d6114db54",
+  "spanId": "43ad6bc31a826afd",
+  "parentSpanId": "",
+  "name": "http_processor",
+  "kind": 1,
+  "startTimeUnixNano": "1765198415253280028",
+  "endTimeUnixNano": "1765198424660663434",
+  "attributes": [
+    {
+      "key": "city_name",
+      "value": {"stringValue": "london"}
+    },
+    {
+      "key": "result_length",
+      "value": {"intValue": "198"}
+    }
+  ],
+  "status": {
+    "code": 0,
+    "message": ""
+  },
+  "instrumentationScope": {
+    "name": "rpcn-mcp"
+  },
+  "flags": 1
+}
+----
+
+* `traceId`: Unique identifier for the entire trace (hex-encoded string).
+* `spanId`: Unique identifier for this specific span (hex-encoded string).
+* `parentSpanId`: Links child spans to parent operations (empty string if root span).
+* `name`: Descriptive name of the operation (typically the tool name in the case of MCP servers).
+* `kind`: Span kind as integer (see the `redpanda.otel_traces-value` schema for details).
+* `startTimeUnixNano` / `endTimeUnixNano`: Timing information in nanoseconds since Unix epoch.
+* `attributes`: Array of key-value pairs with contextual information about the operation.
+* `status`: Operation status with `code` (0 = OK, 2 = ERROR) and optional `message`.
+* `instrumentationScope`: Identifies the library or component that created the span.
+
+=== Identifying MCP servers and tools
+
+All MCP servers in a cluster write traces to the same `redpanda.otel_traces` topic. Each trace has a unique `traceId`, and you can identify which tool created the trace by examining the span fields:
+
+* When `instrumentationScope.name` is `rpcn-mcp`, the span represents an MCP tool invocation.
+* The `name` field contains the MCP tool name (for example, `weather`, `http_processor`, `generate_input`).
+* Child spans reference their parent using `parentSpanId` and share the same `traceId`
+
+For example, a span with `instrumentationScope.name: "rpcn-mcp"` and `name: "weather"` indicates the `weather` tool was invoked. Child spans created by Redpanda Connect components show `instrumentationScope.name: "redpanda-connect"` and represent internal processing steps.
+
+=== Real trace examples
+
+Here are actual traces from MCP tool executions showing the parent-child span relationships and detailed attributes.
+
+**Successful tool execution:**
+
+This trace shows an `http_processor` tool that fetched weather data for London. The parent span includes child spans for mutations, HTTP requests, and processing:
+
+[source,json]
+----
+{
+    "attributes": [
+        {
+            "key": "city_name",
+            "value": {"stringValue": "london"}
+        },
+        {
+            "key": "result_prefix",
+            "value": {"stringValue": "{\"city\":\"london\",\"description\":\"Partly cloudy\",\"feels_like\":12,\"humidity\":88,\"metadata\":{\"fetched_at\":\"2025-12-08T12:53:44.660Z\""}
+        },
+        {
+            "key": "result_length",
+            "value": {"intValue": "198"}
+        }
+    ],
+    "endTimeUnixNano": "1765198424660663434",
+    "flags": 1,
+    "instrumentationScope": {"name": "rpcn-mcp"},
+    "kind": 1,
+    "name": "http_processor",
+    "spanId": "43ad6bc31a826afd",
+    "startTimeUnixNano": "1765198415253280028",
+    "status": {"code": 0, "message": ""},
+    "traceId": "71cad555b35602fbb35f035d6114db54"
+}
+----
+
+The parent span (`http_processor`) has child spans showing the processing pipeline:
+
+[,json]
+----
+{
+    "attributes": [],
+    "endTimeUnixNano": "1765198424659619511",
+    "flags": 1,
+    "instrumentationScope": {"name": "redpanda-connect"},
+    "kind": 1,
+    "name": "http",
+    "parentSpanId": "43ad6bc31a826afd",
+    "spanId": "ed45544a7d7b08d4",
+    "startTimeUnixNano": "1765198415253319496",
+    "status": {"code": 0, "message": ""},
+    "traceId": "71cad555b35602fbb35f035d6114db54"
+}
+----
+
+* The parent span (`http_processor`) includes custom attributes like `city_name` and `result_length` that help debug and monitor tool behavior.
+* Child spans use the same `traceId` but different `spanId` values.
+* The `parentSpanId` in child spans matches the parent's `spanId`, creating the hierarchy.
+* Duration can be calculated: `(1765198424660663434 - 1765198415253280028) / 1000000 = 9407ms`.
+
+**Trace with error event:**
+
+This trace shows an HTTP request that encountered an error during execution:
+
+[,json]
+----
+{
+    "attributes": [],
+    "endTimeUnixNano": "1765198423080903265",
+    "events": [
+        {
+            "attributes": [
+                {
+                    "key": "error",
+                    "value": {"stringValue": "type"}
+                }
+            ],
+            "name": "event",
+            "timeUnixNano": "1765198420254169629"
+        }
+    ],
+    "flags": 1,
+    "instrumentationScope": {"name": "redpanda-connect"},
+    "kind": 1,
+    "name": "http_request",
+    "parentSpanId": "43ad6bc31a826afd",
+    "spanId": "ba332199f3af6d7f",
+    "startTimeUnixNano": "1765198415253325782",
+    "status": {"code": 0, "message": ""},
+    "traceId": "71cad555b35602fbb35f035d6114db54"
+}
+----
+
+* The span still shows `status.code: 0` (success) overall.
+* However, the `events` array contains error information with `error: type`.
+* This indicates a recoverable error or warning during execution.
+* The event's `timeUnixNano` shows exactly when the error occurred.
+
+== Common monitoring scenarios
+
+=== Track tool invocations
+
+Monitor which tools are being called and how often:
+
+. Consume traces from `redpanda.otel_traces`.
+. Filter spans where `name` contains `tool_invocation`.
+. Examine the `mcp.tool.name` attribute to see which tools are being used.
+. Calculate frequency by counting spans per tool name over time windows.
+
+=== Measure performance
+
+Analyze tool execution times:
+
+. Find spans with `mcp.tool.name` attributes.
+. Calculate duration: `(endTimeUnixNano - startTimeUnixNano) / 1000000` (milliseconds).
+. Track percentiles (p50, p95, p99) to identify performance issues.
+. Set alerts for durations exceeding acceptable thresholds.
+
+=== Debug failures
+
+Investigate errors and failures:
+
+. Filter spans where `status.code` is not `STATUS_CODE_OK`.
+. Look for `STATUS_CODE_ERROR` in the status field.
+. Examine `status.message` for error details.
+. Use `traceId` to correlate related spans and understand the full error context.
+
+=== Correlate distributed operations
+
+Link MCP server activity to downstream effects:
+
+. Extract `traceId` from tool invocation spans.
+. Search for the same `traceId` in other application logs or traces.
+. Follow `parentSpanId` relationships to build complete operation timelines.
+. Identify bottlenecks across your entire system.
+
+== Integration with observability platforms
+
+The `redpanda.otel_traces` topic stores trace data in OpenTelemetry format. Direct export to platforms like Grafana Cloud and Datadog is not supported due to format compatibility limitations. Redpanda produces one span per topic message, whereas these platforms expect traces in batch format.
+
+You can consume traces directly from the `redpanda.otel_traces` topic using any Kafka-compatible consumer for custom analysis and processing.
+

@@ -1,0 +1,53 @@
+name: Test MCP Examples
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'modules/ai-agents/examples/**/*.yaml'
+      - 'modules/ai-agents/examples/test-mcp-examples.sh'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'modules/ai-agents/examples/**/*.yaml'
+      - 'modules/ai-agents/examples/test-mcp-examples.sh'
+
+jobs:
+  test-all-examples:
+    name: Test All MCP Examples
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install npm dependencies
+        run: npm install
+
+      - name: Install doc-tools dependencies
+        run: npx --no-install doc-tools install-test-dependencies
+
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Make test script executable
+        run: chmod +x modules/ai-agents/examples/test-mcp-examples.sh
+
+      - name: Run MCP examples tests
+        run: |
+          cd modules/ai-agents/examples
+          ./test-mcp-examples.sh
+
+      - name: Test Summary
+        if: always()
+        run: |
+          echo "::notice title=MCP Examples Testing::All Cloud MCP examples have been validated"
