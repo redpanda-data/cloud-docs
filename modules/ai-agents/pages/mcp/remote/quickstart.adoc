@@ -169,7 +169,15 @@ The template populates the configuration with YAML for the tool definition.
 
 . From the *Template* dropdown, select *Redpanda Output*.
 +
-The template populates the configuration for publishing to Redpanda. Authentication is handled automatically by the MCP server's service account.
+The template populates the configuration for publishing to Redpanda. Update the `sasl` section to use:
++
+[source,yaml]
+----
+  sasl:
+    - mechanism: REDPANDA_CLOUD_SERVICE_ACCOUNT
+----
++
+This automatically uses the service account associated with your MCP server for authentication.
 
 . Click *Lint* to check the configuration. You should see no errors.
 
@@ -238,7 +246,7 @@ curl -X POST "https://<dataplane-api-url>/v1/redpanda-connect/mcp-servers" \
         },
         "redpanda_output": {
           "component_type": "COMPONENT_TYPE_OUTPUT",
-          "config_yaml": "redpanda:\n  seed_brokers: [ \"${REDPANDA_BROKERS}\" ]\n  topic: events\n  tls:\n    enabled: true\n"
+          "config_yaml": "redpanda:\n  seed_brokers: [ \"${REDPANDA_BROKERS}\" ]\n  topic: events\n  tls:\n    enabled: true\n  sasl:\n    - mechanism: REDPANDA_CLOUD_SERVICE_ACCOUNT\n"
         }
       }
     }
