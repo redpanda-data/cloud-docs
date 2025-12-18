@@ -58,6 +58,22 @@ This opens a browser window to authenticate. The token is saved locally inside y
 ----
 rpk topic create events --partitions 3 --replicas 3
 ----
+
+. Create a user called `mcp` with a strong password:
++
+[,bash]
+----
+rpk acl user create mcp --password <your-secure-password>
+----
++
+Save the password securely. You need it later when configuring the MCP server.
+
+. Grant the `mcp` user permissions to produce and consume from the `events` topic:
++
+[,bash]
+----
+rpk acl create --allow-principal User:mcp --operation all --topic events
+----
 --
 
 Data Plane API::
@@ -121,11 +137,43 @@ curl -X POST "https://<dataplane-api-url>/v1/topics" \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -d '{
-    "topic": {
-      "name": "events",
-      "partition_count": 3,
-      "replication_factor": 3
-    }
+    "name": "events",
+    "partition_count": 3,
+    "replication_factor": 3
+  }'
+----
+
+. Make a request to link:/api/doc/cloud-dataplane/operation/operation-userservice_createuser[`POST /v1/users`] to create a user called `mcp`:
++
+[,bash]
+----
+curl -X POST "https://<dataplane-api-url>/v1/users" \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "mcp",
+    "password": "<your-secure-password>",
+    "mechanism": "SASL_MECHANISM_SCRAM_SHA_256"
+  }'
+----
++
+Save the password securely. You need it later when configuring the MCP server.
+
+. Make a request to link:/api/doc/cloud-dataplane/operation/operation-aclservice_createacl[`POST /v1/acls`] to grant the `mcp` user permissions to produce and consume from the `events` topic:
++
+[,bash]
+----
+curl -X POST "https://<dataplane-api-url>/v1/acls" \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "resource_type": "RESOURCE_TYPE_TOPIC",
+    "resource_name": "events",
+    "resource_pattern_type": "RESOURCE_PATTERN_TYPE_LITERAL",
+    "principal": "User:mcp",
+    "host": "*",
+    "operation": "OPERATION_ALL",
+    "permission_type": "PERMISSION_TYPE_ALLOW"
   }'
 ----
 --
@@ -169,7 +217,9 @@ The template populates the configuration with YAML for the tool definition.
 
 . From the *Template* dropdown, select *Redpanda Output*.
 +
-The template populates the configuration for publishing to Redpanda. Authentication is handled automatically by the MCP server's service account.
+The template populates the configuration for publishing to Redpanda and a section for adding the required secrets is displayed.
+
+. Enter the values for the `mcp` user's credentials in the *Add Required Secrets* section.
 
 . Click *Lint* to check the configuration. You should see no errors.
 
@@ -186,27 +236,37 @@ It may take a few seconds to start. The status changes from *Starting* to *Runni
 Data Plane API::
 +
 --
-. Create a service account using the link:/api/doc/cloud-controlplane/operation/operation-serviceaccountservice_createserviceaccount[Control Plane API]:
+. Create a secret for the username:
 +
 [,bash]
 ----
-curl -X POST "https://api.redpanda.com/v1/service-accounts" \
+curl -X POST "https://<dataplane-api-url>/v1/secrets" \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -d '{
-    "service_account": {
-      "name": "mcp-server-demo",
-      "description": "Service account for MCP server demo"
-    }
+    "id": "MCP_USERNAME",
+    "scopes": ["SCOPE_MCP_SERVER"],
+    "secret_data": "bWNw"
   }'
 ----
 +
-The response includes `client_id` and `client_secret`. Save these values.
-
-. Store the service account credentials in the xref:develop:connect/configuration/secret-management.adoc[Secrets Store]:
+The `secret_data` value `bWNw` is the base64-encoded string `mcp`.
 +
-* Create secret `REDPANDA_SA_CLIENT_ID` with the service account `client_id`.
-* Create secret `REDPANDA_SA_CLIENT_SECRET` with the service account `client_secret`.
+Create a secret for the password:
++
+[,bash]
+----
+curl -X POST "https://<dataplane-api-url>/v1/secrets" \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "MCP_PASSWORD",
+    "scopes": ["SCOPE_MCP_SERVER"],
+    "secret_data": "<base64-encoded-password>"
+  }'
+----
++
+Replace `<base64-encoded-password>` with your password encoded in base64. You can encode it with: `echo -n '<your-secure-password>' | base64`.
 
 . Using the Data Plane API URL from the previous section, make a request to link:/api/doc/cloud-dataplane/operation/operation-mcpserverservice_createmcpserver[`POST /v1/redpanda-connect/mcp-servers`] to create the MCP server:
 +
@@ -216,30 +276,24 @@ curl -X POST "https://<dataplane-api-url>/v1/redpanda-connect/mcp-servers" \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -d '{
-    "mcp_server": {
-      "display_name": "event-data-generator",
-      "description": "Generates fake user event data and publishes it to Redpanda topics",
-      "tags": {
-        "owner": "platform",
-        "env": "demo"
+    "display_name": "event-data-generator",
+    "description": "Generates fake user event data and publishes it to Redpanda topics",
+    "tags": {
+      "owner": "platform",
+      "env": "demo"
+    },
+    "resources": {
+      "memory_shares": "400M",
+      "cpu_shares": "100m"
+    },
+    "tools": {
+      "generate_input": {
+        "component_type": "COMPONENT_TYPE_INPUT",
+        "config_yaml": "generate:\n  interval: 1s\n  mapping: |\n    root.user_id = \"user\" + random_int(min: 1, max: 1000).string()\n    root.event_type = [\"login\", \"logout\", \"purchase\", \"view\"].index(random_int(max: 3))\n    root.timestamp = now().ts_format(\"2006-01-02T15:04:05Z07:00\")"
       },
-      "resources": {
-        "memory_shares": "400M",
-        "cpu_shares": "100m"
-      },
-      "service_account": {
-        "client_id": "${secrets.REDPANDA_SA_CLIENT_ID}",
-        "client_secret": "${secrets.REDPANDA_SA_CLIENT_SECRET}"
-      },
-      "tools": {
-        "generate_input": {
-          "component_type": "COMPONENT_TYPE_INPUT",
-          "config_yaml": "generate:\n  interval: 1s\n  mapping: |\n    root.user_id = \"user\" + random_int(min: 1, max: 1000).string()\n    root.event_type = [\"login\", \"logout\", \"purchase\", \"view\"].index(random_int(max: 3))\n    root.timestamp = now().ts_format(\"2006-01-02T15:04:05Z07:00\")"
-        },
-        "redpanda_output": {
-          "component_type": "COMPONENT_TYPE_OUTPUT",
-          "config_yaml": "redpanda:\n  seed_brokers: [ \"${REDPANDA_BROKERS}\" ]\n  topic: events\n  tls:\n    enabled: true\n"
-        }
+      "redpanda_output": {
+        "component_type": "COMPONENT_TYPE_OUTPUT",
+        "config_yaml": "redpanda:\n  seed_brokers: [ \"${REDPANDA_BROKERS}\" ]\n  topic: events\n  tls:\n    enabled: true\n  sasl:\n    - mechanism: SCRAM-SHA-256\n      username: \"${secrets.MCP_USERNAME}\"\n      password: \"${secrets.MCP_PASSWORD}\"\n"
       }
     }
   }'
