@@ -1,11 +1,6 @@
 = AI Gateway Quickstart
-:description: Learn how to configure the AI Gateway for Redpanda Cloud, including the LLM proxy and the MCP proxy.
-:page-beta: true
+:description: Learn how to configure the AI Gateway for unified access to multiple LLM providers and MCP servers through a single endpoint.
 
-[NOTE]
-====
-This private beta documentation introduces AI Gateway in a *Self-Managed* deployment for internal testing. However, it will be released for *Redpanda Cloud BYOC* deployments only. This is a living document, and the UX/API will evolve quickly.
-====
 
 The Redpanda AI Gateway is a production-grade proxy that provides unified access to multiple Large Language Model (LLM) providers and Model Context Protocol (MCP) servers through a single endpoint. It maintains centralized control over routing, rate limiting, cost optimization, security, and observability.
 
@@ -17,7 +12,7 @@ The Redpanda AI Gateway is a production-grade proxy that provides unified access
 
 == Get started
 
-Before users can create gateways, an administrator must enable LLM providers and models.
+Before a gateway owner can create a gateway, an administrator must enable LLM providers and models.
 
 === Step 1: Enable a provider 
 
@@ -36,7 +31,7 @@ The infrastructure that is serving the model is different based on the provider 
 . Navigate to *Models*.
 . Enable the models you want exposed through gateways.
 
-NOTE: Requests use the `vendor/model_id` format (for example, `openai/gpt-4o`, `anthropic/claude-3-5-sonnet-20241022`).
+NOTE: Requests must use the `vendor/model_id` format (for example, `openai/gpt-4o`, `anthropic/claude-3-5-sonnet-20241022`). Requests that omit the vendor prefix may be rejected.
 
 === Step 3: Create a gateway 
 
@@ -57,7 +52,7 @@ The LLM routing pipeline visually represents the request lifecycle:
 
 . Rate Limit (first): For example, global rate limit of 100 requests/second
 . Spend Limit / Monthly Budget (second): For example, $15K/month with blocking enforcement
-. Routing to a primary provider pool with optional fallback provider pool(s): For example, primary route to Anthropic pool, fallback to Bedrock pool
+. Routing to a primary provider pool with optional fallback provider pools: For example, primary route to Anthropic pool, fallback to Bedrock pool
 
 *Load balancing / multi-provider distribution:*
 If a provider pool contains multiple providers, you can distribute traffic (for example, balancing across Anthropic and Bedrock).
@@ -87,6 +82,8 @@ You can aggregate multiple MCP servers behind a single endpoint. For example:
 
 The orchestrator is a built-in MCP server that enables programmatic tool calling. The agent can generate JavaScript to call multiple tools in a single orchestrated step, which reduces the number of round trips. For example, a workflow requiring 47 file reads can be reduced from 49 round trips to just 1.
 
+*REVIEWERS: When/how exactly do you use the orchestrator? Also what happens after they create a gateway? Please provide an example of how to validate end-to-end routing against the gateway endpoint!*
+
 === Step 6: Understand tiered tool loading (token savings)
 
 When many tools are aggregated, listing all tools can consume significant tokens. Tiered tool loading effectively behaves as tiered/lazy tool discovery:
@@ -109,6 +106,8 @@ After traffic flows through a gateway, you can inspect:
 * Per-model breakdown
 
 This is central to governance: You can see and control usage by gateway boundary (for example, by team, environment, customer, or product).
+
+*REVIEWERS: Where do those metrics appear in the UI, or how does a user validate observability after setup?*
 
 == CEL routing
 
