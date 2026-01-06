@@ -1,0 +1,164 @@
+= AI Gateway Quickstart
+:description: Learn how to configure the AI Gateway for Redpanda Cloud, including the LLM proxy and the MCP proxy.
+:page-beta: true
+
+[NOTE]
+====
+This private beta documentation introduces AI Gateway in a *Self-Managed* deployment for internal testing. However, it will be released for *Redpanda Cloud BYOC* deployments only. This is a living document, and the UX/API will evolve quickly.
+====
+
+The Redpanda AI Gateway is a production-grade proxy that provides unified access to multiple Large Language Model (LLM) providers and Model Context Protocol (MCP) servers through a single endpoint. It maintains centralized control over routing, rate limiting, cost optimization, security, and observability.
+
+== Prerequisites
+
+* Access to the AI Gateway UI (provided by your administrator)
+* API key for at least one LLM provider (OpenAI, Anthropic, or AWS Bedrock)
+* (Optional) MCP server endpoints if you plan to use tool aggregation
+
+== Get started
+
+Before users can create gateways, an administrator must enable LLM providers and models.
+
+=== Step 1: Enable a provider 
+
+Providers represent upstream services (Anthropic, OpenAI, AWS Bedrock, custom) and associated credentials. Providers are disabled by default. An administrator must enable them explicitly by adding credentials.
+
+. Navigate to *Providers*.
+. Select a provider (for example, *Anthropic*).
+. On the *Configuration* tab, enter your API Key.
+
+=== Step 2: Enable models
+
+The model catalog is the set of models made available through the gateway. Models are disabled by default. An administrator must enable them explicitly.
+
+The infrastructure that is serving the model is different based on the provider you select. For example, AWS Bedrock has different reliability and availability metrics than Anthropic. When you consider all the metrics, you can design your gateway to use different providers for different use cases.
+
+. Navigate to *Models*.
+. Enable the models you want exposed through gateways.
+
+NOTE: Requests use the `vendor/model_id` format (for example, `openai/gpt-4o`, `anthropic/claude-3-5-sonnet-20241022`).
+
+=== Step 3: Create a gateway 
+
+A gateway is a logical configuration boundary (policies + routing + observability) on top of a single deployment. It's a "virtual gateway" that you can create per team, environment (staging/production), product, or customer.
+
+. Navigate to *Gateways*.
+. Click *Create Gateway*.
+. Choose a name, workspace, and optional metadata. 
+. After creation, copy the *Gateway Endpoint* from the gateway detail page.
+
+TIP: A _workspace_ is conceptually similar to a _resource group_ in Redpanda streaming. 
+
+=== Step 4: Configure LLM routing 
+
+On the Gateways page, select the *LLM* tab to configure rate limits, spend limits, and routing policies.
+
+The LLM routing pipeline visually represents the request lifecycle:
+
+. Rate Limit (first): For example, global rate limit of 100 requests/second
+. Spend Limit / Monthly Budget (second): For example, $15K/month with blocking enforcement
+. Routing to a primary provider pool with optional fallback provider pool(s): For example, primary route to Anthropic pool, fallback to Bedrock pool
+
+*Load balancing / multi-provider distribution:*
+If a provider pool contains multiple providers, you can distribute traffic (for example, balancing across Anthropic and Bedrock).
+
+TIP: Provider pool (UI) = Backend pool (API)
+
+=== Step 5: Configure MCP tools
+
+NOTE: Model Context Protocol (MCP) is a standard for connecting AI agents to external tools and data sources. MCP servers expose tools that agents can discover and call.
+
+On the Gateways page, select the *MCP* tab to configure tool discovery and tool execution.
+
+You can aggregate multiple MCP servers behind a single endpoint. For example:
+
+* Data catalog API
+* MCP orchestrator
+* Research memory store
+* Vector search service
+
+*How MCP works:*
+
+* You configure MCP server endpoints in the MCP gateway.
+* The gateway presents a single aggregated MCP surface to the agent.
+* Agents can list/search tools and call them through the gateway.
+
+*MCP orchestrator*
+
+The orchestrator is a built-in MCP server that enables programmatic tool calling. The agent can generate JavaScript to call multiple tools in a single orchestrated step, which reduces the number of round trips. For example, a workflow requiring 47 file reads can be reduced from 49 round trips to just 1.
+
+=== Step 6: Understand tiered tool loading (token savings)
+
+When many tools are aggregated, listing all tools can consume significant tokens. Tiered tool loading effectively behaves as tiered/lazy tool discovery:
+
+* Instead of returning all tools, the MCP gateway initially returns:
+** a *tool search* capability, and
+** the *MCP orchestrator*
+* The agent then searches for the specific tool it needs and retrieves only that subset.
+
+This can reduce token usage significantly (for example, 80-90% depending on how many servers/tools are configured).
+
+== Observability
+
+After traffic flows through a gateway, you can inspect:
+
+* Request volume
+* Token usage
+* Estimated spend
+* Latency
+* Per-model breakdown
+
+This is central to governance: You can see and control usage by gateway boundary (for example, by team, environment, customer, or product).
+
+== CEL routing
+
+The AI Gateway uses Common Expression Language (CEL) for flexible routing and policy application. CEL expressions let you create sophisticated routing rules based on request properties without code changes. Use CEL to:
+
+* Route requests to specific providers based on model family
+* Apply different rate limits based on user tiers
+* Enforce policies based on request content
+
+An inline editor in the UI helps you discover available request fields (headers, path, body, and so on).
+
+=== Practical CEL examples
+
+Route based on model family:
+
+[,cel]
+----
+request.body.model.startsWith("anthropic/")
+----
+
+Apply a rule to all requests:
+
+[,cel]
+----
+true
+----
+
+Route based on a header (for example, product tier):
+
+[,cel]
+----
+request.headers['tier'][0] == "premium"
+----
+
+Guard for field existence:
+
+[,cel]
+----
+has(request.body.max_tokens) && request.body.max_tokens > 1000
+----
+
+== Architecture
+
+The AI Gateway is the policy-controlled choke point for both LLM inference and tool access in agentic systems. It is a core building block in the Agentic Data Plane: Agents reason, plan and execute, invoking LLMs and tools, while logs, metrics, and traces flow to the customer's observability stack.
+
+image::shared:ai-gateway.png[AI Gateway architecture]
+
+== Common gateway patterns
+
+* *Team isolation*: Create separate gateways for each team to track usage and enforce budgets independently.
+* *Environment separation*: Use different gateways for staging and production with appropriate rate limits.
+* *Failover*: Configure a primary provider pool with a fallback pool for high availability.
+* *A/B testing*: Distribute traffic across providers to compare performance and cost.
