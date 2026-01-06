@@ -1,0 +1,137 @@
+= MCP Tool Best Practices
+:description: Learn best practices for writing robust MCP tools in Redpanda Cloud.
+:page-topic-type: best-practices
+:personas: ai_agent_developer, streaming_platform_developer, data_engineer_pipeline_architect
+:page-env-cloud: true
+// Reader journey: "I want to do this well"
+// Learning objectives - what readers should be able to do after reading this page:
+:learning-objective-1: Evaluate when to add input validation to MCP tools
+:learning-objective-2: Choose error handling strategies for different failure modes
+:learning-objective-3: Distinguish effective response formats from problematic ones
+:learning-objective-4: Identify characteristics of effective MCP descriptions
+:learning-objective-5: Apply debugging techniques to identify issues
+
+This page teaches you how to write well-structured MCP tools in Redpanda Cloud. It goes beyond the xref:ai-agents:mcp/remote/quickstart.adoc[quickstart] to explain the patterns and practices that make tools reliable and maintainable.
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
+* [ ] {learning-objective-4}
+* [ ] {learning-objective-5}
+
+TIP: Complete the xref:ai-agents:mcp/remote/quickstart.adoc[quickstart] first if you haven't deployed an MCP server yet.
+
+== Anatomy of a well-structured tool
+
+A robust MCP tool has four sections: input validation, core logic with error handling, response formatting, and MCP metadata. Here's a complete example:
+
+[source,yaml]
+----
+include::ai-agents:example$weather_service.yaml[]
+----
+<1> <<input-validation,Input validation>>: Sanitize and validate inputs before processing
+<2> <<error-handling,Error handling>>: Wrap operations that can fail in `try` blocks
+<3> HTTP call with explicit timeout
+<4> <<response-formatting,Response formatting>>: Structure output for AI clients
+<5> <<error-handling,Catch block>>: Return useful errors instead of failing silently
+<6> <<mcp-metadata,MCP metadata>>: Declare tool name, description, and parameters
+
+[[input-validation]]
+== Input validation
+
+include::redpanda-connect:ai-agents:partial$mcp/input-validation.adoc[]
+
+[[error-handling]]
+== Error handling with try/catch
+
+include::redpanda-connect:ai-agents:partial$mcp/error-handling.adoc[]
+
+[[response-formatting]]
+== Response formatting
+
+include::redpanda-connect:ai-agents:partial$mcp/response-formatting.adoc[]
+
+[[mcp-metadata]]
+== MCP metadata design
+
+include::redpanda-connect:ai-agents:partial$mcp/mcp-metadata-design.adoc[]
+
+[[tool-implementation]]
+== Tool design guidelines
+
+:env-cloud: true
+include::redpanda-connect:ai-agents:partial$mcp/tool-implementation-practices.adoc[]
+:!env-cloud:
+
+[[secrets]]
+== Secrets management
+
+Store all credentials and sensitive values in the Redpanda Cloud xref:develop:connect/configuration/secret-management.adoc[Secrets Store], then reference them using `${secrets.NAME}` syntax.
+
+When you reference secrets in your tool's YAML configuration, the Cloud Console automatically detects these references and provides an interface to create the secrets inline.
+
+=== Secrets best practices
+
+* Never commit secrets to Git or hardcode them in configuration files.
+* Use uppercase snake_case for secret names (for example, `DATAPLANE_TOKEN`).
+* Rotate secrets in the Secrets Store periodically.
+* Follow the principle of least privilege. Only request the scopes and roles your tool actually needs.
+
+For syntax details, see xref:ai-agents:mcp/remote/reference.adoc#secrets[Secrets reference].
+
+[[tags]]
+== Tags
+
+Tags help you organize, filter, and manage MCP servers across your organization.
+
+=== Common tag patterns
+
+[cols="1,2,2"]
+|===
+| Strategy | Description | Examples
+
+| Ownership
+| Track which team owns the server.
+| `owner=platform-team`, `team=data-engineering`
+
+| Environment
+| Identify the deployment stage.
+| `env=production`, `env=staging`, `env=dev`
+
+| Cost allocation
+| Allocate costs to departments or projects.
+| `cost-center=marketing`, `project=analytics`
+
+| Purpose
+| Describe the use case or data domain.
+| `purpose=customer-data`, `use-case=alerts`
+|===
+
+=== Tag best practices
+
+* Use consistent naming conventions across your organization (lowercase with hyphens or underscores).
+* Document your tagging strategy so all team members apply tags consistently.
+* Use tags for filtering in the Cloud Console and API.
+* Review tags periodically to keep them accurate as servers evolve.
+
+For syntax and reserved tags, see xref:ai-agents:mcp/remote/reference.adoc#tags[Tags reference].
+
+[[debugging]]
+== Debugging techniques
+
+:env-cloud: true
+include::redpanda-connect:ai-agents:partial$mcp/debugging-techniques.adoc[]
+:!env-cloud:
+
+TIP: For solutions to specific errors, see xref:ai-agents:mcp/remote/troubleshooting.adoc[].
+
+== Next steps
+
+Continue your learning journey with these resources:
+
+* xref:ai-agents:mcp/remote/concepts.adoc[]: Learn about the execution model and component types
+* xref:ai-agents:mcp/remote/tool-patterns.adoc[]: Find reusable patterns for common scenarios
+* xref:ai-agents:mcp/remote/reference.adoc[]: Look up YAML rules and property restrictions
+* xref:ai-agents:mcp/remote/troubleshooting.adoc[]: Diagnose and fix common issues

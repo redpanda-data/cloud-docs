@@ -1,49 +1,93 @@
 = MCP in Redpanda Cloud
-:description: Learn about Model Context Protocol (MCP) in Redpanda Cloud, including the two complementary options: Redpanda Cloud MCP Server and Remote MCP (managed).
+:description: Learn about Model Context Protocol (MCP) in Redpanda Cloud, including the two complementary options: local MCP Server and Remote MCP.
+:page-topic-type: overview
+:personas: absolute_beginner, ai_agent_developer, ai_product_builder, redpanda_cloud_user
+// Reader journey: "I'm new" - understanding the landscape
+// Learning objectives - what readers should understand after reading this page:
+:learning-objective-1: Understand what MCP enables for AI assistants
+:learning-objective-2: Distinguish between local and remote MCP options
+:learning-objective-3: Choose the right MCP option for your use case
 
+This page introduces MCP in Redpanda Cloud and helps you choose the right option for your use case.
 
-Model Context Protocol (MCP) is a way to give AI assistants like Claude access to tools and data they wouldn't normally have. Instead of just chatting with your AI assistant, you can ask it to perform real tasks on your behalf.
+After reading this page, you will be able to:
 
-== Why use MCP with Redpanda Cloud?
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
 
-With MCP, you can have natural conversations with your AI assistant about your streaming data infrastructure. Rather than remembering command-line syntax or navigating through web interfaces, you describe what you want in plain language and your AI assistant handles the technical details.
+== What is MCP?
+
+MCP (Model Context Protocol) is an open standard that lets AI assistants use tools. Think of it like a universal adapter: instead of building custom integrations for every AI system, you define your tools once using MCP, and any MCP-compatible AI client can discover and use them.
+
+Without MCP, connecting AI to your business systems requires custom API code, authentication handling, and response formatting for each AI platform. With MCP, you describe what a tool does and what inputs it needs, and the protocol handles the rest.
 
 == MCP options in Redpanda Cloud
 
-In Redpanda Cloud, there are two complementary options to use MCP:
+Redpanda Cloud offers two complementary MCP options:
 
-[cols="1s,2a,2a"]
+Local MCP Server badge::[label=beta, tooltip={page-beta-text}]::
+A pre-built server that gives AI assistants access to Redpanda Cloud APIs. It runs on your computer and lets you manage clusters, topics, and other resources through natural language.
++
+Example: "Create a cluster called `dev-analytics` with 3 brokers."
+
+Remote MCP::
+Your own MCP server built with Redpanda Connect and hosted inside your Redpanda Cloud cluster. You define custom tools that access your data, call external APIs, or trigger workflows.
++
+Example: "Analyze the last 100 orders and show me the top product categories."
+
+=== Comparison
+
+[cols="1h,2,2"]
 |===
-| |Redpanda Cloud MCP Server badge::[label=beta, tooltip={page-beta-text}] | Remote MCP
+| | Local MCP Server | Remote MCP
 
-| Description
-| A server that gives your AI assistant access to your Redpanda Cloud account and clusters.
-| Your own MCP server built with Redpanda Connect and hosted inside your Redpanda Cloud cluster.
+| Purpose
+| Operate your Redpanda Cloud account
+| Build custom tools for your data and workflows
 
 | Where it runs
 | Your computer
-| In your Redpanda Cloud cluster (managed by Redpanda)
+| Redpanda Cloud (managed)
 
 | Who builds it
 | Redpanda
-| You, with Redpanda Connect
+| You, using Redpanda Connect
 
-| Example use cases (prompts you might ask)
-| - Create a new cluster called `dev-analytics` for testing.
-- List all topics in my production cluster.
-| - Analyze the last 100 orders and show me the top product categories.
-- Generate a summary of user activity from the events stream.
+| Access to
+| Redpanda Cloud APIs (clusters, topics, users, ACLs)
+| Anything you configure (databases, APIs, Redpanda topics, LLMs)
+
+| Best for
+| Platform operations, quick admin tasks, incident response
+| Data analysis, workflow automation, team-shared tools
 |===
-
-TIP: The Redpanda documentation site includes a read-only MCP server that gives you access to Redpanda documentation and code examples through AI assistants like Claude Desktop. This server only provides access to public documentation content. It cannot access your Redpanda Cloud account, clusters, or any private data. This is useful for getting help with Redpanda concepts and examples without connecting your actual Redpanda environment. For setup instructions, see xref:home:ROOT:mcp-setup.adoc[].
 
 == Which should I use?
 
-Use the **Redpanda Cloud MCP Server** to operate your Redpanda Cloud account quickly from your laptop.
+Choose based on what you want to accomplish:
 
-Use the **Remote MCP** to provide reusable tools for your team, running inside the cluster, authored with Redpanda Connect.
+**Use the Local MCP Server** when you want to:
+
+* Manage Redpanda Cloud resources without memorizing CLI commands
+* Quickly create test clusters, topics, or users
+* Inspect cluster health during incidents
+* Onboard team members who prefer natural language over APIs
+
+**Use Remote MCP** when you want to:
+
+* Build tools that access your business data in Redpanda topics
+* Create reusable tools shared across your team
+* Connect AI assistants to external systems (databases, APIs, LLMs)
+* Run tools close to your data with managed infrastructure
+
+You can use both options together. For example, use the Local MCP Server to create a cluster, then deploy Remote MCP tools to analyze data in that cluster.
 
 == Get started
 
-* xref:ai-agents:mcp/local/quickstart.adoc[]
-* xref:ai-agents:mcp/remote/quickstart.adoc[]
+* xref:ai-agents:mcp/local/quickstart.adoc[]: Connect Claude to your Redpanda Cloud account
+* xref:ai-agents:mcp/remote/quickstart.adoc[]: Build and deploy custom MCP tools
+
+== Suggested reading
+
+* xref:home:ROOT:mcp-setup.adoc[]: Access Redpanda documentation through AI assistants (read-only, no Cloud access required)
