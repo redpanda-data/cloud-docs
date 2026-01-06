@@ -6,6 +6,13 @@ NOTE: AI Gateway is supported on BYOC clusters running Redpanda version 25.3 and
 
 The Redpanda AI Gateway is a production-grade proxy that provides unified access to multiple Large Language Model (LLM) providers and Model Context Protocol (MCP) servers through a single endpoint. It maintains centralized control over routing, rate limiting, cost optimization, security, and observability.
 
+Common gateway patterns:
+
+* *Team isolation*: Create separate gateways for each team to track usage and enforce budgets independently.
+* *Environment separation*: Use different gateways for staging and production with appropriate rate limits.
+* *Failover*: Configure a primary provider pool with a fallback pool for high availability.
+* *A/B testing*: Distribute traffic across providers to compare performance and cost.
+
 == Prerequisites
 
 * Access to the AI Gateway UI (provided by your administrator)
@@ -20,7 +27,7 @@ Before a gateway owner can create a gateway, an administrator must enable LLM pr
 
 Providers represent upstream services (Anthropic, OpenAI) and associated credentials. Providers are disabled by default. An administrator must enable them explicitly by adding credentials.
 
-. Navigate to *Providers*.
+. In AI Gateways, navigate to *Providers*.
 . Select a provider (for example, Anthropic).
 . On the *Configuration* tab, enter your API Key.
 
@@ -106,7 +113,7 @@ You can aggregate multiple MCP servers behind a single endpoint. For example:
 * The gateway presents a single aggregated MCP surface to the agent.
 * Agents can list/search tools and call them through the gateway.
 
-*MCP orchestrator*
+*MCP orchestrator:*
 
 The orchestrator is a built-in MCP server that enables programmatic tool calling. The agent can generate JavaScript to call multiple tools in a single orchestrated step, which reduces the number of round trips. For example, a workflow requiring 47 file reads can be reduced from 49 round trips to just 1.
 
@@ -177,9 +184,192 @@ Guard for field existence:
 has(request.body.max_tokens) && request.body.max_tokens > 1000
 ----
 
-== Common gateway patterns
+== Integrate with AI agents and tools
 
-* *Team isolation*: Create separate gateways for each team to track usage and enforce budgets independently.
-* *Environment separation*: Use different gateways for staging and production with appropriate rate limits.
-* *Failover*: Configure a primary provider pool with a fallback pool for high availability.
-* *A/B testing*: Distribute traffic across providers to compare performance and cost.
+The AI Gateway provides standardized endpoints that work with various AI development tools and agents. This section shows how to configure popular tools to use your AI Gateway endpoints.
+
+=== MCP server endpoint
+
+If you've configured MCP tools in your gateway, AI agents can connect to the aggregated MCP endpoint:
+
+* MCP endpoint URL: `https://gw.ai.panda.com/mcp`
+
+* Headers required:
+** `Authorization: Bearer your-api-key` 
+** `rp-aigw-id: your-gateway-id`
+
+This endpoint aggregates all MCP servers configured in your gateway, providing a unified interface for tool discovery and execution.
+
+=== Environment variables
+
+For consistent configuration across tools, set these environment variables:
+
+[source,bash]
+----
+export REDPANDA_GATEWAY_URL="https://gw.ai.panda.com"
+export REDPANDA_GATEWAY_ID="your-gateway-id" 
+export REDPANDA_API_KEY="your-api-key"
+----
+
+Many tools and SDKs can automatically use these environment variables when configured appropriately.
+
+=== Claude Code
+
+Configure Claude Code to use AI Gateway endpoints by creating or editing your MCP configuration file.
+
+*For Claude Desktop (with VS Code extension):*
+
+Create or edit `.vscode/settings.json`:
+
+[source,json]
+----
+{
+  "claude.mcpServers": {
+    "redpanda-ai-gateway": {
+      "command": "node",
+      "args": ["/path/to/mcp-redpanda-gateway/index.js"],
+      "env": {
+        "GATEWAY_ENDPOINT": "https://gw.ai.panda.com",
+        "GATEWAY_ID": "your-gateway-id",
+        "API_KEY": "your-api-key"
+      }
+    }
+  }
+}
+----
+
+*For Claude Code CLI:*
+
+Create or edit `~/.claude/config.json`:
+
+[source,json]
+----
+{
+  "mcpServers": {
+    "redpanda-ai-gateway": {
+      "command": "npx",
+      "args": ["@redpanda/mcp-ai-gateway"],
+      "env": {
+        "REDPANDA_GATEWAY_URL": "https://gw.ai.panda.com",
+        "REDPANDA_GATEWAY_ID": "your-gateway-id",
+        "REDPANDA_API_KEY": "your-api-key"
+      }
+    }
+  },
+  "apiProviders": {
+    "redpanda": {
+      "baseURL": "https://gw.ai.panda.com",
+      "headers": {
+        "rp-aigw-id": "your-gateway-id"
+      }
+    }
+  }
+}
+----
+
+=== VS Code extensions
+
+Configure VS Code extensions that support OpenAI-compatible APIs:
+
+*Continue extension:*
+
+Edit your Continue config file (`~/.continue/config.json`):
+
+[source,json]
+----
+{
+  "models": [
+    {
+      "title": "Redpanda AI Gateway - GPT-4",
+      "provider": "openai",
+      "model": "openai/gpt-4",
+      "apiBase": "https://gw.ai.panda.com",
+      "apiKey": "your-api-key",
+      "requestOptions": {
+        "headers": {
+          "rp-aigw-id": "your-gateway-id"
+        }
+      }
+    },
+    {
+      "title": "Redpanda AI Gateway - Claude",
+      "provider": "anthropic", 
+      "model": "anthropic/claude-3-5-sonnet-20241022",
+      "apiBase": "https://gw.ai.panda.com",
+      "apiKey": "your-api-key",
+      "requestOptions": {
+        "headers": {
+          "rp-aigw-id": "your-gateway-id"
+        }
+      }
+    }
+  ]
+}
+----
+
+=== Cursor IDE
+
+Configure Cursor to route requests through the AI Gateway:
+
+. Open Cursor Settings (*Cursor* → *Settings* or `Cmd+,`)
+. Navigate to *AI* settings
+. Add a custom OpenAI-compatible provider:
+
+[source,json]
+----
+{
+  "cursor.ai.providers.openai.apiBase": "https://gw.ai.panda.com",
+  "cursor.ai.providers.openai.defaultHeaders": {
+    "rp-aigw-id": "your-gateway-id"
+  }
+}
+----
+
+=== Custom applications
+
+For custom applications using OpenAI or Anthropic SDKs:
+
+*OpenAI SDK (Python):*
+
+[source,python]
+----
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://gw.ai.panda.com",
+    api_key="your-api-key",
+    default_headers={
+        "rp-aigw-id": "your-gateway-id"
+    }
+)
+----
+
+*Anthropic SDK (Python):*
+
+[source,python]
+----
+from anthropic import Anthropic
+
+client = Anthropic(
+    base_url="https://gw.ai.panda.com",
+    api_key="your-api-key",
+    default_headers={
+        "rp-aigw-id": "your-gateway-id"
+    }
+)
+----
+
+*Node.js with OpenAI SDK:*
+
+[source,javascript]
+----
+import OpenAI from 'openai';
+
+const openai = new OpenAI({
+  baseURL: 'https://gw.ai.panda.com',
+  apiKey: process.env.OPENAI_API_KEY,
+  defaultHeaders: {
+    'rp-aigw-id': 'your-gateway-id'
+  }
+});
+----
