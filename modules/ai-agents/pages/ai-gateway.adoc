@@ -215,30 +215,20 @@ Many tools and SDKs can automatically use these environment variables when confi
 
 === Claude Code
 
-Configure Claude Code to use AI Gateway endpoints by creating or editing your MCP configuration file.
-
-*For Claude Desktop (with VS Code extension):*
-
-Create or edit `.vscode/settings.json`:
-
-[source,json]
-----
-{
-  "claude.mcpServers": {
-    "redpanda-ai-gateway": {
-      "command": "node",
-      "args": ["/path/to/mcp-redpanda-gateway/index.js"],
-      "env": {
-        "GATEWAY_ENDPOINT": "https://gw.ai.panda.com",
-        "GATEWAY_ID": "your-gateway-id",
-        "API_KEY": "your-api-key"
-      }
-    }
-  }
-}
-----
+Configure Claude Code to use AI Gateway endpoints using HTTP transport for the MCP connection.
 
 *For Claude Code CLI:*
+
+Use the `claude mcp add` command to configure the HTTP transport:
+
+[source,bash]
+----
+claude mcp add --transport http redpanda-aigateway https://gw.ai.panda.com/mcp \
+  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "rp-aigw-id: GATEWAY_ID"
+----
+
+*Alternative configuration via config file:*
 
 Create or edit `~/.claude/config.json`:
 
@@ -247,12 +237,11 @@ Create or edit `~/.claude/config.json`:
 {
   "mcpServers": {
     "redpanda-ai-gateway": {
-      "command": "npx",
-      "args": ["@redpanda/mcp-ai-gateway"],
-      "env": {
-        "REDPANDA_GATEWAY_URL": "https://gw.ai.panda.com",
-        "REDPANDA_GATEWAY_ID": "your-gateway-id",
-        "REDPANDA_API_KEY": "your-api-key"
+      "transport": "http",
+      "url": "https://gw.ai.panda.com/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR_API_KEY",
+        "rp-aigw-id": "GATEWAY_ID"
       }
     }
   },
