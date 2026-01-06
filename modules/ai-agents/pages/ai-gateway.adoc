@@ -2,13 +2,15 @@
 :description: Learn how to configure the AI Gateway for unified access to multiple LLM providers and MCP servers through a single endpoint.
 
 
+NOTE: AI Gateway is supported on BYOC clusters running Redpanda version 25.3 and later.
+
 The Redpanda AI Gateway is a production-grade proxy that provides unified access to multiple Large Language Model (LLM) providers and Model Context Protocol (MCP) servers through a single endpoint. It maintains centralized control over routing, rate limiting, cost optimization, security, and observability.
 
 == Prerequisites
 
 * Access to the AI Gateway UI (provided by your administrator)
-* API key for at least one LLM provider (OpenAI, Anthropic, or AWS Bedrock)
-* (Optional) MCP server endpoints if you plan to use tool aggregation
+* API key for at least one LLM provider: OpenAI or Anthropic
+* Optional: MCP server endpoints if you plan to use tool aggregation
 
 == Get started
 
@@ -16,22 +18,47 @@ Before a gateway owner can create a gateway, an administrator must enable LLM pr
 
 === Step 1: Enable a provider 
 
-Providers represent upstream services (Anthropic, OpenAI, AWS Bedrock, custom) and associated credentials. Providers are disabled by default. An administrator must enable them explicitly by adding credentials.
+Providers represent upstream services (Anthropic, OpenAI) and associated credentials. Providers are disabled by default. An administrator must enable them explicitly by adding credentials.
 
 . Navigate to *Providers*.
-. Select a provider (for example, *Anthropic*).
+. Select a provider (for example, Anthropic).
 . On the *Configuration* tab, enter your API Key.
 
 === Step 2: Enable models
 
 The model catalog is the set of models made available through the gateway. Models are disabled by default. An administrator must enable them explicitly.
 
-The infrastructure that is serving the model is different based on the provider you select. For example, AWS Bedrock has different reliability and availability metrics than Anthropic. When you consider all the metrics, you can design your gateway to use different providers for different use cases.
+The infrastructure that is serving the model is different based on the provider you select. For example, OpenAI has different reliability and availability metrics than Anthropic. When you consider all the metrics, you can design your gateway to use different providers for different use cases.
 
 . Navigate to *Models*.
 . Enable the models you want exposed through gateways.
 
-NOTE: Requests must use the `vendor/model_id` format (for example, `openai/gpt-4o`, `anthropic/claude-3-5-sonnet-20241022`). Requests that omit the vendor prefix may be rejected.
+==== Model naming convention
+
+Model provider requests must use the `vendor/model_id` format in the model property of the request body, and include the `rp-aigw-id` header with the gateway ID the request is being sent to. The following example routes OpenAI API calls through Redpanda's AI Gateway for centralized control.
+
+[source,python]
+----
+# Example: Using the OpenAI Python SDK with AI Gateway
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://gw.ai.panda.com", <1>
+    api_key="your-api-key",
+)
+
+# Add header per request
+response = client.chat.completions.create(
+    model="openai/gpt-5", <2>
+    messages=[{"role": "user", "content": "Hello!"}],
+    extra_headers={
+        "rp-aigw-id": "gateway-abc"  # Override for this request
+    } <3>
+)
+----
+<1> This redirects the OpenAI client to the AI Gateway endpoint.
+<2> The `model` property uses the `vendor/model_id` format as required by the AI Gateway.
+<3> Includes the `rp-aigw-id` header to specify which gateway configuration to use.
 
 === Step 3: Create a gateway 
 
@@ -40,9 +67,10 @@ A gateway is a logical configuration boundary (policies + routing + observabilit
 . Navigate to *Gateways*.
 . Click *Create Gateway*.
 . Choose a name, workspace, and optional metadata. 
-. After creation, copy the *Gateway Endpoint* from the gateway detail page.
-
++
 TIP: A _workspace_ is conceptually similar to a _resource group_ in Redpanda streaming. 
+
+. After creation, copy the *Gateway Endpoint* from the gateway detail page.
 
 === Step 4: Configure LLM routing 
 
@@ -50,12 +78,12 @@ On the Gateways page, select the *LLM* tab to configure rate limits, spend limit
 
 The LLM routing pipeline visually represents the request lifecycle:
 
-. Rate Limit (first): For example, global rate limit of 100 requests/second
-. Spend Limit / Monthly Budget (second): For example, $15K/month with blocking enforcement
-. Routing to a primary provider pool with optional fallback provider pools: For example, primary route to Anthropic pool, fallback to Bedrock pool
+. Rate Limit: For example, global rate limit of 100 requests/second
+. Spend Limit / Monthly Budget: For example, $15K/month with blocking enforcement
+. Routing to a primary provider pool with optional fallback provider pools: For example, primary route to Anthropic pool, fallback to OpenAI pool
 
 *Load balancing / multi-provider distribution:*
-If a provider pool contains multiple providers, you can distribute traffic (for example, balancing across Anthropic and Bedrock).
+If a provider pool contains multiple providers, you can distribute traffic (for example, balancing across Anthropic and OpenAI).
 
 TIP: Provider pool (UI) = Backend pool (API)
 
@@ -63,7 +91,7 @@ TIP: Provider pool (UI) = Backend pool (API)
 
 NOTE: Model Context Protocol (MCP) is a standard for connecting AI agents to external tools and data sources. MCP servers expose tools that agents can discover and call.
 
-On the Gateways page, select the *MCP* tab to configure tool discovery and tool execution.
+On the Gateways page, select the *MCP* tab to configure tool discovery and tool execution. 
 
 You can aggregate multiple MCP servers behind a single endpoint. For example:
 
@@ -84,9 +112,9 @@ The orchestrator is a built-in MCP server that enables programmatic tool calling
 
 *REVIEWERS: When/how exactly do you use the orchestrator? Also what happens after they create a gateway? Please provide an example of how to validate end-to-end routing against the gateway endpoint!*
 
-=== Step 6: Understand tiered tool loading (token savings)
+=== Step 6: Understand deferred tool loading (token savings)
 
-When many tools are aggregated, listing all tools can consume significant tokens. Tiered tool loading effectively behaves as tiered/lazy tool discovery:
+When many tools are aggregated, listing all tools can consume significant tokens. Deferred tool loading effectively behaves as lazy tool discovery:
 
 * Instead of returning all tools, the MCP gateway initially returns:
 ** a *tool search* capability, and
@@ -119,7 +147,7 @@ The AI Gateway uses Common Expression Language (CEL) for flexible routing and po
 
 An inline editor in the UI helps you discover available request fields (headers, path, body, and so on).
 
-=== Practical CEL examples
+=== CEL examples
 
 Route based on model family:
 
@@ -148,12 +176,6 @@ Guard for field existence:
 ----
 has(request.body.max_tokens) && request.body.max_tokens > 1000
 ----
-
-== Architecture
-
-The AI Gateway is the policy-controlled choke point for both LLM inference and tool access in agentic systems. It is a core building block in the Agentic Data Plane: Agents reason, plan and execute, invoking LLMs and tools, while logs, metrics, and traces flow to the customer's observability stack.
-
-image::shared:ai-gateway.png[AI Gateway architecture]
 
 == Common gateway patterns
 
