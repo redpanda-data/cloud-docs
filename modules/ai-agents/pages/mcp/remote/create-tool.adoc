@@ -1,0 +1,466 @@
+= Create an MCP Tool
+:description: Create an MCP tool with the correct YAML structure, metadata, and parameter mapping.
+:page-topic-type: how-to
+:personas: ai_agent_developer, streaming_platform_developer, data_engineer_pipeline_architect
+// Reader journey: "I want to create a tool for my AI agent"
+// Learning objectives - what readers can do after reading this page:
+:learning-objective-1: Create a tool with the correct structure and MCP metadata
+:learning-objective-2: Map MCP parameters to component configuration fields using Bloblang
+:learning-objective-3: Use the Secrets Store for credentials and sensitive data
+:learning-objective-4: Test tools using the MCP Inspector
+
+This guide walks you through creating an MCP tool using any Redpanda Connect component.
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
+* [ ] {learning-objective-4}
+
+== Prerequisites
+
+* A Redpanda Cloud cluster with *Remote MCP* enabled.
+* You can describe the MCP execution model (see xref:ai-agents:mcp/remote/concepts.adoc#execution-model[The MCP execution model])
+* You have chosen the right component type for your use case (see xref:ai-agents:mcp/remote/concepts.adoc#component-selection[Choose the right component type])
+
+== Create the tool
+
+In Redpanda Cloud, you create tools directly in the Cloud Console or using the Data Plane API.
+
+[tabs]
+======
+Cloud Console::
++
+--
+. Log in to the link:https://cloud.redpanda.com/[Redpanda Cloud Console^].
+
+. Navigate to *Remote MCP* and either create a new MCP server or edit an existing one.
+
+. In the *Tools* section, click *Add Tool*.
+
+. Enter the YAML configuration for your tool.
+
+. Click *Lint* to validate your configuration.
+
+. Click *Save* to deploy the tool.
+--
+
+Data Plane API::
++
+--
+Use the link:/api/doc/cloud-dataplane/operation/operation-mcpserverservice_createmcpserver[Create MCP Server] or link:/api/doc/cloud-dataplane/operation/operation-mcpserverservice_updatemcpserver[Update MCP Server] endpoints to add tools programmatically.
+--
+======
+
+[[yaml-structure]]
+== Tool structure
+
+Each tool configuration must contain exactly one component. The component type is inferred from the type you select when creating or editing the MCP server. The component can be a processor, input, output, or cache.
+
+[[anatomy]]
+== Tool anatomy
+
+An MCP tool wraps a xref:develop:connect/components/about.adoc[Redpanda Connect component] and exposes it to AI clients. Each tool has three parts:
+
+* **Label**: The tool name AI clients see
+* **Component configuration**: A Redpanda Connect component (processor, input, output, or cache) that does the work
+* **MCP metadata**: Describes the tool's purpose and parameters for AI clients
+
+Here's an example using the xref:develop:connect/components/processors/sql_select.adoc[`sql_select` processor]:
+
+[source,yaml]
+----
+label: lookup-customer # <1>
+
+sql_select: # <2>
+  driver: postgres
+  dsn: "${secrets.DATABASE_URL}"
+  table: customers
+  columns: ["id", "name", "email", "plan"]
+  where: id = ?
+  args_mapping: '[this.customer_id]'
+
+meta: # <3>
+  mcp:
+    enabled: true
+    description: "Look up a customer by ID and return their profile."
+    properties:
+      - name: customer_id
+        type: string
+        description: "The customer's unique identifier"
+        required: true
+----
+
+<1> **Label**: Becomes the tool name.
+<2> **Component**: The `sql_select` processor configured to query a database.
+<3> **MCP metadata**: Tells AI clients what this tool does and what parameters it accepts.
+
+The following sections show how to structure tools for each component type.
+
+=== Processor tools
+
+xref:develop:connect/components/processors/about.adoc[Processors] transform, filter, or enrich data. Use a `processors:` array with one or more processors:
+
+[source,yaml]
+----
+label: enrich-order
+
+processors:
+  - http:
+      url: "https://api.example.com/lookup"
+      verb: GET
+
+meta:
+  mcp:
+    enabled: true
+    description: "Enrich order with customer data"
+----
+
+=== Input, output, and cache tools
+
+xref:develop:connect/components/inputs/about.adoc[Inputs] read data from sources, xref:develop:connect/components/outputs/about.adoc[outputs] write data to destinations, and xref:develop:connect/components/caches/about.adoc[caches] store and retrieve data. Define these components directly at the top level:
+
+.Input tool
+[source,yaml]
+----
+label: read-events
+
+redpanda:  # <1>
+  seed_brokers: ["${REDPANDA_BROKERS}"]
+  topics: ["events"]
+  consumer_group: "mcp-reader"
+  tls:
+    enabled: true
+  sasl:
+    - mechanism: SCRAM-SHA-256
+      username: "${secrets.MCP_USERNAME}"
+      password: "${secrets.MCP_PASSWORD}"
+
+meta:
+  mcp:
+    enabled: true
+    description: "Read events from Redpanda"
+----
+<1> The component name (`redpanda`) is at the top level, not wrapped in `input:`.
+
+.Output tool
+[source,yaml]
+----
+label: publish-event
+
+redpanda:
+  seed_brokers: ["${REDPANDA_BROKERS}"]
+  topic: "processed-events"
+  tls:
+    enabled: true
+  sasl:
+    - mechanism: SCRAM-SHA-256
+      username: "${secrets.MCP_USERNAME}"
+      password: "${secrets.MCP_PASSWORD}"
+
+meta:
+  mcp:
+    enabled: true
+    description: "Publish event to Redpanda"
+----
+
+.Cache tool
+[source,yaml]
+----
+label: session-cache
+
+memory:
+  default_ttl: 300s
+
+meta:
+  mcp:
+    enabled: true
+    description: "In-memory cache for session data"
+----
+
+=== Output with inline processors
+
+Outputs can include a `processors:` section to transform data before publishing:
+
+[source,yaml]
+----
+label: publish-with-timestamp
+
+processors:
+  - mutation: |
+      root = this
+      root.published_at = now()
+
+redpanda:
+  seed_brokers: ["${REDPANDA_BROKERS}"]
+  topic: "processed-events"
+  tls:
+    enabled: true
+  sasl:
+    - mechanism: SCRAM-SHA-256
+      username: "${secrets.MCP_USERNAME}"
+      password: "${secrets.MCP_PASSWORD}"
+
+meta:
+  mcp:
+    enabled: true
+    description: "Add timestamp and publish to Redpanda"
+----
+
+See xref:ai-agents:mcp/remote/tool-patterns.adoc#outputs-with-processors[outputs with processors] for more examples.
+
+Do not wrap components in `input:`, `output:`, or `cache:` blocks. This syntax is for pipelines, not MCP tools.
+
+[[mcp-metadata]]
+== MCP metadata fields
+
+The `meta.mcp` block defines how AI clients discover and interact with your tool. These fields control tool visibility, naming, and input parameters.
+
+[cols="1,1,2", options="header"]
+|===
+| Field | Required | Description
+
+| `enabled`
+| Yes
+| Set to `true` to expose this component as an MCP tool. Set to `false` to disable without deleting the tool.
+
+| `description`
+| Yes
+| Explains what the tool does and what it returns. AI clients use this to decide when to call the tool.
+
+| `properties`
+| No
+| Array of input parameters the tool accepts. Each property has `name`, `type`, `description`, and `required` fields.
+
+| `tags`
+| No
+| Array of strings for categorizing tools.
+|===
+
+=== Property fields
+
+Each entry in the `properties` array defines an input parameter:
+
+[cols="1,1,2", options="header"]
+|===
+| Field | Required | Description
+
+| `name`
+| Yes
+| Parameter name. Use snake_case or camelCase consistently.
+
+| `type`
+| Yes
+| Data type: `string`, `number`, or `boolean`.
+
+| `description`
+| Yes
+| Explains what the parameter is for. Include example values.
+
+| `required`
+| Yes
+| Set to `true` if the tool cannot function without this parameter.
+|===
+
+[[property-restrictions]]
+=== Property restrictions by component type
+
+include::redpanda-connect:ai-agents:partial$mcp/property-restrictions-table.adoc[]
+
+[[parameter-mapping]]
+== Map parameters to component fields
+
+When an AI client calls your tool, the `arguments` object becomes the message body. You can access these arguments using xref:develop:connect/guides/bloblang/about.adoc[Bloblang], but the syntax depends on where you're using it:
+
+* **Inside Bloblang contexts** (mutation, mapping, args_mapping): Use `this.field_name`
+* **Inside string fields** (URLs, topics, headers): Use interpolation `${! json("field_name") }`
+
+=== In Bloblang contexts
+
+Use `this` to access message fields directly in processors like `mutation`, `mapping`, or in `args_mapping` fields:
+
+[source,yaml]
+----
+mutation: |
+  root.search_query = this.query.lowercase()
+  root.max_results = this.limit.or(10)
+----
+
+[source,yaml]
+----
+sql_select:
+  table: orders
+  where: customer_id = ? AND status = ?
+  args_mapping: '[this.customer_id, this.status.or("active")]'
+----
+
+=== In string fields (interpolation)
+
+Use `${! ... }` interpolation to embed Bloblang expressions inside string values like URLs or topic names:
+
+[source,yaml]
+----
+http:
+  url: 'https://api.weather.com/v1/current?city=${! json("city") }&units=${! json("units").or("metric") }'
+----
+
+[source,yaml]
+----
+redpanda:
+  seed_brokers: ["${REDPANDA_BROKERS}"]  # <1>
+  topic: '${! json("topic_name") }'  # <2>
+----
+<1> `$\{VAR}` without `!` is environment variable substitution, not Bloblang.
+<2> `${! ... }` with `!` is Bloblang interpolation that accesses message data.
+
+TIP: For more on Bloblang syntax, see xref:develop:connect/guides/bloblang/about.adoc[]. For interpolation details, see xref:develop:connect/configuration/interpolation.adoc[].
+
+=== Provide defaults for optional parameters
+
+Use `.or(default)` to handle missing optional parameters:
+
+[source,yaml]
+----
+mutation: |
+  root.city = this.city  # Required - will error if missing
+  root.units = this.units.or("metric")  # Optional with default
+  root.limit = this.limit.or(10).number()  # Optional, converted to number
+----
+
+Declare which parameters are required in your `meta.mcp.properties`:
+
+[source,yaml]
+----
+properties:
+  - name: city
+    type: string
+    description: "City name to look up"
+    required: true
+  - name: units
+    type: string
+    description: "Temperature units: 'metric' or 'imperial' (default: metric)"
+    required: false
+----
+
+[[secrets]]
+== Use the Secrets Store
+
+Never hardcode credentials, API keys, or connection strings in your tool configurations. Use the xref:develop:connect/configuration/secret-management.adoc[Secrets Store] to securely manage sensitive values.
+
+Reference secrets using `${secrets.SECRET_NAME}` syntax:
+
+[source,yaml]
+----
+http:
+  url: "https://api.example.com/data"
+  headers:
+    Authorization: "Bearer ${secrets.API_TOKEN}"
+
+sql_select:
+  driver: postgres
+  dsn: "${secrets.DATABASE_URL}"
+  table: customers
+----
+
+When you add secret references to your tool configuration, the Cloud Console automatically detects them and provides an interface to create the required secrets.
+
+=== Secrets best practices
+
+* Use uppercase snake_case for secret names (for example, `DATAPLANE_TOKEN`, `API_KEY`).
+* Rotate secrets periodically.
+* Follow the principle of least privilege. Only request the scopes and roles your tool actually needs.
+
+See xref:ai-agents:mcp/remote/best-practices.adoc#secrets[Secrets management] for more guidance.
+
+== Test the tool
+
+. Click *Lint* to validate your configuration.
+
+. Deploy the MCP server.
+
+. Use the *MCP Inspector* tab to test tool calls:
++
+* Select the tool from the list
+* Enter test parameter values
+* Click *Run Tool* to execute
+* Review the response
+
+. Connect an AI client and verify the tool appears:
++
+[,bash]
+----
+rpk cloud mcp proxy \
+  --cluster-id <cluster-id> \
+  --mcp-server-id <server-id> \
+  --install --client claude-code
+----
+
+. Test end-to-end with realistic prompts to verify the AI client uses your tool correctly.
+
+== Complete example
+
+Here's a complete tool that wraps the `http` processor to fetch weather data:
+
+[source,yaml]
+----
+label: get-weather
+
+processors:
+  # Validate and sanitize input
+  - label: validate_city
+    mutation: |
+      root.city = if this.city.or("").trim() == "" {
+        throw("city is required")
+      } else {
+        this.city.trim().lowercase().re_replace_all("[^a-z\\s\\-]", "")
+      }
+      root.units = this.units.or("metric")
+
+  # Fetch weather data
+  - label: fetch_weather
+    try:
+      - http:
+          url: 'https://wttr.in/${! json("city") }?format=j1'
+          verb: GET
+          timeout: 10s
+
+      - mutation: |
+          root.weather = {
+            "location": this.nearest_area.0.areaName.0.value,
+            "country": this.nearest_area.0.country.0.value,
+            "temperature_c": this.current_condition.0.temp_C,
+            "temperature_f": this.current_condition.0.temp_F,
+            "condition": this.current_condition.0.weatherDesc.0.value,
+            "humidity": this.current_condition.0.humidity,
+            "wind_kph": this.current_condition.0.windspeedKmph
+          }
+
+  # Handle errors gracefully
+  - label: handle_errors
+    catch:
+      - mutation: |
+          root.error = true
+          root.message = "Failed to fetch weather: " + error()
+
+meta:
+  mcp:
+    enabled: true
+    description: "Get current weather for a city. Returns temperature, conditions, humidity, and wind speed."
+    properties:
+      - name: city
+        type: string
+        description: "City name (e.g., 'London', 'New York', 'Tokyo')"
+        required: true
+      - name: units
+        type: string
+        description: "Temperature units: 'metric' or 'imperial' (default: metric)"
+        required: false
+----
+
+== Next steps
+
+* xref:ai-agents:mcp/remote/best-practices.adoc[]: Apply naming and design guidelines.
+* xref:ai-agents:mcp/remote/tool-patterns.adoc[]: Find patterns for databases, APIs, and Redpanda.
+* xref:ai-agents:mcp/remote/troubleshooting.adoc[]: Diagnose common issues.
+* xref:develop:connect/components/about.adoc[]: Browse all available components.

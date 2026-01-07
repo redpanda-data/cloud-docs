@@ -22,7 +22,7 @@ MCP (Model Context Protocol) is an open standard that lets AI assistants use too
 
 Without MCP, connecting AI to your business systems requires custom API code, authentication handling, and response formatting for each AI platform. With MCP, you describe what a tool does and what inputs it needs, and the protocol handles the rest.
 
-== What Remote MCP adds
+== What is Remote MCP?
 
 Remote MCP lets you build and host MCP servers in your Redpanda Cloud clusters. Your tools run next to your data, managed by Redpanda, so you get:
 
@@ -30,25 +30,6 @@ Remote MCP lets you build and host MCP servers in your Redpanda Cloud clusters. 
 * *Proximity to data:* Tools execute next to your cluster for lower latency and simpler networking.
 * *Secure secrets management:* Use the xref:develop:connect/configuration/secret-management.adoc[Secrets Store] instead of hardcoding credentials.
 * *Fast iteration:* Define tools as YAML, deploy, and your AI agents can use them immediately.
-
-== Who is this for?
-
-[cols="1,2"]
-|===
-| You want to | Remote MCP can help you
-
-| Add AI capabilities to existing systems
-| Expose your APIs, databases, and Redpanda topics to AI assistants without rewriting them
-
-| Build AI agents that access real-time data
-| Create tools that query live data and trigger business workflows
-
-| Prototype AI features quickly
-| Define tools in YAML and iterate without deploying infrastructure
-
-| Give AI controlled access to business logic
-| Expose specific operations while keeping other systems private
-|===
 
 // Use cases table - single-sourced from rp-connect-docs partial
 include::redpanda-connect:ai-agents:partial$mcp/use-cases-table.adoc[]
@@ -89,9 +70,6 @@ meta:
 
 When an AI client asks about weather, it calls this tool with the city name. The tool fetches data from the weather API and returns it.
 
-// Customer analytics example - single-sourced from rp-connect-docs partial
-include::redpanda-connect:ai-agents:partial$mcp/customer-analytics-example.adoc[]
-
 // MCP specification support - single-sourced from rp-connect-docs partial
 include::redpanda-connect:ai-agents:partial$mcp/specification-support.adoc[]
 
@@ -103,9 +81,8 @@ To start using Remote MCP, try the xref:ai-agents:mcp/remote/quickstart.adoc[qui
 
 Continue your learning journey with these resources:
 
+* xref:ai-agents:mcp/remote/quickstart.adoc[]: Build your first MCP server
 * xref:ai-agents:mcp/remote/concepts.adoc[]: Understand the execution model and component types
-* xref:ai-agents:mcp/remote/best-practices.adoc[]: Learn input validation, error handling, and response formatting
-* xref:ai-agents:mcp/remote/tool-patterns.adoc[]: Find reusable patterns for common scenarios
-* xref:ai-agents:mcp/remote/reference.adoc[]: Look up configuration rules and restrictions
+* xref:ai-agents:mcp/remote/create-tool.adoc[]: Create custom tools step by step
 * link:https://docs.anthropic.com/en/docs/mcp[Model Context Protocol documentation^]
 
