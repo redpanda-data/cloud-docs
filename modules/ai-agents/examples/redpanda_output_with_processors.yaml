@@ -1,12 +1,4 @@
-redpanda:
-  seed_brokers: [ "${REDPANDA_BROKERS}" ]
-  topic: "llm-responses"
-  tls:
-    enabled: true
-  sasl:
-    - mechanism: "${REDPANDA_SASL_MECHANISM}"
-      username: "${REDPANDA_SASL_USERNAME}"
-      password: "${REDPANDA_SASL_PASSWORD}"
+label: summarize_and_publish
 
 processors:
   - openai_chat_completion:
@@ -17,3 +9,23 @@ processors:
       root.question = this.question
       root.answer = this.content
       root.timestamp = now().ts_format("2006-01-02T15:04:05Z07:00")
+
+redpanda:
+  seed_brokers: [ "${REDPANDA_BROKERS}" ]
+  topic: "llm-responses"
+  tls:
+    enabled: true
+  sasl:
+    - mechanism: SCRAM-SHA-256
+      username: "${secrets.MCP_USERNAME}"
+      password: "${secrets.MCP_PASSWORD}"
+
+meta:
+  mcp:
+    enabled: true
+    description: "Process a question through an LLM and publish the response to Redpanda"
+    properties:
+      - name: question
+        type: string
+        description: "The question to send to the LLM"
+        required: true
