@@ -4,7 +4,7 @@
 
 NOTE: AI Gateway is supported on BYOC clusters running Redpanda version 25.3 and later.
 
-The Redpanda AI Gateway is a production-grade proxy that provides unified access to multiple Large Language Model (LLM) providers and Model Context Protocol (MCP) servers through a single endpoint. It maintains centralized control over routing, rate limiting, cost optimization, security, and observability.
+The Redpanda AI Gateway is a production-grade proxy that provides unified access to multiple Large Language Model (LLM) providers and Model Context Protocol (MCP) servers through a single endpoint. MCP servers expose tools that agents can discover and call. An AI Gateway maintains centralized control over routing, rate limiting, cost optimization, security, and observability.
 
 Common gateway patterns:
 
@@ -21,7 +21,7 @@ Common gateway patterns:
 
 == Get started
 
-Before a gateway owner can create a gateway, an administrator must enable LLM providers and models.
+Before you can create a gateway, an administrator must enable LLM providers and models.
 
 === Step 1: Enable a provider 
 
@@ -29,11 +29,11 @@ Providers represent upstream services (Anthropic, OpenAI) and associated credent
 
 . In AI Gateways, navigate to *Providers*.
 . Select a provider (for example, Anthropic).
-. On the *Configuration* tab, enter your API Key.
+. On the *Configuration* tab for the provider, click *Add configuration* and enter your API Key.
 
 === Step 2: Enable models
 
-The model catalog is the set of models made available through the gateway. Models are disabled by default. An administrator must enable them explicitly.
+The model catalog is the set of models made available through the gateway. Models are disabled by default. After enabling a provider, an administrator can enable its models.
 
 The infrastructure that is serving the model is different based on the provider you select. For example, OpenAI has different reliability and availability metrics than Anthropic. When you consider all the metrics, you can design your gateway to use different providers for different use cases.
 
@@ -81,13 +81,13 @@ TIP: A _workspace_ is conceptually similar to a _resource group_ in Redpanda str
 
 === Step 4: Configure LLM routing 
 
-On the Gateways page, select the *LLM* tab to configure rate limits, spend limits, and routing policies.
+On the Gateways page, select the *LLM* tab to configure rate limits, spend limits, routing, and provider pools with fallback options. 
 
 The LLM routing pipeline visually represents the request lifecycle:
 
-. Rate Limit: For example, global rate limit of 100 requests/second
-. Spend Limit / Monthly Budget: For example, $15K/month with blocking enforcement
-. Routing to a primary provider pool with optional fallback provider pools: For example, primary route to Anthropic pool, fallback to OpenAI pool
+. Rate Limit: For example, global rate limit of 100 requests/second.
+. Spend Limit / Monthly Budget: For example, $15K/month with blocking enforcement, so it blocks requests after that budget is exceeded.
+. Routing to a primary provider pool with optional fallback provider pools: For example, primary route to Anthropic backend pool, and if that fails, it will fallback to OpenAI pool.
 
 *Load balancing / multi-provider distribution:*
 If a provider pool contains multiple providers, you can distribute traffic (for example, balancing across Anthropic and OpenAI).
@@ -96,39 +96,19 @@ TIP: Provider pool (UI) = Backend pool (API)
 
 === Step 5: Configure MCP tools
 
-NOTE: Model Context Protocol (MCP) is a standard for connecting AI agents to external tools and data sources. MCP servers expose tools that agents can discover and call.
+On the Gateways page, select the *MCP* tab to configure your MCP tool discovery and tool execution. This MCP proxy is an aggregator of MCP servers, allowing multiple MCP servers behind a single endpoint. Agents can then find tools and call them through the gateway. To configure the MCP proxy, add the following:
 
-On the Gateways page, select the *MCP* tab to configure tool discovery and tool execution. 
+* Display name: When you drag a provider pool, you give it a name.
+* Model dropdown: Choose a model from the available models in the catalog.
+* Load Balancing options: If you have multiple providers, you can load balance requests between them; for example, round robin.
 
-You can aggregate multiple MCP servers behind a single endpoint. For example:
+MCP tools include a data catalog API, the memory store, a vector search service, and an MCP orchestrator. The *MCP orchestrator* is a built-in MCP server that enables programmatic tool calling. Agents can generate code to call multiple tools in a single orchestrated step, which reduces the number of round trips. For example, a workflow requiring 47 file reads can be reduced from 49 round trips to just 1. To add other tools, (for example, Slack), add the Slack MCP server endpoint.
 
-* Data catalog API
-* MCP orchestrator
-* Research memory store
-* Vector search service
-
-*How MCP works:*
-
-* You configure MCP server endpoints in the MCP gateway.
-* The gateway presents a single aggregated MCP surface to the agent.
-* Agents can list/search tools and call them through the gateway.
-
-*MCP orchestrator:*
-
-The orchestrator is a built-in MCP server that enables programmatic tool calling. The agent can generate JavaScript to call multiple tools in a single orchestrated step, which reduces the number of round trips. For example, a workflow requiring 47 file reads can be reduced from 49 round trips to just 1.
+When many tools are aggregated, listing all tools can consume significant tokens. With *deferred tool loading*, instead of returning all tools, the MCP gateway initially returns a tool search capability and the MCP orchestrator. The agent then searches for the specific tool it needs and retrieves only that subset. That way, the exchange of messages between the MCP gateway and the agent is small. This can reduce token usage significantly when you have many tools configured. 
 
 *REVIEWERS: When/how exactly do you use the orchestrator? Also what happens after they create a gateway? Please provide an example of how to validate end-to-end routing against the gateway endpoint!*
 
-=== Step 6: Understand deferred tool loading (token savings)
-
-When many tools are aggregated, listing all tools can consume significant tokens. Deferred tool loading effectively behaves as lazy tool discovery:
-
-* Instead of returning all tools, the MCP gateway initially returns:
-** a *tool search* capability, and
-** the *MCP orchestrator*
-* The agent then searches for the specific tool it needs and retrieves only that subset.
-
-This can reduce token usage significantly (for example, 80-90% depending on how many servers/tools are configured).
+*REVIEWERS: How do users connect to the ADP catalog + MCP servers exposed through RPCN?*
 
 == Observability
 
@@ -152,7 +132,7 @@ The AI Gateway uses Common Expression Language (CEL) for flexible routing and po
 * Apply different rate limits based on user tiers
 * Enforce policies based on request content
 
-An inline editor in the UI helps you discover available request fields (headers, path, body, and so on).
+The editor in the UI helps you discover available request fields (headers, path, body, and so on).
 
 === CEL examples
 
