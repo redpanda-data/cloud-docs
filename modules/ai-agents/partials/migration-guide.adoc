@@ -1,0 +1,866 @@
+= Migration guide: from direct provider integration to AI gateway
+
+== Overview
+
+This guide helps you migrate existing applications from direct LLM provider integrations (OpenAI, Anthropic, etc.) to Redpanda AI Gateway. The migration is designed to be *incremental and reversible*, allowing you to test thoroughly before fully committing.
+
+*Migration Time*: 10-30 minutes for most applications
+*Downtime Required*: None (supports parallel operation)
+*Rollback Difficulty*: Easy (feature flag or environment variable)
+
+== Prerequisites
+
+Before migrating, ensure you have:
+* ✅ AI Gateway configured in your Redpanda Cloud account
+* ✅ Providers and models enabled (see [Admin Guide: Providers](// PLACEHOLDER: link))
+* ✅ Gateway created with appropriate policies (see [Gateway Creation Guide](// PLACEHOLDER: link))
+* ✅ Your gateway ID (`rp-aigw-id` header value)
+* ✅ Your gateway endpoint URL
+
+<!-- PLACEHOLDER: Add verification command, e.g.:
+[source,bash]
+----
+curl https://{GATEWAY_ENDPOINT}/v1/models \
+  -H "Authorization: Bearer {YOUR_TOKEN}" \
+  -H "rp-aigw-id: {GATEWAY_ID}"
+----
+
+Expected output: List of enabled models
+-->
+
+== Migration strategy
+
+=== Recommended approach: parallel operation
+
+Run both direct and gateway-routed requests simultaneously to validate behavior before full cutover.
+
+[source,text]
+----
+┌─────────────────┐
+│  Application    │
+└────────┬────────┘
+         │
+    ┌────▼─────┐
+    │ Feature  │
+    │  Flag    │
+    └────┬─────┘
+         │
+    ┌────▼──────────────┐
+    │                   │
+┌───▼─────┐      ┌─────▼─────┐
+│ Direct  │      │  Gateway  │
+│Provider │      │  Route    │
+└─────────┘      └───────────┘
+----
+
+
+*Benefits*:
+* No downtime
+* Easy rollback
+* Compare results side-by-side
+* Gradual traffic shift
+
+== Step-by-step migration
+
+=== Step 1: add environment variables
+
+Add gateway configuration to your environment without removing existing provider keys (yet).
+
+*.env (or equivalent)*
+[source,bash]
+----
+# Existing (keep these for now)
+OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-ant-...
+
+# New gateway configuration
+REDPANDA_AI_GATEWAY_URL=https://{GATEWAY_ENDPOINT}
+REDPANDA_AI_GATEWAY_ID={GATEWAY_ID}
+REDPANDA_AI_GATEWAY_TOKEN={YOUR_TOKEN}
+
+# Feature flag (start with gateway disabled)
+USE_AI_GATEWAY=false
+----
+
+
+=== Step 2: update your code
+
+==== Option a: OpenAI SDK (recommended for most use cases)
+
+*Before (Direct OpenAI)*
+[source,python]
+----
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.getenv("OPENAI_API_KEY")
+)
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "Hello"}]
+)
+----
+
+
+*After (Gateway-Routed with Feature Flag)*
+[source,python]
+----
+from openai import OpenAI
+import os
+
+# Feature flag determines which client to use
+use_gateway = os.getenv("USE_AI_GATEWAY", "false").lower() == "true"
+
+if use_gateway:
+    client = OpenAI(
+        base_url=os.getenv("REDPANDA_AI_GATEWAY_URL"),
+        api_key=os.getenv("REDPANDA_AI_GATEWAY_TOKEN"),
+        default_headers={"rp-aigw-id": os.getenv("REDPANDA_AI_GATEWAY_ID")}
+    )
+    model = "openai/gpt-4o"  # Add vendor prefix
+else:
+    client = OpenAI(
+        api_key=os.getenv("OPENAI_API_KEY")
+    )
+    model = "gpt-4o"  # Original model name
+
+response = client.chat.completions.create(
+    model=model,
+    messages=[{"role": "user", "content": "Hello"}]
+)
+----
+
+
+*Better: Abstraction Function*
+[source,python]
+----
+from openai import OpenAI
+import os
+
+def get_llm_client():
+    """Returns configured OpenAI client (direct or gateway-routed)"""
+    use_gateway = os.getenv("USE_AI_GATEWAY", "false").lower() == "true"
+
+    if use_gateway:
+        return OpenAI(
+            base_url=os.getenv("REDPANDA_AI_GATEWAY_URL"),
+            api_key=os.getenv("REDPANDA_AI_GATEWAY_TOKEN"),
+            default_headers={"rp-aigw-id": os.getenv("REDPANDA_AI_GATEWAY_ID")}
+        )
+    else:
+        return OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+def get_model_name(base_model: str) -> str:
+    """Returns model name with vendor prefix if using gateway"""
+    use_gateway = os.getenv("USE_AI_GATEWAY", "false").lower() == "true"
+    return f"openai/{base_model}" if use_gateway else base_model
+
+# Usage
+client = get_llm_client()
+response = client.chat.completions.create(
+    model=get_model_name("gpt-4o"),
+    messages=[{"role": "user", "content": "Hello"}]
+)
+----
+
+
+==== Option b: Anthropic SDK
+
+*Before (Direct Anthropic)*
+[source,python]
+----
+from anthropic import Anthropic
+
+client = Anthropic(
+    api_key=os.getenv("ANTHROPIC_API_KEY")
+)
+
+response = client.messages.create(
+    model="claude-sonnet-3.5",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Hello"}]
+)
+----
+
+
+*After (Gateway via OpenAI-Compatible Wrapper)*
+
+Because AI Gateway provides an OpenAI-compatible endpoint, we recommend migrating Anthropic SDK usage to OpenAI SDK for consistency:
+
+[source,python]
+----
+from openai import OpenAI
+import os
+
+use_gateway = os.getenv("USE_AI_GATEWAY", "false").lower() == "true"
+
+if use_gateway:
+    # Use OpenAI SDK with gateway
+    client = OpenAI(
+        base_url=os.getenv("REDPANDA_AI_GATEWAY_URL"),
+        api_key=os.getenv("REDPANDA_AI_GATEWAY_TOKEN"),
+        default_headers={"rp-aigw-id": os.getenv("REDPANDA_AI_GATEWAY_ID")}
+    )
+
+    response = client.chat.completions.create(
+        model="anthropic/claude-sonnet-3.5",
+        max_tokens=1024,
+        messages=[{"role": "user", "content": "Hello"}]
+    )
+else:
+    # Keep existing Anthropic SDK
+    from anthropic import Anthropic
+    client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+
+    response = client.messages.create(
+        model="claude-sonnet-3.5",
+        max_tokens=1024,
+        messages=[{"role": "user", "content": "Hello"}]
+    )
+----
+
+
+*Alternative: Keep Anthropic SDK with base_url Override*
+
+// PLACEHOLDER: Verify if Anthropic SDK supports base_url override for OpenAI-compatible endpoints
+
+[source,python]
+----
+from anthropic import Anthropic
+
+use_gateway = os.getenv("USE_AI_GATEWAY", "false").lower() == "true"
+
+if use_gateway:
+    client = Anthropic(
+        base_url=os.getenv("REDPANDA_AI_GATEWAY_URL"),  # If supported
+        api_key=os.getenv("REDPANDA_AI_GATEWAY_TOKEN"),
+        default_headers={"rp-aigw-id": os.getenv("REDPANDA_AI_GATEWAY_ID")}
+    )
+else:
+    client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+----
+
+
+==== Option c: multiple providers
+
+*Before (Separate SDKs)*
+[source,python]
+----
+from openai import OpenAI
+from anthropic import Anthropic
+
+openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+anthropic_client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+
+# Different code paths
+if use_openai:
+    response = openai_client.chat.completions.create(...)
+else:
+    response = anthropic_client.messages.create(...)
+----
+
+
+*After (Unified via Gateway)*
+[source,python]
+----
+from openai import OpenAI
+
+# Single client for all providers
+client = OpenAI(
+    base_url=os.getenv("REDPANDA_AI_GATEWAY_URL"),
+    api_key=os.getenv("REDPANDA_AI_GATEWAY_TOKEN"),
+    default_headers={"rp-aigw-id": os.getenv("REDPANDA_AI_GATEWAY_ID")}
+)
+
+# Same code, different models
+if use_openai:
+    response = client.chat.completions.create(
+        model="openai/gpt-4o",
+        messages=[...]
+    )
+else:
+    response = client.chat.completions.create(
+        model="anthropic/claude-sonnet-3.5",
+        messages=[...]
+    )
+----
+
+
+=== Step 3: test gateway connection
+
+Before changing the feature flag, verify gateway connectivity:
+
+*Python Test Script*
+[source,python]
+----
+from openai import OpenAI
+import os
+
+def test_gateway_connection():
+    client = OpenAI(
+        base_url=os.getenv("REDPANDA_AI_GATEWAY_URL"),
+        api_key=os.getenv("REDPANDA_AI_GATEWAY_TOKEN"),
+        default_headers={"rp-aigw-id": os.getenv("REDPANDA_AI_GATEWAY_ID")}
+    )
+
+    try:
+        response = client.chat.completions.create(
+            model="openai/gpt-4o-mini",  # Use cheap model for testing
+            messages=[{"role": "user", "content": "Test"}],
+            max_tokens=10
+        )
+        print("✅ Gateway connection successful")
+        print(f"Response: {response.choices[0].message.content}")
+        return True
+    except Exception as e:
+        print(f"❌ Gateway connection failed: {e}")
+        return False
+
+if __name__ == "__main__":
+    test_gateway_connection()
+----
+
+
+*Expected Output*:
+[source,text]
+----
+✅ Gateway connection successful
+Response: Hello
+----
+
+
+*Common Issues*:
+* `401 Unauthorized` → Check `REDPANDA_AI_GATEWAY_TOKEN`
+* `404 Not Found` → Check `REDPANDA_AI_GATEWAY_URL` (should end with `/v1/chat/completions` or base path)
+* `Model not found` → Ensure model is enabled in gateway configuration
+* No `rp-aigw-id` header → Verify header is set in `default_headers`
+
+See [Troubleshooting Guide](// PLACEHOLDER: link) for more details.
+
+=== Step 4: verify in observability dashboard
+
+After successful test:
+1. Open AI Gateway observability dashboard
+2. Navigate to // PLACEHOLDER: specific UI path, e.g., "Gateways → {GATEWAY_NAME} → Logs"
+3. Verify your test request appears
+4. Check fields:
+   * ✅ Model: `openai/gpt-4o-mini`
+   * ✅ Provider: OpenAI
+   * ✅ Status: 200
+   * ✅ Token count: ~10 prompt + ~10 completion
+   * ✅ Cost: // PLACEHOLDER: expected cost
+
+*If request doesn't appear*: Check [End-to-End Validation Guide](// PLACEHOLDER: link)
+
+=== Step 5: enable gateway for subset of traffic
+
+Gradually roll out gateway usage:
+
+*Staged Rollout Strategy*:
+1. *Week 1*: Internal testing only (dev team accounts)
+2. *Week 2*: 10% of production traffic
+3. *Week 3*: 50% of production traffic
+4. *Week 4*: 100% of production traffic
+
+*Implementation Options*:
+
+*Option A: Environment-Based*
+[source,python]
+----
+# Enable gateway in staging first
+use_gateway = os.getenv("ENVIRONMENT") in ["staging", "production"]
+----
+
+
+*Option B: Percentage-Based*
+[source,python]
+----
+import random
+
+# Route 10% of traffic through gateway
+use_gateway = random.random() < 0.10
+----
+
+
+*Option C: User-Based*
+[source,python]
+----
+# Enable for internal users first
+use_gateway = user.email.endswith("@yourcompany.com")
+----
+
+
+*Option D: Feature Flag Service* (recommended)
+[source,python]
+----
+# LaunchDarkly, Split.io, etc.
+use_gateway = feature_flags.is_enabled("ai-gateway", user_context)
+----
+
+
+=== Step 6: monitor and compare
+
+During parallel operation, compare metrics:
+
+*Metrics to Monitor*:
+| Metric | Direct | Gateway | Notes |
+|--------|--------|---------|-------|
+| Success rate | // track | // track | Should be identical |
+| Latency p50 | // track | // track | Gateway adds ~// PLACEHOLDER: Xms |
+| Latency p99 | // track | // track | Watch for outliers |
+| Error rate | // track | // track | Should be identical |
+| Cost per 1K requests | // track | // track | Compare estimated costs |
+
+*Monitoring Code Example*:
+[source,python]
+----
+import time
+
+def call_llm_with_metrics(use_gateway: bool, model: str, messages: list):
+    start_time = time.time()
+
+    try:
+        client = get_llm_client(use_gateway)
+        response = client.chat.completions.create(
+            model=model,
+            messages=messages
+        )
+
+        latency = time.time() - start_time
+
+        # Log metrics
+        metrics.record("llm.request.success", 1, tags={
+            "routing": "gateway" if use_gateway else "direct",
+            "model": model
+        })
+        metrics.record("llm.request.latency", latency, tags={
+            "routing": "gateway" if use_gateway else "direct"
+        })
+
+        return response
+
+    except Exception as e:
+        metrics.record("llm.request.error", 1, tags={
+            "routing": "gateway" if use_gateway else "direct",
+            "error": str(e)
+        })
+        raise
+----
+
+
+=== Step 7: full cutover
+
+Once metrics confirm gateway reliability:
+
+1. *Set feature flag to 100%*:
+   ```bash
+   USE_AI_GATEWAY=true
+   ```
+
+2. *Deploy updated configuration*
+
+3. *Monitor for 24-48 hours*
+
+4. *Remove direct provider credentials* (optional, for security):
+   ```bash
+   # .env
+   # OPENAI_API_KEY=sk-...  # Remove after confirming gateway stability
+   # ANTHROPIC_API_KEY=sk-ant-...  # Remove after confirming gateway stability
+
+   REDPANDA_AI_GATEWAY_URL=https://{GATEWAY_ENDPOINT}
+   REDPANDA_AI_GATEWAY_ID={GATEWAY_ID}
+   REDPANDA_AI_GATEWAY_TOKEN={YOUR_TOKEN}
+   ```
+
+5. *Remove direct integration code* (optional, for cleanup):
+   ```python
+   # Remove feature flag logic, keep only gateway path
+   client = OpenAI(
+       base_url=os.getenv("REDPANDA_AI_GATEWAY_URL"),
+       api_key=os.getenv("REDPANDA_AI_GATEWAY_TOKEN"),
+       default_headers={"rp-aigw-id": os.getenv("REDPANDA_AI_GATEWAY_ID")}
+   )
+   ```
+
+== Rollback procedure
+
+If issues arise, rollback is simple:
+
+*Emergency Rollback (< 1 minute)*:
+[source,bash]
+----
+# Set feature flag back to false
+USE_AI_GATEWAY=false
+
+# Restart application (if needed)
+----
+
+
+*Gradual Rollback*:
+[source,python]
+----
+# Reduce gateway traffic percentage
+use_gateway = random.random() < 0.50  # Back to 50%
+use_gateway = random.random() < 0.10  # Back to 10%
+use_gateway = False  # Back to 0%
+----
+
+
+*Keep direct provider credentials until you're confident in gateway stability.*
+
+== Framework-specific migration
+
+=== LangChain
+
+*Before*
+[source,python]
+----
+from langchain_openai import ChatOpenAI
+
+llm = ChatOpenAI(
+    model="gpt-4o",
+    api_key=os.getenv("OPENAI_API_KEY")
+)
+----
+
+
+*After*
+[source,python]
+----
+from langchain_openai import ChatOpenAI
+
+use_gateway = os.getenv("USE_AI_GATEWAY", "false").lower() == "true"
+
+if use_gateway:
+    llm = ChatOpenAI(
+        model="openai/gpt-4o",
+        base_url=os.getenv("REDPANDA_AI_GATEWAY_URL"),
+        api_key=os.getenv("REDPANDA_AI_GATEWAY_TOKEN"),
+        default_headers={"rp-aigw-id": os.getenv("REDPANDA_AI_GATEWAY_ID")}
+    )
+else:
+    llm = ChatOpenAI(
+        model="gpt-4o",
+        api_key=os.getenv("OPENAI_API_KEY")
+    )
+----
+
+
+=== LlamaIndex
+
+*Before*
+[source,python]
+----
+from llama_index.llms.openai import OpenAI
+
+llm = OpenAI(model="gpt-4o")
+----
+
+
+*After*
+[source,python]
+----
+from llama_index.llms.openai import OpenAI
+
+use_gateway = os.getenv("USE_AI_GATEWAY", "false").lower() == "true"
+
+if use_gateway:
+    llm = OpenAI(
+        model="openai/gpt-4o",
+        api_base=os.getenv("REDPANDA_AI_GATEWAY_URL"),
+        api_key=os.getenv("REDPANDA_AI_GATEWAY_TOKEN"),
+        additional_kwargs={"headers": {"rp-aigw-id": os.getenv("REDPANDA_AI_GATEWAY_ID")}}
+    )
+else:
+    llm = OpenAI(model="gpt-4o")
+----
+
+
+// PLACEHOLDER: Verify LlamaIndex syntax for custom headers
+
+=== Vercel AI SDK (javascript/typescript)
+
+*Before*
+[source,typescript]
+----
+import { openai } from '@ai-sdk/openai';
+
+const model = openai('gpt-4o');
+----
+
+
+*After*
+[source,typescript]
+----
+import { openai } from '@ai-sdk/openai';
+
+const useGateway = process.env.USE_AI_GATEWAY === 'true';
+
+const model = useGateway
+  ? openai('openai/gpt-4o', {
+      baseURL: process.env.REDPANDA_AI_GATEWAY_URL,
+      apiKey: process.env.REDPANDA_AI_GATEWAY_TOKEN,
+      headers: {
+        'rp-aigw-id': process.env.REDPANDA_AI_GATEWAY_ID,
+      },
+    })
+  : openai('gpt-4o');
+----
+
+
+// PLACEHOLDER: Verify Vercel AI SDK syntax
+
+== Migration checklist
+
+Use this checklist to track your migration:
+
+* [ ] *Prerequisites*
+  * [ ] Gateway configured and tested
+  * [ ] Providers enabled
+  * [ ] Models enabled
+  * [ ] Gateway ID and endpoint URL obtained
+
+* [ ] *Code Changes*
+  * [ ] Environment variables added
+  * [ ] Feature flag implemented
+  * [ ] Client initialization updated
+  * [ ] Model name prefix added (vendor/model_id)
+  * [ ] Headers added (rp-aigw-id)
+
+* [ ] *Testing*
+  * [ ] Gateway connection test passes
+  * [ ] Test request visible in observability dashboard
+  * [ ] Integration tests pass with gateway
+  * [ ] End-to-end tests pass with gateway
+
+* [ ] *Staged Rollout*
+  * [ ] Week 1: Internal testing (dev team only)
+  * [ ] Week 2: 10% production traffic
+  * [ ] Week 3: 50% production traffic
+  * [ ] Week 4: 100% production traffic
+
+* [ ] *Monitoring*
+  * [ ] Success rate comparison (direct vs gateway)
+  * [ ] Latency comparison (direct vs gateway)
+  * [ ] Error rate comparison (direct vs gateway)
+  * [ ] Cost comparison (direct vs gateway)
+
+* [ ] *Cleanup* (optional, after 30 days stable)
+  * [ ] Remove direct provider credentials
+  * [ ] Remove feature flag logic
+  * [ ] Update documentation
+  * [ ] Archive direct integration code
+
+== Common migration issues
+
+=== Issue: "model not found" error
+
+*Symptom*:
+[source,text]
+----
+Error: Model 'openai/gpt-4o' not found
+----
+
+
+*Causes*:
+1. Model not enabled in gateway configuration
+2. Wrong model name format (missing vendor prefix)
+3. Typo in model name
+
+*Solution*:
+1. Verify model is enabled: // PLACEHOLDER: UI path or CLI command
+2. Confirm format: `vendor/model_id` (e.g., `openai/gpt-4o`, not `gpt-4o`)
+3. Check supported models: // PLACEHOLDER: link to model catalog
+
+=== Issue: missing `rp-aigw-id` header
+
+*Symptom*:
+[source,text]
+----
+Error: Missing required header 'rp-aigw-id'
+----
+
+
+*Solution*:
+[source,python]
+----
+# Ensure header is set in default_headers
+client = OpenAI(
+    base_url=os.getenv("REDPANDA_AI_GATEWAY_URL"),
+    api_key=os.getenv("REDPANDA_AI_GATEWAY_TOKEN"),
+    default_headers={"rp-aigw-id": os.getenv("REDPANDA_AI_GATEWAY_ID")}  # ← Required
+)
+----
+
+
+=== Issue: higher latency than expected
+
+*Expected Gateway Overhead*: // PLACEHOLDER: Xms p50, Yms p99
+
+*If latency is significantly higher*:
+1. Check geographic routing (gateway → provider region)
+2. Verify provider pool configuration (no unnecessary fallbacks)
+3. Review CEL routing complexity
+4. Check for rate limiting (adds retry latency)
+
+*Solution*: See [Performance Optimization Guide](// PLACEHOLDER: link)
+
+=== Issue: requests not appearing in dashboard
+
+*Causes*:
+1. Wrong gateway ID
+2. Request failed before reaching gateway
+3. UI delay (logs may take // PLACEHOLDER: Xs to appear)
+
+*Solution*: See [End-to-End Validation Guide](// PLACEHOLDER: link)
+
+=== Issue: different response format
+
+*Symptom*: Response structure differs between direct and gateway
+
+// PLACEHOLDER: Confirm if response format is identical to OpenAI API or if there are differences
+
+*Solution*:
+* AI Gateway should return OpenAI-compatible responses
+* If differences exist, file a support ticket with request ID from logs
+
+== Advanced migration scenarios
+
+=== Scenario: custom request timeouts
+
+*Before*
+[source,python]
+----
+client = OpenAI(api_key=..., timeout=30.0)
+----
+
+
+*After*
+[source,python]
+----
+client = OpenAI(
+    base_url=os.getenv("REDPANDA_AI_GATEWAY_URL"),
+    api_key=os.getenv("REDPANDA_AI_GATEWAY_TOKEN"),
+    default_headers={"rp-aigw-id": os.getenv("REDPANDA_AI_GATEWAY_ID")},
+    timeout=30.0  # Still supported
+)
+----
+
+
+=== Scenario: streaming responses
+
+// PLACEHOLDER: Verify streaming support
+
+*Before*
+[source,python]
+----
+stream = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[...],
+    stream=True
+)
+
+for chunk in stream:
+    print(chunk.choices[0].delta.content, end="")
+----
+
+
+*After*
+[source,python]
+----
+stream = client.chat.completions.create(
+    model="openai/gpt-4o",  # Add vendor prefix
+    messages=[...],
+    stream=True
+)
+
+for chunk in stream:
+    print(chunk.choices[0].delta.content, end="")
+----
+
+
+=== Scenario: custom headers (e.g., user tracking)
+
+*Before*
+[source,python]
+----
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[...],
+    extra_headers={"X-User-ID": user.id}
+)
+----
+
+
+*After*
+[source,python]
+----
+response = client.chat.completions.create(
+    model="openai/gpt-4o",
+    messages=[...],
+    extra_headers={
+        "X-User-ID": user.id,  # Custom headers still supported
+        "rp-aigw-id": os.getenv("REDPANDA_AI_GATEWAY_ID")  # Required gateway header
+    }
+)
+----
+
+
+*Note*: Gateway may use custom headers for routing (e.g., CEL expressions can reference `request.headers["X-User-ID"]`)
+
+== Post-migration benefits
+
+After successful migration, you gain:
+
+=== 1. simplified provider management
+[source,python]
+----
+# Switch providers with one config change (no code changes)
+model = "anthropic/claude-sonnet-3.5"  # Was openai/gpt-4o
+----
+
+
+=== 2. unified observability
+* All requests in one dashboard
+* Cross-provider cost comparison
+* Session reconstruction across models
+
+=== 3. automatic failover
+* Configure once, benefit everywhere
+* No application-level retry logic needed
+
+=== 4. cost controls
+* Enforce budgets centrally
+* Rate limit per team/customer
+* No surprises in cloud bills
+
+=== 5. a/b testing
+* Test new models without code changes
+* Compare quality/cost/latency
+* Gradual rollout via routing policies
+
+== Next steps
+
+* *Configure routing policies* → [CEL Routing Guide](// PLACEHOLDER: link)
+* *Set up failover* → [Provider Pools Guide](// PLACEHOLDER: link)
+* *Add rate limits* → [Rate Limiting Guide](// PLACEHOLDER: link)
+* *Explore MCP* → [MCP Aggregation Guide](// PLACEHOLDER: link)
+* *Optimize costs* → [Cost Optimization Guide](// PLACEHOLDER: link)
+
+== Get help
+
+If you encounter issues during migration:
+* Check [Troubleshooting Guide](// PLACEHOLDER: link)
+* Review [End-to-End Validation](// PLACEHOLDER: link)
+* Contact support: // PLACEHOLDER: support email or portal
+* Community: // PLACEHOLDER: Slack, Discord, or forum link
+
+'''
+
+*Related Pages*:
+* [Quickstart](// PLACEHOLDER: link)
+* [Troubleshooting](// PLACEHOLDER: link)
+* [OpenAI Integration](// PLACEHOLDER: link)
+* [Anthropic Integration](// PLACEHOLDER: link)
+* [LangChain Integration](// PLACEHOLDER: link)

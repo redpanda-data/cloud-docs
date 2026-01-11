@@ -1,0 +1,503 @@
+= AI gateway quickstart
+
+Get your first request routed through Redpanda AI Gateway in under 10 minutes.
+
+== What you'll accomplish
+
+✓ *2 minutes*: Route your first LLM request through the gateway
+✓ *5 minutes*: See observability data in the dashboard
+✓ *7 minutes*: Add a fallback provider for reliability
+✓ *10 minutes*: Write your first CEL routing rule
+
+*Total time*: 10-15 minutes
+
+== Prerequisites
+
+Before starting, ensure you have:
+* ✅ Redpanda Cloud account with BYOC // PLACEHOLDER: specific version?
+* ✅ Admin access to configure providers and gateways
+* ✅ API keys for at least one LLM provider (OpenAI, Anthropic, etc.)
+* ✅ Python 3.8+ or Node.js 18+ (for examples)
+
+== Step 1: configure a provider (admin task)
+
+*Time: ~2 minutes*
+
+Providers must be configured before they can be used in gateways.
+
+// PLACEHOLDER: Add UI navigation path, e.g., "Console → AI Gateway → Providers → Add Provider"
+
+1. *Navigate to Providers*:
+   * Open Redpanda Cloud Console
+   * Go to // PLACEHOLDER: exact menu path
+
+2. *Add Provider*:
+   ```
+   Provider: OpenAI
+   API Key: sk-...
+   Enabled Models: gpt-4o, gpt-4o-mini
+   ```
+
+   // PLACEHOLDER: Add screenshot of provider configuration form
+
+3. *Verify*:
+   * Provider status shows "Active"
+   * Models appear in model catalog
+
+*Alternative: CLI* (if available)
+[source,bash]
+----
+# PLACEHOLDER: CLI command for adding provider
+rpk cloud ai-gateway provider create \
+  --provider openai \
+  --api-key sk-... \
+  --models gpt-4o,gpt-4o-mini
+----
+
+
+*Supported Providers*:
+// PLACEHOLDER: List currently supported providers
+* OpenAI
+* Anthropic
+* // PLACEHOLDER: Others?
+
+See link:// PLACEHOLDER: link[Admin Guide: Providers] for detailed configuration options.
+
+== Step 2: create a gateway
+
+*Time: ~1 minute*
+
+Gateways define routing policies, rate limits, and observability scope.
+
+// PLACEHOLDER: Add UI navigation path
+
+1. *Navigate to Gateways*:
+   * Go to // PLACEHOLDER: exact menu path
+
+2. *Create Gateway*:
+   ```
+   Name: my-first-gateway
+   Workspace: default
+   Description: Quickstart gateway for testing
+   ```
+
+   // PLACEHOLDER: Add screenshot of gateway creation form
+
+3. *Save Gateway ID*:
+   After creation, copy your gateway ID (required for requests):
+   ```
+   Gateway ID: gw_abc123...
+   Gateway Endpoint: https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1
+   ```
+
+   // PLACEHOLDER: Confirm exact endpoint format
+
+*Recommended Gateway Patterns*:
+* One gateway per environment (staging, production)
+* One gateway per team (for budget isolation)
+* One gateway per customer (for multi-tenant SaaS)
+
+See link:// PLACEHOLDER: link[Gateway Creation Guide] for best practices.
+
+== Step 3: send your first request
+
+*Time: ~2 minutes*
+
+Now route a request through your gateway.
+
+=== Python
+
+[source,python]
+----
+from openai import OpenAI
+import os
+
+# Configure client to use AI Gateway
+client = OpenAI(
+    base_url="https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1",  # Gateway endpoint
+    api_key=os.getenv("REDPANDA_CLOUD_TOKEN"),  # Your Redpanda Cloud token
+    default_headers={
+        "rp-aigw-id": "gw_abc123..."  # Your gateway ID from Step 2
+    }
+)
+
+# Make a request (note the vendor/model_id format)
+response = client.chat.completions.create(
+    model="openai/gpt-4o-mini",  # Format: {provider}/{model}
+    messages=[
+        {"role": "user", "content": "Say 'Hello from AI Gateway!'"}
+    ],
+    max_tokens=20
+)
+
+print(response.choices[0].message.content)
+# Output: Hello from AI Gateway!
+----
+
+
+=== Typescript/javascript
+
+[source,typescript]
+----
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  baseURL: 'https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1',
+  apiKey: process.env.REDPANDA_CLOUD_TOKEN,
+  defaultHeaders: {
+    'rp-aigw-id': 'gw_abc123...'
+  }
+});
+
+const response = await client.chat.completions.create({
+  model: 'openai/gpt-4o-mini',
+  messages: [
+    { role: 'user', content: 'Say "Hello from AI Gateway!"' }
+  ],
+  max_tokens: 20
+});
+
+console.log(response.choices[0].message.content);
+// Output: Hello from AI Gateway!
+----
+
+
+=== Curl
+
+[source,bash]
+----
+curl https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ${REDPANDA_CLOUD_TOKEN}" \
+  -H "rp-aigw-id: gw_abc123..." \
+  -d '{
+    "model": "openai/gpt-4o-mini",
+    "messages": [
+      {"role": "user", "content": "Say \"Hello from AI Gateway!\""}
+    ],
+    "max_tokens": 20
+  }'
+----
+
+
+*Expected Response*:
+[source,json]
+----
+{
+  "id": "chatcmpl-...",
+  "object": "chat.completion",
+  "created": 1704844800,
+  "model": "openai/gpt-4o-mini",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "Hello from AI Gateway!"
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 8,
+    "completion_tokens": 5,
+    "total_tokens": 13
+  }
+}
+----
+
+
+*Troubleshooting*:
+* `401 Unauthorized` → Check `REDPANDA_CLOUD_TOKEN`
+* `404 Not Found` → Verify `base_url` is correct
+* `Model not found` → Ensure model is enabled in Step 1
+* `Missing rp-aigw-id` → Verify header is set
+
+See link:// PLACEHOLDER: link[Troubleshooting Guide] for more help.
+
+== Step 4: verify in observability dashboard
+
+*Time: ~1 minute*
+
+Confirm your request appears in the AI Gateway dashboard.
+
+// PLACEHOLDER: Add UI navigation path and screenshots
+
+1. *Navigate to Logs*:
+   * Go to // PLACEHOLDER: Console → AI Gateway → {Gateway Name} → Logs
+
+2. *Find Your Request*:
+   * Filter by Gateway: `my-first-gateway`
+   * Filter by Model: `openai/gpt-4o-mini`
+   * Time range: Last 5 minutes
+
+3. *Verify Fields*:
+   * ✅ Model: `openai/gpt-4o-mini`
+   * ✅ Provider: OpenAI
+   * ✅ Status: 200
+   * ✅ Prompt tokens: ~8
+   * ✅ Completion tokens: ~5
+   * ✅ Estimated cost: // PLACEHOLDER: $X.XXXX
+   * ✅ Latency: // PLACEHOLDER: ~XXXms
+
+4. *Click Request to Expand*:
+   * View full prompt and response
+   * See request headers
+   * Check routing decision (which provider pool was used)
+
+*If request doesn't appear*:
+* Wait // PLACEHOLDER: Xs (logs may have delay)
+* Check gateway ID matches
+* Verify request succeeded (no error in client)
+* See link:// PLACEHOLDER: link[End-to-End Validation Guide]
+
+*🎉 Congratulations!* You've successfully routed your first request through AI Gateway and verified observability.
+
+'''
+
+== Next steps: add failover (optional, +3 minutes)
+
+Add automatic failover to a backup provider for reliability.
+
+=== Step 5: add second provider
+
+*Time: ~1 minute*
+
+Add Anthropic as a fallback option:
+
+// PLACEHOLDER: Add UI path
+
+1. *Navigate to Providers* → *Add Provider*:
+   ```
+   Provider: Anthropic
+   API Key: sk-ant-...
+   Enabled Models: claude-sonnet-3.5
+   ```
+
+2. *Verify*:
+   * Anthropic provider status: Active
+   * Models appear in catalog
+
+=== Step 6: configure provider pool with fallback
+
+*Time: ~2 minutes*
+
+Update your gateway to use OpenAI as primary, Anthropic as fallback.
+
+// PLACEHOLDER: Add UI path and configuration format
+
+1. *Navigate to Gateway Settings*:
+   * Go to // PLACEHOLDER: AI Gateway → {Gateway Name} → Routing
+
+2. *Configure Provider Pool*:
+   ```yaml
+   # PLACEHOLDER: Confirm actual configuration format
+   routing:
+     primary_pool:
+       * provider: openai
+         models: [gpt-4o, gpt-4o-mini]
+     fallback_pool:
+       * provider: anthropic
+         models: [claude-sonnet-3.5]
+
+   fallback_triggers:
+     * rate_limit_exceeded
+     * timeout
+     * 5xx_errors
+   ```
+
+   // PLACEHOLDER: Add screenshot of routing configuration
+
+3. *Save Configuration*
+
+=== Step 7: test failover
+
+*Time: ~1 minute*
+
+Simulate a provider failure to see fallback in action.
+
+// PLACEHOLDER: Add method to test failback, or skip if not easily testable
+
+*Option A: Disable Primary Provider Temporarily*
+1. Disable OpenAI provider in settings
+2. Send request with `openai/gpt-4o` model
+3. Gateway should automatically route to Anthropic fallback
+4. Check logs to confirm fallback was used
+
+*Option B: Trigger Rate Limit*
+1. Send many requests rapidly to hit rate limit
+2. Gateway should fallback to Anthropic
+3. Check logs for "fallback_triggered" indicator
+
+*Verify Fallback*:
+[source,python]
+----
+response = client.chat.completions.create(
+    model="openai/gpt-4o",  # Request OpenAI model
+    messages=[{"role": "user", "content": "Test fallback"}]
+)
+
+# Check which provider actually handled it
+# PLACEHOLDER: How to verify this - response header? Log metadata?
+----
+
+
+*Check Dashboard*:
+* Request should show:
+  * Requested model: `openai/gpt-4o`
+  * Actual provider: Anthropic (fallback)
+  * Fallback reason: // PLACEHOLDER: rate_limit / timeout / error
+
+'''
+
+== Next steps: add routing rule (optional, +3 minutes)
+
+Use CEL expressions to route requests based on headers or content.
+
+=== Step 8: create CEL routing rule
+
+*Time: ~2 minutes*
+
+Route premium users to better models automatically.
+
+// PLACEHOLDER: Add UI path for CEL configuration
+
+1. *Navigate to Gateway Settings*:
+   * Go to // PLACEHOLDER: AI Gateway → {Gateway Name} → Routing Rules
+
+2. *Add CEL Rule*:
+   ```cel
+   # Route based on user tier header
+   request.headers["x-user-tier"] == "premium"
+     ? "openai/gpt-4o"
+     : "openai/gpt-4o-mini"
+   ```
+
+   // PLACEHOLDER: Add screenshot of CEL editor with syntax highlighting
+
+3. *Test Rule* (if UI supports testing):
+   * Input test headers: `x-user-tier: premium`
+   * Verify output: `openai/gpt-4o`
+   * Input test headers: `x-user-tier: free`
+   * Verify output: `openai/gpt-4o-mini`
+
+4. *Save Rule*
+
+=== Step 9: test routing rule
+
+*Time: ~1 minute*
+
+Send requests with different headers and verify routing.
+
+*Premium User Request*:
+[source,python]
+----
+response = client.chat.completions.create(
+    model="auto",  # PLACEHOLDER: or how to trigger CEL routing
+    messages=[{"role": "user", "content": "Hello"}],
+    extra_headers={"x-user-tier": "premium"}
+)
+
+# Should route to gpt-4o (premium model)
+----
+
+
+*Free User Request*:
+[source,python]
+----
+response = client.chat.completions.create(
+    model="auto",
+    messages=[{"role": "user", "content": "Hello"}],
+    extra_headers={"x-user-tier": "free"}
+)
+
+# Should route to gpt-4o-mini (cost-effective model)
+----
+
+
+*Verify in Dashboard*:
+* Check request logs
+* Confirm correct model was selected based on header
+* View routing decision explanation
+
+*🎉 Congratulations!* You've configured intelligent routing based on request context.
+
+'''
+
+== What you've learned
+
+✅ *Provider Configuration*: Added LLM providers (OpenAI, Anthropic)
+✅ *Gateway Creation*: Created your first gateway with policies
+✅ *Request Routing*: Sent requests through the gateway
+✅ *Observability*: Verified requests in dashboard logs
+✅ *Failover*: Configured automatic fallback to backup provider (optional)
+✅ *Smart Routing*: Created CEL rule for dynamic model selection (optional)
+
+== What's next?
+
+=== Immediate next steps
+1. *Set Rate Limits* → link:// PLACEHOLDER: link[Rate Limiting Guide]
+   * Protect against runaway costs
+   * Prevent abuse
+
+2. *Add Spend Limits* → link:// PLACEHOLDER: link[Budget Controls Guide]
+   * Set monthly budgets per gateway
+   * Get alerts before limits are hit
+
+3. *Configure MCP Aggregation* → link:// PLACEHOLDER: link[MCP Guide]
+   * Give agents access to tools
+   * Reduce token costs with deferred loading
+
+=== Explore advanced features
+* *A/B Testing Models* → link:// PLACEHOLDER: link[A/B Testing Guide]
+* *Multi-Tenancy Patterns* → link:// PLACEHOLDER: link[Multi-Tenancy Guide]
+* *Cost Optimization* → link:// PLACEHOLDER: link[Cost Optimization Guide]
+* *Performance Tuning* → link:// PLACEHOLDER: link[Performance Guide]
+
+=== Integration guides
+* link:// PLACEHOLDER: link[OpenAI SDK Integration]
+* link:// PLACEHOLDER: link[Anthropic SDK Integration]
+* link:// PLACEHOLDER: link[LangChain Integration]
+* link:// PLACEHOLDER: link[LlamaIndex Integration]
+* link:// PLACEHOLDER: link[Claude Code CLI]
+* link:// PLACEHOLDER: link[VS Code Extension]
+* link:// PLACEHOLDER: link[Cursor IDE]
+
+=== Migrate existing applications
+* link:// PLACEHOLDER: link[Migration Guide: From Direct Integration to Gateway]
+
+== Common next questions
+
+*Q: How do I switch between providers without code changes?*
+A: Change the model string in your gateway routing rules. No code deployment needed.
+
+*Q: How much latency does the gateway add?*
+A: Typically // PLACEHOLDER: Xms overhead. See link:// PLACEHOLDER: link[Performance Benchmarks].
+
+*Q: Can I use the same gateway for multiple applications?*
+A: Yes, but we recommend separate gateways per environment or team for better cost tracking.
+
+*Q: How do I attribute costs to specific customers?*
+A: Use CEL routing with custom headers, then filter logs by header value. See link:// PLACEHOLDER: link[Cost Attribution Guide].
+
+*Q: Does the gateway work with streaming responses?*
+A: // PLACEHOLDER: Yes/No, with any limitations
+
+*Q: What happens if the gateway goes down?*
+A: // PLACEHOLDER: Describe high availability setup, or recommend keeping fallback to direct integration
+
+== Get help
+
+* *Documentation*: link:// PLACEHOLDER: actual URL[https://docs.redpanda.com/redpanda-cloud/ai-gateway/]
+* *Troubleshooting*: link:// PLACEHOLDER: link[Common Issues Guide]
+* *Community*: // PLACEHOLDER: Slack, Discord, forum link
+* *Support*: // PLACEHOLDER: support email or portal
+
+'''
+
+*Related Pages*:
+* link:// PLACEHOLDER: link[What is AI Gateway?]
+* link:// PLACEHOLDER: link[Core Concepts]
+* link:// PLACEHOLDER: link[End-to-End Validation]
+* link:// PLACEHOLDER: link[CEL Routing Deep Dive]
+* link:// PLACEHOLDER: link[Observability: Logs & Metrics]

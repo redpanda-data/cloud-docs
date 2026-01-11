@@ -1,0 +1,419 @@
+= What is Redpanda AI gateway?
+
+== Overview
+
+Redpanda AI Gateway is a unified access layer for LLM providers and AI tools that sits between your applications and the AI services they use. It provides centralized routing, policy enforcement, cost management, and observability for all your AI traffic.
+
+== The problem
+
+Modern AI applications face several critical challenges:
+
+=== 1. provider fragmentation
+
+* Applications hardcode provider-specific SDKs (OpenAI, Anthropic, Google, etc.)
+* Switching providers requires code changes and redeployment
+* Testing across providers is time-consuming and error-prone
+* Provider outages directly impact your application
+
+=== 2. cost spirals without visibility
+
+* No centralized view of token usage across teams and applications
+* Difficult to attribute costs to specific customers, features, or environments
+* Testing and debugging can rack up unexpected bills
+* No way to enforce budgets or rate limits per team/customer
+
+=== 3. tool coordination complexity
+
+* Agents need access to multiple MCP (Model Context Protocol) servers
+* Managing tool discovery and execution is repetitive across projects
+* High token costs from loading all available tools upfront
+* No centralized governance over which tools agents can access
+
+=== 4. observability gaps
+
+* Requests scattered across multiple provider dashboards
+* Can't reconstruct user sessions that span multiple models
+* No unified view of latency, errors, and costs
+* Debugging "the AI gave the wrong answer" requires manual log diving
+
+== What AI gateway solves
+
+Redpanda AI Gateway addresses these challenges through four core capabilities:
+
+=== 1. unified LLM access (single endpoint for all providers)
+
+// PLACEHOLDER: Add architecture diagram showing:
+// - Application → AI Gateway → Multiple LLM Providers (OpenAI, Anthropic, etc.)
+// - Single baseURL configuration
+// - Model routing via vendor/model_id format
+
+*Before (Direct Integration)*
+
+[source,python]
+----
+# OpenAI
+from openai import OpenAI
+client = OpenAI(api_key="sk-...")
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "Hello"}]
+)
+
+# Anthropic (different SDK, different patterns)
+from anthropic import Anthropic
+client = Anthropic(api_key="sk-ant-...")
+response = client.messages.create(
+    model="claude-sonnet-3.5",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Hello"}]
+)
+----
+
+*After (AI Gateway - OpenAI-Compatible)*
+
+[source,python]
+----
+from openai import OpenAI
+
+# Single configuration, multiple providers
+client = OpenAI(
+    base_url="https://{GATEWAY_ENDPOINT}",
+    api_key="your-redpanda-token",
+    default_headers={"rp-aigw-id": "{GATEWAY_ID}"}
+)
+
+# Route to OpenAI
+response = client.chat.completions.create(
+    model="openai/gpt-4o",
+    messages=[{"role": "user", "content": "Hello"}]
+)
+
+# Route to Anthropic (same code, different model string)
+response = client.chat.completions.create(
+    model="anthropic/claude-sonnet-3.5",
+    messages=[{"role": "user", "content": "Hello"}]
+)
+----
+
+*Result*: Change `model` parameter to switch providers. No code redeployment needed.
+
+=== 2. policy-based routing & cost control
+
+Define routing rules, rate limits, and budgets once; enforce them automatically:
+
+*Example: Tier-Based Routing*
+
+[source,cel]
+----
+// Route premium users to best model, free users to cost-effective model
+request.headers["x-user-tier"] == "premium"
+  ? "anthropic/claude-opus-4"
+  : "anthropic/claude-sonnet-3.5"
+----
+
+*Example: Environment-Based Budget*
+
+// PLACEHOLDER: Confirm exact policy configuration format
+
+[source,yaml]
+----
+rate_limits:
+  staging: 100 requests/minute
+  production: 10000 requests/minute
+
+spend_limits:
+  staging: $500/month
+  production: $50000/month
+----
+
+*Example: Automatic Failover*
+
+// PLACEHOLDER: Add details on pool configuration and failback behavior
+
+* Primary: OpenAI GPT-4
+* Fallback: Anthropic Claude Opus on rate limits or timeouts
+* Result: 99.9% uptime even during provider outages
+
+=== 3. MCP aggregation & orchestration
+
+*Agent Tool Access Without the Overhead*
+
+*Before*: Agent loads all tools from multiple MCP servers upfront
+
+* Sends 50+ tool definitions with every request
+* High token costs (thousands of tokens per request)
+* Slow agent startup
+* No centralized governance
+
+*After*: AI Gateway aggregates MCP servers
+
+* Deferred tool loading: Only search + orchestrator tools loaded initially
+* *80-90% token reduction* depending on configuration
+* Agent queries for specific tools only when needed
+* Centralized approval of MCP servers
+
+*Orchestrator for Complex Workflows*
+
+* Single JavaScript-based orchestrator tool
+* Reduces multi-step workflows from multiple round trips to one call
+* Example: "Search vector DB → if results insufficient → fallback to web search"
+
+// PLACEHOLDER: Add link to MCP aggregation guide when ready
+
+=== 4. unified observability & cost tracking
+
+*Single Dashboard for All LLM Traffic*
+
+// PLACEHOLDER: Add screenshots of:
+// - Request logs view
+// - Cost breakdown by model/provider
+// - Latency histogram
+// - Error rate tracking
+
+Track across all requests:
+
+* Volume (requests per gateway, model, provider)
+* Token usage (prompt + completion tokens)
+* Estimated spend (per model, with cross-provider comparison)
+* Latency (p50, p95, p99)
+* Errors (by type, provider, model)
+
+*Use Cases*:
+
+* "Which model is the most cost-effective for our use case?"
+* "Why did this specific user request fail?"
+* "How much does our staging environment cost us per week?"
+* "What's the latency difference between OpenAI and Anthropic for our workload?"
+
+== Cost comparison example
+
+// PLACEHOLDER: Insert real customer data or anonymized case study
+
+*Scenario*: SaaS chatbot with 1M requests/month, averaging 500 prompt + 300 completion tokens
+
+[cols="1,1,2"]
+|===
+|Configuration |Monthly Cost |Notes
+
+|*Direct Integration* (no gateway)
+|// PLACEHOLDER: $X,XXX
+|No caching, no routing optimization
+
+|*+ AI Gateway* (basic routing)
+|// PLACEHOLDER: $X,XXX
+|Provider failover, unified observability
+
+|*+ Caching*
+|// PLACEHOLDER: $X,XXX
+|// PLACEHOLDER: X% reduction from cache hits
+
+|*+ Deferred Tool Loading*
+|// PLACEHOLDER: $X,XXX
+|80-90% token reduction for agent workloads
+
+|*+ Tier-Based Routing*
+|// PLACEHOLDER: $X,XXX
+|Premium users → better model, free → cost-effective
+|===
+
+*Total Savings*: // PLACEHOLDER: $X,XXX/month (XX% reduction)
+
+*Hidden Savings*:
+
+* Developer time: No more managing multiple provider SDKs
+* Incident response: Automatic failover reduces downtime costs
+* Experimentation: Safe A/B testing without risking production
+
+== Common gateway patterns
+
+=== Pattern 1: team isolation
+
+*Use Case*: Multiple teams sharing infrastructure, need separate budgets and policies
+
+*Setup*: Create one gateway per team
+
+* Team A Gateway: $5K/month budget, staging + production environments
+* Team B Gateway: $10K/month budget, different rate limits
+* Each team sees only their traffic in observability dashboards
+
+// PLACEHOLDER: Link to multi-tenancy guide
+
+=== Pattern 2: environment separation
+
+*Use Case*: Prevent staging traffic from affecting production metrics
+
+*Setup*: Separate gateways for staging vs production
+
+* Staging Gateway: Lower rate limits, restricted model access, aggressive cost controls
+* Production Gateway: High rate limits, all models enabled, alerting on anomalies
+
+=== Pattern 3: primary + fallback for reliability
+
+*Use Case*: Ensure uptime during provider outages
+
+*Setup*: Configure provider pools with automatic failover
+
+* Primary: OpenAI (preferred for quality)
+* Fallback: Anthropic (activates on OpenAI rate limits or timeouts)
+* Monitor fallback rate to detect primary provider issues early
+
+=== Pattern 4: a/b testing models
+
+*Use Case*: Compare model quality/cost without dual integration
+
+*Setup*: Route percentage of traffic to different models
+
+// PLACEHOLDER: Confirm if percentage-based routing is supported, or if it's header-based only
+
+* 80% traffic → claude-sonnet-3.5
+* 20% traffic → claude-opus-4
+* Compare quality metrics and costs, then adjust
+
+=== Pattern 5: customer-based routing
+
+*Use Case*: SaaS product with tiered pricing (free, pro, enterprise)
+
+*Setup*: CEL routing based on request headers
+
+[source,cel]
+----
+request.headers["x-customer-tier"] == "enterprise" ? "anthropic/claude-opus-4" :
+request.headers["x-customer-tier"] == "pro" ? "anthropic/claude-sonnet-3.5" :
+"anthropic/claude-haiku"
+----
+
+== Deployment model
+
+// PLACEHOLDER: Verify BYOC availability and any managed offering plans
+
+*BYOC (Bring Your Own Cloud)*
+
+* Currently available: BYOC version for // PLACEHOLDER: specific Redpanda version
+* Deployment: Within your Redpanda Cloud cluster
+* Data residency: All traffic stays in your cloud account
+* Supported clouds: // PLACEHOLDER: AWS, GCP, Azure?
+
+// PLACEHOLDER: If managed offering is planned, add:
+// *Managed (Redpanda Cloud)*
+// - Coming soon: Fully managed AI Gateway
+// - No infrastructure management
+// - Global deployment regions
+// - Uptime SLA
+
+== What's supported today
+
+=== LLM providers
+
+// PLACEHOLDER: Confirm currently supported providers
+
+* OpenAI
+* Anthropic
+* // PLACEHOLDER: Google, AWS Bedrock, Azure OpenAI, others?
+
+=== API compatibility
+
+* OpenAI-compatible `/v1/chat/completions` endpoint
+* // PLACEHOLDER: Streaming support?
+* // PLACEHOLDER: Embeddings support?
+* // PLACEHOLDER: Other endpoints?
+
+=== Policy features
+
+* CEL-based routing expressions
+* Rate limiting (// PLACEHOLDER: per-gateway, per-header, per-tenant?)
+* Monthly spend limits (// PLACEHOLDER: per-gateway, per-workspace?)
+* Provider pools with automatic failover
+* // PLACEHOLDER: Caching support?
+
+=== MCP support
+
+* MCP server aggregation
+* Deferred tool loading (80-90% token reduction)
+* JavaScript orchestrator for multi-step workflows
+* // PLACEHOLDER: Tool execution sandboxing?
+
+=== Observability
+
+* Request logs with full prompt/response history
+* Token usage tracking
+* Estimated cost per request
+* Latency metrics
+* // PLACEHOLDER: Metrics export? OpenTelemetry support?
+
+== What's not supported yet
+
+// PLACEHOLDER: List current limitations, for example:
+// - Custom model deployments (Azure OpenAI BYOK, AWS Bedrock custom models)
+// - Response caching
+// - Prompt templates/versioning
+// - Guardrails (PII detection, content moderation)
+// - Multi-region active-active deployment
+// - Metrics export to external systems
+// - Budget alerts/notifications
+
+== Architecture
+
+// PLACEHOLDER: Add architecture diagram showing:
+// 1. Control Plane:
+//    - Workspace management
+//    - Provider/model configuration
+//    - Gateway creation and policy definition
+//    - Admin console
+//
+// 2. Data Plane:
+//    - Request ingestion
+//    - Policy evaluation (rate limits → spend limits → routing → execution)
+//    - Provider pool selection and failover
+//    - MCP aggregation layer
+//    - Response logging and metrics
+//
+// 3. Observability Plane:
+//    - Request logs storage
+//    - Metrics aggregation
+//    - Dashboard UI
+
+*Request Lifecycle*:
+
+. Application sends request to gateway endpoint with `rp-aigw-id` header
+. Gateway authenticates request
+. Rate limit policy evaluates (allow/deny)
+. Spend limit policy evaluates (allow/deny)
+. Routing policy evaluates (which model/provider to use)
+. Provider pool selects backend (primary/fallback)
+. Request forwarded to LLM provider
+. Response returned to application
+. Request logged with tokens, cost, latency, status
+
+*MCP Request Lifecycle*:
+
+. Application discovers tools via `/mcp` endpoint
+. Gateway aggregates tools from approved MCP servers
+. Application receives search + orchestrator tools (deferred loading)
+. Application invokes specific tool
+. Gateway routes to appropriate MCP server
+. Tool execution result returned
+. Request logged with execution time, status
+
+== Next steps
+
+* *New to AI Gateway?* → link:quickstart.adoc[Quickstart: Route your first request]
+* *Understand the concepts* → link:core-concepts.adoc[Core Concepts: Gateways, Providers, Models]
+* *Set up providers* → link:admin-guide-providers.adoc[Admin Guide: Configure LLM Providers]
+* *Define policies* → link:routing-rate-limits.adoc[Routing & Rate Limits Guide]
+* *Integrate agents* → link:mcp-aggregation-guide.adoc[MCP Aggregation Guide]
+* *Monitor usage* → link:observability-logs.adoc[Observability: Logs and Metrics]
+
+== Get help
+
+* Documentation: https://docs.redpanda.com/redpanda-cloud/ai-gateway/
+* Community: // PLACEHOLDER: Slack, Discord, or forum link
+* Support: // PLACEHOLDER: support email or portal
+
+'''
+
+*Related Pages*:
+
+* link:quickstart.adoc[Quickstart]
+* link:core-concepts.adoc[Core Concepts]
+* link:architecture-deep-dive.adoc[Architecture Deep Dive]
+* link:use-cases-patterns.adoc[Use Cases & Patterns]
