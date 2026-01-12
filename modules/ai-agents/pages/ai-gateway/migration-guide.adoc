@@ -498,37 +498,40 @@ def call_llm_with_metrics(use_gateway: bool, model: str, messages: list):
 Once metrics confirm gateway reliability:
 
 1. Set feature flag to 100%:
-
-   ```bash
-   USE_AI_GATEWAY=true
-   ```
++
+[source,bash]
+----
+USE_AI_GATEWAY=true
+----
 
 2. Deploy updated configuration
 
 3. Monitor for 24-48 hours
 
 4. Remove direct provider credentials (optional, for security):
++
+[source,bash]
+----
+# .env
+# OPENAI_API_KEY=sk-...  # Remove after confirming gateway stability
+# ANTHROPIC_API_KEY=sk-ant-...  # Remove after confirming gateway stability
 
-   ```bash
-   # .env
-   # OPENAI_API_KEY=sk-...  # Remove after confirming gateway stability
-   # ANTHROPIC_API_KEY=sk-ant-...  # Remove after confirming gateway stability
-
-   REDPANDA_AI_GATEWAY_URL=https://{GATEWAY_ENDPOINT}
-   REDPANDA_AI_GATEWAY_ID={GATEWAY_ID}
-   REDPANDA_AI_GATEWAY_TOKEN={YOUR_TOKEN}
-   ```
+REDPANDA_AI_GATEWAY_URL=https://{GATEWAY_ENDPOINT}
+REDPANDA_AI_GATEWAY_ID={GATEWAY_ID}
+REDPANDA_AI_GATEWAY_TOKEN={YOUR_TOKEN}
+----
 
 5. Remove direct integration code (optional, for cleanup):
-
-   ```python
-   # Remove feature flag logic, keep only gateway path
-   client = OpenAI(
-       base_url=os.getenv("REDPANDA_AI_GATEWAY_URL"),
-       api_key=os.getenv("REDPANDA_AI_GATEWAY_TOKEN"),
-       default_headers={"rp-aigw-id": os.getenv("REDPANDA_AI_GATEWAY_ID")}
-   )
-   ```
++
+[source,python]
+----
+# Remove feature flag logic, keep only gateway path
+client = OpenAI(
+    base_url=os.getenv("REDPANDA_AI_GATEWAY_URL"),
+    api_key=os.getenv("REDPANDA_AI_GATEWAY_TOKEN"),
+    default_headers={"rp-aigw-id": os.getenv("REDPANDA_AI_GATEWAY_ID")}
+)
+----
 
 == Rollback procedure
 

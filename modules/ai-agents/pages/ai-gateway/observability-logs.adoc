@@ -517,10 +517,11 @@ Common causes:
 === Task 2: "Reconstruct a user's conversation"
 
 1. *Filter by user*:
-
-   ```
-   Filter: request.headers["x-user-id"] = "user_123"
-   ```
++
+[source,text]
+----
+Filter: request.headers["x-user-id"] = "user_123"
+----
 
 2. *Sort by timestamp* (ascending)
 
@@ -535,11 +536,12 @@ Use case: User says "the AI contradicted itself" → View full conversation hist
 === Task 3: "Why is latency high for this user?"
 
 1. *Find user's requests*:
-
-   ```
-   Filter: request.headers["x-user-id"] = "user_123"
-   AND Latency > 3000ms
-   ```
++
+[source,text]
+----
+Filter: request.headers["x-user-id"] = "user_123"
+AND Latency > 3000ms
+----
 
 2. *Check Performance Details*:
 
@@ -563,10 +565,11 @@ Common causes:
 === Task 4: "Which requests used the fallback provider?"
 
 1. *Filter by fallback*:
-
-   ```
-   Filter: Fallback Triggered = true
-   ```
++
+[source,text]
+----
+Filter: Fallback Triggered = true
+----
 
 2. *Group by Fallback Reason*:
 
@@ -584,11 +587,12 @@ Use case: Verify failover is working as expected
 === Task 5: "What did we spend on this customer today?"
 
 1. *Filter by customer*:
-
-   ```
-   Filter: request.headers["x-customer-id"] = "customer_abc"
-   AND Timestamp >= "today"
-   ```
++
+[source,text]
+----
+Filter: request.headers["x-customer-id"] = "customer_abc"
+AND Timestamp >= "today"
+----
 
 2. *Sum estimated costs* (if UI supports):
 

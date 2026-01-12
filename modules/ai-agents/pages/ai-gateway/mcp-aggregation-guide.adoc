@@ -12,7 +12,7 @@ MCP aggregation benefits:
 * Orchestration: JavaScript-based orchestrator reduces multi-step round trips
 * Security: Controlled tool execution environment
 
-== What is MCO?
+== What is MCP?
 
 *Model Context Protocol (MCP)* is a standard for exposing tools (functions) that AI agents can discover and invoke. MCP servers provide tools like:
 
@@ -23,20 +23,25 @@ MCP aggregation benefits:
 * Code execution
 * Workflow automation
 
-*Without AI Gateway*:
+[cols="1,1"]
+|===
+| Without AI Gateway | With AI Gateway
 
-* Agent connects to each MCP server individually
-* Agent loads ALL tools from ALL servers upfront (high token cost)
-* No centralized governance or security
-* Complex configuration
+| Agent connects to each MCP server individually 
+| Agent connects to gateway's unified `/mcp` endpoint
 
-*With AI Gateway*:
+| Agent loads ALL tools from ALL servers upfront (high token cost) 
+| Gateway aggregates tools from approved MCP servers
 
-* Agent connects to gateway's unified `/mcp` endpoint
-* Gateway aggregates tools from approved MCP servers
-* Deferred loading: Only search + orchestrator tools sent initially
-* Agent queries for specific tools when needed (token savings)
-* Centralized governance and observability
+| No centralized governance or security 
+| Deferred loading: Only search + orchestrator tools sent initially
+
+| Complex configuration 
+| Agent queries for specific tools when needed (token savings)
+
+| 
+| Centralized governance and observability
+|===
 
 == Architecture
 
@@ -315,10 +320,11 @@ Compare token usage before/after deferred loading:
    * Average tokens per request: // PLACEHOLDER: measure
 
 4. Calculate savings:
-
-   ```
-   Savings % = ((Before - After) / Before) × 100
-   ```
++
+[source,text]
+----
+Savings % = ((Before - After) / Before) × 100
+----
 
 Expected Results: 80-90% reduction in average tokens per request
 
@@ -560,19 +566,20 @@ Steps:
    * Console → AI Gateway → MCP Servers → Add Server
 
 2. Configure server:
-
-   ```yaml
-   # PLACEHOLDER: Actual configuration format
-   name: database-server
-   url: https://mcp-database.example.com
-   authentication:
-     type: bearer_token
-     token: ${SECRET_REF}  # Reference to secret
-   enabled_tools:
-     * execute_sql
-     * list_tables
-     * describe_table
-   ```
++
+[source,yaml]
+----
+# PLACEHOLDER: Actual configuration format
+name: database-server
+url: https://mcp-database.example.com
+authentication:
+  type: bearer_token
+  token: ${SECRET_REF}  # Reference to secret
+enabled_tools:
+  * execute_sql
+  * list_tables
+  * describe_table
+----
 
 3. Test connection:
 
@@ -655,11 +662,13 @@ Challenge: MCP server updates may change tool schemas
 Recommendations:
 
 1. Pin versions (if supported):
-   ```yaml
-   mcp_servers:
-     * name: database-server
-       version: "1.2.3"  # Pin to specific version
-   ```
++
+[source,yaml]
+----
+mcp_servers:
+  * name: database-server
+    version: "1.2.3"  # Pin to specific version
+----
 
 2. Test in staging first:
 
@@ -796,7 +805,7 @@ Solution:
 
 // PLACEHOLDER: Confirm sandboxing implementation
 
-Orchestrator Sandbox:
+Orchestrator sandbox:
 
 * No file system access
 * No network access (except via MCP tools)
