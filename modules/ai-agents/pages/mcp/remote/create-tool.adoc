@@ -7,6 +7,7 @@
 :learning-objective-1: Create a tool with the correct structure and MCP metadata
 :learning-objective-2: Map MCP parameters to component configuration fields using Bloblang
 :learning-objective-3: Test tools using the MCP Inspector
+:toc:
 
 After xref:ai-agents:mcp/remote/quickstart.adoc[deploying your first MCP server], create custom tools that AI clients can discover and invoke. This guide walks you through the process using any Redpanda Connect component.
 
@@ -52,12 +53,7 @@ Use the link:/api/doc/cloud-dataplane/operation/operation-mcpserverservice_creat
 ======
 
 [[yaml-structure]]
-== Tool structure
-
-Each tool configuration must contain exactly one component. The component type is inferred from the type you select when creating or editing the MCP server. The component can be a processor, input, output, or cache.
-
-[[anatomy]]
-== Tool anatomy
+== Add the tool structure
 
 An MCP tool wraps a xref:develop:connect/components/about.adoc[Redpanda Connect component] and exposes it to AI clients. Each tool has three parts:
 
@@ -94,12 +90,19 @@ meta: # <3>
 <2> **Component**: The `sql_select` processor configured to query a database.
 <3> **MCP metadata**: Tells AI clients what this tool does and what parameters it accepts.
 
+Each tool configuration must contain exactly one component. The component type is inferred from the type you select when creating or editing the MCP server. The component can be a processor, input, output, or cache.
+
 The following sections show how to structure tools for each component type.
 
-=== Processor tools
+=== Label naming rules
+
+include::redpanda-connect:ai-agents:partial$mcp/create-tool/label-naming-rules.adoc[]
+
+=== Component types
 
 xref:develop:connect/components/processors/about.adoc[Processors] transform, filter, or enrich data. Use a `processors:` array with one or more processors:
 
+.Processor tool
 [source,yaml]
 ----
 label: enrich-order
@@ -114,8 +117,6 @@ meta:
     enabled: true
     description: "Enrich order with customer data"
 ----
-
-=== Input, output, and cache tools
 
 xref:develop:connect/components/inputs/about.adoc[Inputs] read data from sources, xref:develop:connect/components/outputs/about.adoc[outputs] write data to destinations, and xref:develop:connect/components/caches/about.adoc[caches] store and retrieve data. Define these components directly at the top level:
 
@@ -177,10 +178,9 @@ meta:
     description: "In-memory cache for session data"
 ----
 
-=== Output with inline processors
-
 Outputs can include a `processors:` section to transform data before publishing:
 
+.Output tool with processors
 [source,yaml]
 ----
 label: publish-with-timestamp
@@ -211,22 +211,18 @@ See xref:ai-agents:mcp/remote/tool-patterns.adoc#outputs-with-processors[outputs
 Do not wrap components in `input:`, `output:`, or `cache:` blocks. This syntax is for pipelines, not MCP tools.
 
 [[mcp-metadata]]
-== MCP metadata fields
+=== MCP metadata fields
 
 The `meta.mcp` block defines how AI clients discover and interact with your tool. These fields control tool visibility, naming, and input parameters.
 
 include::redpanda-connect:ai-agents:partial$mcp/create-tool/mcp-metadata-fields-table.adoc[]
 
-=== Label naming rules
-
-include::redpanda-connect:ai-agents:partial$mcp/create-tool/label-naming-rules.adoc[]
-
-=== Property fields
+==== Property fields
 
 include::redpanda-connect:ai-agents:partial$mcp/create-tool/property-fields-table.adoc[]
 
 [[property-restrictions]]
-=== Property restrictions by component type
+==== Property restrictions by component type
 
 include::redpanda-connect:ai-agents:partial$mcp/create-tool/property-restrictions-table.adoc[]
 
