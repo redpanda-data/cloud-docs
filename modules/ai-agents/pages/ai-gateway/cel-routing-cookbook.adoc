@@ -1,10 +1,12 @@
-= CEL routing: deep dive & cookbook
+= DRAFT: CEL Routing Cookbook
+:description: Quickstart to configure the AI Gateway for unified access to multiple LLM providers and MCP servers through a single endpoint.
 
 == Overview
 
 Redpanda AI Gateway uses CEL (Common Expression Language) for dynamic request routing. CEL expressions evaluate request properties (headers, body, context) and determine which model or provider should handle each request.
 
-*CEL enables*:
+CEL enables:
+
 * User-based routing (free vs premium tiers)
 * Content-based routing (by prompt topic, length, complexity)
 * Environment-based routing (staging vs production models)
@@ -15,19 +17,21 @@ Redpanda AI Gateway uses CEL (Common Expression Language) for dynamic request ro
 
 == CEL basics
 
-=== What is cel?
+=== What is CEL?
 
 CEL (Common Expression Language) is a non-Turing-complete expression language designed for fast, safe evaluation. It's used by Google (Firebase, Cloud IAM), Kubernetes, Envoy, and other systems.
 
-*Key Properties*:
-* *Safe*: Cannot loop infinitely or access system resources
-* *Fast*: Evaluates in microseconds
-* *Readable*: Similar to Python/JavaScript expressions
-* *Type-safe*: Errors caught at configuration time, not runtime
+Key properties:
+
+* Safe: Cannot loop infinitely or access system resources
+* Fast: Evaluates in microseconds
+* Readable: Similar to Python/JavaScript expressions
+* Type-safe: Errors caught at configuration time, not runtime
 
 === CEL syntax primer
 
-*Comparison Operators*:
+Comparison operators:
+
 [source,cel]
 ----
 == // equal
@@ -39,7 +43,8 @@ CEL (Common Expression Language) is a non-Turing-complete expression language de
 ----
 
 
-*Logical Operators*:
+Logical operators:
+
 [source,cel]
 ----
 &&   // AND
@@ -48,14 +53,16 @@ CEL (Common Expression Language) is a non-Turing-complete expression language de
 ----
 
 
-*Ternary Operator* (most common pattern):
+Ternary operator (most common pattern):
+
 [source,cel]
 ----
 condition ? value_if_true : value_if_false
 ----
 
 
-*Functions*:
+Functions:
+
 [source,cel]
 ----
 .size()           // Length of string or array
@@ -67,7 +74,8 @@ has(field)        // Check if field exists
 ----
 
 
-*Examples*:
+Examples:
+
 [source,cel]
 ----
 // Simple comparison
@@ -106,7 +114,7 @@ request.headers["x-request-id"]    // Standard header
 ----
 
 
-*Note*: Header names are case-insensitive in HTTP, but CEL requires lowercase keys.
+NOTE: Header names are case-insensitive in HTTP, but CEL requires lowercase keys.
 
 === `request.body` (object)
 
@@ -125,7 +133,8 @@ request.body.stream                     // Bool: Streaming enabled (if set)
 ----
 
 
-*Note*: Fields are optional. Use `has()` to check existence:
+NOTE: Fields are optional. Use `has()` to check existence:
+
 [source,cel]
 ----
 has(request.body.max_tokens) ? request.body.max_tokens : 1000
@@ -158,19 +167,19 @@ request.method == "POST"
 == CEL routing patterns
 
 Each pattern follows this structure:
-* *When to use*: Scenario description
-* *Expression*: CEL code
-* *What happens*: Routing behavior
-* *Verify*: How to test
-* *Cost/performance impact*: Implications
 
-'''
+* When to use: Scenario description
+* Expression: CEL code
+* What happens: Routing behavior
+* Verify: How to test
+* Cost/performance impact: Implications
 
-=== Pattern 1: tier-based routing
+=== Pattern 1: Tier-based routing
 
-*When to use*: Different user tiers (free, pro, enterprise) should get different model quality
+When to use: Different user tiers (free, pro, enterprise) should get different model quality
 
-*Expression*:
+Expression:
+
 [source,cel]
 ----
 request.headers["x-user-tier"] == "enterprise" ? "openai/gpt-4o" :
@@ -179,12 +188,14 @@ request.headers["x-user-tier"] == "pro" ? "anthropic/claude-sonnet-3.5" :
 ----
 
 
-*What happens*:
+What happens:
+
 * Enterprise users → GPT-4o (best quality)
 * Pro users → Claude Sonnet 3.5 (balanced)
 * Free users → GPT-4o-mini (cost-effective)
 
-*Verify*:
+Verify:
+
 [source,python]
 ----
 # Test enterprise
@@ -205,20 +216,20 @@ response = client.chat.completions.create(
 ----
 
 
-*Cost Impact*:
+Cost impact:
+
 * Enterprise: ~$5.00 per 1K requests
 * Pro: ~$3.50 per 1K requests
 * Free: ~$0.50 per 1K requests
 
-*Use Case*: SaaS product with tiered pricing where model quality is a differentiator
+Use case: SaaS product with tiered pricing where model quality is a differentiator
 
-'''
+=== Pattern 2: Environment-based routing
 
-=== Pattern 2: environment-based routing
+When to use: Prevent staging from using expensive models
 
-*When to use*: Prevent staging from using expensive models
+Expression:
 
-*Expression*:
 [source,cel]
 ----
 request.headers["x-environment"] == "production"
@@ -227,11 +238,13 @@ request.headers["x-environment"] == "production"
 ----
 
 
-*What happens*:
+What happens:
+
 * Production → GPT-4o (best quality)
 * Staging/dev → GPT-4o-mini (10x cheaper)
 
-*Verify*:
+Verify:
+
 [source,python]
 ----
 # Set environment header
@@ -244,22 +257,24 @@ response = client.chat.completions.create(
 ----
 
 
-*Cost Impact*:
+Cost impact:
+
 * Prevents staging from inflating costs
 * Example: Staging with 100K test requests/day
   * GPT-4o: $500/day ($15K/month)
   * GPT-4o-mini: $50/day ($1.5K/month)
   * *Savings: $13.5K/month*
 
-*Use Case*: Protect against runaway staging costs
+Use case: Protect against runaway staging costs
 
 '''
 
-=== Pattern 3: content-length guard rails
+=== Pattern 3: Content-length guard rails
 
-*When to use*: Block or downgrade long prompts to prevent cost spikes
+When to use: Block or downgrade long prompts to prevent cost spikes
 
-*Expression (Block)*:
+Expression (Block):
+
 [source,cel]
 ----
 request.body.messages.size() > 10 || request.body.max_tokens > 4000
@@ -268,11 +283,12 @@ request.body.messages.size() > 10 || request.body.max_tokens > 4000
 ----
 
 
-*What happens*:
+What happens:
 * Requests with >10 messages or >4000 max_tokens → Rejected with 400 error
 * Normal requests → GPT-4o
 
-*Expression (Downgrade)*:
+Expression (Downgrade):
+
 [source,cel]
 ----
 request.body.messages.size() > 10 || request.body.max_tokens > 4000
@@ -281,11 +297,13 @@ request.body.messages.size() > 10 || request.body.max_tokens > 4000
 ----
 
 
-*What happens*:
+What happens:
+
 * Long conversations → Downgraded to cheaper model
 * Short conversations → Premium model
 
-*Verify*:
+Verify:
+
 [source,python]
 ----
 # Test rejection
@@ -306,19 +324,19 @@ response = client.chat.completions.create(
 ----
 
 
-*Cost Impact*:
+Cost impact:
+
 * Prevents unexpected bills from verbose prompts
 * Example: Block requests >10K tokens (would cost $0.15 each)
 
-*Use Case*: Staging cost controls, prevent prompt injection attacks that inflate token usage
+Use case: Staging cost controls, prevent prompt injection attacks that inflate token usage
 
-'''
+=== Pattern 4: Topic-based routing
 
-=== Pattern 4: topic-based routing
+When to use: Route different question types to specialized models
 
-*When to use*: Route different question types to specialized models
+Expression:
 
-*Expression*:
 [source,cel]
 ----
 request.body.messages[0].content.contains("code") ||
@@ -329,11 +347,13 @@ request.body.messages[0].content.contains("programming")
 ----
 
 
-*What happens*:
+What happens:
+
 * Coding questions → GPT-4o (optimized for code)
 * General questions → Claude Sonnet (better prose)
 
-*Verify*:
+Verify:
+
 [source,python]
 ----
 # Test code question
@@ -352,19 +372,20 @@ response = client.chat.completions.create(
 ----
 
 
-*Cost Impact*:
+Cost impact:
+
 * Optimize model selection for task type
 * Could improve quality without increasing costs
 
-*Use Case*: Multi-purpose chatbot with both coding and general queries
+Use case: Multi-purpose chatbot with both coding and general queries
 
-'''
 
-=== Pattern 5: geographic/regional routing
+=== Pattern 5: Geographic/regional routing
 
-*When to use*: Route by user region for compliance or latency optimization
+When to use: Route by user region for compliance or latency optimization
 
-*Expression*:
+Expression:
+
 [source,cel]
 ----
 request.headers["x-user-region"] == "eu"
@@ -373,11 +394,13 @@ request.headers["x-user-region"] == "eu"
 ----
 
 
-*What happens*:
+What happens:
+
 * EU users → EU-region model (GDPR compliance)
 * Other users → Default region
 
-*Verify*:
+Verify:
+
 [source,python]
 ----
 response = client.chat.completions.create(
@@ -389,17 +412,17 @@ response = client.chat.completions.create(
 ----
 
 
-*Cost Impact*: Neutral (same model, different region)
+Cost impact: Neutral (same model, different region)
 
-*Use Case*: GDPR compliance, data residency requirements
+Use case: GDPR compliance, data residency requirements
 
-'''
 
-=== Pattern 6: customer-specific routing
+=== Pattern 6: Customer-specific routing
 
-*When to use*: Different customers have different model access (enterprise features)
+When to use: Different customers have different model access (enterprise features)
 
-*Expression*:
+Expression:
+
 [source,cel]
 ----
 request.headers["x-customer-id"] == "customer_vip_123"
@@ -408,11 +431,13 @@ request.headers["x-customer-id"] == "customer_vip_123"
 ----
 
 
-*What happens*:
+What happens:
+
 * VIP customer → Best model
 * Standard customers → Normal model
 
-*Verify*:
+Verify:
+
 [source,python]
 ----
 response = client.chat.completions.create(
@@ -424,21 +449,22 @@ response = client.chat.completions.create(
 ----
 
 
-*Cost Impact*:
+Cost impact:
+
 * VIP: ~$7.50 per 1K requests
 * Standard: ~$3.50 per 1K requests
 
-*Use Case*: Enterprise contracts with premium model access
+Use case: Enterprise contracts with premium model access
 
-'''
 
 === Pattern 7: a/b testing (percentage-based routing)
 
-*When to use*: Test new models with a percentage of traffic
+When to use: Test new models with a percentage of traffic
 
 // PLACEHOLDER: Confirm if CEL can access random functions or if A/B testing requires different mechanism
 
-*Expression (if random is available)*:
+Expression (if random is available):
+
 [source,cel]
 ----
 // PLACEHOLDER: Verify CEL random function availability
@@ -448,7 +474,8 @@ random() < 0.10
 ----
 
 
-*Alternative (Hash-Based)*:
+Alternative (hash-based):
+
 [source,cel]
 ----
 // Use customer ID hash for stable routing
@@ -458,11 +485,13 @@ hash(request.headers["x-customer-id"]) % 100 < 10
 ----
 
 
-*What happens*:
+What happens:
+
 * 10% of requests → New model (Opus 4)
 * 90% of requests → Existing model (GPT-4o)
 
-*Verify*:
+Verify:
+
 [source,python]
 ----
 # Send 100 requests, count which model was used
@@ -476,19 +505,19 @@ for i in range(100):
 ----
 
 
-*Cost Impact*:
+Cost impact:
+
 * Allows safe, incremental rollout of new models
 * Monitor quality/cost for new model before full adoption
 
-*Use Case*: Evaluate new models in production with real traffic
+Use case: Evaluate new models in production with real traffic
 
-'''
+=== Pattern 8: Complexity-based routing
 
-=== Pattern 8: complexity-based routing
+When to use: Route simple queries to cheap models, complex queries to expensive models
 
-*When to use*: Route simple queries to cheap models, complex queries to expensive models
+Expression:
 
-*Expression*:
 [source,cel]
 ----
 request.body.messages.size() == 1 &&
@@ -498,11 +527,13 @@ request.body.messages[0].content.size() < 100
 ----
 
 
-*What happens*:
+What happens:
+
 * Single short message (<100 chars) → Cheap model
 * Multi-turn or long messages → Premium model
 
-*Verify*:
+Verify:
+
 [source,python]
 ----
 # Test simple
@@ -525,21 +556,21 @@ response = client.chat.completions.create(
 ----
 
 
-*Cost Impact*:
+Cost impact:
+
 * Can reduce costs significantly if simple queries are common
 * Example: 50% of queries are simple, save 90% on those = 45% total savings
 
-*Use Case*: FAQ chatbot with mix of simple lookups and complex questions
+Use case: FAQ chatbot with mix of simple lookups and complex questions
 
-'''
+=== Pattern 9: Time-based routing
 
-=== Pattern 9: time-based routing
-
-*When to use*: Use cheaper models during off-peak hours
+When to use: Use cheaper models during off-peak hours
 
 // PLACEHOLDER: Confirm if CEL has access to current timestamp
 
-*Expression (if time functions available)*:
+Expression (if time functions available):
+
 [source,cel]
 ----
 // PLACEHOLDER: Verify CEL time function availability
@@ -549,23 +580,25 @@ now().hour >= 22 || now().hour < 6  // 10pm - 6am
 ----
 
 
-*What happens*:
+What happens:
+
 * Off-peak hours (10pm-6am) → Cheap model
 * Peak hours (6am-10pm) → Premium model
 
-*Cost Impact*:
+Cost impact:
+
 * Optimize for user experience during peak usage
 * Save costs during low-traffic hours
 
-*Use Case*: Consumer apps with time-zone-specific usage patterns
+Use case: Consumer apps with time-zone-specific usage patterns
 
-'''
 
-=== Pattern 10: fallback chain (multi-level)
+=== Pattern 10: Fallback chain (multi-level)
 
-*When to use*: Complex fallback logic beyond simple primary/secondary
+When to use: Complex fallback logic beyond simple primary/secondary
 
-*Expression*:
+Expression:
+
 [source,cel]
 ----
 request.headers["x-priority"] == "critical"
@@ -576,26 +609,27 @@ request.headers["x-priority"] == "critical"
 ----
 
 
-*What happens*:
+What happens:
+
 * Critical requests → Always GPT-4o
 * Premium non-critical → Claude Sonnet
 * Everyone else → GPT-4o-mini
 
-*Verify*: Test with different header combinations
+Verify: Test with different header combinations
 
-*Cost Impact*: Ensures SLA for critical requests while optimizing costs elsewhere
+Cost impact: Ensures SLA for critical requests while optimizing costs elsewhere
 
-*Use Case*: Production systems with SLA requirements
+Use case: Production systems with SLA requirements
 
-'''
 
 == Advanced CEL patterns
 
-=== Pattern: default values with `has()`
+=== Pattern: Default values with `has()`
 
-*Problem*: Field might not exist in request
+Problem: Field might not exist in request
 
-*Expression*:
+Expression:
+
 [source,cel]
 ----
 has(request.body.max_tokens) && request.body.max_tokens > 2000
@@ -604,11 +638,12 @@ has(request.body.max_tokens) && request.body.max_tokens > 2000
 ----
 
 
-*What happens*: Safely checks if `max_tokens` exists before comparing
+What happens: Safely checks if `max_tokens` exists before comparing
 
-=== Pattern: multiple conditions with parentheses
+=== Pattern: Multiple conditions with parentheses
 
-*Expression*:
+Expression:
+
 [source,cel]
 ----
 (request.headers["x-user-tier"] == "premium" ||
@@ -619,11 +654,12 @@ request.headers["x-environment"] == "production"
 ----
 
 
-*What happens*: Premium users OR VIP customer, AND production → GPT-4o
+What happens: Premium users OR VIP customer, AND production → GPT-4o
 
-=== Pattern: regex matching
+=== Pattern: Regex matching
 
-*Expression*:
+Expression:
+
 [source,cel]
 ----
 request.body.messages[0].content.matches("(?i)(urgent|asap|emergency)")
@@ -632,11 +668,12 @@ request.body.messages[0].content.matches("(?i)(urgent|asap|emergency)")
 ----
 
 
-*What happens*: Messages containing "urgent", "ASAP", or "emergency" (case-insensitive) → GPT-4o
+What happens: Messages containing "urgent", "ASAP", or "emergency" (case-insensitive) → GPT-4o
 
-=== Pattern: string array contains
+=== Pattern: String array contains
 
-*Expression*:
+Expression:
+
 [source,cel]
 ----
 ["customer_1", "customer_2", "customer_3"].exists(c, c == request.headers["x-customer-id"])
@@ -645,11 +682,12 @@ request.body.messages[0].content.matches("(?i)(urgent|asap|emergency)")
 ----
 
 
-*What happens*: Only specific customers get premium model
+What happens: Only specific customers get premium model
 
-=== Pattern: reject invalid requests
+=== Pattern: Reject invalid requests
 
-*Expression*:
+Expression:
+
 [source,cel]
 ----
 !has(request.body.messages) || request.body.messages.size() == 0
@@ -658,7 +696,7 @@ request.body.messages[0].content.matches("(?i)(urgent|asap|emergency)")
 ----
 
 
-*What happens*: Requests without messages are rejected (400 error)
+What happens: Requests without messages are rejected (400 error)
 
 == Test CEL expressions
 
@@ -666,13 +704,13 @@ request.body.messages[0].content.matches("(?i)(urgent|asap|emergency)")
 
 // PLACEHOLDER: Add screenshot if UI has CEL editor with test mode
 
-1. Navigate to Gateway → Routing Rules
+1. Navigate to Gateways → Routing Rules
 2. Enter CEL expression
 3. Click "Test"
 4. Input test headers/body
 5. View evaluated result
 
-=== Option 2: send test requests
+=== Option 2: Send test requests
 
 [source,python]
 ----
@@ -701,7 +739,7 @@ test_cel_routing(
 ----
 
 
-=== Option 3: cli test (if available)
+=== Option 3: CLI test (if available)
 
 [source,bash]
 ----
@@ -720,16 +758,18 @@ rpk cloud ai-gateway test-cel \
 
 === Error: "unknown field"
 
-*Symptom*:
+Symptom:
+
 [source,text]
 ----
 Error: Unknown field 'request.headers.x-user-tier'
 ----
 
 
-*Cause*: Wrong syntax (dot notation instead of bracket notation for headers)
+Cause: Wrong syntax (dot notation instead of bracket notation for headers)
 
-*Fix*:
+Fix:
+
 [source,cel]
 ----
 // Wrong
@@ -742,16 +782,18 @@ request.headers["x-user-tier"]
 
 === Error: "type mismatch"
 
-*Symptom*:
+Symptom:
+
 [source,text]
 ----
 Error: Type mismatch: expected bool, got string
 ----
 
 
-*Cause*: Forgot comparison operator
+Cause: Forgot comparison operator
 
-*Fix*:
+Fix:
+
 [source,cel]
 ----
 // Wrong (returns string)
@@ -764,16 +806,17 @@ request.headers["tier"] == "premium"
 
 === Error: "field does not exist"
 
-*Symptom*:
+Symptom:
+
 [source,text]
 ----
 Error: No such key: max_tokens
 ----
 
 
-*Cause*: Accessing field that doesn't exist in request
+Cause: Accessing field that doesn't exist in request
 
-*Fix*:
+Fix:
 [source,cel]
 ----
 // Wrong (crashes if max_tokens not in request)
@@ -786,16 +829,18 @@ has(request.body.max_tokens) && request.body.max_tokens > 1000
 
 === Error: "index out of bounds"
 
-*Symptom*:
+Symptom:
+
 [source,text]
 ----
 Error: Index 0 out of bounds for array of size 0
 ----
 
 
-*Cause*: Accessing array element that doesn't exist
+Cause: Accessing array element that doesn't exist
 
-*Fix*:
+Fix:
+
 [source,cel]
 ----
 // Wrong (crashes if messages empty)
@@ -810,21 +855,23 @@ request.body.messages.size() > 0 && request.body.messages[0].content.contains("t
 
 === Expression complexity
 
-*Fast* (<1ms evaluation):
+Fast (<1ms evaluation):
+
 [source,cel]
 ----
 request.headers["tier"] == "premium" ? "openai/gpt-4o" : "openai/gpt-4o-mini"
 ----
 
 
-*Slower* (~5-10ms evaluation):
+Slower (~5-10ms evaluation):
+
 [source,cel]
 ----
 request.body.messages[0].content.matches("complex.*regex.*pattern")
 ----
 
 
-*Recommendation*: Keep expressions simple. Complex regex can add latency.
+Recommendation: Keep expressions simple. Complex regex can add latency.
 
 === Number of evaluations
 
@@ -866,15 +913,12 @@ Each request evaluates CEL expression once. Total latency impact:
 
 == Next steps
 
-* *Apply CEL Routing* → [Gateway Configuration Guide](// PLACEHOLDER: link)
-* *Test Routing* → [End-to-End Validation](// PLACEHOLDER: link)
-* *Monitor Routing Decisions* → [Observability: Logs](// PLACEHOLDER: link)
-* *Optimize Costs* → [Cost Optimization Guide](// PLACEHOLDER: link)
-* *Multi-Tenancy Patterns* → [Multi-Tenancy Guide](// PLACEHOLDER: link)
+* *Apply CEL routing* → [Gateway Configuration Guide](// PLACEHOLDER: link)
+* *Test routing* → [End-to-End Validation](// PLACEHOLDER: link)
+* *Monitor routing decisions* → [Observability: Logs](// PLACEHOLDER: link)
+* *Optimize costs* → [Cost Optimization Guide](// PLACEHOLDER: link)
+* *Multi-tenancy patterns* → [Multi-Tenancy Guide](// PLACEHOLDER: link)
 
 == Related pages
 
 * [Quickstart](// PLACEHOLDER: link)
-* [Provider Pools & Fallback](// PLACEHOLDER: link)
-* [Rate Limiting](// PLACEHOLDER: link)
-* [Observability](// PLACEHOLDER: link)

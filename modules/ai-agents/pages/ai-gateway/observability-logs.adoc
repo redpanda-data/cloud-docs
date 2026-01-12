@@ -1,31 +1,33 @@
-= Observability: request logs
+= DRAFT: Observability: Request Logs
+:description: Quickstart to configure the AI Gateway for unified access to multiple LLM providers and MCP servers through a single endpoint.
 
 == Overview
 
 AI Gateway logs every LLM request that passes through it, capturing the full request/response history, token usage, cost, latency, and routing decisions. This page explains how to find, filter, and interpret request logs.
 
-*Use Logs For*:
+Use logs for:
+
 * Debugging specific failed requests
 * Reconstructing user conversation sessions
 * Auditing what prompts were sent and responses received
 * Understanding which provider handled a request
 * Investigating latency spikes or errors for specific users
 
-*Use Metrics For*: Aggregate analytics, trends, cost tracking across time → See [Observability: Metrics](// PLACEHOLDER: link)
+Use metrics for: Aggregate analytics, trends, cost tracking across time → See [Observability: Metrics](// PLACEHOLDER: link)
 
 == Where to find logs
 
 // PLACEHOLDER: Add exact UI navigation path
 
-1. *Navigate to Logs View*:
+1. Navigate to logs view:
    * Console → AI Gateway → // PLACEHOLDER: exact path
    * Or: Gateway detail page → Logs tab
 
-2. *Select Gateway*:
+2. Select gateway:
    * Filter by specific gateway, or view all gateways
    * // PLACEHOLDER: screenshot of gateway selector
 
-3. *Set Time Range*:
+3. Set time range:
    * Default: Last 1 hour
    * Options: Last 5 minutes, 1 hour, 24 hours, 7 days, 30 days, Custom
    * // PLACEHOLDER: screenshot of time range picker
@@ -45,7 +47,7 @@ Each log entry contains:
 | *Status* | HTTP status code | `200`, `400`, `429`, `500` |
 | *Latency* | Total request duration (ms) | `1250ms` |
 
-=== Model & provider info
+=== Model and provider info
 
 | Field | Description | Example |
 |-------|-------------|---------|
@@ -56,7 +58,7 @@ Each log entry contains:
 | *Fallback Triggered* | Whether fallback was used | `true`/`false` |
 | *Fallback Reason* | Why fallback occurred | `rate_limit`, `timeout`, `5xx_error` |
 
-=== Token & cost info
+=== Token and cost info
 
 | Field | Description | Example |
 |-------|-------------|---------|
@@ -75,7 +77,7 @@ Each log entry contains:
 | *Response Headers* | Headers returned | // PLACEHOLDER: Any gateway-specific headers? |
 | *Response Body* | Full response payload | Includes message content, metadata |
 
-=== Routing & policy info
+=== Routing and policy info
 
 | Field | Description | Example |
 |-------|-------------|---------|
@@ -107,7 +109,7 @@ Filter: Gateway = "production-gateway"
 
 Shows only requests for the selected gateway.
 
-*Use Case*: Isolate production traffic from staging
+Use case: Isolate production traffic from staging
 
 === By model
 
@@ -121,7 +123,7 @@ Filter: Model = "openai/gpt-4o"
 
 Shows only requests for specific model.
 
-*Use Case*: Compare quality/cost between models
+Use case: Compare quality/cost between models
 
 === By provider
 
@@ -133,7 +135,7 @@ Filter: Provider = "OpenAI"
 
 Shows only requests handled by specific provider.
 
-*Use Case*: Investigate provider-specific issues
+Use case: Investigate provider-specific issues
 
 === By status
 
@@ -145,7 +147,8 @@ Filter: Status = "429"
 
 Shows only requests with specific HTTP status.
 
-*Common Filters*:
+Common filters:
+
 * `200`: Successful requests
 * `400`: Bad requests (client errors)
 * `401`: Authentication errors
@@ -153,7 +156,7 @@ Shows only requests with specific HTTP status.
 * `500`: Server errors
 * `5xx`: All server errors
 
-*Use Case*: Find all failed requests
+Use case: Find all failed requests
 
 === By time range
 
@@ -163,7 +166,7 @@ Filter: Timestamp >= "2025-01-11T14:00:00Z" AND Timestamp <= "2025-01-11T15:00:0
 ----
 
 
-*Use Case*: Investigate incident during specific time window
+Use case: Investigate incident during specific time window
 
 === By custom header
 
@@ -175,7 +178,7 @@ Filter: request.headers["x-user-id"] = "user_123"
 
 Shows only requests for specific user.
 
-*Use Case*: Debug user-reported issue
+Use case: Debug user-reported issue
 
 === By token range
 
@@ -187,7 +190,7 @@ Filter: Total Tokens > 10000
 
 Shows only high-token requests.
 
-*Use Case*: Find expensive requests
+Use case: Find expensive requests
 
 === By latency
 
@@ -199,7 +202,7 @@ Filter: Latency > 5000ms
 
 Shows only slow requests.
 
-*Use Case*: Investigate performance issues
+Use case: Investigate performance issues
 
 === Combined filters
 
@@ -239,7 +242,7 @@ Search in Request Body: "user's actual question"
 
 Find requests containing specific prompt text.
 
-*Use Case*: "A user said the AI gave a wrong answer about X" → Search for "X" in prompts
+Use case: "A user said the AI gave a wrong answer about X" → Search for "X" in prompts
 
 === Search by response content
 
@@ -251,7 +254,7 @@ Search in Response Body: "specific AI response phrase"
 
 Find responses containing specific text.
 
-*Use Case*: Find all requests where AI mentioned a competitor name
+Use case: Find all requests where AI mentioned a competitor name
 
 == Inspect individual requests
 
@@ -262,12 +265,13 @@ Click any log entry to expand full details.
 === Request details tab
 
 Shows:
+
 * Full request headers
 * Full request body (formatted JSON)
 * All parameters (temperature, max_tokens, etc.)
 * Custom headers used for routing
 
-*Example*:
+Example:
 [source,json]
 ----
 {
@@ -291,6 +295,7 @@ Shows:
 === Response details tab
 
 Shows:
+
 * Full response headers
 * Full response body (formatted JSON)
 * Finish reason (`stop`, `length`, `content_filter`)
@@ -322,6 +327,7 @@ Shows:
 === Routing details tab
 
 Shows:
+
 * CEL expression evaluated (if any)
 * CEL result (which model was selected)
 * Provider pool used (primary/fallback)
@@ -329,7 +335,7 @@ Shows:
 * Rate limit evaluation (allowed/blocked)
 * Spend limit evaluation (allowed/blocked)
 
-*Example*:
+Example:
 [source,yaml]
 ----
 CEL Expression: |
@@ -350,6 +356,7 @@ Spend Limit: allowed ($1,234 / $50,000 budget used)
 === Performance details tab
 
 Shows:
+
 * Total latency breakdown
   * Gateway processing time: // PLACEHOLDER: Xms
   * Provider API call time: // PLACEHOLDER: Xms
@@ -357,7 +364,7 @@ Shows:
 * Token generation rate (tokens/second)
 * Time to first token (for streaming, if supported)
 
-*Example*:
+Example:
 [source,text]
 ----
 Total Latency: 1,250ms
@@ -371,29 +378,33 @@ Token Generation Rate: 71 tokens/second
 
 == Common log analysis tasks
 
-=== Task 1: "why did this request fail?"
+=== Task 1: "Why did this request fail?"
 
-1. *Find the request*:
+1. Find the request:
+
    * Filter by timestamp (when user reported issue)
    * Or search by request content
    * Or filter by custom header (user ID)
 
-2. *Check Status*:
+2. Check status:
+
    * `400` → Client error (bad request format, invalid parameters)
    * `401` → Authentication issue
    * `404` → Model not found
    * `429` → Rate limited
    * `500`/`5xx` → Provider or gateway error
 
-3. *Check Error Message*:
+3. Check error message:
+
    * Gateway error: Issue with configuration, rate limits, etc.
    * Provider error: Issue with upstream API (OpenAI, Anthropic, etc.)
 
-4. *Check Routing*:
+4. Check routing:
    * Was fallback triggered? (May indicate primary provider issue)
    * Was CEL rule applied correctly?
 
-*Common Causes*:
+Common causes:
+
 * Model not enabled in gateway
 * Rate limit exceeded
 * Monthly budget exceeded
@@ -401,9 +412,10 @@ Token Generation Rate: 71 tokens/second
 * Provider outage/rate limit
 * Malformed request
 
-=== Task 2: "reconstruct a user's conversation"
+=== Task 2: "Reconstruct a user's conversation"
 
 1. *Filter by user*:
+
    ```
    Filter: request.headers["x-user-id"] = "user_123"
    ```
@@ -411,84 +423,97 @@ Token Generation Rate: 71 tokens/second
 2. *Sort by timestamp* (ascending)
 
 3. *Review conversation flow*:
+
    * Each request shows prompt
    * Each response shows AI reply
    * Reconstruct full conversation thread
 
-*Use Case*: User says "the AI contradicted itself" → View full conversation history
+Use case: User says "the AI contradicted itself" → View full conversation history
 
-=== Task 3: "why is latency high for this user?"
+=== Task 3: "Why is latency high for this user?"
 
 1. *Find user's requests*:
+
    ```
    Filter: request.headers["x-user-id"] = "user_123"
    AND Latency > 3000ms
    ```
 
 2. *Check Performance Details*:
+
    * Is gateway processing slow? (Likely CEL complexity)
    * Is provider API slow? (Upstream latency)
    * Is token generation rate normal? (Tokens/second)
 
 3. *Compare to other requests*:
+
    * Filter for same model
    * Compare latency percentiles
    * Identify if issue is user-specific or model-wide
 
-*Common Causes*:
+Common causes:
+
 * Complex CEL routing rules
 * Provider performance degradation
 * Large context windows (high token count)
 * Network issues
 
-=== Task 4: "which requests used the fallback provider?"
+=== Task 4: "Which requests used the fallback provider?"
 
 1. *Filter by fallback*:
+
    ```
    Filter: Fallback Triggered = true
    ```
 
 2. *Group by Fallback Reason*:
+
    * Rate limit exceeded (primary provider throttled)
    * Timeout (primary provider slow)
    * 5xx error (primary provider error)
 
 3. *Analyze pattern*:
+
    * Is fallback happening frequently? (May indicate primary provider issue)
    * Is fallback successful? (Check status of fallback requests)
 
-*Use Case*: Verify failover is working as expected
+Use case: Verify failover is working as expected
 
-=== Task 5: "what did we spend on this customer today?"
+=== Task 5: "What did we spend on this customer today?"
 
 1. *Filter by customer*:
+
    ```
    Filter: request.headers["x-customer-id"] = "customer_abc"
    AND Timestamp >= "today"
    ```
 
 2. *Sum estimated costs* (if UI supports):
+
    // PLACEHOLDER: Does UI have cost aggregation for filtered results?
    * Total: $X.XX
    * Breakdown by model
 
 3. *Export to CSV* (if supported):
+
    // PLACEHOLDER: Is CSV export available?
    * For detailed billing analysis
 
-*Use Case*: Chargeback/showback to customers
+Use case: Chargeback/showback to customers
 
 == Log retention
 
 // PLACEHOLDER: Confirm log retention policy
 
-*Retention Period*: // PLACEHOLDER: e.g., 30 days, 90 days, configurable
+Retention period: // PLACEHOLDER: e.g., 30 days, 90 days, configurable
 
-*After Retention Period*:
+After retention period:
+
 * Logs are deleted automatically
 * Aggregate metrics retained longer (see [Metrics](// PLACEHOLDER: link))
 
-*Export Logs* (if needed for longer retention):
+Export logs (if needed for longer retention):
+
 // PLACEHOLDER: Is log export available? Via API? CSV?
 
 == Log export
@@ -522,39 +547,44 @@ curl https://{CLUSTER_ID}.cloud.redpanda.com/api/ai-gateway/logs \
 
 // PLACEHOLDER: Are there integrations with external platforms?
 
-*Supported Integrations* (if any):
+Supported integrations (if any):
+
 * OpenTelemetry export → Send logs to Jaeger, Datadog, New Relic
 * CloudWatch Logs → For AWS deployments
 * // PLACEHOLDER: Others?
 
 See [Observability Integrations](// PLACEHOLDER: link) for setup guides.
 
-== Privacy & security
+== Privacy and security
 
 === What is logged
 
 // PLACEHOLDER: Confirm what is logged by default
 
-*Logged by Default*:
+Logged by default:
+
 * Request headers (including custom headers)
 * Request body (full prompt content)
 * Response body (full AI response)
 * Token usage, cost, latency
 * Routing decisions, policy evaluations
 
-*Not Logged* (if applicable):
+Not logged (if applicable):
+
 * // PLACEHOLDER: Anything redacted? API keys? Specific headers?
 
 === Redaction options
 
 // PLACEHOLDER: Are there options to redact PII or sensitive data?
 
-*If Redaction is Supported*:
+If redaction is supported:
+
 * Configure redaction rules for specific fields
 * Mask PII (email addresses, phone numbers, etc.)
 * Redact custom header values
 
 Example:
+
 [source,yaml]
 ----
 # PLACEHOLDER: Actual configuration format
@@ -572,48 +602,55 @@ redaction:
 
 // PLACEHOLDER: Who can view logs? RBAC?
 
-*Permissions Required*:
+Permissions required:
+
 * View logs: // PLACEHOLDER: role/permission name
 * Export logs: // PLACEHOLDER: role/permission name
 
-*Audit Trail*:
+Audit trail:
+
 * Log access is audited (who viewed which logs, when)
 * // PLACEHOLDER: Where to find audit trail?
 
 == Troubleshoot log issues
 
-=== Issue: "logs not appearing for my request"
+=== Issue: "Logs not appearing for my request"
 
-*Possible Causes*:
+Possible causes:
+
 1. Log ingestion delay (wait // PLACEHOLDER: Xs)
 2. Wrong gateway ID filter
 3. Request failed before reaching gateway (authentication error)
 4. Time range filter too narrow
 
-*Solution*:
+Solution:
+
 1. Wait a moment and refresh
 2. Remove all filters, search by timestamp
 3. Check client-side error logs
 4. Expand time range to "Last 1 hour"
 
-=== Issue: "missing request/response content"
+=== Issue: "Missing request/response content"
 
-*Possible Causes*:
+Possible causes:
+
 1. Payload too large (// PLACEHOLDER: size limit?)
 2. Redaction rules applied
 3. // PLACEHOLDER: Other reasons?
 
-*Solution*:
+Solution:
+
 // PLACEHOLDER: How to retrieve full content if truncated?
 
-=== Issue: "cost estimate incorrect"
+=== Issue: "Cost estimate incorrect"
 
-*Possible Causes*:
+Possible causes:
+
 1. Cost estimate based on public pricing (may differ from your contract)
 2. Provider changed pricing
 3. // PLACEHOLDER: Other reasons?
 
-*Note*: Cost estimates are approximate. Use provider invoices for billing.
+Note: Cost estimates are approximate. Use provider invoices for billing.
 
 == Next steps
 
@@ -622,10 +659,3 @@ redaction:
 * *Export to SIEM* → [Security Integration Guide](// PLACEHOLDER: link)
 * *Cost Attribution* → [Cost Tracking Guide](// PLACEHOLDER: link)
 * *Troubleshoot Errors* → [Troubleshooting Guide](// PLACEHOLDER: link)
-
-== Related pages
-
-* [Observability: Metrics](// PLACEHOLDER: link)
-* [End-to-End Validation](// PLACEHOLDER: link)
-* [Troubleshooting Common Issues](// PLACEHOLDER: link)
-* [CEL Routing Deep Dive](// PLACEHOLDER: link)

@@ -1,19 +1,22 @@
-= MCP aggregation & orchestration guide
+= DRAFT: MCP Aggregation and Orchestration Guide
+:description: Quickstart to configure the AI Gateway for unified access to multiple LLM providers and MCP servers through a single endpoint.
 
 == Overview
 
 AI Gateway provides MCP (Model Context Protocol) aggregation, allowing AI agents to access tools from multiple MCP servers through a single unified endpoint. This eliminates the need for agents to manage multiple MCP connections and significantly reduces token costs through deferred tool loading.
 
-*MCP Aggregation Benefits*:
-* *Single Endpoint*: One MCP endpoint aggregates all approved MCP servers
-* *Token Reduction*: 80-90% fewer tokens through deferred tool loading
-* *Centralized Governance*: Admin-approved MCP servers only
-* *Orchestration*: JavaScript-based orchestrator reduces multi-step round trips
-* *Security*: Controlled tool execution environment
+MCP aggregation benefits:
 
-== What is mcp?
+* Single endpoint: One MCP endpoint aggregates all approved MCP servers
+* Token reduction: 80-90% fewer tokens through deferred tool loading
+* Centralized governance: Admin-approved MCP servers only
+* Orchestration: JavaScript-based orchestrator reduces multi-step round trips
+* Security: Controlled tool execution environment
+
+== What is MCO?
 
 *Model Context Protocol (MCP)* is a standard for exposing tools (functions) that AI agents can discover and invoke. MCP servers provide tools like:
+
 * Database queries
 * File system operations
 * API integrations (CRM, payment, analytics)
@@ -22,12 +25,14 @@ AI Gateway provides MCP (Model Context Protocol) aggregation, allowing AI agents
 * Workflow automation
 
 *Without AI Gateway*:
+
 * Agent connects to each MCP server individually
 * Agent loads ALL tools from ALL servers upfront (high token cost)
 * No centralized governance or security
 * Complex configuration
 
 *With AI Gateway*:
+
 * Agent connects to gateway's unified `/mcp` endpoint
 * Gateway aggregates tools from approved MCP servers
 * Deferred loading: Only search + orchestrator tools sent initially
@@ -81,9 +86,10 @@ AI Gateway provides MCP (Model Context Protocol) aggregation, allowing AI agents
 
 == MCP request lifecycle
 
-=== 1. tool discovery (initial connection)
+=== 1. Tool discovery (initial connection)
 
-*Agent Request*:
+Agent request:
+
 [source,http]
 ----
 GET /mcp/tools
@@ -94,7 +100,8 @@ Headers:
 ----
 
 
-*Gateway Response* (with deferred loading):
+Gateway response (with deferred loading):
+
 [source,json]
 ----
 {
@@ -126,16 +133,18 @@ Headers:
 ----
 
 
-*Note*: Only 2 tools returned initially (search + orchestrator), not all 50+ tools from all MCP servers.
+Note: Only 2 tools returned initially (search + orchestrator), not all 50+ tools from all MCP servers.
 
-*Token Savings*:
+Token savings:
+
 * Without deferred loading: ~5,000-10,000 tokens (all tool definitions)
 * With deferred loading: ~500-1,000 tokens (2 tool definitions)
-* *80-90% reduction*
+* 80-90% reduction
 
-=== 2. tool query (when agent needs specific tool)
+=== 2. Tool query (when agent needs specific tool)
 
-*Agent Request*:
+Agent request:
+
 [source,http]
 ----
 POST /mcp/tools/search_tools
@@ -149,7 +158,8 @@ Body:
 ----
 
 
-*Gateway Response*:
+Gateway response:
+
 [source,json]
 ----
 {
@@ -183,11 +193,12 @@ Body:
 ----
 
 
-*Agent receives only relevant tools* based on query.
+Agent receives only relevant tools based on query.
 
-=== 3. tool execution
+=== 3. Tool execution
 
-*Agent Request*:
+Agent request:
+
 [source,http]
 ----
 POST /mcp/tools/execute_sql
@@ -202,12 +213,14 @@ Body:
 ----
 
 
-*Gateway*:
+Gateway:
+
 1. Routes to appropriate MCP server (database-server)
 2. Executes tool
 3. Returns result
 
-*Gateway Response*:
+Gateway response:
+
 [source,json]
 ----
 {
@@ -220,19 +233,21 @@ Body:
 ----
 
 
-*Agent receives result* and can continue reasoning.
+Agent receives result and can continue reasoning.
 
-== Deferred tool loading: deep dive
+== Deferred tool loading
 
 === How it works
 
-*Traditional MCP (No Deferred Loading)*:
+Traditional MCP (No deferred loading):
+
 1. Agent connects to MCP endpoint
 2. Gateway sends ALL tools from ALL MCP servers (50+ tools)
 3. Agent includes ALL tool definitions in EVERY LLM request
 4. High token cost: ~5,000-10,000 tokens per request
 
-*Deferred Loading (AI Gateway)*:
+Deferred loading (AI Gateway):
+
 1. Agent connects to MCP endpoint with `rp-aigw-mcp-deferred: true` header
 2. Gateway sends only 2 tools: `search_tools` + `orchestrator`
 3. Agent includes only 2 tool definitions in LLM request (~500-1,000 tokens)
@@ -241,17 +256,19 @@ Body:
    * Gateway returns matching tools
    * Agent calls specific tool (e.g., `execute_sql`)
 5. Total token cost: Initial 500-1,000 + per-query ~200-500
-   * *Still 80-90% lower than loading all tools*
+   * Still 80-90% lower than loading all tools
 
 === When to use deferred loading
 
-*Use Deferred Loading When*:
+Use deferred loading when:
+
 * You have 10+ tools across multiple MCP servers
 * Agents don't need all tools for every request
 * Token costs are a concern
 * Agents can handle multi-step workflows (search → execute)
 
-*Don't Use Deferred Loading When*:
+Don't use deferred loading when:
+
 * You have <5 tools total (overhead not worth it)
 * Agents need all tools for every request (rare)
 * Latency is more important than token costs (deferred adds 1 round trip)
@@ -260,7 +277,8 @@ Body:
 
 // PLACEHOLDER: Add UI path or configuration method
 
-*Option 1: Enable at Gateway Level* (recommended)
+Option 1: Enable at gateway level (recommended)
+
 [source,yaml]
 ----
 # PLACEHOLDER: Actual configuration format
@@ -269,7 +287,8 @@ mcp:
 ----
 
 
-*Option 2: Enable Per-Request* (agent-controlled)
+Option 2: Enable per-request (agent-controlled)
+
 [source,python]
 ----
 # Agent includes header
@@ -282,24 +301,27 @@ headers = {
 
 === Measure token savings
 
-*Compare token usage before/after deferred loading*:
+Compare token usage before/after deferred loading:
 
-1. *Check Logs Without Deferred Loading*:
+1. Check logs without deferred loading:
+
    * Filter: Gateway = your-gateway, Model = your-model, Date = before enabling
    * Average tokens per request: // PLACEHOLDER: measure
 
-2. *Enable Deferred Loading*
+2. Enable deferred loading
 
-3. *Check Logs After Deferred Loading*:
+3. Check logs after deferred loading:
+
    * Filter: Same gateway/model, Date = after enabling
    * Average tokens per request: // PLACEHOLDER: measure
 
-4. *Calculate Savings*:
+4. Calculate savings:
+
    ```
    Savings % = ((Before - After) / Before) × 100
    ```
 
-*Expected Results*: 80-90% reduction in average tokens per request
+Expected Results: 80-90% reduction in average tokens per request
 
 == Orchestrator: multi-step workflows
 
@@ -307,19 +329,22 @@ headers = {
 
 The *orchestrator* is a special tool that executes JavaScript workflows, reducing multi-step interactions from multiple round trips to a single request.
 
-*Without Orchestrator*:
+Without Orchestrator:
+
 1. Agent: "Search vector database for relevant docs" → Round trip 1
 2. Agent receives results, evaluates: "Results insufficient"
 3. Agent: "Fallback to web search" → Round trip 2
 4. Agent receives results, processes → Round trip 3
 5. *Total: 3 round trips* (high latency, 3× token cost)
 
-*With Orchestrator*:
+With Orchestrator:
+
 1. Agent: "Execute workflow: Search vector DB → if insufficient, fallback to web search"
 2. Gateway executes entire workflow in JavaScript
 3. Agent receives final result → *1 round trip*
 
-*Benefits*:
+Benefits:
+
 * *Latency Reduction*: 1 round trip vs 3+
 * *Token Reduction*: No intermediate LLM calls needed
 * *Reliability*: Workflow logic executes deterministically
@@ -327,22 +352,25 @@ The *orchestrator* is a special tool that executes JavaScript workflows, reducin
 
 === When to use orchestrator
 
-*Use Orchestrator When*:
+Use orchestrator when:
+
 * Multi-step workflows with conditional logic (if/else)
 * Fallback patterns (try A, if fails, try B)
 * Sequential tool calls with dependencies
 * Loop-based operations (iterate, aggregate)
 
-*Don't Use Orchestrator When*:
+Don't use orchestrator when:
+
 * Single tool call (no benefit)
 * Agent needs to reason between steps (orchestrator is deterministic)
 * Workflow requires LLM judgment at each step
 
 === Orchestrator example: search with fallback
 
-*Scenario*: Search vector database; if results insufficient, fallback to web search.
+Scenario: Search vector database; if results insufficient, fallback to web search.
 
-*Without Orchestrator* (3 round trips):
+Without Orchestrator (3 round trips):
+
 [source,python]
 ----
 # Agent's internal reasoning (3 separate LLM calls)
@@ -362,7 +390,8 @@ else:
 ----
 
 
-*With Orchestrator* (1 round trip):
+With Orchestrator (1 round trip):
+
 [source,python]
 ----
 # Agent invokes orchestrator once
@@ -392,18 +421,20 @@ results = call_tool("orchestrator", {
 ----
 
 
-*Savings*:
-* *Latency*: ~3-5 seconds (3 round trips) → ~1-2 seconds (1 round trip)
-* *Tokens*: ~1,500 tokens (3 LLM calls) → ~500 tokens (1 LLM call)
-* *Cost*: ~$0.0075 → ~$0.0025 (67% reduction)
+Savings:
+
+* Latency: ~3-5 seconds (3 round trips) → ~1-2 seconds (1 round trip)
+* Tokens: ~1,500 tokens (3 LLM calls) → ~500 tokens (1 LLM call)
+* Cost: ~$0.0075 → ~$0.0025 (67% reduction)
 
 === Orchestrator API
 
 // PLACEHOLDER: Confirm orchestrator API details
 
-*Tool Name*: `orchestrator`
+Tool name: `orchestrator`
 
-*Input Schema*:
+Input schema:
+
 [source,json]
 ----
 {
@@ -413,24 +444,27 @@ results = call_tool("orchestrator", {
 ----
 
 
-*Available in Workflow*:
+Available in workflow:
+
 * `tools.{tool_name}(params)`: Call any tool from approved MCP servers
 * `context.{variable}`: Access context variables
 * Standard JavaScript: `if`, `for`, `while`, `try/catch`, `async/await`
 
-*Security*:
+Security:
+
 * Sandboxed execution (no file system, network, or system access)
 * Timeout: // PLACEHOLDER: e.g., 30 seconds
 * Memory limit: // PLACEHOLDER: e.g., 128MB
 
-*Limitations*:
+Limitations:
+
 * Cannot call external APIs directly (must use MCP tools)
 * Cannot import npm packages (built-in JS only)
 * // PLACEHOLDER: Other limitations?
 
 === Orchestrator example: data aggregation
 
-*Scenario*: Fetch user data from database, calculate summary statistics.
+Scenario: Fetch user data from database, calculate summary statistics.
 
 [source,python]
 ----
@@ -470,7 +504,8 @@ results = call_tool("orchestrator", {
 ----
 
 
-*Output*:
+Output:
+
 [source,json]
 ----
 {
@@ -485,20 +520,23 @@ results = call_tool("orchestrator", {
 ----
 
 
-*vs Without Orchestrator*:
+vs Without Orchestrator:
+
 * Would require fetching all users to agent → agent processes → 2 round trips
 * Orchestrator: All processing in gateway → 1 round trip
 
 === Orchestrator best practices
 
-*DO*:
+DO:
+
 * Use for deterministic workflows (same input → same output)
 * Use for sequential operations with dependencies
 * Use for fallback patterns
 * Handle errors with `try/catch`
 * Keep workflows readable (add comments)
 
-*DON'T*:
+DON'T:
+
 * Use for workflows requiring LLM reasoning at each step (let agent handle that)
 * Execute long-running operations (timeout will hit)
 * Access external resources (use MCP tools instead)
@@ -510,16 +548,20 @@ results = call_tool("orchestrator", {
 
 // PLACEHOLDER: Add UI path for MCP server management
 
-*Prerequisites*:
+Prerequisites:
+
 * MCP server URL
 * Authentication method (if required)
 * List of tools to enable
 
-*Steps*:
-1. *Navigate to MCP Servers*:
+Steps:
+
+1. Navigate to MCP servers:
+
    * Console → AI Gateway → MCP Servers → Add Server
 
-2. *Configure Server*:
+2. Configure server:
+
    ```yaml
    # PLACEHOLDER: Actual configuration format
    name: database-server
@@ -533,47 +575,54 @@ results = call_tool("orchestrator", {
      * describe_table
    ```
 
-3. *Test Connection*:
+3. Test connection:
+
    * Gateway attempts connection to MCP server
    * Verifies authentication
    * Retrieves tool list
 
-4. *Enable Server*:
+4. Enable server:
+
    * Server status: Active
    * Tools available to agents
 
-*Common MCP Servers*:
-* *Database*: PostgreSQL, MySQL, MongoDB query tools
-* *Filesystem*: Read/write/search files
-* *API Integrations*: Slack, GitHub, Salesforce, Stripe
-* *Search*: Web search, vector search, enterprise search
-* *Code Execution*: Python, JavaScript sandboxes
-* *Workflow*: Zapier, n8n integrations
+Common MCP servers:
+
+* Database: PostgreSQL, MySQL, MongoDB query tools
+* Filesystem: Read/write/search files
+* API Integrations: Slack, GitHub, Salesforce, Stripe
+* Search: Web search, vector search, enterprise search
+* Code Execution: Python, JavaScript sandboxes
+* Workflow: Zapier, n8n integrations
 
 === MCP server approval workflow
 
-*Why Approval is Required*:
+Why approval is required:
+
 * Security: Prevent agents from accessing unauthorized systems
 * Governance: Control which tools are available
 * Cost: Some tools are expensive (API calls, compute)
 * Compliance: Audit trail of approved tools
 
-*Approval Process*:
+Approval process:
+
 // PLACEHOLDER: Confirm if there's an approval workflow or if admins directly enable servers
 
-1. *Request*: User/team requests MCP server
-2. *Review*: Admin reviews security, cost, necessity
-3. *Approval/Rejection*: Admin decision
-4. *Configuration*: If approved, admin adds server to gateway
+1. Request: User/team requests MCP server
+2. Review: Admin reviews security, cost, necessity
+3. Approval/Rejection: Admin decision
+4. Configuration: If approved, admin adds server to gateway
 
-*Rejected Server Behavior*:
+Rejected server behavior:
+
 * Server not listed in tool discovery
 * Agent cannot query or invoke tools from this server
 * Requests return `403 Forbidden`
 
 === Restrict MCP server access
 
-*Per-Gateway Restrictions*:
+Per-gateway restrictions:
+
 [source,yaml]
 ----
 # PLACEHOLDER: Actual configuration format
@@ -592,7 +641,8 @@ gateways:
 ----
 
 
-*Use Cases*:
+Use cases:
+
 * Production gateway: Only production-safe tools
 * Staging gateway: All tools for testing
 * Customer-specific gateway: Only tools relevant to customer
@@ -601,22 +651,25 @@ gateways:
 
 // PLACEHOLDER: How is MCP server versioning handled?
 
-*Challenge*: MCP server updates may change tool schemas
+Challenge: MCP server updates may change tool schemas
 
-*Recommendations*:
-1. *Pin Versions* (if supported):
+Recommendations:
+
+1. Pin versions (if supported):
    ```yaml
    mcp_servers:
      * name: database-server
        version: "1.2.3"  # Pin to specific version
    ```
 
-2. *Test in Staging First*:
+2. Test in staging first:
+
    * Update MCP server in staging gateway
    * Test agent workflows
    * Promote to production when validated
 
-3. *Monitor Breaking Changes*:
+3. Monitor breaking changes:
+
    * Subscribe to MCP server changelogs
    * Set up alerts for schema changes
 
@@ -625,6 +678,7 @@ gateways:
 === Logs
 
 MCP tool invocations appear in request logs with:
+
 * Tool name
 * MCP server
 * Input parameters
@@ -632,14 +686,16 @@ MCP tool invocations appear in request logs with:
 * Execution time
 * Errors (if any)
 
-*Filter Logs by MCP*:
+Filter logs by MCP:
+
 [source,text]
 ----
 Filter: request.path.startsWith("/mcp")
 ----
 
 
-*Common Log Fields*:
+Common log fields:
+
 | Field | Description | Example |
 |-------|-------------|---------|
 | Tool | Tool invoked | `execute_sql` |
@@ -653,7 +709,8 @@ Filter: request.path.startsWith("/mcp")
 
 // PLACEHOLDER: Confirm if MCP-specific metrics exist
 
-*MCP-Specific Metrics* (if available):
+MCP-specific metrics (if available):
+
 * MCP requests per second
 * Tool invocation count (by tool, by MCP server)
 * MCP latency (p50, p95, p99)
@@ -661,7 +718,8 @@ Filter: request.path.startsWith("/mcp")
 * Orchestrator execution count
 * Orchestrator execution time
 
-*Dashboard*: MCP Analytics
+Dashboard: MCP Analytics
+
 * Top tools by usage
 * Top MCP servers by latency
 * Error rate by MCP server
@@ -669,39 +727,45 @@ Filter: request.path.startsWith("/mcp")
 
 === Debug MCP issues
 
-*Issue: "Tool not found"*
+Issue: "Tool not found"
 
-*Possible Causes*:
+Possible causes:
+
 1. MCP server not added to gateway
 2. Tool not enabled in MCP server configuration
 3. Deferred loading enabled but agent didn't query for tool first
 
-*Solution*:
+Solution:
+
 1. Verify MCP server is active: // PLACEHOLDER: UI path
 2. Verify tool is in enabled_tools list
 3. If deferred loading: Agent must call `search_tools` first
 
-*Issue: "MCP server timeout"*
+Issue: "MCP server timeout"
 
-*Possible Causes*:
+Possible causes:
+
 1. MCP server is down/unreachable
 2. Tool execution is slow (e.g., expensive database query)
 3. Gateway timeout too short
 
-*Solution*:
+Solution:
+
 1. Check MCP server health
 2. Optimize tool (e.g., add database index)
 3. Increase timeout: // PLACEHOLDER: How to configure?
 
-*Issue: "Orchestrator workflow failed"*
+Issue: "Orchestrator workflow failed"
 
-*Possible Causes*:
+Possible causes:
+
 1. JavaScript syntax error
 2. Tool invocation failed inside workflow
 3. Timeout exceeded
 4. Memory limit exceeded
 
-*Solution*:
+Solution:
+
 1. Test workflow syntax in JavaScript playground
 2. Check logs for tool error inside orchestrator
 3. Simplify workflow or increase timeout
@@ -713,32 +777,37 @@ Filter: request.path.startsWith("/mcp")
 
 // PLACEHOLDER: Confirm sandboxing implementation
 
-*Orchestrator Sandbox*:
+Orchestrator Sandbox:
+
 * No file system access
 * No network access (except via MCP tools)
 * No system calls
 * Memory limit: // PLACEHOLDER: e.g., 128MB
 * Execution timeout: // PLACEHOLDER: e.g., 30s
 
-*MCP Tool Execution*:
+MCP tool execution:
+
 * Tools execute in MCP server's environment (not gateway)
 * Gateway does not execute tool code (only proxies requests)
 * Security is MCP server's responsibility
 
 === Authentication
 
-*Gateway → MCP Server*:
+Gateway → MCP server:
+
 * Bearer token (most common)
 * API key
 * mTLS (for high-security environments)
 
-*Agent → Gateway*:
+Agent → Gateway:
+
 * Standard gateway authentication (Redpanda Cloud token)
 * `rp-aigw-id` header identifies gateway (and its approved MCP servers)
 
 === Audit trail
 
 All MCP operations logged:
+
 * Who (agent/user) invoked tool
 * When (timestamp)
 * What tool was invoked
@@ -746,19 +815,21 @@ All MCP operations logged:
 * What result was returned
 * Whether it succeeded or failed
 
-*Use Case*: Compliance, security investigation, debugging
+Use case: Compliance, security investigation, debugging
 
 === Restrict dangerous tools
 
-*Recommendation*: Don't enable destructive tools in production gateways
+Recommendation: Don't enable destructive tools in production gateways
 
-*Examples of Dangerous Tools*:
+Examples of dangerous tools*:
+
 * File deletion (`delete_file`)
 * Database writes without safeguards (`execute_sql` with UPDATE/DELETE)
 * Payment operations (`charge_customer`)
 * System commands (`execute_bash`)
 
-*Best Practice*:
+Best practice:
+
 * Read-only tools in production gateway
 * Write tools only in staging gateway (with approval workflows)
 * Wrap dangerous operations in MCP server with safeguards (e.g., "require confirmation token")
@@ -767,9 +838,10 @@ All MCP operations logged:
 
 === Combine MCP with CEL routing
 
-*Use Case*: Route agents to different MCP servers based on customer tier
+Use case: Route agents to different MCP servers based on customer tier
 
-*CEL Expression*:
+CEL expression:
+
 [source,cel]
 ----
 request.headers["x-customer-tier"] == "enterprise"
@@ -778,19 +850,21 @@ request.headers["x-customer-tier"] == "enterprise"
 ----
 
 
-*Result*:
+Result:
+
 * Enterprise customers: Access to proprietary data, expensive APIs
 * Basic customers: Access to public data, free APIs
 
 === MCP with provider pools
 
-*Scenario*: Different agents use different models + different tools
+Scenario: Different agents use different models + different tools
 
-*Configuration*:
+Configuration:
+
 * Gateway A: GPT-4o + database + CRM MCP servers
 * Gateway B: Claude Sonnet + web search + analytics MCP servers
 
-*Use Case*: Optimize model-tool pairing (some models better at certain tools)
+Use case: Optimize model-tool pairing (some models better at certain tools)
 
 == Integration examples
 
@@ -860,7 +934,7 @@ if response.choices[0].message.tool_calls:
 ----
 
 
-=== Claude code cli
+=== Claude Code CLI
 
 [source,bash]
 ----
@@ -909,15 +983,14 @@ response = agent.run("Find all premium users in the database")
 
 == Next steps
 
-* *Configure MCP Servers* → [MCP Server Administration Guide](// PLACEHOLDER: link)
-* *Write Orchestrator Workflows* → [Orchestrator Examples](// PLACEHOLDER: link)
-* *Monitor MCP Usage* → [Observability: MCP Metrics](// PLACEHOLDER: link)
-* *Optimize Token Costs* → [Cost Optimization Guide](// PLACEHOLDER: link)
-* *Build Agentic Workflows* → [Agent Patterns Guide](// PLACEHOLDER: link)
+* *Configure MCP servers* → [MCP Server Administration Guide](// PLACEHOLDER: link)
+* *Write Orchestrator workflows* → [Orchestrator Examples](// PLACEHOLDER: link)
+* *Monitor MCP usage* → [Observability: MCP Metrics](// PLACEHOLDER: link)
+* *Optimize token costs* → [Cost Optimization Guide](// PLACEHOLDER: link)
+* *Build agentic workflows* → [Agent Patterns Guide](// PLACEHOLDER: link)
 
 == Related pages
 
 * [Quickstart](// PLACEHOLDER: link)
 * [CEL Routing](// PLACEHOLDER: link)
 * [Observability: Logs](// PLACEHOLDER: link)
-* [Security & Data Handling](// PLACEHOLDER: link)

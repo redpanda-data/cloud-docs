@@ -1,23 +1,28 @@
-= Migration guide: from direct provider integration to AI gateway
+= DRAFT: Migrate from Direct Provider Integration to AI Gateway
+:description: Quickstart to configure the AI Gateway for unified access to multiple LLM providers and MCP servers through a single endpoint.
 
 == Overview
 
 This guide helps you migrate existing applications from direct LLM provider integrations (OpenAI, Anthropic, etc.) to Redpanda AI Gateway. The migration is designed to be *incremental and reversible*, allowing you to test thoroughly before fully committing.
 
-*Migration Time*: 10-30 minutes for most applications
-*Downtime Required*: None (supports parallel operation)
-*Rollback Difficulty*: Easy (feature flag or environment variable)
+Migration time: 10-30 minutes for most applications
+
+Downtime required: None (supports parallel operation)
+
+Rollback difficulty: Easy (feature flag or environment variable)
 
 == Prerequisites
 
 Before migrating, ensure you have:
-* ✅ AI Gateway configured in your Redpanda Cloud account
-* ✅ Providers and models enabled (see [Admin Guide: Providers](// PLACEHOLDER: link))
-* ✅ Gateway created with appropriate policies (see [Gateway Creation Guide](// PLACEHOLDER: link))
-* ✅ Your gateway ID (`rp-aigw-id` header value)
-* ✅ Your gateway endpoint URL
 
-<!-- PLACEHOLDER: Add verification command, e.g.:
+* AI Gateway configured in your Redpanda Cloud account
+* Providers and models enabled (see [Admin Guide: Providers](// PLACEHOLDER: link))
+* Gateway created with appropriate policies (see [Gateway Creation Guide](// PLACEHOLDER: link))
+* Your gateway ID (`rp-aigw-id` header value)
+* Your gateway endpoint URL
+
+<!-- PLACEHOLDER: Add verification command, for example:
+
 [source,bash]
 ----
 curl https://{GATEWAY_ENDPOINT}/v1/models \
@@ -30,7 +35,7 @@ Expected output: List of enabled models
 
 == Migration strategy
 
-=== Recommended approach: parallel operation
+=== Recommended approach: Parallel operation
 
 Run both direct and gateway-routed requests simultaneously to validate behavior before full cutover.
 
@@ -54,7 +59,8 @@ Run both direct and gateway-routed requests simultaneously to validate behavior 
 ----
 
 
-*Benefits*:
+Benefits:
+
 * No downtime
 * Easy rollback
 * Compare results side-by-side
@@ -62,7 +68,7 @@ Run both direct and gateway-routed requests simultaneously to validate behavior 
 
 == Step-by-step migration
 
-=== Step 1: add environment variables
+=== Step 1: Add environment variables
 
 Add gateway configuration to your environment without removing existing provider keys (yet).
 
@@ -83,11 +89,12 @@ USE_AI_GATEWAY=false
 ----
 
 
-=== Step 2: update your code
+=== Step 2: Update your code
 
-==== Option a: OpenAI SDK (recommended for most use cases)
+==== Option A: OpenAI SDK (recommended for most use cases)
 
-*Before (Direct OpenAI)*
+Before (Direct OpenAI)
+
 [source,python]
 ----
 from openai import OpenAI
@@ -103,7 +110,8 @@ response = client.chat.completions.create(
 ----
 
 
-*After (Gateway-Routed with Feature Flag)*
+After (Gateway-routed with feature flag)
+
 [source,python]
 ----
 from openai import OpenAI
@@ -132,7 +140,8 @@ response = client.chat.completions.create(
 ----
 
 
-*Better: Abstraction Function*
+Better: Abstraction function
+
 [source,python]
 ----
 from openai import OpenAI
@@ -165,9 +174,10 @@ response = client.chat.completions.create(
 ----
 
 
-==== Option b: Anthropic SDK
+==== Option B: Anthropic SDK
 
-*Before (Direct Anthropic)*
+Before (Direct Anthropic)
+
 [source,python]
 ----
 from anthropic import Anthropic
@@ -184,7 +194,7 @@ response = client.messages.create(
 ----
 
 
-*After (Gateway via OpenAI-Compatible Wrapper)*
+After (Gateway via OpenAI-compatible wrapper)
 
 Because AI Gateway provides an OpenAI-compatible endpoint, we recommend migrating Anthropic SDK usage to OpenAI SDK for consistency:
 
@@ -221,7 +231,7 @@ else:
 ----
 
 
-*Alternative: Keep Anthropic SDK with base_url Override*
+Alternative: Keep Anthropic SDK with base_url override
 
 // PLACEHOLDER: Verify if Anthropic SDK supports base_url override for OpenAI-compatible endpoints
 
@@ -242,9 +252,10 @@ else:
 ----
 
 
-==== Option c: multiple providers
+==== Option C: Multiple providers
 
-*Before (Separate SDKs)*
+Before (Separate SDKs)
+
 [source,python]
 ----
 from openai import OpenAI
@@ -261,7 +272,8 @@ else:
 ----
 
 
-*After (Unified via Gateway)*
+After (Unified via Gateway)
+
 [source,python]
 ----
 from openai import OpenAI
@@ -287,11 +299,12 @@ else:
 ----
 
 
-=== Step 3: test gateway connection
+=== Step 3: Test gateway connection
 
 Before changing the feature flag, verify gateway connectivity:
 
-*Python Test Script*
+Python Test Script
+
 [source,python]
 ----
 from openai import OpenAI
@@ -322,15 +335,17 @@ if __name__ == "__main__":
 ----
 
 
-*Expected Output*:
+Expected output:
+
 [source,text]
 ----
-✅ Gateway connection successful
+Gateway connection successful
 Response: Hello
 ----
 
 
-*Common Issues*:
+Common issues:
+
 * `401 Unauthorized` → Check `REDPANDA_AI_GATEWAY_TOKEN`
 * `404 Not Found` → Check `REDPANDA_AI_GATEWAY_URL` (should end with `/v1/chat/completions` or base path)
 * `Model not found` → Ensure model is enabled in gateway configuration
@@ -338,34 +353,37 @@ Response: Hello
 
 See [Troubleshooting Guide](// PLACEHOLDER: link) for more details.
 
-=== Step 4: verify in observability dashboard
+=== Step 4: Verify in observability dashboard
 
 After successful test:
+
 1. Open AI Gateway observability dashboard
-2. Navigate to // PLACEHOLDER: specific UI path, e.g., "Gateways → {GATEWAY_NAME} → Logs"
+2. Navigate to // PLACEHOLDER: specific UI path, for example, "Gateways → {GATEWAY_NAME} → Logs"
 3. Verify your test request appears
 4. Check fields:
-   * ✅ Model: `openai/gpt-4o-mini`
-   * ✅ Provider: OpenAI
-   * ✅ Status: 200
-   * ✅ Token count: ~10 prompt + ~10 completion
-   * ✅ Cost: // PLACEHOLDER: expected cost
+   * Model: `openai/gpt-4o-mini`
+   * Provider: OpenAI
+   * Status: 200
+   * Token count: ~10 prompt + ~10 completion
+   * Cost: // PLACEHOLDER: expected cost
 
 *If request doesn't appear*: Check [End-to-End Validation Guide](// PLACEHOLDER: link)
 
-=== Step 5: enable gateway for subset of traffic
+=== Step 5: Enable gateway for subset of traffic
 
 Gradually roll out gateway usage:
 
-*Staged Rollout Strategy*:
+Staged rollout strategy:
+
 1. *Week 1*: Internal testing only (dev team accounts)
 2. *Week 2*: 10% of production traffic
 3. *Week 3*: 50% of production traffic
 4. *Week 4*: 100% of production traffic
 
-*Implementation Options*:
+Implementation options:
 
-*Option A: Environment-Based*
+Option A: Environment-based
+
 [source,python]
 ----
 # Enable gateway in staging first
@@ -373,7 +391,8 @@ use_gateway = os.getenv("ENVIRONMENT") in ["staging", "production"]
 ----
 
 
-*Option B: Percentage-Based*
+Option B: Percentage-based
+
 [source,python]
 ----
 import random
@@ -383,7 +402,8 @@ use_gateway = random.random() < 0.10
 ----
 
 
-*Option C: User-Based*
+Option C: User-based
+
 [source,python]
 ----
 # Enable for internal users first
@@ -391,7 +411,8 @@ use_gateway = user.email.endswith("@yourcompany.com")
 ----
 
 
-*Option D: Feature Flag Service* (recommended)
+Option D: Feature flag service (recommended)
+
 [source,python]
 ----
 # LaunchDarkly, Split.io, etc.
@@ -399,11 +420,12 @@ use_gateway = feature_flags.is_enabled("ai-gateway", user_context)
 ----
 
 
-=== Step 6: monitor and compare
+=== Step 6: Monitor and compare
 
 During parallel operation, compare metrics:
 
-*Metrics to Monitor*:
+Metrics to monitor:
+
 | Metric | Direct | Gateway | Notes |
 |--------|--------|---------|-------|
 | Success rate | // track | // track | Should be identical |
@@ -412,7 +434,8 @@ During parallel operation, compare metrics:
 | Error rate | // track | // track | Should be identical |
 | Cost per 1K requests | // track | // track | Compare estimated costs |
 
-*Monitoring Code Example*:
+Monitoring code example:
+
 [source,python]
 ----
 import time
@@ -449,11 +472,12 @@ def call_llm_with_metrics(use_gateway: bool, model: str, messages: list):
 ----
 
 
-=== Step 7: full cutover
+=== Step 7: Full cutover
 
 Once metrics confirm gateway reliability:
 
 1. *Set feature flag to 100%*:
+
    ```bash
    USE_AI_GATEWAY=true
    ```
@@ -463,6 +487,7 @@ Once metrics confirm gateway reliability:
 3. *Monitor for 24-48 hours*
 
 4. *Remove direct provider credentials* (optional, for security):
+
    ```bash
    # .env
    # OPENAI_API_KEY=sk-...  # Remove after confirming gateway stability
@@ -474,6 +499,7 @@ Once metrics confirm gateway reliability:
    ```
 
 5. *Remove direct integration code* (optional, for cleanup):
+
    ```python
    # Remove feature flag logic, keep only gateway path
    client = OpenAI(
@@ -487,7 +513,8 @@ Once metrics confirm gateway reliability:
 
 If issues arise, rollback is simple:
 
-*Emergency Rollback (< 1 minute)*:
+Emergency rollback (< 1 minute):
+
 [source,bash]
 ----
 # Set feature flag back to false
@@ -497,7 +524,8 @@ USE_AI_GATEWAY=false
 ----
 
 
-*Gradual Rollback*:
+Gradual rollback:
+
 [source,python]
 ----
 # Reduce gateway traffic percentage
@@ -513,7 +541,8 @@ use_gateway = False  # Back to 0%
 
 === LangChain
 
-*Before*
+Before
+
 [source,python]
 ----
 from langchain_openai import ChatOpenAI
@@ -525,7 +554,8 @@ llm = ChatOpenAI(
 ----
 
 
-*After*
+After
+
 [source,python]
 ----
 from langchain_openai import ChatOpenAI
@@ -549,7 +579,8 @@ else:
 
 === LlamaIndex
 
-*Before*
+Before
+
 [source,python]
 ----
 from llama_index.llms.openai import OpenAI
@@ -558,7 +589,8 @@ llm = OpenAI(model="gpt-4o")
 ----
 
 
-*After*
+After
+
 [source,python]
 ----
 from llama_index.llms.openai import OpenAI
@@ -579,9 +611,10 @@ else:
 
 // PLACEHOLDER: Verify LlamaIndex syntax for custom headers
 
-=== Vercel AI SDK (javascript/typescript)
+=== Vercel AI SDK (JavaScript/TypeScript)
 
-*Before*
+Before
+
 [source,typescript]
 ----
 import { openai } from '@ai-sdk/openai';
@@ -590,7 +623,8 @@ const model = openai('gpt-4o');
 ----
 
 
-*After*
+After
+
 [source,typescript]
 ----
 import { openai } from '@ai-sdk/openai';
@@ -616,12 +650,14 @@ const model = useGateway
 Use this checklist to track your migration:
 
 * [ ] *Prerequisites*
+
   * [ ] Gateway configured and tested
   * [ ] Providers enabled
   * [ ] Models enabled
   * [ ] Gateway ID and endpoint URL obtained
 
 * [ ] *Code Changes*
+
   * [ ] Environment variables added
   * [ ] Feature flag implemented
   * [ ] Client initialization updated
@@ -629,24 +665,28 @@ Use this checklist to track your migration:
   * [ ] Headers added (rp-aigw-id)
 
 * [ ] *Testing*
+
   * [ ] Gateway connection test passes
   * [ ] Test request visible in observability dashboard
   * [ ] Integration tests pass with gateway
   * [ ] End-to-end tests pass with gateway
 
 * [ ] *Staged Rollout*
+
   * [ ] Week 1: Internal testing (dev team only)
   * [ ] Week 2: 10% production traffic
   * [ ] Week 3: 50% production traffic
   * [ ] Week 4: 100% production traffic
 
 * [ ] *Monitoring*
+
   * [ ] Success rate comparison (direct vs gateway)
   * [ ] Latency comparison (direct vs gateway)
   * [ ] Error rate comparison (direct vs gateway)
   * [ ] Cost comparison (direct vs gateway)
 
 * [ ] *Cleanup* (optional, after 30 days stable)
+
   * [ ] Remove direct provider credentials
   * [ ] Remove feature flag logic
   * [ ] Update documentation
@@ -654,35 +694,39 @@ Use this checklist to track your migration:
 
 == Common migration issues
 
-=== Issue: "model not found" error
+=== Issue: "Model not found" error
 
-*Symptom*:
+Symptom:
 [source,text]
 ----
 Error: Model 'openai/gpt-4o' not found
 ----
 
 
-*Causes*:
+Causes:
+
 1. Model not enabled in gateway configuration
 2. Wrong model name format (missing vendor prefix)
 3. Typo in model name
 
-*Solution*:
+Solution:
+
 1. Verify model is enabled: // PLACEHOLDER: UI path or CLI command
-2. Confirm format: `vendor/model_id` (e.g., `openai/gpt-4o`, not `gpt-4o`)
+2. Confirm format: `vendor/model_id` (for example, `openai/gpt-4o`, not `gpt-4o`)
 3. Check supported models: // PLACEHOLDER: link to model catalog
 
-=== Issue: missing `rp-aigw-id` header
+=== Issue: Missing `rp-aigw-id` header
 
-*Symptom*:
+Symptom:
+
 [source,text]
 ----
 Error: Missing required header 'rp-aigw-id'
 ----
 
 
-*Solution*:
+Solution:
+
 [source,python]
 ----
 # Ensure header is set in default_headers
@@ -694,49 +738,54 @@ client = OpenAI(
 ----
 
 
-=== Issue: higher latency than expected
+=== Issue: Higher latency than expected
 
-*Expected Gateway Overhead*: // PLACEHOLDER: Xms p50, Yms p99
+Expected gateway overhead: // PLACEHOLDER: Xms p50, Yms p99
 
-*If latency is significantly higher*:
+If latency is significantly higher:
+
 1. Check geographic routing (gateway → provider region)
 2. Verify provider pool configuration (no unnecessary fallbacks)
 3. Review CEL routing complexity
 4. Check for rate limiting (adds retry latency)
 
-*Solution*: See [Performance Optimization Guide](// PLACEHOLDER: link)
+Solution: See [Performance Optimization Guide](// PLACEHOLDER: link)
 
-=== Issue: requests not appearing in dashboard
+=== Issue: Requests not appearing in dashboard
 
-*Causes*:
+Causes:
+
 1. Wrong gateway ID
 2. Request failed before reaching gateway
 3. UI delay (logs may take // PLACEHOLDER: Xs to appear)
 
-*Solution*: See [End-to-End Validation Guide](// PLACEHOLDER: link)
+Solution: See [End-to-End Validation Guide](// PLACEHOLDER: link)
 
-=== Issue: different response format
+=== Issue: Different response format
 
-*Symptom*: Response structure differs between direct and gateway
+Symptom: Response structure differs between direct and gateway
 
 // PLACEHOLDER: Confirm if response format is identical to OpenAI API or if there are differences
 
-*Solution*:
+Solution:
+
 * AI Gateway should return OpenAI-compatible responses
 * If differences exist, file a support ticket with request ID from logs
 
 == Advanced migration scenarios
 
-=== Scenario: custom request timeouts
+=== Scenario: Custom request timeouts
 
-*Before*
+Before
+
 [source,python]
 ----
 client = OpenAI(api_key=..., timeout=30.0)
 ----
 
 
-*After*
+After
+
 [source,python]
 ----
 client = OpenAI(
@@ -748,11 +797,12 @@ client = OpenAI(
 ----
 
 
-=== Scenario: streaming responses
+=== Scenario: Streaming responses
 
 // PLACEHOLDER: Verify streaming support
 
-*Before*
+Before
+
 [source,python]
 ----
 stream = client.chat.completions.create(
@@ -766,7 +816,8 @@ for chunk in stream:
 ----
 
 
-*After*
+After
+
 [source,python]
 ----
 stream = client.chat.completions.create(
@@ -780,9 +831,10 @@ for chunk in stream:
 ----
 
 
-=== Scenario: custom headers (e.g., user tracking)
+=== Scenario: Custom headers (for example, user tracking)
 
-*Before*
+Before
+
 [source,python]
 ----
 response = client.chat.completions.create(
@@ -793,7 +845,8 @@ response = client.chat.completions.create(
 ----
 
 
-*After*
+After
+
 [source,python]
 ----
 response = client.chat.completions.create(
@@ -807,13 +860,14 @@ response = client.chat.completions.create(
 ----
 
 
-*Note*: Gateway may use custom headers for routing (e.g., CEL expressions can reference `request.headers["X-User-ID"]`)
+NOTE: Gateway may use custom headers for routing (for example, CEL expressions can reference `request.headers["X-User-ID"]`)
 
 == Post-migration benefits
 
 After successful migration, you gain:
 
-=== 1. simplified provider management
+=== 1. Simplified provider management
+
 [source,python]
 ----
 # Switch providers with one config change (no code changes)
@@ -821,21 +875,25 @@ model = "anthropic/claude-sonnet-3.5"  # Was openai/gpt-4o
 ----
 
 
-=== 2. unified observability
+=== 2. Unified observability
+
 * All requests in one dashboard
 * Cross-provider cost comparison
 * Session reconstruction across models
 
-=== 3. automatic failover
+=== 3. Automatic failover
+
 * Configure once, benefit everywhere
 * No application-level retry logic needed
 
-=== 4. cost controls
+=== 4. Cost controls
+
 * Enforce budgets centrally
 * Rate limit per team/customer
 * No surprises in cloud bills
 
-=== 5. a/b testing
+=== 5. A/B testing
+
 * Test new models without code changes
 * Compare quality/cost/latency
 * Gradual rollout via routing policies
@@ -848,19 +906,9 @@ model = "anthropic/claude-sonnet-3.5"  # Was openai/gpt-4o
 * *Explore MCP* → [MCP Aggregation Guide](// PLACEHOLDER: link)
 * *Optimize costs* → [Cost Optimization Guide](// PLACEHOLDER: link)
 
-== Get help
+== Related pages
 
-If you encounter issues during migration:
-* Check [Troubleshooting Guide](// PLACEHOLDER: link)
-* Review [End-to-End Validation](// PLACEHOLDER: link)
-* Contact support: // PLACEHOLDER: support email or portal
-* Community: // PLACEHOLDER: Slack, Discord, or forum link
-
-'''
-
-*Related Pages*:
 * [Quickstart](// PLACEHOLDER: link)
-* [Troubleshooting](// PLACEHOLDER: link)
 * [OpenAI Integration](// PLACEHOLDER: link)
 * [Anthropic Integration](// PLACEHOLDER: link)
 * [LangChain Integration](// PLACEHOLDER: link)

@@ -1,31 +1,33 @@
-= Observability: metrics & analytics
+= DRAFT: Observability: Metrics and Analytics
+:description: Quickstart to configure the AI Gateway for unified access to multiple LLM providers and MCP servers through a single endpoint.
 
 == Overview
 
 AI Gateway provides aggregate metrics and analytics dashboards to help you understand usage patterns, costs, performance, and errors across all your LLM traffic.
 
-*Use Metrics For*:
+Use metrics for:
+
 * Cost tracking and budget management
 * Usage trends over time
 * Performance monitoring (latency, error rates)
 * Capacity planning
 * Model/provider comparison
 
-*Use Logs For*: Debugging specific requests, viewing full prompts/responses → See [Observability: Logs](// PLACEHOLDER: link)
+Use logs for: Debugging specific requests, viewing full prompts/responses. See [Observability: Logs](// PLACEHOLDER: link)
 
 == Where to find metrics
 
 // PLACEHOLDER: Add exact UI navigation path
 
-1. *Navigate to Analytics Dashboard*:
+1. Navigate to analytics dashboard:
    * Console → AI Gateway → // PLACEHOLDER: exact path
    * Or: Gateway detail page → Analytics tab
 
-2. *Select Gateway* (optional):
+2. Select gateway (optional):
    * View all gateways (org-wide metrics)
    * Or filter to specific gateway
 
-3. *Set Time Range*:
+3. Set time range:
    * Default: Last 7 days
    * Options: Last 24 hours, 7 days, 30 days, 90 days, Custom
    * // PLACEHOLDER: screenshot of time range picker
@@ -34,64 +36,72 @@ AI Gateway provides aggregate metrics and analytics dashboards to help you under
 
 === Request volume
 
-*What it shows*: Total number of requests over time
+What it shows: Total number of requests over time
 
 // PLACEHOLDER: Screenshot of request volume graph
 
-*Graph Type*: Time series line chart
+Graph type: Time series line chart
 
-*Filters*:
+Filters:
+
 * By gateway
 * By model
 * By provider
 * By status (success/error)
 
-*Use Cases*:
+Use cases:
+
 * Identify usage patterns (peak hours, days of week)
 * Detect traffic spikes or drops
 * Capacity planning
 
-*Example Insights*:
+Example insights:
+
 * "Traffic doubles every Monday morning at 9am" → Scale infrastructure
 * "Staging gateway has more traffic than prod" → Investigate runaway testing
 
 === Token usage
 
-*What it shows*: Prompt, completion, and total tokens consumed
+What it shows: Prompt, completion, and total tokens consumed
 
 // PLACEHOLDER: Screenshot of token usage graph
 
-*Graph Type*: Stacked area chart (prompt vs completion tokens)
+Graph type: Stacked area chart (prompt vs completion tokens)
 
-*Metrics*:
+Metrics:
+
 * Total tokens
 * Prompt tokens (input)
 * Completion tokens (output)
 * Tokens per request (average)
 
-*Breakdowns*:
+Breakdowns:
+
 * By gateway
 * By model
 * By provider
 
-*Use Cases*:
+Use cases:
+
 * Understand cost drivers (prompt vs completion tokens)
 * Identify verbose prompts or responses
 * Optimize token usage
 
-*Example Insights*:
+Example insights:
+
 * "90% of tokens are completion tokens" → Responses are verbose, optimize max_tokens
 * "Staging uses 10x more tokens than prod" → Investigate test suite
 
 === Estimated spend
 
-*What it shows*: Calculated cost based on token usage and public pricing
+What it shows: Calculated cost based on token usage and public pricing
 
 // PLACEHOLDER: Screenshot of cost tracking dashboard
 
-*Graph Type*: Time series line chart with cost breakdown
+Graph type: Time series line chart with cost breakdown
 
-*Metrics*:
+Metrics:
+
 * Total estimated spend
 * Spend by model
 * Spend by provider
@@ -99,56 +109,65 @@ AI Gateway provides aggregate metrics and analytics dashboards to help you under
 * Cost per 1K requests
 * Cost per 1M tokens
 
-*Breakdowns*:
+Breakdowns:
+
 * By gateway (for chargeback/showback)
 * By model (for cost optimization)
 * By provider (for negotiation leverage)
 * By custom header (if configured, e.g., `x-customer-id`)
 
-*Use Cases*:
+Use cases:
+
 * Budget tracking ("Are we staying under $50K/month?")
 * Cost attribution ("Which team spent the most?")
 * Model comparison ("Is Claude cheaper than GPT-4 for our use case?")
 * Forecasting ("At this rate, we'll spend $X next month")
 
-*Important Notes*:
+Important notes:
+
 * *Estimates based on public pricing* (may differ from your contract)
 * *Not a substitute for provider invoices* (use for approximation only)
-* *Update frequency*: // PLACEHOLDER: Real-time? Hourly? Daily?
+* Update frequency: // PLACEHOLDER: Real-time? Hourly? Daily?
 
-*Example Insights*:
+Example insights:
+
 * "Customer A accounts for 60% of spend" → Consider rate limits or tiered pricing
 * "GPT-4o is 3x more expensive than Claude Sonnet for similar quality" → Optimize routing
 
 === Latency
 
-*What it shows*: Request duration from gateway to provider and back
+What it shows: Request duration from gateway to provider and back
 
 // PLACEHOLDER: Screenshot of latency histogram
 
-*Metrics*:
+Metrics:
+
 * p50 (median) latency
 * p95 latency
 * p99 latency
 * Min/max latency
 * Average latency
 
-*Breakdowns*:
+Breakdowns:
+
 * By gateway
 * By model
 * By provider
 * By token range (longer responses = higher latency)
 
-*Use Cases*:
+Use cases:
+
 * Identify slow models or providers
 * Set SLO targets (e.g., "p95 < 2 seconds")
 * Detect performance regressions
 
-*Example Insights*:
+Example insights:
+
 * "GPT-4o p99 latency spiked to 10 seconds yesterday" → Investigate provider issue
 * "Claude Sonnet is 30% faster than GPT-4o for same prompts" → Optimize for latency
 
-*Latency Components* (if available):
+Latency components (if available):
+
 // PLACEHOLDER: Does gateway show latency breakdown?
 * Gateway processing time
 * Provider API time
@@ -156,19 +175,21 @@ AI Gateway provides aggregate metrics and analytics dashboards to help you under
 
 === Error rate
 
-*What it shows*: Percentage of failed requests over time
+What it shows: Percentage of failed requests over time
 
 // PLACEHOLDER: Screenshot of error rate graph
 
-*Metrics*:
+Metrics:
+
 * Total error rate (%)
 * Errors by status code (400, 401, 429, 500, etc.)
 * Errors by model
 * Errors by provider
 
-*Graph Type*: Time series line chart with error percentage
+Graph type: Time series line chart with error percentage
 
-*Breakdowns*:
+Breakdowns:
+
 * By error type:
   * Client errors (4xx)
   * Rate limits (429)
@@ -176,47 +197,53 @@ AI Gateway provides aggregate metrics and analytics dashboards to help you under
   * Provider errors
   * Gateway errors
 
-*Use Cases*:
+Use cases:
+
 * Detect provider outages
 * Identify configuration issues (e.g., model not enabled)
 * Monitor rate limit breaches
 
-*Example Insights*:
+Example insights:
+
 * "Error rate spiked to 15% at 2pm" → OpenAI outage, fallback to Anthropic worked
 * "10% of requests fail with 'model not found'" → Model not enabled in gateway
 
 === Success rate
 
-*What it shows*: Percentage of successful (200) requests over time
+What it shows: Percentage of successful (200) requests over time
 
-*Metric*: `Success Rate = (Successful Requests / Total Requests) × 100`
+Metric: `Success Rate = (Successful Requests / Total Requests) × 100`
 
-*Target*: Typically 99%+ for production workloads
+Target: Typically 99%+ for production workloads
 
-*Use Cases*:
+Use cases:
+
 * Monitor overall health
 * Set up alerts (e.g., "Alert if success rate < 95%")
 
 === Fallback rate
 
-*What it shows*: Percentage of requests that used fallback provider
+What it shows: Percentage of requests that used fallback provider
 
 // PLACEHOLDER: Screenshot of fallback rate graph
 
-*Metric*: `Fallback Rate = (Fallback Requests / Total Requests) × 100`
+Metric: `Fallback Rate = (Fallback Requests / Total Requests) × 100`
 
-*Breakdowns*:
+Breakdowns:
+
 * By fallback reason:
   * Rate limit exceeded
   * Timeout
   * 5xx error
 
-*Use Cases*:
+Use cases:
+
 * Monitor primary provider reliability
 * Verify fallback is working
 * Identify when to renegotiate rate limits
 
-*Example Insights*:
+Example insights:
+
 * "Fallback rate increased to 20% yesterday" → OpenAI hit rate limits, time to increase quota
 * "Zero fallbacks in 30 days" → Fallback config may not be working, or primary provider is very reliable
 
@@ -224,11 +251,12 @@ AI Gateway provides aggregate metrics and analytics dashboards to help you under
 
 === Overview dashboard
 
-*Shows*: High-level metrics across all gateways
+Shows: High-level metrics across all gateways
 
 // PLACEHOLDER: Screenshot of overview dashboard
 
-*Widgets*:
+Widgets:
+
 * Total requests (last 24h, 7d, 30d)
 * Total spend (last 24h, 7d, 30d)
 * Success rate (current)
@@ -236,15 +264,16 @@ AI Gateway provides aggregate metrics and analytics dashboards to help you under
 * Top 5 models by request volume
 * Top 5 gateways by spend
 
-*Use Case*: Executive view, health at a glance
+Use case: Executive view, health at a glance
 
 === Gateway dashboard
 
-*Shows*: Metrics for a specific gateway
+Shows: Metrics for a specific gateway
 
 // PLACEHOLDER: Screenshot of gateway dashboard
 
-*Widgets*:
+Widgets:
+
 * Request volume (time series)
 * Token usage (time series)
 * Estimated spend (time series)
@@ -253,15 +282,16 @@ AI Gateway provides aggregate metrics and analytics dashboards to help you under
 * Model breakdown (pie chart)
 * Provider breakdown (pie chart)
 
-*Use Case*: Team-specific monitoring, gateway optimization
+Use case: Team-specific monitoring, gateway optimization
 
 === Model comparison dashboard
 
-*Shows*: Side-by-side comparison of models
+Shows: Side-by-side comparison of models
 
 // PLACEHOLDER: Screenshot of model comparison
 
-*Metrics per Model*:
+Metrics per model:
+
 * Request count
 * Total tokens
 * Estimated cost
@@ -269,37 +299,40 @@ AI Gateway provides aggregate metrics and analytics dashboards to help you under
 * Average latency
 * Error rate
 
-*Use Case*: Evaluate whether to switch models (cost vs performance)
+Use case: Evaluate whether to switch models (cost vs performance)
 
-*Example*:
+Example:
+
 | Model | Requests | Avg Latency | Cost per 1K | Error Rate |
 |-------|----------|-------------|-------------|------------|
 | openai/gpt-4o | 10,000 | 1.2s | $5.00 | 0.5% |
 | anthropic/claude-sonnet-3.5 | 5,000 | 0.9s | $3.50 | 0.3% |
 | openai/gpt-4o-mini | 20,000 | 0.7s | $0.50 | 1.0% |
 
-*Insight*: Claude Sonnet is 25% faster and 30% cheaper than GPT-4o with better reliability
+Insight: Claude Sonnet is 25% faster and 30% cheaper than GPT-4o with better reliability
 
 === Provider comparison dashboard
 
-*Shows*: Side-by-side comparison of providers
+Shows: Side-by-side comparison of providers
 
-*Metrics per Provider*:
+Metrics per provider:
+
 * Request count
 * Total spend
 * Average latency
 * Error rate
 * Fallback trigger rate
 
-*Use Case*: Evaluate provider reliability, negotiate contracts
+Use case: Evaluate provider reliability, negotiate contracts
 
 === Cost breakdown dashboard
 
-*Shows*: Detailed cost analysis
+Shows: Detailed cost analysis
 
 // PLACEHOLDER: Screenshot of cost breakdown
 
-*Widgets*:
+Widgets:
+
 * Spend by gateway (stacked bar chart)
 * Spend by model (pie chart)
 * Spend by provider (pie chart)
@@ -307,9 +340,9 @@ AI Gateway provides aggregate metrics and analytics dashboards to help you under
 * Spend trend (time series with forecast)
 * Budget utilization (progress bar: $X / $Y monthly limit)
 
-*Use Case*: FinOps, budget management, chargeback/showback
+Use case: FinOps, budget management, chargeback/showback
 
-== Filter & group
+== Filter and group
 
 === Filter by gateway
 
@@ -321,7 +354,7 @@ Filter: Gateway = "production-gateway"
 
 Shows metrics for specific gateway only.
 
-*Use Case*: Isolate prod from staging metrics
+Use case: Isolate prod from staging metrics
 
 === Filter by model
 
@@ -333,7 +366,7 @@ Filter: Model = "openai/gpt-4o"
 
 Shows metrics for specific model only.
 
-*Use Case*: Evaluate model performance in isolation
+Use case: Evaluate model performance in isolation
 
 === Filter by provider
 
@@ -345,7 +378,7 @@ Filter: Provider = "OpenAI"
 
 Shows metrics for specific provider only.
 
-*Use Case*: Evaluate provider reliability
+Use case: Evaluate provider reliability
 
 === Filter by status
 
@@ -356,7 +389,7 @@ Filter: Status >= "500"  // Only server errors
 ----
 
 
-*Use Case*: Focus on errors, or calculate success rate
+Use case: Focus on errors, or calculate success rate
 
 === Filter by custom dimension
 
@@ -370,37 +403,41 @@ Filter: request.headers["x-customer-id"] = "customer_abc"
 
 Shows metrics for specific customer.
 
-*Use Case*: Customer-specific cost tracking for chargeback
+Use case: Customer-specific cost tracking for chargeback
 
 === Group by dimension
 
-*Common Groupings*:
+Common groupings:
+
 * Group by Gateway
 * Group by Model
 * Group by Provider
 * Group by Status
 * Group by Hour/Day/Week/Month (time aggregation)
 
-*Example*: "Show me spend grouped by model, for production gateway, over last 30 days"
+Example: "Show me spend grouped by model, for production gateway, over last 30 days"
 
 == Alerting
 
 // PLACEHOLDER: Confirm if alerting is supported
 
-*If Alerting is Supported*:
+If alerting is supported:
 
 === Alert types
 
-*Budget Alerts*:
+Budget alerts:
+
 * Alert when spend exceeds X% of monthly budget
 * Alert when spend grows Y% week-over-week
 
-*Performance Alerts*:
+Performance alerts:
+
 * Alert when error rate > X%
 * Alert when p99 latency > Xms
 * Alert when success rate < X%
 
-*Usage Alerts*:
+Usage alerts:
+
 * Alert when request volume drops (potential outage)
 * Alert when fallback rate > X% (primary provider issue)
 
@@ -447,7 +484,7 @@ See [Alerting Guide](// PLACEHOLDER: link) for detailed setup.
 2. Click "Export to CSV"
 3. Download includes time series data
 
-*Use Case*: Import into spreadsheet for analysis, reporting
+Use case: Import into spreadsheet for analysis, reporting
 
 === Export via API
 
@@ -465,7 +502,8 @@ curl https://{CLUSTER_ID}.cloud.redpanda.com/api/ai-gateway/metrics \
 ----
 
 
-*Response*:
+Response:
+
 [source,json]
 ----
 {
@@ -485,38 +523,40 @@ curl https://{CLUSTER_ID}.cloud.redpanda.com/api/ai-gateway/metrics \
 
 // PLACEHOLDER: OpenTelemetry support? Other integrations?
 
-*Supported Integrations* (if any):
-* *Prometheus*: Metrics endpoint for scraping
-* *OpenTelemetry*: Export metrics to OTel collector
-* *Datadog*: Direct integration
-* *Grafana*: Pre-built dashboards
+Supported integrations (if any):
+
+* Prometheus: Metrics endpoint for scraping
+* OpenTelemetry: Export metrics to OTel collector
+* Datadog: Direct integration
+* Grafana: Pre-built dashboards
 * // PLACEHOLDER: Others?
 
 See [Observability Integrations](// PLACEHOLDER: link) for setup guides.
 
 == Common analysis tasks
 
-=== Task 1: "are we staying within budget?"
+=== Task 1: "Are we staying within budget?"
 
-1. *View Cost Breakdown Dashboard*
-2. *Check Budget Utilization Widget*:
+1. View cost breakdown dashboard
+2. Check budget utilization widget:
    * Current spend: $X
    * Monthly budget: $Y
    * Utilization: X%
    * Days remaining in month: Z
-3. *Forecast*:
+3. Forecast:
    * At current rate: $X × (30 / days_elapsed)
    * On track to exceed budget? Yes/No
 
-*Action*:
+Action:
+
 * If approaching limit: Adjust rate limits, optimize models, pause non-prod usage
 * If well under budget: Opportunity to test more expensive models
 
-=== Task 2: "which team is using the most resources?"
+=== Task 2: "Which team is using the most resources?"
 
-1. *Filter by Gateway* (assuming one gateway per team)
+1. Filter by gateway (assuming one gateway per team)
 2. *Sort by Spend* (descending)
-3. *View Table*:
+3. View table:
 
 | Gateway | Requests | Tokens | Spend | % of Total |
 |---------|----------|--------|-------|------------|
@@ -524,15 +564,15 @@ See [Observability Integrations](// PLACEHOLDER: link) for setup guides.
 | team-product | 300K | 150M | $750 | 30% |
 | team-eng | 200K | 100M | $500 | 20% |
 
-*Action*: Chargeback costs to teams, or investigate high-usage teams
+Action: Chargeback costs to teams, or investigate high-usage teams
 
-=== Task 3: "is this model worth the extra cost?"
+=== Task 3: "Is this model worth the extra cost?"
 
 1. *Open Model Comparison Dashboard*
-2. *Select Models to Compare*:
+2. Select models to compare:
    * Expensive model: `openai/gpt-4o`
    * Cheap model: `openai/gpt-4o-mini`
-3. *Compare Metrics*:
+3. Compare metrics:
 
 | Metric | GPT-4o | GPT-4o-mini | Difference |
 |--------|--------|-------------|------------|
@@ -540,60 +580,62 @@ See [Observability Integrations](// PLACEHOLDER: link) for setup guides.
 | Avg Latency | 1.2s | 0.7s | 58% *faster* (mini) |
 | Error Rate | 0.5% | 1.0% | 2x errors (mini) |
 
-*Decision*: If mini's error rate is acceptable, save 10x on costs
+Decision: If mini's error rate is acceptable, save 10x on costs
 
-=== Task 4: "why did costs spike yesterday?"
+=== Task 4: "Why did costs spike yesterday?"
 
-1. *View Cost Trend Graph*
-2. *Identify Spike* (e.g., Jan 10th: $500 vs usual $100)
-3. *Drill Down*:
-   * *By Gateway*: Which gateway caused the spike?
-   * *By Model*: Did someone switch to expensive model?
-   * *By Hour*: What time did spike occur?
-4. *Cross-Reference with Logs*:
+1. View cost trend graph
+2. Identify spike (e.g., Jan 10th: $500 vs usual $100)
+3. Drill down:
+   * By gateway: Which gateway caused the spike?
+   * By model: Did someone switch to expensive model?
+   * By hour: What time did spike occur?
+4. Cross-reference with logs:
    * Filter logs to spike timeframe
    * Check for unusual request patterns
    * Identify custom header (user ID, customer ID) if present
 
-*Common Causes*:
+Common causes:
+
 * Test suite running against prod gateway
 * A/B test routing all traffic to expensive model
 * User error (wrong model in config)
 * Runaway loop in application code
 
-=== Task 5: "is provider x more reliable than provider y?"
+=== Task 5: "Is provider X more reliable than provider Y?"
 
-1. *Open Provider Comparison Dashboard*
-2. *Compare Error Rates*:
+1. Open provider comparison dashboard
+2. Compare error rates:
 
 | Provider | Requests | Error Rate | Fallback Triggers |
 |----------|----------|------------|-------------------|
 | OpenAI | 500K | 0.8% | 50 (rate limits) |
 | Anthropic | 300K | 0.3% | 5 (timeouts) |
 
-*Insight*: Anthropic has 62% lower error rate
+Insight: Anthropic has 62% lower error rate
 
-3. *Compare Latencies*:
+3. Compare latencies:
 
 | Provider | p50 Latency | p99 Latency |
 |----------|-------------|-------------|
 | OpenAI | 1.0s | 3.5s |
 | Anthropic | 0.8s | 2.5s |
 
-*Insight*: Anthropic is 20% faster at p50, 28% faster at p99
+Insight: Anthropic is 20% faster at p50, 28% faster at p99
 
-*Decision*: Prioritize Anthropic in routing pools
+Decision: Prioritize Anthropic in routing pools
 
 == Metrics retention
 
 // PLACEHOLDER: Confirm metrics retention policy
 
-*Retention Period*:
+Retention period:
+
 * *High-resolution* (1-minute granularity): // PLACEHOLDER: e.g., 7 days
 * *Medium-resolution* (1-hour granularity): // PLACEHOLDER: e.g., 30 days
 * *Low-resolution* (1-day granularity): // PLACEHOLDER: e.g., 1 year
 
-*Note*: Aggregate metrics retained longer than individual request logs
+Note: Aggregate metrics retained longer than individual request logs
 
 == API access to metrics
 
@@ -608,7 +650,8 @@ curl https://{CLUSTER_ID}.cloud.redpanda.com/api/ai-gateway/metrics/list \
 ----
 
 
-*Response*:
+Response:
+
 [source,json]
 ----
 {
@@ -647,7 +690,8 @@ curl https://{CLUSTER_ID}.cloud.redpanda.com/api/ai-gateway/metrics/query \
 ----
 
 
-*Response*:
+Response:
+
 [source,json]
 ----
 {
@@ -672,65 +716,76 @@ curl https://{CLUSTER_ID}.cloud.redpanda.com/api/ai-gateway/metrics/query \
 
 == Best practices
 
-=== 1. set up budget alerts early
+=== 1. Set up budget alerts early
+
 * Don't wait for surprise bills
 * Alert at 50%, 80%, 90% of budget
 * Include multiple stakeholders (eng, finance)
 
-=== 2. create team dashboards
+=== 2. Create team dashboards
+
 * One dashboard per team showing their gateway(s)
 * Empowers teams to self-optimize
 * Reduces central ops burden
 
-=== 3. monitor fallback rate
+=== 3. Monitor fallback rate
+
 * Low fallback rate (0-5%): Normal, failover working
 * High fallback rate (>20%): Investigate primary provider issues
 * Zero fallback rate: Verify fallback config is correct
 
-=== 4. compare models regularly
+=== 4. Compare models regularly
+
 * Run A/B tests with metrics
 * Reassess as pricing and models change
 * Don't assume expensive = better quality for your use case
 
-=== 5. track trends, not point-in-time
+=== 5. Track trends, not point-in-time
+
 * Day-to-day variance is normal
 * Look for week-over-week and month-over-month trends
 * Seasonal patterns (e.g., more usage on weekdays)
 
 == Troubleshoot metrics issues
 
-=== Issue: "metrics don't match my provider invoice"
+=== Issue: "Metrics don't match my provider invoice"
 
-*Possible Causes*:
+Possible causes:
+
 1. Metrics are estimates based on public pricing
 2. Your contract has custom pricing
 3. Provider changed pricing mid-month
 
-*Solution*:
+Solution:
+
 * Use metrics for trends and optimization decisions
 * Use provider invoices for actual billing
 * // PLACEHOLDER: Can users configure custom pricing in gateway?
 
-=== Issue: "metrics are delayed or missing"
+=== Issue: "Metrics are delayed or missing"
 
-*Possible Causes*:
+Possible causes:
+
 1. Metrics aggregation has delay (// PLACEHOLDER: typical delay?)
 2. Time range outside retention period
 3. No requests in selected time range (empty data)
 
-*Solution*:
+Solution:
+
 1. Wait and refresh (// PLACEHOLDER: Xminutes typical delay)
 2. Check retention policy
 3. Verify requests were sent (check logs)
 
-=== Issue: "dashboard shows 'no data'"
+=== Issue: "Dashboard shows 'no data'"
 
-*Possible Causes*:
+Possible causes:
+
 1. Filters too restrictive (no matching requests)
 2. Gateway has no traffic yet
 3. Permissions issue (can't access this gateway's metrics)
 
-*Solution*:
+Solution:
+
 1. Remove filters, widen time range
 2. Send test request (see [Quickstart](// PLACEHOLDER: link))
 3. Check permissions with admin
@@ -742,10 +797,3 @@ curl https://{CLUSTER_ID}.cloud.redpanda.com/api/ai-gateway/metrics/query \
 * *Optimize Costs* → [Cost Optimization Guide](// PLACEHOLDER: link)
 * *Export to BI Tools* → [Data Export Guide](// PLACEHOLDER: link)
 * *Compare Models* → [Model Selection Guide](// PLACEHOLDER: link)
-
-== Related pages
-
-* [Observability: Logs](// PLACEHOLDER: link)
-* [Budget & Rate Limits](// PLACEHOLDER: link)
-* [Cost Optimization](// PLACEHOLDER: link)
-* [Performance Benchmarks](// PLACEHOLDER: link)
