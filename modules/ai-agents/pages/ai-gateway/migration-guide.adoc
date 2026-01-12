@@ -1,9 +1,8 @@
 = DRAFT: Migrate from Direct Provider Integration to AI Gateway
-:description: Quickstart to configure the AI Gateway for unified access to multiple LLM providers and MCP servers through a single endpoint.
+:description: Step-by-step migration guide to transition existing applications from direct LLM provider integrations to Redpanda AI Gateway with minimal disruption.
 
-== Overview
 
-This guide helps you migrate existing applications from direct LLM provider integrations (OpenAI, Anthropic, etc.) to Redpanda AI Gateway. The migration is designed to be *incremental and reversible*, allowing you to test thoroughly before fully committing.
+This guide helps you migrate existing applications from direct LLM provider integrations (OpenAI, Anthropic, etc.) to Redpanda AI Gateway. The migration is designed to be incremental and reversible, allowing you to test thoroughly before fully committing.
 
 Migration time: 10-30 minutes for most applications
 
@@ -426,13 +425,35 @@ During parallel operation, compare metrics:
 
 Metrics to monitor:
 
-| Metric | Direct | Gateway | Notes |
-|--------|--------|---------|-------|
-| Success rate | // track | // track | Should be identical |
-| Latency p50 | // track | // track | Gateway adds ~// PLACEHOLDER: Xms |
-| Latency p99 | // track | // track | Watch for outliers |
-| Error rate | // track | // track | Should be identical |
-| Cost per 1K requests | // track | // track | Compare estimated costs |
+[cols="2,1,1,3"]
+|===
+| Metric | Direct | Gateway | Notes
+
+| Success rate 
+| // track 
+| // track 
+| Should be identical
+
+| Latency p50 
+| // track 
+| // track 
+| Gateway adds ~// PLACEHOLDER: Xms
+
+| Latency p99 
+| // track 
+| // track 
+| Watch for outliers
+
+| Error rate 
+| // track 
+| // track 
+| Should be identical
+
+| Cost per 1K requests 
+| // track 
+| // track 
+| Compare estimated costs
+|===
 
 Monitoring code example:
 
@@ -476,17 +497,17 @@ def call_llm_with_metrics(use_gateway: bool, model: str, messages: list):
 
 Once metrics confirm gateway reliability:
 
-1. *Set feature flag to 100%*:
+1. Set feature flag to 100%:
 
    ```bash
    USE_AI_GATEWAY=true
    ```
 
-2. *Deploy updated configuration*
+2. Deploy updated configuration
 
-3. *Monitor for 24-48 hours*
+3. Monitor for 24-48 hours
 
-4. *Remove direct provider credentials* (optional, for security):
+4. Remove direct provider credentials (optional, for security):
 
    ```bash
    # .env
@@ -498,7 +519,7 @@ Once metrics confirm gateway reliability:
    REDPANDA_AI_GATEWAY_TOKEN={YOUR_TOKEN}
    ```
 
-5. *Remove direct integration code* (optional, for cleanup):
+5. Remove direct integration code (optional, for cleanup):
 
    ```python
    # Remove feature flag logic, keep only gateway path
@@ -539,8 +560,11 @@ use_gateway = False  # Back to 0%
 
 == Framework-specific migration
 
-=== LangChain
-
+[tabs]
+======
+LangChain::
++
+--
 Before
 
 [source,python]
@@ -552,7 +576,6 @@ llm = ChatOpenAI(
     api_key=os.getenv("OPENAI_API_KEY")
 )
 ----
-
 
 After
 
@@ -575,10 +598,11 @@ else:
         api_key=os.getenv("OPENAI_API_KEY")
     )
 ----
+--
 
-
-=== LlamaIndex
-
+LlamaIndex::
++
+--
 Before
 
 [source,python]
@@ -587,7 +611,6 @@ from llama_index.llms.openai import OpenAI
 
 llm = OpenAI(model="gpt-4o")
 ----
-
 
 After
 
@@ -608,11 +631,12 @@ else:
     llm = OpenAI(model="gpt-4o")
 ----
 
-
 // PLACEHOLDER: Verify LlamaIndex syntax for custom headers
+--
 
-=== Vercel AI SDK (JavaScript/TypeScript)
-
+Vercel AI SDK::
++
+--
 Before
 
 [source,typescript]
@@ -621,7 +645,6 @@ import { openai } from '@ai-sdk/openai';
 
 const model = openai('gpt-4o');
 ----
-
 
 After
 
@@ -642,21 +665,22 @@ const model = useGateway
   : openai('gpt-4o');
 ----
 
-
 // PLACEHOLDER: Verify Vercel AI SDK syntax
+--
+======
 
 == Migration checklist
 
 Use this checklist to track your migration:
 
-* [ ] *Prerequisites*
+*Prerequisites*
 
   * [ ] Gateway configured and tested
   * [ ] Providers enabled
   * [ ] Models enabled
   * [ ] Gateway ID and endpoint URL obtained
 
-* [ ] *Code Changes*
+*Code Changes*
 
   * [ ] Environment variables added
   * [ ] Feature flag implemented
@@ -664,28 +688,28 @@ Use this checklist to track your migration:
   * [ ] Model name prefix added (vendor/model_id)
   * [ ] Headers added (rp-aigw-id)
 
-* [ ] *Testing*
+*Testing*
 
   * [ ] Gateway connection test passes
   * [ ] Test request visible in observability dashboard
   * [ ] Integration tests pass with gateway
   * [ ] End-to-end tests pass with gateway
 
-* [ ] *Staged Rollout*
+*Staged rollout*
 
   * [ ] Week 1: Internal testing (dev team only)
   * [ ] Week 2: 10% production traffic
   * [ ] Week 3: 50% production traffic
   * [ ] Week 4: 100% production traffic
 
-* [ ] *Monitoring*
+*Monitoring*
 
   * [ ] Success rate comparison (direct vs gateway)
   * [ ] Latency comparison (direct vs gateway)
   * [ ] Error rate comparison (direct vs gateway)
   * [ ] Cost comparison (direct vs gateway)
 
-* [ ] *Cleanup* (optional, after 30 days stable)
+*Cleanup* (optional, after 30 days stable)
 
   * [ ] Remove direct provider credentials
   * [ ] Remove feature flag logic
@@ -900,11 +924,8 @@ model = "anthropic/claude-sonnet-3.5"  # Was openai/gpt-4o
 
 == Next steps
 
-* *Configure routing policies* → [CEL Routing Guide](// PLACEHOLDER: link)
-* *Set up failover* → [Provider Pools Guide](// PLACEHOLDER: link)
-* *Add rate limits* → [Rate Limiting Guide](// PLACEHOLDER: link)
-* *Explore MCP* → [MCP Aggregation Guide](// PLACEHOLDER: link)
-* *Optimize costs* → [Cost Optimization Guide](// PLACEHOLDER: link)
+* Configure routing policies → [CEL Routing Guide](// PLACEHOLDER: link)
+* Explore MCP → [MCP Aggregation Guide](// PLACEHOLDER: link)
 
 == Related pages
 

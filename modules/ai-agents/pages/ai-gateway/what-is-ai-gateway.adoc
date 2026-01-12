@@ -1,7 +1,6 @@
 = DRAFT: What is Redpanda AI Gateway?
-:description: Introduction to the AI Gateway.
+:description: Overview of Redpanda AI Gateway, its features, benefits, architecture, supported providers, deployment models, and common usage patterns.
 
-== Overview
 
 Redpanda AI Gateway is a unified access layer for LLM providers and AI tools that sits between your applications and the AI services they use. It provides centralized routing, policy enforcement, cost management, and observability for all your AI traffic.
 
@@ -9,28 +8,28 @@ Redpanda AI Gateway is a unified access layer for LLM providers and AI tools tha
 
 Modern AI applications face several critical challenges:
 
-=== 1. Provider fragmentation
+Provider fragmentation
 
 * Applications hardcode provider-specific SDKs (OpenAI, Anthropic, Google, etc.)
 * Switching providers requires code changes and redeployment
 * Testing across providers is time-consuming and error-prone
 * Provider outages directly impact your application
 
-=== 2. Cost spirals without visibility
+Cost spirals without visibility
 
 * No centralized view of token usage across teams and applications
 * Difficult to attribute costs to specific customers, features, or environments
 * Testing and debugging can rack up unexpected bills
 * No way to enforce budgets or rate limits per team/customer
 
-=== 3. Tool coordination complexity
+Tool coordination complexity
 
 * Agents need access to multiple MCP (Model Context Protocol) servers
 * Managing tool discovery and execution is repetitive across projects
 * High token costs from loading all available tools upfront
 * No centralized governance over which tools agents can access
 
-=== 4. Observability gaps
+Observability gaps
 
 * Requests scattered across multiple provider dashboards
 * Can't reconstruct user sessions that span multiple models
@@ -48,7 +47,7 @@ Redpanda AI Gateway addresses these challenges through four core capabilities:
 // - Single baseURL configuration
 // - Model routing via vendor/model_id format
 
-*Before (direct integration)*
+Before (direct integration)
 
 [source,python]
 ----
@@ -70,7 +69,7 @@ response = client.messages.create(
 )
 ----
 
-*After (AI Gateway - OpenAI-compatible)*
+After (AI Gateway - OpenAI-compatible)
 
 [source,python]
 ----
@@ -96,13 +95,13 @@ response = client.chat.completions.create(
 )
 ----
 
-*Result*: Change `model` parameter to switch providers. No code redeployment needed.
+Result: Change `model` parameter to switch providers. No code redeployment needed.
 
 === 2. Policy-based routing and cost control
 
 Define routing rules, rate limits, and budgets once; enforce them automatically:
 
-*Example: Tier-based routing*
+Example: Tier-based routing
 
 [source,cel]
 ----
@@ -112,7 +111,7 @@ request.headers["x-user-tier"] == "premium"
   : "anthropic/claude-sonnet-3.5"
 ----
 
-*Example: Environment-based budget*
+Example: Environment-based budget
 
 // PLACEHOLDER: Confirm exact policy configuration format
 
@@ -127,7 +126,7 @@ spend_limits:
   production: $50000/month
 ----
 
-*Example: Automatic failover*
+Example: Automatic failover
 
 // PLACEHOLDER: Add details on pool configuration and failback behavior
 
@@ -139,21 +138,21 @@ spend_limits:
 
 Agent tool access without the overhead
 
-*Before*: Agent loads all tools from multiple MCP servers upfront
+Before: Agent loads all tools from multiple MCP servers upfront
 
 * Sends 50+ tool definitions with every request
 * High token costs (thousands of tokens per request)
 * Slow agent startup
 * No centralized governance
 
-*After*: AI Gateway aggregates MCP servers
+After: AI Gateway aggregates MCP servers
 
 * Deferred tool loading: Only search + orchestrator tools loaded initially
-* *80-90% token reduction* depending on configuration
+* 80-90% token reduction, depending on configuration
 * Agent queries for specific tools only when needed
 * Centralized approval of MCP servers
 
-*Orchestrator for complex workflows*
+Orchestrator for complex workflows
 
 * Single JavaScript-based orchestrator tool
 * Reduces multi-step workflows from multiple round trips to one call
@@ -196,30 +195,30 @@ Scenario: SaaS chatbot with 1M requests/month, averaging 500 prompt + 300 comple
 |===
 |Configuration |Monthly Cost |Notes
 
-|*Direct integration* (no gateway)
+|Direct integration (no gateway)
 |// PLACEHOLDER: $X,XXX
 |No caching, no routing optimization
 
-|*AI Gateway* (basic routing)
+|AI Gateway (basic routing)
 |// PLACEHOLDER: $X,XXX
 |Provider failover, unified observability
 
-|*Caching*
+|Caching
 |// PLACEHOLDER: $X,XXX
 |// PLACEHOLDER: X% reduction from cache hits
 
-|*Deferred tool loading*
+|Deferred tool loading
 |// PLACEHOLDER: $X,XXX
 |80-90% token reduction for agent workloads
 
-|*Tier-based routing*
+|Tier-based routing
 |// PLACEHOLDER: $X,XXX
 |Premium users → better model, free → cost-effective
 |===
 
-*Total savings*: // PLACEHOLDER: $X,XXX/month (XX% reduction)
+Total savings: // PLACEHOLDER: $X,XXX/month (XX% reduction)
 
-*Hidden savings*:
+Hidden savings:
 
 * Developer time: No more managing multiple provider SDKs
 * Incident response: Automatic failover reduces downtime costs
@@ -287,7 +286,7 @@ request.headers["x-customer-tier"] == "pro" ? "anthropic/claude-sonnet-3.5" :
 
 // PLACEHOLDER: Verify BYOC availability and any managed offering plans
 
-*BYOC (Bring Your Own Cloud)*
+BYOC (Bring Your Own Cloud)
 
 * Currently available: BYOC version for // PLACEHOLDER: specific Redpanda version
 * Deployment: Within your Redpanda Cloud cluster
@@ -303,7 +302,7 @@ request.headers["x-customer-tier"] == "pro" ? "anthropic/claude-sonnet-3.5" :
 
 == What's supported today
 
-=== LLM providers
+LLM providers
 
 // PLACEHOLDER: Confirm currently supported providers
 
@@ -311,14 +310,14 @@ request.headers["x-customer-tier"] == "pro" ? "anthropic/claude-sonnet-3.5" :
 * Anthropic
 * // PLACEHOLDER: Google, AWS Bedrock, Azure OpenAI, others?
 
-=== API compatibility
+API compatibility
 
 * OpenAI-compatible `/v1/chat/completions` endpoint
 * // PLACEHOLDER: Streaming support?
 * // PLACEHOLDER: Embeddings support?
 * // PLACEHOLDER: Other endpoints?
 
-=== Policy features
+Policy features
 
 * CEL-based routing expressions
 * Rate limiting (// PLACEHOLDER: per-gateway, per-header, per-tenant?)
@@ -326,14 +325,14 @@ request.headers["x-customer-tier"] == "pro" ? "anthropic/claude-sonnet-3.5" :
 * Provider pools with automatic failover
 * // PLACEHOLDER: Caching support?
 
-=== MCP support
+MCP support
 
 * MCP server aggregation
 * Deferred tool loading (80-90% token reduction)
 * JavaScript orchestrator for multi-step workflows
 * // PLACEHOLDER: Tool execution sandboxing?
 
-=== Observability
+Observability
 
 * Request logs with full prompt/response history
 * Token usage tracking
@@ -373,7 +372,7 @@ request.headers["x-customer-tier"] == "pro" ? "anthropic/claude-sonnet-3.5" :
 //    - Metrics aggregation
 //    - Dashboard UI
 
-*Request lifecycle*:
+Request lifecycle:
 
 . Application sends request to gateway endpoint with `rp-aigw-id` header
 . Gateway authenticates request
@@ -385,7 +384,7 @@ request.headers["x-customer-tier"] == "pro" ? "anthropic/claude-sonnet-3.5" :
 . Response returned to application
 . Request logged with tokens, cost, latency, status
 
-*MCP request lifecycle*:
+MCP request lifecycle:
 
 . Application discovers tools via `/mcp` endpoint
 . Gateway aggregates tools from approved MCP servers
@@ -397,10 +396,6 @@ request.headers["x-customer-tier"] == "pro" ? "anthropic/claude-sonnet-3.5" :
 
 == Next steps
 
-* *New to AI Gateway?* → link:quickstart.adoc[Quickstart: Route your first request]
-* *Understand the concepts* → link:core-concepts.adoc[Core Concepts: Gateways, Providers, Models]
-* *Set up providers* → link:admin-guide-providers.adoc[Admin Guide: Configure LLM Providers]
-* *Define policies* → link:routing-rate-limits.adoc[Routing and Rate Limits Guide]
-* *Integrate agents* → link:mcp-aggregation-guide.adoc[MCP Aggregation Guide]
-* *Monitor usage* → link:observability-logs.adoc[Observability: Logs and Metrics]
-
+* New to AI Gateway? → link:quickstart.adoc[Quickstart: Route your first request]
+* Integrate agents → link:mcp-aggregation-guide.adoc[MCP Aggregation Guide]
+* Monitor usage → link:observability-logs.adoc[Observability: Logs and Metrics]

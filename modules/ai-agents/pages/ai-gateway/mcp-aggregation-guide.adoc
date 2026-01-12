@@ -1,7 +1,6 @@
 = DRAFT: MCP Aggregation and Orchestration Guide
-:description: Quickstart to configure the AI Gateway for unified access to multiple LLM providers and MCP servers through a single endpoint.
+:description: Guide to MCP aggregation and orchestration in Redpanda AI Gateway, including architecture, deferred tool loading, orchestrator workflows, administration, observability, security, and integration examples.
 
-== Overview
 
 AI Gateway provides MCP (Model Context Protocol) aggregation, allowing AI agents to access tools from multiple MCP servers through a single unified endpoint. This eliminates the need for agents to manage multiple MCP connections and significantly reduces token costs through deferred tool loading.
 
@@ -696,14 +695,34 @@ Filter: request.path.startsWith("/mcp")
 
 Common log fields:
 
-| Field | Description | Example |
-|-------|-------------|---------|
-| Tool | Tool invoked | `execute_sql` |
-| MCP Server | Which server handled it | `database-server` |
-| Input | Parameters sent | `{"query": "SELECT ..."}` |
-| Output | Result returned | `[{"id": 1, ...}]` |
-| Latency | Tool execution time | `250ms` |
-| Status | Success/failure | `200`, `500` |
+[cols="1,2,2"]
+|===
+| Field | Description | Example
+
+| Tool 
+| Tool invoked 
+| `execute_sql`
+
+| MCP Server 
+| Which server handled it 
+| `database-server`
+
+| Input 
+| Parameters sent 
+| `{"query": "SELECT ..."}`
+
+| Output 
+| Result returned 
+| `[{"id": 1, ...}]`
+
+| Latency 
+| Tool execution time 
+| `250ms`
+
+| Status 
+| Success/failure 
+| `200`, `500`
+|===
 
 === Metrics
 
@@ -868,8 +887,11 @@ Use case: Optimize model-tool pairing (some models better at certain tools)
 
 == Integration examples
 
-=== Python (openai sdk)
-
+[tabs]
+====
+Python (OpenAI SDK)::
++
+--
 [source,python]
 ----
 from openai import OpenAI
@@ -932,10 +954,11 @@ if response.choices[0].message.tool_calls:
             ]
         )
 ----
+--
 
-
-=== Claude Code CLI
-
+Claude Code CLI::
++
+--
 [source,bash]
 ----
 # Configure gateway with MCP
@@ -947,10 +970,11 @@ claude code
 
 # Agent can now use aggregated MCP tools
 ----
+--
 
-
-=== LangChain
-
+LangChain::
++
+--
 [source,python]
 ----
 from langchain_openai import ChatOpenAI
@@ -979,18 +1003,14 @@ agent = initialize_agent(
 # Agent can now use MCP tools
 response = agent.run("Find all premium users in the database")
 ----
+--
+====
 
 
 == Next steps
 
-* *Configure MCP servers* → [MCP Server Administration Guide](// PLACEHOLDER: link)
-* *Write Orchestrator workflows* → [Orchestrator Examples](// PLACEHOLDER: link)
-* *Monitor MCP usage* → [Observability: MCP Metrics](// PLACEHOLDER: link)
-* *Optimize token costs* → [Cost Optimization Guide](// PLACEHOLDER: link)
-* *Build agentic workflows* → [Agent Patterns Guide](// PLACEHOLDER: link)
-
-== Related pages
-
-* [Quickstart](// PLACEHOLDER: link)
-* [CEL Routing](// PLACEHOLDER: link)
-* [Observability: Logs](// PLACEHOLDER: link)
+* Configure MCP servers → [MCP Server Administration Guide](// PLACEHOLDER: link)
+* Write Orchestrator workflows → [Orchestrator Examples](// PLACEHOLDER: link)
+* Monitor MCP usage → [Observability: MCP Metrics](// PLACEHOLDER: link)
+* Optimize token costs → [Cost Optimization Guide](// PLACEHOLDER: link)
+* Build agentic workflows → [Agent Patterns Guide](// PLACEHOLDER: link)

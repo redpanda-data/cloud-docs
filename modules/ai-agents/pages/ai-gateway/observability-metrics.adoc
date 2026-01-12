@@ -1,7 +1,6 @@
 = DRAFT: Observability: Metrics and Analytics
-:description: Quickstart to configure the AI Gateway for unified access to multiple LLM providers and MCP servers through a single endpoint.
+:description: Guide to AI Gateway metrics and analytics, including where to find metrics, key metrics explained, dashboard views, filtering/grouping, alerting, exporting, common analysis tasks, retention, API access, best practices, and troubleshooting.
 
-== Overview
 
 AI Gateway provides aggregate metrics and analytics dashboards to help you understand usage patterns, costs, performance, and errors across all your LLM traffic.
 
@@ -303,11 +302,28 @@ Use case: Evaluate whether to switch models (cost vs performance)
 
 Example:
 
-| Model | Requests | Avg Latency | Cost per 1K | Error Rate |
-|-------|----------|-------------|-------------|------------|
-| openai/gpt-4o | 10,000 | 1.2s | $5.00 | 0.5% |
-| anthropic/claude-sonnet-3.5 | 5,000 | 0.9s | $3.50 | 0.3% |
-| openai/gpt-4o-mini | 20,000 | 0.7s | $0.50 | 1.0% |
+[cols="2,1,1,1,1"]
+|===
+| Model | Requests | Avg Latency | Cost per 1K | Error Rate
+
+| openai/gpt-4o 
+| 10,000 
+| 1.2s 
+| $5.00 
+| 0.5%
+
+| anthropic/claude-sonnet-3.5 
+| 5,000 
+| 0.9s 
+| $3.50 
+| 0.3%
+
+| openai/gpt-4o-mini 
+| 20,000 
+| 0.7s 
+| $0.50 
+| 1.0%
+|===
 
 Insight: Claude Sonnet is 25% faster and 30% cheaper than GPT-4o with better reliability
 
@@ -558,11 +574,28 @@ Action:
 2. *Sort by Spend* (descending)
 3. View table:
 
-| Gateway | Requests | Tokens | Spend | % of Total |
-|---------|----------|--------|-------|------------|
-| team-ml | 500K | 250M | $1,250 | 50% |
-| team-product | 300K | 150M | $750 | 30% |
-| team-eng | 200K | 100M | $500 | 20% |
+[cols="2,1,1,1,1"]
+|===
+| Gateway | Requests | Tokens | Spend | % of Total
+
+| team-ml 
+| 500K 
+| 250M 
+| $1,250 
+| 50%
+
+| team-product 
+| 300K 
+| 150M 
+| $750 
+| 30%
+
+| team-eng 
+| 200K 
+| 100M 
+| $500 
+| 20%
+|===
 
 Action: Chargeback costs to teams, or investigate high-usage teams
 
@@ -574,11 +607,25 @@ Action: Chargeback costs to teams, or investigate high-usage teams
    * Cheap model: `openai/gpt-4o-mini`
 3. Compare metrics:
 
-| Metric | GPT-4o | GPT-4o-mini | Difference |
-|--------|--------|-------------|------------|
-| Cost per 1K requests | $5.00 | $0.50 | *10x* |
-| Avg Latency | 1.2s | 0.7s | 58% *faster* (mini) |
-| Error Rate | 0.5% | 1.0% | 2x errors (mini) |
+[cols="2,1,1,2"]
+|===
+| Metric | GPT-4o | GPT-4o-mini | Difference
+
+| Cost per 1K requests 
+| $5.00 
+| $0.50 
+| *10x*
+
+| Avg Latency 
+| 1.2s 
+| 0.7s 
+| 58% *faster* (mini)
+
+| Error Rate 
+| 0.5% 
+| 1.0% 
+| 2x errors (mini)
+|===
 
 Decision: If mini's error rate is acceptable, save 10x on costs
 
@@ -607,19 +654,37 @@ Common causes:
 1. Open provider comparison dashboard
 2. Compare error rates:
 
-| Provider | Requests | Error Rate | Fallback Triggers |
-|----------|----------|------------|-------------------|
-| OpenAI | 500K | 0.8% | 50 (rate limits) |
-| Anthropic | 300K | 0.3% | 5 (timeouts) |
+[cols="2,1,1,2"]
+|===
+| Provider | Requests | Error Rate | Fallback Triggers
+
+| OpenAI 
+| 500K 
+| 0.8% 
+| 50 (rate limits)
+
+| Anthropic 
+| 300K 
+| 0.3% 
+| 5 (timeouts)
+|===
 
 Insight: Anthropic has 62% lower error rate
 
 3. Compare latencies:
 
-| Provider | p50 Latency | p99 Latency |
-|----------|-------------|-------------|
-| OpenAI | 1.0s | 3.5s |
-| Anthropic | 0.8s | 2.5s |
+[cols="2,1,1"]
+|===
+| Provider | p50 Latency | p99 Latency
+
+| OpenAI 
+| 1.0s 
+| 3.5s
+
+| Anthropic 
+| 0.8s 
+| 2.5s
+|===
 
 Insight: Anthropic is 20% faster at p50, 28% faster at p99
 
@@ -631,9 +696,9 @@ Decision: Prioritize Anthropic in routing pools
 
 Retention period:
 
-* *High-resolution* (1-minute granularity): // PLACEHOLDER: e.g., 7 days
-* *Medium-resolution* (1-hour granularity): // PLACEHOLDER: e.g., 30 days
-* *Low-resolution* (1-day granularity): // PLACEHOLDER: e.g., 1 year
+* *High-resolution* (1-minute granularity): // PLACEHOLDER: for example, 7 days
+* *Medium-resolution* (1-hour granularity): // PLACEHOLDER: for example, 30 days
+* *Low-resolution* (1-day granularity): // PLACEHOLDER: for example, 1 year
 
 Note: Aggregate metrics retained longer than individual request logs
 
@@ -716,31 +781,31 @@ Response:
 
 == Best practices
 
-=== 1. Set up budget alerts early
+Set up budget alerts early
 
 * Don't wait for surprise bills
 * Alert at 50%, 80%, 90% of budget
 * Include multiple stakeholders (eng, finance)
 
-=== 2. Create team dashboards
+Create team dashboards
 
 * One dashboard per team showing their gateway(s)
 * Empowers teams to self-optimize
 * Reduces central ops burden
 
-=== 3. Monitor fallback rate
+Monitor fallback rate
 
 * Low fallback rate (0-5%): Normal, failover working
 * High fallback rate (>20%): Investigate primary provider issues
 * Zero fallback rate: Verify fallback config is correct
 
-=== 4. Compare models regularly
+Compare models regularly
 
 * Run A/B tests with metrics
 * Reassess as pricing and models change
 * Don't assume expensive = better quality for your use case
 
-=== 5. Track trends, not point-in-time
+Track trends, not point-in-time
 
 * Day-to-day variance is normal
 * Look for week-over-week and month-over-month trends
@@ -792,8 +857,4 @@ Solution:
 
 == Next steps
 
-* *View Individual Requests* → [Observability: Logs](// PLACEHOLDER: link)
-* *Set Up Alerts* → [Alerting Guide](// PLACEHOLDER: link)
-* *Optimize Costs* → [Cost Optimization Guide](// PLACEHOLDER: link)
-* *Export to BI Tools* → [Data Export Guide](// PLACEHOLDER: link)
-* *Compare Models* → [Model Selection Guide](// PLACEHOLDER: link)
+* View individual requests → [Observability: Logs](// PLACEHOLDER: link)

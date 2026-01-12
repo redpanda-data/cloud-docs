@@ -113,8 +113,11 @@ See link:// PLACEHOLDER: link[Gateway Creation Guide] for best practices.
 
 Now route a request through your gateway.
 
-=== Python
-
+[tabs]
+====
+Python::
++
+--
 [source,python]
 ----
 from openai import OpenAI
@@ -141,10 +144,11 @@ response = client.chat.completions.create(
 print(response.choices[0].message.content)
 # Output: Hello from AI Gateway!
 ----
+--
 
-
-=== TypeScript/JavaScript
-
+TypeScript/JavaScript::
++
+--
 [source,typescript]
 ----
 import OpenAI from 'openai';
@@ -168,10 +172,11 @@ const response = await client.chat.completions.create({
 console.log(response.choices[0].message.content);
 // Output: Hello from AI Gateway!
 ----
+--
 
-
-=== cURL
-
+cURL::
++
+--
 [source,bash]
 ----
 curl https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1/chat/completions \
@@ -186,7 +191,6 @@ curl https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1/chat/completions \
     "max_tokens": 20
   }'
 ----
-
 
 Expected response:
 
@@ -214,6 +218,8 @@ Expected response:
   }
 }
 ----
+--
+====
 
 
 Troubleshooting:
@@ -262,7 +268,9 @@ If request doesn't appear:
 * Verify request succeeded (no error in client)
 * See link:// PLACEHOLDER: link[End-to-End Validation Guide]
 
-== Next steps: Add failover (optional, +3 minutes)
+== Next steps: Add failover (optional)
+
+*Time: ~3 minutes*
 
 Add automatic failover to a backup provider for reliability.
 
@@ -364,7 +372,9 @@ Check dashboards:
   * Fallback reason: // PLACEHOLDER: rate_limit / timeout / error
 
 
-== Next steps: Add routing rule (optional, +3 minutes)
+== Next steps: Add routing rule (optional)
+
+*Time: ~3 minutes*
 
 Use CEL expressions to route requests based on headers or content.
 
@@ -439,15 +449,6 @@ response = client.chat.completions.create(
 * Check request logs
 * Confirm correct model was selected based on header
 * View routing decision explanation
-
-
-== What you've learned
-*Provider configuration*: Added LLM providers (OpenAI, Anthropic)
-*Gateway creation*: Created your first gateway with policies
-*Request routing*: Sent requests through the gateway
-*Observability*: Verified requests in dashboard logs
-*Failover*: Configured automatic fallback to backup provider (optional)
-*Smart routing*: Created CEL rule for dynamic model selection (optional)
 
 == What's next?
 

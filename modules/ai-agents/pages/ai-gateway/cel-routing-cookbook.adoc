@@ -1,7 +1,6 @@
 = DRAFT: CEL Routing Cookbook
-:description: Quickstart to configure the AI Gateway for unified access to multiple LLM providers and MCP servers through a single endpoint.
+:description: CEL routing cookbook for Redpanda AI Gateway with common patterns, examples, and best practices.
 
-== Overview
 
 Redpanda AI Gateway uses CEL (Common Expression Language) for dynamic request routing. CEL expressions evaluate request properties (headers, body, context) and determine which model or provider should handle each request.
 
@@ -887,38 +886,64 @@ Each request evaluates CEL expression once. Total latency impact:
 
 === String functions
 
-| Function | Description | Example |
-|----------|-------------|---------|
-| `size()` | String length | `"hello".size() == 5` |
-| `contains(s)` | String contains | `"hello".contains("ell")` |
-| `startsWith(s)` | String starts with | `"hello".startsWith("he")` |
-| `endsWith(s)` | String ends with | `"hello".endsWith("lo")` |
-| `matches(regex)` | Regex match | `"hello".matches("h.*o")` |
+[cols="2,3,3"]
+|===
+| Function | Description | Example
+
+| `size()` 
+| String length 
+| `"hello".size() == 5`
+
+| `contains(s)` 
+| String contains 
+| `"hello".contains("ell")`
+
+| `startsWith(s)` 
+| String starts with 
+| `"hello".startsWith("he")`
+
+| `endsWith(s)` 
+| String ends with 
+| `"hello".endsWith("lo")`
+
+| `matches(regex)` 
+| Regex match 
+| `"hello".matches("h.*o")`
+|===
 
 === Array functions
 
-| Function | Description | Example |
-|----------|-------------|---------|
-| `size()` | Array length | `[1,2,3].size() == 3` |
-| `exists(x, cond)` | Any element matches | `[1,2,3].exists(x, x > 2)` |
-| `all(x, cond)` | All elements match | `[1,2,3].all(x, x > 0)` |
+[cols="2,3,3"]
+|===
+| Function | Description | Example
+
+| `size()` 
+| Array length 
+| `[1,2,3].size() == 3`
+
+| `exists(x, cond)` 
+| Any element matches 
+| `[1,2,3].exists(x, x > 2)`
+
+| `all(x, cond)` 
+| All elements match 
+| `[1,2,3].all(x, x > 0)`
+|===
 
 === Utility functions
 
-| Function | Description | Example |
-|----------|-------------|---------|
-| `has(field)` | Field exists | `has(request.body.max_tokens)` |
+[cols="2,3,3"]
+|===
+| Function | Description | Example
+
+| `has(field)` 
+| Field exists 
+| `has(request.body.max_tokens)`
+|===
 
 // PLACEHOLDER: Other functions like hash(), random(), now()?
 
 == Next steps
 
 * *Apply CEL routing* → [Gateway Configuration Guide](// PLACEHOLDER: link)
-* *Test routing* → [End-to-End Validation](// PLACEHOLDER: link)
 * *Monitor routing decisions* → [Observability: Logs](// PLACEHOLDER: link)
-* *Optimize costs* → [Cost Optimization Guide](// PLACEHOLDER: link)
-* *Multi-tenancy patterns* → [Multi-Tenancy Guide](// PLACEHOLDER: link)
-
-== Related pages
-
-* [Quickstart](// PLACEHOLDER: link)

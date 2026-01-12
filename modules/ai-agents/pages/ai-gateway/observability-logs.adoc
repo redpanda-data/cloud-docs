@@ -1,7 +1,6 @@
 = DRAFT: Observability: Request Logs
-:description: Quickstart to configure the AI Gateway for unified access to multiple LLM providers and MCP servers through a single endpoint.
+:description: Guide to AI Gateway request logs, including where to find logs, log fields, filtering, searching, inspecting requests, common analysis tasks, log retention, export options, privacy/security, and troubleshooting.
 
-== Overview
 
 AI Gateway logs every LLM request that passes through it, capturing the full request/response history, token usage, cost, latency, and routing decisions. This page explains how to find, filter, and interpret request logs.
 
@@ -38,62 +37,161 @@ Each log entry contains:
 
 === Core request info
 
-| Field | Description | Example |
-|-------|-------------|---------|
-| *Request ID* | Unique identifier for this request | `req_abc123...` |
-| *Timestamp* | When request was received (UTC) | `2025-01-11T14:32:10.123Z` |
-| *Gateway ID* | Which gateway handled this request | `gw_abc123...` |
-| *Gateway Name* | Human-readable gateway name | `production-gateway` |
-| *Status* | HTTP status code | `200`, `400`, `429`, `500` |
-| *Latency* | Total request duration (ms) | `1250ms` |
+[cols="1,2,2"]
+|===
+| Field | Description | Example
+
+| *Request ID* 
+| Unique identifier for this request 
+| `req_abc123...`
+
+| *Timestamp* 
+| When request was received (UTC) 
+| `2025-01-11T14:32:10.123Z`
+
+| *Gateway ID* 
+| Which gateway handled this request 
+| `gw_abc123...`
+
+| *Gateway Name* 
+| Human-readable gateway name 
+| `production-gateway`
+
+| *Status* 
+| HTTP status code 
+| `200`, `400`, `429`, `500`
+
+| *Latency* 
+| Total request duration (ms) 
+| `1250ms`
+|===
 
 === Model and provider info
 
-| Field | Description | Example |
-|-------|-------------|---------|
-| *Requested Model* | Model specified in request | `openai/gpt-4o` |
-| *Actual Model* | Model that handled request (may differ due to routing) | `anthropic/claude-sonnet-3.5` |
-| *Provider* | Which provider handled the request | `OpenAI`, `Anthropic` |
-| *Provider Pool* | Pool used (primary/fallback) | `primary`, `fallback` |
-| *Fallback Triggered* | Whether fallback was used | `true`/`false` |
-| *Fallback Reason* | Why fallback occurred | `rate_limit`, `timeout`, `5xx_error` |
+[cols="1,2,2"]
+|===
+| Field | Description | Example
+
+| *Requested Model* 
+| Model specified in request 
+| `openai/gpt-4o`
+
+| *Actual Model* 
+| Model that handled request (may differ due to routing) 
+| `anthropic/claude-sonnet-3.5`
+
+| *Provider* 
+| Which provider handled the request 
+| `OpenAI`, `Anthropic`
+
+| *Provider Pool* 
+| Pool used (primary/fallback) 
+| `primary`, `fallback`
+
+| *Fallback Triggered* 
+| Whether fallback was used 
+| `true`/`false`
+
+| *Fallback Reason* 
+| Why fallback occurred 
+| `rate_limit`, `timeout`, `5xx_error`
+|===
 
 === Token and cost info
 
-| Field | Description | Example |
-|-------|-------------|---------|
-| *Prompt Tokens* | Input tokens consumed | `523` |
-| *Completion Tokens* | Output tokens generated | `187` |
-| *Total Tokens* | Prompt + completion | `710` |
-| *Estimated Cost* | Calculated cost for this request | `$0.0142` |
-| *Cost Breakdown* | Per-token costs | `Prompt: $0.005, Completion: $0.0092` |
+[cols="1,2,2"]
+|===
+| Field | Description | Example
+
+| *Prompt Tokens* 
+| Input tokens consumed 
+| `523`
+
+| *Completion Tokens* 
+| Output tokens generated 
+| `187`
+
+| *Total Tokens* 
+| Prompt + completion 
+| `710`
+
+| *Estimated Cost* 
+| Calculated cost for this request 
+| `$0.0142`
+
+| *Cost Breakdown* 
+| Per-token costs 
+| `Prompt: $0.005, Completion: $0.0092`
+|===
 
 === Request content (expandable)
 
-| Field | Description | Notes |
-|-------|-------------|-------|
-| *Request Headers* | All headers sent | Includes `rp-aigw-id`, custom headers |
-| *Request Body* | Full request payload | Includes messages, parameters |
-| *Response Headers* | Headers returned | // PLACEHOLDER: Any gateway-specific headers? |
-| *Response Body* | Full response payload | Includes message content, metadata |
+[cols="1,2,2"]
+|===
+| Field | Description | Notes
+
+| *Request Headers* 
+| All headers sent 
+| Includes `rp-aigw-id`, custom headers
+
+| *Request Body* 
+| Full request payload 
+| Includes messages, parameters
+
+| *Response Headers* 
+| Headers returned 
+| // PLACEHOLDER: Any gateway-specific headers?
+
+| *Response Body* 
+| Full response payload 
+| Includes message content, metadata
+|===
 
 === Routing and policy info
 
-| Field | Description | Example |
-|-------|-------------|---------|
-| *CEL Expression* | Routing rule applied (if any) | `request.headers["tier"] == "premium" ? ...` |
-| *CEL Result* | Model selected by CEL | `openai/gpt-4o` |
-| *Rate Limit Status* | Whether rate limited | `allowed`, `throttled`, `blocked` |
-| *Spend Limit Status* | Whether budget exceeded | `allowed`, `blocked` |
-| *Policy Stage* | Where request was processed/blocked | `rate_limit`, `routing`, `execution` |
+[cols="1,2,2"]
+|===
+| Field | Description | Example
+
+| *CEL Expression* 
+| Routing rule applied (if any) 
+| `request.headers["tier"] == "premium" ? ...`
+
+| *CEL Result* 
+| Model selected by CEL 
+| `openai/gpt-4o`
+
+| *Rate Limit Status* 
+| Whether rate limited 
+| `allowed`, `throttled`, `blocked`
+
+| *Spend Limit Status* 
+| Whether budget exceeded 
+| `allowed`, `blocked`
+
+| *Policy Stage* 
+| Where request was processed/blocked 
+| `rate_limit`, `routing`, `execution`
+|===
 
 === Error info (if applicable)
 
-| Field | Description | Example |
-|-------|-------------|---------|
-| *Error Code* | Gateway or provider error code | `RATE_LIMIT_EXCEEDED`, `MODEL_NOT_FOUND` |
-| *Error Message* | Human-readable error | `Request rate limit exceeded for gateway` |
-| *Provider Error* | Upstream provider error | `OpenAI API returned 429: Rate limit exceeded` |
+[cols="1,2,2"]
+|===
+| Field | Description | Example
+
+| *Error Code* 
+| Gateway or provider error code 
+| `RATE_LIMIT_EXCEEDED`, `MODEL_NOT_FOUND`
+
+| *Error Message* 
+| Human-readable error 
+| `Request rate limit exceeded for gateway`
+
+| *Provider Error* 
+| Upstream provider error 
+| `OpenAI API returned 429: Rate limit exceeded`
+|===
 
 == Filter logs
 
@@ -272,6 +370,7 @@ Shows:
 * Custom headers used for routing
 
 Example:
+
 [source,json]
 ----
 {
@@ -301,7 +400,8 @@ Shows:
 * Finish reason (`stop`, `length`, `content_filter`)
 * Response metadata
 
-*Example*:
+Example:
+
 [source,json]
 ----
 {
@@ -336,6 +436,7 @@ Shows:
 * Spend limit evaluation (allowed/blocked)
 
 Example:
+
 [source,yaml]
 ----
 CEL Expression: |
@@ -365,6 +466,7 @@ Shows:
 * Time to first token (for streaming, if supported)
 
 Example:
+
 [source,text]
 ----
 Total Latency: 1,250ms
@@ -654,8 +756,4 @@ Note: Cost estimates are approximate. Use provider invoices for billing.
 
 == Next steps
 
-* *Aggregate Analytics* → [Observability: Metrics](// PLACEHOLDER: link)
-* *Set Up Alerts* → [Alerting Guide](// PLACEHOLDER: link)
-* *Export to SIEM* → [Security Integration Guide](// PLACEHOLDER: link)
-* *Cost Attribution* → [Cost Tracking Guide](// PLACEHOLDER: link)
-* *Troubleshoot Errors* → [Troubleshooting Guide](// PLACEHOLDER: link)
+* Aggregate analytics → [Observability: Metrics](// PLACEHOLDER: link)
