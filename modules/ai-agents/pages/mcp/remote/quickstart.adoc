@@ -1,31 +1,24 @@
 = Remote MCP Server Quickstart
 :description: Learn how to extend AI agents with custom tools that interact with your Redpanda data using the Model Context Protocol (MCP).
+:page-topic-type: tutorial
+:personas: ai_agent_developer, streaming_developer, evaluator
+// Reader journey: "I want to try it now"
+// Learning objectives - what readers will achieve by completing this quickstart:
+:learning-objective-1: Create an MCP server in Redpanda Cloud
+:learning-objective-2: Define tools that generate and publish data
+:learning-objective-3: Connect Claude Code to your MCP server and invoke tools
 
-Model Context Protocol (MCP) enables AI assistants like Claude to interact with external systems through custom tools. This quickstart teaches you how to create an MCP server in Redpanda Cloud with tools that generate and publish event data, then connect Claude Code to use those tools through natural language commands.
+This quickstart builds an MCP server in Redpanda Cloud that exposes tools for generating and publishing event data. You'll create two tools, then ask Claude Code to use them through natural language:
 
-== What you'll learn
+> Generate 10 user events and publish them to the events topic.
 
-By completing this quickstart, you'll understand:
+By completing this quickstart, you will be able to:
 
-* What MCP is and how it extends AI capabilities
-* How MCP servers, tools, and clients work together
-* How to create and deploy custom tools in Redpanda Cloud
-* How to connect AI assistants to your Redpanda data infrastructure
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
 
-== How MCP works
-
-The Model Context Protocol defines a standard way for AI assistants to interact with external tools and data sources:
-
-MCP Server:: Hosts a collection of tools that perform specific actions. MCP servers run as managed services in your Redpanda Cloud cluster.
-Tools:: Individual capabilities your AI can use, built with Redpanda Connect components. Tools can read from sources (inputs), transform data (processors), write to destinations (outputs), or cache results.
-Client:: An AI assistant (like Claude Code) that discovers available tools and calls them based on user requests.
-
-In this quickstart, you'll create a server with two tools:
-
-. `generate_input`: Creates fake user event data with randomized fields
-. `redpanda_output`: Publishes generated events to a Redpanda topic
-
-Once connected, you can ask Claude in natural language to "generate 10 events and publish them to Redpanda," and Claude will automatically call your tools to complete the task.
+TIP: For background on how MCP tools work and when to use each component type, see xref:ai-agents:mcp/remote/concepts.adoc[].
 
 == Prerequisites
 
@@ -183,7 +176,7 @@ curl -X POST "https://<dataplane-api-url>/v1/acls" \
 
 [tabs]
 =====
-Cloud UI::
+Cloud Console::
 +
 --
 . Log in to the link:https://cloud.redpanda.com/[Redpanda Cloud Console^].
@@ -382,47 +375,23 @@ rpk topic consume events --num 10
 +
 You should see the generated event data in JSON format, confirming that Claude successfully used your custom tools to generate data and publish it to Redpanda.
 
-== Summary
-
-You extended Claude's capabilities with custom tools that interact with your Redpanda cluster. Claude can now generate and publish event data through natural language commands without manual scripting. This same pattern works for any workflow: reading from topics, transforming data, querying databases, or calling external APIs.
-
 == Troubleshoot
 
-=== MCP server not starting
+If you encounter issues during this quickstart:
 
-If your server is not starting or shows an error state:
+- **MCP server not starting**: Check the *Logs* tab and verify your YAML syntax by clicking *Lint*.
+- **Connection issues**: Verify you're logged in with `rpk cloud login` and that your server status shows *Running*.
+- **Publishing failures**: Verify the `events` topic exists with `rpk topic list`.
 
-- Check the *Logs* tab for specific error messages.
-- Verify your YAML syntax by clicking *Lint*.
-
-=== Connection issues
-
-If Claude Code can't connect to your server:
-
-- Verify you're logged in with `rpk cloud login`.
-- Check that your rpk version is 25.2.5 or later: `rpk version`.
-- Ensure your server status shows *Running* in Redpanda Cloud.
-- Try restarting Claude Code after running the proxy command.
-
-=== Publishing failures
-
-If the publish tool returns errors:
-
-- Verify the `events` topic exists:
-+
-```bash
-rpk topic list
-```
-- Use the MCP Inspector in Redpanda Cloud to test with different event data.
-- Check the MCP server logs for authentication or authorization errors.
+For detailed solutions, see xref:ai-agents:mcp/remote/troubleshooting.adoc[].
 
 == Next steps
 
-Now that you understand how MCP works, you can create custom tools for your specific use cases:
+You've deployed an MCP server and connected Claude Code to your Redpanda cluster. Here's where to go next:
 
-* **Data ingestion**: Build tools that read from external APIs, databases, or file systems and publish to Redpanda topics.
-* **Data processing**: Create tools that consume from topics, transform data, and write results back to Redpanda.
-* **Monitoring and observability**: Add tools that query metrics, check system health, or analyze streaming data.
-* **Integration workflows**: Connect Redpanda to other systems through custom tools that Claude can orchestrate.
-
-See xref:ai-agents:mcp/remote/developer-guide.adoc[] to learn how to build custom tools using Redpanda Connect components.
+* xref:ai-agents:mcp/remote/concepts.adoc[]: Understand how MCP tools differ from pipelines
+* xref:ai-agents:mcp/remote/create-tool.adoc[]: Build production-quality tools with validation
+* xref:ai-agents:mcp/remote/best-practices.adoc[]: Apply naming and design guidelines
+* xref:ai-agents:mcp/remote/tool-patterns.adoc[]: Find reusable patterns
+* xref:ai-agents:mcp/remote/troubleshooting.adoc[]: Diagnose common issues
+* xref:ai-agents:mcp/remote/admin-guide.adoc[]: Scale resources, monitor activity, and administer your MCP servers

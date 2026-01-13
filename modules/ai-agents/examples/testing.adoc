@@ -58,18 +58,15 @@ MCP metadata validation checks:
 
 === Unit testing limitations
 
-[IMPORTANT]
-====
-MCP tool examples are standalone component definitions (e.g., `label:`, `processors:`, `meta:`), not full pipelines with `input:`, `pipeline:`, `output:` sections. This means they cannot use inline `tests:` sections like cookbook examples do.
+MCP tool examples are standalone component definitions (`label:`, `processors:`, `meta:`), not full pipelines with `input:`, `pipeline:`, `output:` sections. This means they cannot use inline `tests:` sections like cookbook examples do.
 
 The `rpk connect test` command requires full pipeline structure with paths like `/pipeline/processors/0`, which don't exist in MCP tool definitions.
-====
 
 For testing MCP tools:
 
-* **Linting is the primary validation** - ensures syntax and schema correctness
-* **MCP metadata validation** - verifies tool has proper description and properties
-* **Manual testing** - uses the Cloud Console MCP Server interface to test tools end-to-end
+- Ensure syntax and schema correctness.
+- Verify MCP metadata has proper description and properties.
+- Perform manual testing using the Cloud Console MCP Server interface to test tools end-to-end.
 
 == MCP tool structure
 
@@ -143,13 +140,12 @@ For comprehensive validation, test MCP tools using the Cloud Console:
 
 . Navigate to your Cloud cluster's MCP Server configuration
 . Add or update your MCP tool configuration
-. Use the Cloud Console's AI chat interface to invoke the tool
+. Use the Cloud Console's MCP Inspector to locate your tool
 . Verify the tool executes correctly and returns expected results
 
 This validates:
 
 * Tool loads correctly in the MCP server
-* MCP metadata is properly exposed to AI clients
 * Tool executes with provided parameters
 * Responses are formatted correctly
 * Secrets are properly resolved from Cloud Secrets Store

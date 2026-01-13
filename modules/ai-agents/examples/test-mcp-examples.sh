@@ -1,9 +1,18 @@
 #!/usr/bin/env bash
 #
-# Automated testing script for Redpanda Connect MCP examples
+# Test script for Redpanda Cloud MCP examples
+#
+# This script tests:
+# 1. MCP tool definitions using `rpk connect mcp-server lint`
+# 2. MCP metadata validation (enabled, description, properties)
 #
 # Usage:
-#   ./test-mcp-examples.sh
+#   ./test-mcp-examples.sh              # Run all tests
+#   ./test-mcp-examples.sh --lint-only  # Only lint, skip metadata validation
+#
+# Unlike rp-connect-docs, Cloud MCP tools cannot be tested with
+# `rpk connect run` because they are standalone tool definitions, not
+# full pipelines. End-to-end testing requires the Cloud Console.
 
 set -euo pipefail
 
@@ -12,51 +21,95 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
 NC='\033[0m'
 
-# Counters
-TOTAL=0
-SKIPPED=0
-MCP_FAILS=0
+# Get script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
 
-echo "🧪 Redpanda Connect MCP Examples Test Suite"
+# Counters
+TOTAL_TOOLS=0
+PASSED_LINT=0
+PASSED_METADATA=0
+FAILED_LINT=0
+FAILED_METADATA=0
+SKIPPED=0
+
+echo "🧪 Redpanda Cloud MCP Examples - Test Suite"
 echo "============================================"
 echo ""
 
-# Run MCP server lint on the directory
-echo "Running rpk connect mcp-server lint..."
-LINT_OUTPUT=$(rpk connect mcp-server lint --skip-env-var-check --verbose 2>&1) || {
-    echo -e "${RED}❌ Linting failed${NC}"
-    echo ""
-    echo "$LINT_OUTPUT"
-    exit 1
-}
-echo -e "${GREEN}✅ Linting passed${NC}"
+# Parse arguments
+RUN_METADATA=true
+
+if [[ $# -gt 0 ]]; then
+    case "$1" in
+        --lint-only)
+            RUN_METADATA=false
+            ;;
+    esac
+fi
+
+# ============================================================================
+# SECTION 1: MCP Tool Linting
+# Validates YAML syntax and component schemas
+# ============================================================================
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo -e "📦 ${CYAN}SECTION 1: MCP Tool Linting${NC}"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-# Function to validate MCP metadata
-validate_mcp_metadata() {
-    local file=$1
+# Count YAML files
+file_count=$(find . -maxdepth 1 -name "*.yaml" | wc -l | tr -d ' ')
+TOTAL_TOOLS=$file_count
 
-    echo -n "  Validating MCP metadata... "
+echo -n -e "${BLUE}📁 examples/${NC} ($file_count files)... "
+
+if output=$(rpk connect mcp-server lint --skip-env-var-check . 2>&1); then
+    echo -e "${GREEN}✓ PASSED${NC}"
+    PASSED_LINT=$file_count
+else
+    echo -e "${RED}✗ FAILED${NC}"
+    echo "$output" | sed 's/^/   /' | head -20
+    FAILED_LINT=$file_count
+fi
+
+# ============================================================================
+# SECTION 2: MCP Metadata Validation
+# Validates tool metadata (enabled, description, properties)
+# ============================================================================
+
+if $RUN_METADATA; then
+    echo ""
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo -e "📝 ${CYAN}SECTION 2: MCP Metadata Validation${NC}"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
 
     # Determine which YAML parser to use
-    local use_yq=true
+    use_yq=true
     if ! command -v yq &> /dev/null; then
         use_yq=false
         if ! command -v python3 &> /dev/null; then
-            echo -e "${RED}FAILED${NC} (neither yq nor python3 available)"
-            MCP_FAILS=$((MCP_FAILS + 1))
-            return 1
+            echo -e "${YELLOW}⚠ Neither yq nor python3 available - skipping metadata validation${NC}"
+            RUN_METADATA=false
         fi
     fi
 
-    # Check if .meta.mcp exists
-    local mcp_exists
-    if $use_yq; then
-        mcp_exists=$(yq eval '.meta.mcp' "$file" 2>/dev/null)
-    else
-        mcp_exists=$(python3 -c "
+    if $RUN_METADATA; then
+        for file in *.yaml; do
+            if [[ -f "$file" ]]; then
+                echo -n -e "   ${BLUE}$file${NC}... "
+
+                # Check if .meta.mcp exists
+                if $use_yq; then
+                    mcp_exists=$(yq eval '.meta.mcp' "$file" 2>/dev/null)
+                    enabled=$(yq eval '.meta.mcp.enabled' "$file" 2>/dev/null)
+                    description=$(yq eval '.meta.mcp.description' "$file" 2>/dev/null)
+                else
+                    mcp_exists=$(python3 -c "
 import yaml
 try:
     with open('$file') as f:
@@ -67,20 +120,7 @@ try:
 except:
     print('null')
 " 2>/dev/null)
-    fi
-
-    if [[ "$mcp_exists" == "null" || -z "$mcp_exists" ]]; then
-        echo -e "${YELLOW}SKIPPED${NC} (no MCP metadata)"
-        SKIPPED=$((SKIPPED + 1))
-        return 0
-    fi
-
-    # Read .meta.mcp.enabled
-    local enabled
-    if $use_yq; then
-        enabled=$(yq eval '.meta.mcp.enabled' "$file" 2>/dev/null)
-    else
-        enabled=$(python3 -c "
+                    enabled=$(python3 -c "
 import yaml
 try:
     with open('$file') as f:
@@ -90,19 +130,7 @@ try:
 except:
     print('null')
 " 2>/dev/null)
-    fi
-
-    if [[ "$enabled" != "true" ]]; then
-        echo -e "${YELLOW}WARNING${NC} (mcp.enabled not set to true)"
-        return 0
-    fi
-
-    # Read .meta.mcp.description
-    local description
-    if $use_yq; then
-        description=$(yq eval '.meta.mcp.description' "$file" 2>/dev/null)
-    else
-        description=$(python3 -c "
+                    description=$(python3 -c "
 import yaml
 try:
     with open('$file') as f:
@@ -112,44 +140,79 @@ try:
 except:
     print('null')
 " 2>/dev/null)
+                fi
+
+                # Validate
+                if [[ "$mcp_exists" == "null" || -z "$mcp_exists" ]]; then
+                    echo -e "${YELLOW}SKIPPED${NC} (no MCP metadata)"
+                    SKIPPED=$((SKIPPED + 1))
+                elif [[ "$enabled" != "true" ]]; then
+                    echo -e "${YELLOW}WARNING${NC} (mcp.enabled not true)"
+                    SKIPPED=$((SKIPPED + 1))
+                elif [[ "$description" == "null" || -z "$description" ]]; then
+                    echo -e "${RED}FAILED${NC} (missing description)"
+                    FAILED_METADATA=$((FAILED_METADATA + 1))
+                else
+                    echo -e "${GREEN}PASSED${NC}"
+                    PASSED_METADATA=$((PASSED_METADATA + 1))
+                fi
+            fi
+        done
     fi
+fi
 
-    if [[ "$description" == "null" || -z "$description" ]]; then
-        echo -e "${RED}FAILED${NC} (missing description)"
-        MCP_FAILS=$((MCP_FAILS + 1))
-        return 1
-    fi
+# ============================================================================
+# SECTION 3: Cloud-Specific Validation
+# Validates secrets use Cloud format (${secrets.X})
+# ============================================================================
 
-    echo -e "${GREEN}PASSED${NC}"
-    return 0
-}
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo -e "☁️  ${CYAN}SECTION 3: Cloud Secrets Format${NC}"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
 
-# Validate MCP metadata for each file
+secrets_issues=0
 for file in *.yaml; do
     if [[ -f "$file" ]]; then
-        TOTAL=$((TOTAL + 1))
-        echo ""
-        echo -e "${BLUE}📄 Validating: $file${NC}"
-        validate_mcp_metadata "$file"
+        # Check for non-Cloud secrets patterns (${VAR} without secrets. prefix)
+        # Exclude:
+        #   - ${! ... } which is Bloblang interpolation
+        #   - ${REDPANDA_BROKERS} which is platform-injected
+        if grep -E '\$\{[A-Z_]+\}' "$file" | grep -v '\${secrets\.' | grep -v '\${!' | grep -v '\${REDPANDA_BROKERS}' > /dev/null 2>&1; then
+            echo -e "   ${BLUE}$file${NC}... ${YELLOW}WARNING${NC} (uses env vars instead of \${secrets.X})"
+            secrets_issues=$((secrets_issues + 1))
+        fi
     fi
 done
 
-# Summary
+if [[ $secrets_issues -eq 0 ]]; then
+    echo -e "   ${GREEN}✓ All files use Cloud secrets format${NC}"
+fi
+
+# ============================================================================
+# SUMMARY
+# ============================================================================
+
 echo ""
 echo "============================================"
 echo "📊 Test Summary"
 echo "============================================"
-echo "Total configs tested: $TOTAL"
-if [[ $MCP_FAILS -gt 0 ]]; then
-    echo -e "MCP validation failures: ${RED}$MCP_FAILS${NC}"
-fi
-if [[ $SKIPPED -gt 0 ]]; then
-    echo -e "Skipped: ${YELLOW}$SKIPPED${NC}"
-fi
-echo ""
 
-if [[ $MCP_FAILS -gt 0 ]]; then
-    echo -e "${RED}❌ Some tests failed${NC}"
+echo -e "Lint:       ${PASSED_LINT}/${TOTAL_TOOLS} passed"
+if $RUN_METADATA; then
+    METADATA_TOTAL=$((PASSED_METADATA + FAILED_METADATA + SKIPPED))
+    echo -e "Metadata:   ${PASSED_METADATA}/${METADATA_TOTAL} passed (${SKIPPED} skipped)"
+fi
+if [[ $secrets_issues -gt 0 ]]; then
+    echo -e "Secrets:    ${YELLOW}${secrets_issues} warnings${NC}"
+fi
+echo "──────────────────────────────────────────────────"
+
+TOTAL_FAILED=$((FAILED_LINT + FAILED_METADATA))
+
+if [[ $TOTAL_FAILED -gt 0 ]]; then
+    echo -e "${RED}❌ Some tests failed ($TOTAL_FAILED failures)${NC}"
     exit 1
 else
     echo -e "${GREEN}✅ All tests passed!${NC}"
