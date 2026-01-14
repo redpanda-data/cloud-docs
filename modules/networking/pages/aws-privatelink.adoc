@@ -359,7 +359,8 @@ For more information about AWS cross-region PrivateLink support, see the https:/
 === Requirements
 
 * The Redpanda cluster must be deployed across multiple availability zones (multi-AZ). This is an AWS limitation for cross-region PrivateLink.
-* Cross-region PrivateLink is configured through the `supported_regions` field in the `aws_private_link` configuration.
+* Cross-region PrivateLink is configured through the `supported_regions` field in the `aws_private_link` configuration. This field only appears in the API response for multi-AZ clusters.
+* For BYOC clusters, the Redpanda agent IAM role must have `vpce:AllowMultiRegion` and `elasticloadbalancing:DescribeListenerAttributes` permissions.
 
 === Configure cross-region PrivateLink
 
@@ -381,16 +382,20 @@ With this configuration, clients in VPCs located in `us-east-1`, `us-west-2`, an
 
 === Create a cross-region VPC endpoint
 
-When creating a VPC endpoint in a different region than your Redpanda cluster, use the same process as <<create-vpc-endpoint,creating a standard VPC endpoint>>, but specify the client VPC's region:
+When creating a VPC endpoint in a different region than your Redpanda cluster, use the same process as <<create-vpc-endpoint,creating a standard VPC endpoint>>, but specify both the client VPC's region and the service region where your Redpanda cluster is deployed.
+
+NOTE: The `--service-region` option requires AWS CLI version 2.22.0 or later. Run `aws --version` to check your version and https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html[update if necessary^].
 
 [,bash]
 ----
 # CLIENT_REGION is the region where your client VPC is located
-# This can be different from the Redpanda cluster region
+# SERVICE_REGION is the region where your Redpanda cluster is deployed
 CLIENT_REGION=<client_region>
+SERVICE_REGION=<service_region>
 
 aws ec2 create-vpc-endpoint \
     --region $CLIENT_REGION --profile $PROFILE \
+    --service-region $SERVICE_REGION \
     --vpc-id $CLIENT_VPC_ID \
     --vpc-endpoint-type "Interface" \
     --ip-address-type "ipv4" \
