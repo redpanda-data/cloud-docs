@@ -5,14 +5,16 @@
 // Reader journey: "I operate and maintain"
 // Learning objectives - what readers can learn from this page:
 :learning-objective-1: Identify available MCP server administrative tasks
-:learning-objective-2: Describe how to use the Data Plane API for programmatic management
+:learning-objective-2: Navigate to administrative resources
 :learning-objective-3: Describe the server lifecycle stages
 
-This guide provides an overview of administrative tasks for MCP servers. Use these resources to manage your MCP servers throughout their lifecycle, from creation to deletion.
+Use these resources to manage it throughout its lifecycle, from editing and scaling to monitoring and deletion.
 
-== Prerequisites
+After reading this page, you will be able to:
 
-You must have an existing MCP server. If you do not have one, see xref:ai-agents:mcp/remote/quickstart.adoc[].
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
 
 == Server lifecycle management
 
@@ -32,32 +34,8 @@ Monitor your MCP server's activity using OpenTelemetry traces. Track tool invoca
 
 See xref:ai-agents:mcp/remote/monitor-activity.adoc[].
 
-== Data Plane API
-
-All administrative tasks can be performed through both the Redpanda Cloud Console UI and the Data Plane API. The Data Plane API is useful for:
-
-* Automation and Infrastructure as Code (IaC)
-* CI/CD pipeline integration
-* Custom tooling and scripts
-* Programmatic management at scale
-
-To use the Data Plane API:
-
-. link:/api/doc/cloud-dataplane/topic/topic-quickstart[Authenticate and get the base URL] for the Data Plane API.
-. Use the appropriate endpoint for your task:
-+
-* link:/api/doc/cloud-dataplane/operation/operation-mcpserverservice_updatemcpserver[`PATCH /v1/redpanda-connect/mcp-servers/\{mcp_server_id}`]: Update configuration
-* link:/api/doc/cloud-dataplane/operation/operation-mcpserverservice_stopmcpserver[`POST /v1/redpanda-connect/mcp-servers/\{mcp_server_id}:stop`]: Stop server
-* link:/api/doc/cloud-dataplane/operation/operation-mcpserverservice_startmcpserver[`POST /v1/redpanda-connect/mcp-servers/\{mcp_server_id}:start`]: Start server
-* link:/api/doc/cloud-dataplane/operation/operation-mcpserverservice_deletemcpserver[`DELETE /v1/redpanda-connect/mcp-servers/\{mcp_server_id}`]: Delete server
-
-[NOTE]
-====
-Access tokens expire after 1 hour. To refresh, make the authentication request again with your service account credentials. The same token works for both Control Plane and Data Plane API requests.
-====
-
 == Next steps
 
 * xref:ai-agents:mcp/remote/best-practices.adoc[Learn best practices] for building robust tools.
-* xref:develop:connect/configuration/secret-management.adoc[Manage secrets] used by MCP server tools.
+* xref:develop:connect/configuration/secret-management.adoc[Manage secrets] that MCP server tools use.
 * xref:billing:billing.adoc#remote-mcp-billing-metrics[Review MCP billing] to optimize costs.

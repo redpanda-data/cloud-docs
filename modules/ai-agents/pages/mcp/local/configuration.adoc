@@ -5,44 +5,48 @@
 :personas: ai_agent_developer, platform_admin
 // Reader journey: "I customize and configure"
 // Learning objectives - what readers can learn from this page:
-:learning-objective-1: Configure MCP clients manually
+:learning-objective-1: Configure MCP clients
 :learning-objective-2: Enable delete operations safely
 :learning-objective-3: Troubleshoot common configuration issues
 
-This page explains how to configure the MCP server for the Redpanda Cloud API, including auto and manual client setup, enabling deletes, and security considerations.
+After installing the MCP server for the Redpanda Cloud API, you can configure it for different AI clients, customize security settings, and troubleshoot common issues.
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
 
 == Prerequisites
 
-* At least version 25.2.3 of xref:manage:rpk/rpk-install.adoc[`rpk` installed on your computer].
-* Access to a Redpanda Cloud account.
-* Supported AI client (Claude, Claude Code, or other MCP-compatible client).
+* At least version 25.2.3 of xref:manage:rpk/rpk-install.adoc[`rpk` installed on your local machine]
+* Access to a Redpanda Cloud account
+* An MCP-compatible AI client such as Claude, Claude Code, or another tool that supports the Model Context Protocol
 
-== Endpoint availability
+TIP: The MCP server exposes Redpanda Cloud API endpoints for both the link:https://docs.redpanda.com/api/doc/cloud-controlplane/[Control Plane] and the link:https://docs.redpanda.com/api/doc/cloud-dataplane/[Data Plane]. Available endpoints depend on your `rpk` version. Keep `rpk` updated to access new Redpanda Cloud features through the MCP server. New MCP endpoints are documented in Redpanda link:https://github.com/redpanda-data/redpanda/releases[release notes].
 
-The MCP server exposes Redpanda Cloud API endpoints for both the link:https://docs.redpanda.com/api/doc/cloud-controlplane/[Control Plane] and the link:https://docs.redpanda.com/api/doc/cloud-dataplane/[Data Plane] through `rpk`. Available endpoints depend on your `rpk` version. Newer API features require updated versions of `rpk`.
-
-TIP: Keep `rpk` updated to the latest version to access new Redpanda Cloud features through the MCP server. New MCP endpoints are documented in Redpanda link:https://github.com/redpanda-data/redpanda/releases[release notes].
-
-== Auto-configured clients (Claude and Claude Code)
+== Install the integration for Claude or Claude Code
 
 For some supported clients, you can install and configure the MCP integration using the xref:reference:rpk/rpk-cloud/rpk-cloud-mcp-install.adoc[`rpk cloud mcp install` command].
 For Claude and Claude Code, run one of these commands:
 
-```bash
+[source,bash]
+----
 # Choose one
 rpk cloud mcp install --client claude
 rpk cloud mcp install --client claude-code
-```
+----
 
 If you need to update the integration, re-run the install command for your client.
 
-== Manual configuration for other MCP clients
+== Configure other MCP clients manually
 
-If you're using another MCP-compatible client, you can manually configure it to use the MCP server for the Redpanda Cloud API. Follow these steps:
+If you're using another MCP-compatible client, manually configure it to use the MCP server for the Redpanda Cloud API. Follow these steps:
 
 Add an MCP server entry to your client's configuration (example shown in JSON). Adjust paths for your system.
 
-```json
+[,json]
+----
 "mcpServers": {
   "redpandaCloud": {
     "command": "rpk",
@@ -55,17 +59,15 @@ Add an MCP server entry to your client's configuration (example shown in JSON). 
     ]
   }
 }
-```
+----
 <1> Optional: The `--config` flag lets you target a specific `rpk.yaml`, which contains the configuration for connecting to your cluster. Always use the same configuration path as you used for `rpk cloud login` to ensure it has your token. Default paths vary by operating system. See the xref:reference:rpk/rpk-cloud/rpk-cloud-login.adoc[`rpk cloud login`] reference for the default paths.
 
-[TIP]
-====
 You can also <<local, start the server manually in a terminal to observe logs and troubleshoot>>.
-====
+
 
 == Enable delete operations
 
-Destructive operations are **disabled by default**. To allow delete operations, add `--allow-delete` to the MCP server invocation.
+The server disables destructive operations by default. To allow delete operations, add `--allow-delete` to the MCP server invocation.
 
 CAUTION: Enabling delete operations permits actions like **deleting topics or clusters**. Restrict access to your AI client and double-check prompts.
 
@@ -74,16 +76,18 @@ CAUTION: Enabling delete operations permits actions like **deleting topics or cl
 Auto-configured clients::
 +
 --
-```bash
+[,bash]
+----
 # Choose one
 rpk cloud mcp install --client claude --allow-delete
 rpk cloud mcp install --client claude-code --allow-delete
-```
+----
 --
 Manual configuration example::
 +
 --
-```json
+[,json]
+----
 "mcpServers": {
   "redpandaCloud": {
     "command": "rpk",
@@ -95,11 +99,11 @@ Manual configuration example::
     ]
   }
 }
-```
+----
 --
 ====
 
-== Configuration locations and paths
+== Specify configuration file paths
 
 All `rpk` commands accept a `--config` flag, which lets you specify the exact `rpk.yaml` configuration file to use for connecting to your Redpanda cluster. This flag overrides the default search path and ensures that the command uses the credentials and settings from the file you provide.
 
@@ -141,23 +145,26 @@ rpk cloud login --client-id <service-account-client-id> --client-secret <service
 
 == Troubleshooting
 
-=== Quick checks
+
+=== Verify your installation
 
 . Make sure you are using at least version 25.2.3 of `rpk`.
 . If you see authentication errors, run `rpk cloud login` again.
 . Ensure you installed for the right client:
 +
-```bash
+[source,bash]
+----
 rpk cloud mcp install --client claude
 # or
 rpk cloud mcp install --client claude-code
-```
+----
 . If using another MCP client, verify your `mcpServers.redpandaCloud` entry (paths, JSON syntax, and args order).
-
-. [[local]]Start the server manually using the xref:reference:rpk/rpk-cloud/rpk-cloud-mcp-stdio.adoc[`rpk cloud mcp stdio` command] (one-time login required) to verify connectivity to Redpanda Cloud endpoints:
++
+[[local]]
+. Start the server manually using the xref:reference:rpk/rpk-cloud/rpk-cloud-mcp-stdio.adoc[`rpk cloud mcp stdio` command] (one-time login required) to verify connectivity to Redpanda Cloud endpoints:
 
 +
-[source,bash]
+[,bash]
 ----
 rpk cloud login
 rpk cloud mcp stdio
@@ -197,7 +204,7 @@ Your capabilities depend on your Redpanda Cloud account permissions. If an opera
 
 === Deletes not working
 
-* By default, delete operations are **disabled**. Add `--allow-delete` to the server invocation (auto or manual configuration) and restart the client.
+* The server disables delete operations by default. Add `--allow-delete` to the server invocation (auto or manual configuration) and restart the client.
 * For auto-configured clients, you may need to edit the generated config or re-run the install command and adjust the entry.
 
 

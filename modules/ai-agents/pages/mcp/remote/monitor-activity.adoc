@@ -8,9 +8,9 @@
 :learning-objective-2: Track tool invocations and measure performance
 :learning-objective-3: Debug tool failures using trace data
 
-This guide shows you how to monitor your MCP servers using the execution log.
+After creating an MCP server, you can monitor its activity using the execution log.
 
-Use this guide to:
+After reading this page, you will be able to:
 
 * [ ] {learning-objective-1}
 * [ ] {learning-objective-2}
@@ -102,7 +102,7 @@ Link MCP server activity to downstream effects:
 
 == Integrate with observability platforms
 
-The `redpanda.otel_traces` topic stores trace data in OpenTelemetry format. Direct export to platforms like Grafana Cloud and Datadog is not supported due to format compatibility limitations. Redpanda produces one span per topic message, whereas these platforms expect traces in batch format.
+The `redpanda.otel_traces` topic stores trace data in OpenTelemetry format. Redpanda does not support direct export to platforms like Grafana Cloud and Datadog due to format compatibility limitations. Redpanda produces one span per topic message, whereas these platforms expect traces in batch format.
 
 You can consume traces directly from the `redpanda.otel_traces` topic using any Kafka-compatible consumer for custom analysis and processing.
 
