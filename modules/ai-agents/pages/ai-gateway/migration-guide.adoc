@@ -1,22 +1,26 @@
-= DRAFT: Migrate from Direct Provider Integration to AI Gateway
+= Migrate from Direct Provider Integration to AI Gateway
 :description: Step-by-step migration guide to transition existing applications from direct LLM provider integrations to Redpanda AI Gateway with minimal disruption.
+:page-personas: app_developer
 
+This guide helps you migrate existing applications from direct LLM provider integrations (OpenAI, Anthropic, and others) to Redpanda AI Gateway. Design the migration to be incremental and reversible, allowing you to test thoroughly before fully committing.
 
-This guide helps you migrate existing applications from direct LLM provider integrations (OpenAI, Anthropic, etc.) to Redpanda AI Gateway. The migration is designed to be incremental and reversible, allowing you to test thoroughly before fully committing.
+**Downtime required:** None (supports parallel operation)
 
-Migration time: 10-30 minutes for most applications
+**Rollback difficulty:** Easy (feature flag or environment variable)
 
-Downtime required: None (supports parallel operation)
+After completing this migration, you will be able to:
 
-Rollback difficulty: Easy (feature flag or environment variable)
+* Migrate existing LLM integrations to AI Gateway with zero downtime using feature flags and parallel operation.
+* Verify gateway connectivity and compare performance metrics between direct and gateway-routed requests.
+* Roll back to direct integration immediately if issues arise during migration.
 
 == Prerequisites
 
 Before migrating, ensure you have:
 
 * AI Gateway configured in your Redpanda Cloud account
-* Providers and models enabled (see [Admin Guide: Providers](// PLACEHOLDER: link))
-* Gateway created with appropriate policies (see [Gateway Creation Guide](// PLACEHOLDER: link))
+* Enabled providers and models (see [Admin Guide: Providers](// PLACEHOLDER: link))
+* Created gateway with appropriate policies (see [Gateway Creation Guide](// PLACEHOLDER: link))
 * Your gateway ID (`rp-aigw-id` header value)
 * Your gateway endpoint URL
 

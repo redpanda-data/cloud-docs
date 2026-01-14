@@ -1,16 +1,14 @@
-= DRAFT: quickstart enhanced
-:description: things to consider/compare for quickstart 
+= AI Gateway Quickstart
+:description: Get started with AI Gateway by routing your first request, viewing observability data, testing failover and CEL routing.
+:page-personas: app_developer
 
-Get your first request routed through Redpanda AI Gateway in under 10 minutes.
+Get your first request routed through Redpanda AI Gateway.
 
-== What you'll accomplish
+After completing this quickstart, you will be able to:
 
-* *2 minutes*: Route your first LLM request through the gateway
-* *5 minutes*: See observability data in the dashboard
-* *7 minutes*: Add a fallback provider for reliability
-* *10 minutes*: Write your first CEL routing rule
-
-*Total time*: 10-15 minutes
+* Route your first LLM request through AI Gateway using the Cloud UI and verify it in the observability dashboard.
+* Configure a provider and gateway with correct authentication and routing policies.
+* Test failover behavior and CEL routing rules in a development environment.
 
 == Prerequisites
 
@@ -21,9 +19,7 @@ Before starting, ensure you have:
 * API keys for at least one LLM provider (OpenAI, Anthropic, etc.)
 * Python 3.8+ or Node.js 18+ (for examples)
 
-== Step 1: Configure a provider (admin task)
-
-*Time: ~2 minutes*
+== Step 1: Configure a provider
 
 Providers must be configured before they can be used in gateways.
 
@@ -70,8 +66,6 @@ See link:// PLACEHOLDER: link[Admin Guide: Providers] for detailed configuration
 
 == Step 2: Create a gateway
 
-*Time: ~1 minute*
-
 Gateways define routing policies, rate limits, and observability scope.
 
 // PLACEHOLDER: Add UI navigation path
@@ -109,9 +103,7 @@ See link:// PLACEHOLDER: link[Gateway Creation Guide] for best practices.
 
 == Step 3: Send your first request
 
-*Time: ~2 minutes*
-
-Now route a request through your gateway.
+Route a request through your gateway.
 
 [tabs]
 ====
@@ -233,8 +225,6 @@ See link:// PLACEHOLDER: link[Troubleshooting Guide] for more help.
 
 == Step 4: Verify in observability dashboard
 
-*Time: ~1 minute*
-
 Confirm your request appears in the AI Gateway dashboard.
 
 // PLACEHOLDER: Add UI navigation path and screenshots
@@ -270,13 +260,9 @@ If request doesn't appear:
 
 == Next steps: Add failover (optional)
 
-*Time: ~3 minutes*
-
 Add automatic failover to a backup provider for reliability.
 
 === Step 5: Add second provider
-
-*Time: ~1 minute*
 
 Add Anthropic as a fallback option:
 
@@ -296,8 +282,6 @@ Add Anthropic as a fallback option:
    * Models appear in catalog
 
 === Step 6: Configure provider pool with fallback
-
-*Time: ~2 minutes*
 
 Update your gateway to use OpenAI as primary, Anthropic as fallback.
 
@@ -330,8 +314,6 @@ Update your gateway to use OpenAI as primary, Anthropic as fallback.
 3. *Save configuration*
 
 === Step 7: Test failover
-
-*Time: ~1 minute*
 
 Simulate a provider failure to see fallback in action.
 
@@ -374,13 +356,9 @@ Check dashboards:
 
 == Next steps: Add routing rule (optional)
 
-*Time: ~3 minutes*
-
 Use CEL expressions to route requests based on headers or content.
 
 === Step 8: Create CEL routing rule
-
-*Time: ~2 minutes*
 
 Route premium users to better models automatically.
 
@@ -411,8 +389,6 @@ Route premium users to better models automatically.
 4. Save rule
 
 === Step 9: Test routing rule
-
-*Time: ~1 minute*
 
 Send requests with different headers and verify routing.
 

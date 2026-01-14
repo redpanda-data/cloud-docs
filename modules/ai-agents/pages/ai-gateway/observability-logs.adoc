@@ -1,8 +1,20 @@
-= DRAFT: Observability: Request Logs
+= Observability: Request Logs
 :description: Guide to AI Gateway request logs, including where to find logs, log fields, filtering, searching, inspecting requests, common analysis tasks, log retention, export options, privacy/security, and troubleshooting.
-
+:page-personas: platform_admin, app_developer
 
 AI Gateway logs every LLM request that passes through it, capturing the full request/response history, token usage, cost, latency, and routing decisions. This page explains how to find, filter, and interpret request logs.
+
+After reading this page, you will be able to:
+
+* Locate and filter request logs to debug specific failed requests or reconstruct user conversations.
+* Interpret log fields (status codes, token usage, routing decisions) to diagnose performance and cost issues.
+* Export logs for compliance auditing or long-term analysis.
+
+== Before you begin
+
+* You have an active AI Gateway with at least one request processed.
+* You have access to the Redpanda Cloud Console.
+* You have the appropriate permissions to view gateway logs.
 
 Use logs for:
 
@@ -667,7 +679,7 @@ See [Observability Integrations](// PLACEHOLDER: link) for setup guides.
 
 // PLACEHOLDER: Confirm what is logged by default
 
-Logged by default:
+AI Gateway logs by default:
 
 * Request headers (including custom headers)
 * Request body (full prompt content)
@@ -675,7 +687,7 @@ Logged by default:
 * Token usage, cost, latency
 * Routing decisions, policy evaluations
 
-Not logged (if applicable):
+AI Gateway does not log (if applicable):
 
 * // PLACEHOLDER: Anything redacted? API keys? Specific headers?
 
