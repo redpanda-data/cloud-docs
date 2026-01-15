@@ -1,0 +1,815 @@
+= Configure AI Gateway for Cursor IDE
+:description: Configure Redpanda AI Gateway to support Cursor IDE clients with OpenAI-compatible transforms, model prefix routing, and MCP tool aggregation.
+:page-topic-type: how-to
+:page-personas: platform_admin
+:learning-objective-1: Configure AI Gateway endpoints for Cursor IDE connectivity
+:learning-objective-2: Set up OpenAI-compatible transforms for multi-provider routing
+:learning-objective-3: Deploy multi-tenant authentication strategies for Cursor clients
+
+Configure Redpanda AI Gateway to support Cursor IDE clients accessing multiple LLM providers and MCP tools through OpenAI-compatible endpoints.
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
+
+== Prerequisites
+
+* AI Gateway deployed on a BYOC cluster running Redpanda version 25.3 or later
+* Administrator access to the AI Gateway UI
+* API keys for at least one LLM provider (Anthropic, OpenAI, or others)
+* Understanding of xref:ai-agents:ai-gateway/what-is-ai-gateway.adoc[AI Gateway concepts]
+
+== About Cursor IDE
+
+Cursor is an AI-powered code editor built on VS Code that integrates multiple LLM providers for code completion, chat, and inline editing. Unlike other AI assistants, Cursor uses OpenAI's API format for all providers and routes to different models using a `vendor/model` prefix notation.
+
+Key characteristics:
+
+* Sends all requests in OpenAI-compatible format to `/v1/chat/completions`
+* Routes using model prefixes (for example, `openai/gpt-4o`, `anthropic/claude-sonnet-4-5`)
+* Limited support for custom headers (makes multi-tenant deployments challenging)
+* Supports MCP protocol with a 40-tool limit
+* Built-in code completion and chat modes
+* Configuration via settings file (`~/.cursor/config.json`)
+
+== Architecture overview
+
+Cursor IDE connects to AI Gateway through standardized endpoints:
+
+* LLM endpoint: `https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1/chat/completions` for all providers
+* MCP endpoint: `https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/mcp` for tool discovery and execution
+
+The gateway handles:
+
+. Authentication via bearer tokens in the `Authorization` header
+. Gateway selection via the `rp-aigw-id` header (requires workarounds for multi-tenant scenarios)
+. Model routing using vendor prefixes (for example, `anthropic/claude-sonnet-4-5`)
+. Format transforms from OpenAI format to provider-native formats (for Anthropic, Google, etc.)
+. MCP server aggregation for multi-tool workflows
+. Request logging and cost tracking per gateway
+
+== Enable LLM providers
+
+Cursor IDE works with multiple providers through OpenAI-compatible transforms. Enable the providers your users will access.
+
+=== Configure Anthropic with OpenAI-compatible format
+
+Cursor sends OpenAI-formatted requests but can route to Anthropic models. Configure the gateway to transform these requests:
+
+. Navigate to *AI Gateway* > *Providers* in the Redpanda Cloud console
+. Select *Anthropic* from the provider list
+. Click *Add configuration*
+. Enter your Anthropic API key
+. Under *Format*, select *OpenAI-compatible* (enables automatic transform)
+. Click *Save*
+
+The gateway now transforms OpenAI-format requests to Anthropic's native `/v1/messages` format.
+
+=== Configure OpenAI
+
+To enable OpenAI as a provider:
+
+. Navigate to *AI Gateway* > *Providers*
+. Select *OpenAI* from the provider list
+. Click *Add configuration*
+. Enter your OpenAI API key
+. Under *Format*, select *Native OpenAI*
+. Click *Save*
+
+=== Configure additional providers
+
+Cursor supports many providers through OpenAI-compatible transforms. For each provider:
+
+. Add the provider configuration in the gateway
+. Set the format to *OpenAI-compatible* (the gateway handles format transformation)
+. Enable the transform layer to convert OpenAI request format to the provider's native format
+
+Common additional providers:
+
+* Google Gemini (requires OpenAI-compatible transform)
+* Mistral AI (already OpenAI-compatible format)
+* Together AI (already OpenAI-compatible format)
+
+=== Enable models in the catalog
+
+After enabling providers, enable specific models:
+
+. Navigate to *AI Gateway* > *Models*
+. Enable the models you want Cursor clients to access
++
+Common models for Cursor:
++
+* `anthropic/claude-opus-4-5`
+* `anthropic/claude-sonnet-4-5`
+* `openai/gpt-4o`
+* `openai/gpt-4o-mini`
+* `openai/o1-mini`
+
+. Click *Save*
+
+Cursor uses the `vendor/model_id` format in requests. The gateway maps these to provider endpoints and applies the appropriate format transforms.
+
+== Create a gateway for Cursor clients
+
+Create a dedicated gateway to isolate Cursor traffic and apply specific policies.
+
+=== Gateway configuration
+
+. Navigate to *AI Gateway* > *Gateways*
+. Click *Create Gateway*
+. Enter gateway details:
++
+[cols="1,2"]
+|===
+|Field |Value
+
+|Name
+|`cursor-gateway` (or your preferred name)
+
+|Workspace
+|Select the workspace for access control grouping
+
+|Description
+|Gateway for Cursor IDE clients
+|===
+
+. Click *Create*
+. Copy the gateway ID from the gateway details page
+
+The gateway ID is required in the `rp-aigw-id` header for all requests.
+
+=== Configure unified LLM routing
+
+Cursor sends all requests to a single endpoint (`/v1/chat/completions`) and uses model prefixes for routing. Configure the gateway to route based on the requested model prefix.
+
+==== Model prefix routing
+
+Configure routing that inspects the model field to determine the target provider:
+
+. Navigate to the gateway's *LLM* tab
+. Under *Routing*, click *Add route*
+. Configure Anthropic routing:
++
+[source,cel]
+----
+request.body.model.startsWith("anthropic/")
+----
+
+. Add a *Primary provider pool*:
++
+* Provider: Anthropic
+* Model: All enabled Anthropic models
+* Transform: OpenAI to Anthropic
+* Load balancing: Round robin (if multiple Anthropic configurations exist)
+
+. Click *Save*
+. Add another route for OpenAI:
++
+[source,cel]
+----
+request.body.model.startsWith("openai/")
+----
+
+. Add a *Primary provider pool*:
++
+* Provider: OpenAI
+* Model: All enabled OpenAI models
+* Transform: None (already OpenAI format)
+
+. Click *Save*
+
+Cursor requests route to the appropriate provider based on the model prefix.
+
+==== Default routing with fallback
+
+Configure a catch-all route for requests without vendor prefixes:
+
+[source,cel]
+----
+true  # Matches all requests not matched by previous routes
+----
+
+Add a primary provider (for example, OpenAI) with fallback to Anthropic:
+
+* Primary: OpenAI (for requests with no prefix)
+* Fallback: Anthropic (if OpenAI is unavailable)
+* Failover conditions: Rate limits, timeouts, 5xx errors
+
+=== Apply rate limits
+
+Prevent runaway usage from Cursor clients:
+
+. Navigate to the gateway's *LLM* tab
+. Under *Rate Limit*, configure:
++
+[cols="1,2"]
+|===
+|Setting |Recommended Value
+
+|Global rate limit
+|150 requests per minute
+
+|Per-user rate limit
+|15 requests per minute (if using user identification workarounds)
+|===
+
+. Click *Save*
+
+The gateway blocks requests exceeding these limits and returns HTTP 429 errors.
+
+==== Rate limit considerations for code completion
+
+Cursor's code completion feature generates frequent requests. Consider separate rate limits for completion vs chat:
+
+* Completion models (for example, `openai/gpt-4o-mini`): Higher rate limits
+* Chat models (for example, `anthropic/claude-sonnet-4-5`): Standard rate limits
+
+Configure routing rules that apply different rate limits based on model selection.
+
+=== Set spending limits
+
+Control LLM costs across all providers:
+
+. Under *Spend Limit*, configure:
++
+[cols="1,2"]
+|===
+|Setting |Value
+
+|Monthly budget
+|$7,000 (adjust based on expected usage)
+
+|Enforcement
+|Block requests after budget exceeded
+
+|Alert threshold
+|80% of budget (sends notification)
+|===
+
+. Click *Save*
+
+The gateway tracks estimated costs per request across all providers and blocks traffic when the monthly budget is exhausted.
+
+== Configure MCP tool aggregation
+
+Enable Cursor to discover and use tools from multiple MCP servers through a single endpoint. Note that Cursor has a 40-tool limit, so carefully select which MCP servers to aggregate.
+
+=== Add MCP servers
+
+. Navigate to the gateway's *MCP* tab
+. Click *Add MCP Server*
+. Enter server details:
++
+[cols="1,2"]
+|===
+|Field |Value
+
+|Display name
+|Descriptive name (for example, `redpanda-data-tools`, `code-search-tools`)
+
+|Endpoint URL
+|MCP server endpoint (for example, xref:ai-agents:mcp/remote/overview.adoc[Remote MCP server] URL)
+
+|Authentication
+|Bearer token or other authentication mechanism
+|===
+
+. Click *Save*
+
+Repeat for each MCP server you want to aggregate, keeping in mind the 40-tool limit.
+
+=== Work within the 40-tool limit
+
+Cursor imposes a 40-tool limit on MCP integrations. To stay within this limit:
+
+* Aggregate only essential MCP servers
+* Use deferred tool loading (see next section)
+* Prioritize high-value tools over comprehensive tool sets
+* Consider creating multiple gateways with different tool sets for different use cases
+
+Monitor the total tool count across all aggregated MCP servers:
+
+. Navigate to the gateway's *MCP* tab
+. Review the *Total Tools* count displayed at the top
+. If the count exceeds 40, remove low-priority MCP servers
+
+=== Enable deferred tool loading
+
+Reduce the effective tool count by deferring tool discovery:
+
+. Under *MCP Settings*, enable *Deferred tool loading*
+. Click *Save*
+
+When enabled:
+
+* Cursor initially receives only a search tool and orchestrator tool (2 tools total)
+* Cursor queries for specific tools by name when needed
+* The underlying MCP servers can provide more than 40 tools, but only the search and orchestrator tools count against the limit
+* Token usage decreases by 80-90% for configurations with many tools
+
+Deferred tool loading is the recommended approach for Cursor deployments with multiple MCP servers.
+
+=== Add the MCP orchestrator
+
+The MCP orchestrator reduces multi-step workflows to single calls:
+
+. Under *MCP Settings*, enable *MCP Orchestrator*
+. Configure:
++
+[cols="1,2"]
+|===
+|Setting |Value
+
+|Orchestrator model
+|Select a model with strong code generation capabilities (for example, `anthropic/claude-sonnet-4-5`)
+
+|Execution timeout
+|30 seconds
+
+|Backend
+|Select the Anthropic backend (orchestrator works best with Claude models)
+|===
+
+. Click *Save*
+
+Cursor can now invoke the orchestrator tool to execute complex, multi-step operations in a single request.
+
+== Configure authentication
+
+Cursor clients authenticate using bearer tokens in the `Authorization` header.
+
+=== Generate API tokens
+
+. Navigate to *Security* > *API Tokens* in the Redpanda Cloud console
+. Click *Create Token*
+. Enter token details:
++
+[cols="1,2"]
+|===
+|Field |Value
+
+|Name
+|`cursor-access`
+
+|Scopes
+|`ai-gateway:read`, `ai-gateway:write`
+
+|Expiration
+|Set appropriate expiration based on security policies
+|===
+
+. Click *Create*
+. Copy the token (it appears only once)
+
+Distribute this token to Cursor users through secure channels.
+
+=== Token rotation
+
+Implement token rotation for security:
+
+. Create a new token before the existing token expires
+. Distribute the new token to users
+. Monitor usage of the old token in xref:ai-agents:ai-gateway/observability-logs.adoc[request logs]
+. Revoke the old token after all users have migrated
+
+== Multi-tenant deployment strategies
+
+Cursor has limited support for custom headers, making traditional `rp-aigw-id` header-based multi-tenancy challenging. Use one of these alternative strategies.
+
+=== Strategy 1: Tenant-specific subdomains
+
+Configure different subdomains for each tenant or team:
+
+. Set up DNS records pointing to your AI Gateway cluster:
++
+* `team-alpha.aigateway.example.com` → Gateway ID: `alpha-cursor-gateway`
+* `team-beta.aigateway.example.com` → Gateway ID: `beta-cursor-gateway`
+
+. Configure the gateway to extract tenant identity from the `Host` header:
++
+[source,cel]
+----
+request.headers["host"][0].startsWith("team-alpha")
+----
+
+. Distribute tenant-specific URLs to each team
+. Each team configures Cursor with their specific subdomain
+
+This approach works with standard Cursor configuration without requiring custom headers.
+
+**Configuration example for Team Alpha:**
+
+[source,json]
+----
+{
+  "apiProvider": "openai",
+  "apiBaseUrl": "https://team-alpha.aigateway.example.com/ai-gateway/v1",
+  "apiKey": "TEAM_ALPHA_TOKEN"
+}
+----
+
+=== Strategy 2: Path-based routing
+
+Use URL path prefixes to identify tenants:
+
+. Configure gateway routing to extract tenant from the request path:
++
+[source,cel]
+----
+request.path.startsWith("/ai-gateway/alpha/")
+----
+
+. Create routing rules that map path prefixes to specific gateways or policies
+. Distribute tenant-specific base URLs
+
+**Configuration example for Team Alpha:**
+
+[source,json]
+----
+{
+  "apiProvider": "openai",
+  "apiBaseUrl": "https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/alpha/v1",
+  "apiKey": "TEAM_ALPHA_TOKEN"
+}
+----
+
+This approach requires gateway-level path rewriting to remove the tenant prefix before forwarding to LLM providers.
+
+=== Strategy 3: Query parameter routing
+
+Embed tenant identity in query parameters:
+
+. Configure Cursor to append query parameters to the base URL:
++
+[source,json]
+----
+{
+  "apiProvider": "openai",
+  "apiBaseUrl": "https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1?tenant=alpha",
+  "apiKey": "TEAM_ALPHA_TOKEN"
+}
+----
+
+. Configure gateway routing to extract tenant from query parameters:
++
+[source,cel]
+----
+request.url.query["tenant"][0] == "alpha"
+----
+
+. Create routing rules and rate limits based on the tenant parameter
+
+This approach works with standard Cursor configuration but exposes tenant identity in URLs.
+
+=== Strategy 4: API token-based routing
+
+Use different API tokens to identify tenants:
+
+. Generate separate API tokens for each tenant
+. Tag tokens with metadata indicating the tenant
+. Configure gateway routing based on token identity:
++
+[source,cel]
+----
+request.auth.metadata["tenant"] == "alpha"
+----
+
+. Apply tenant-specific routing, rate limits, and spending limits
+
+This approach is most transparent to users but requires gateway support for token metadata inspection.
+
+=== Choosing a multi-tenant strategy
+
+[cols="1,2,2,1"]
+|===
+|Strategy |Pros |Cons |Best For
+
+|Subdomains
+|Clean, standards-based, no URL modifications
+|Requires DNS configuration, certificate management
+|Organizations with infrastructure control
+
+|Path-based
+|No DNS required, flexible routing
+|Requires path rewriting, tenant exposed in logs
+|Simpler deployments, testing environments
+
+|Query parameters
+|No infrastructure changes
+|Tenant exposed in URLs and logs, less clean
+|Quick deployments, temporary solutions
+
+|Token-based
+|Transparent to users, centralized control
+|Requires advanced gateway features
+|Large deployments, strong security requirements
+|===
+
+== Configure Cursor IDE clients
+
+Provide these instructions to users configuring Cursor IDE.
+
+=== Configuration file location
+
+Cursor uses a JSON configuration file:
+
+* macOS: `~/.cursor/config.json`
+* Linux: `~/.cursor/config.json`
+* Windows: `%USERPROFILE%\.cursor\config.json`
+
+=== Basic configuration
+
+Users configure Cursor with the AI Gateway endpoint:
+
+[source,json]
+----
+{
+  "apiProvider": "openai",
+  "apiBaseUrl": "https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1",
+  "apiKey": "YOUR_API_TOKEN",
+  "models": {
+    "chat": "anthropic/claude-sonnet-4-5",
+    "completion": "openai/gpt-4o-mini"
+  }
+}
+----
+
+Replace:
+
+* `{CLUSTER_ID}`: Your Redpanda cluster ID
+* `YOUR_API_TOKEN`: The API token generated earlier
+
+If using a multi-tenant strategy, adjust the `apiBaseUrl` according to your chosen approach (subdomain, path prefix, or query parameter).
+
+=== Model selection
+
+Configure different models for different Cursor modes:
+
+[cols="1,2,1"]
+|===
+|Mode |Recommended Model |Reason
+
+|Chat
+|`anthropic/claude-sonnet-4-5` or `openai/gpt-4o`
+|High quality for complex questions
+
+|Code completion
+|`openai/gpt-4o-mini`
+|Fast, cost-effective for frequent requests
+
+|Inline edit
+|`anthropic/claude-sonnet-4-5`
+|Balanced quality and speed for code modifications
+|===
+
+=== MCP server configuration
+
+Configure Cursor to connect to the aggregated MCP endpoint:
+
+[source,json]
+----
+{
+  "experimental": {
+    "mcpServers": {
+      "redpanda-ai-gateway": {
+        "transport": "http",
+        "url": "https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/mcp",
+        "headers": {
+          "Authorization": "Bearer YOUR_API_TOKEN"
+        }
+      }
+    }
+  }
+}
+----
+
+If using a multi-tenant strategy, ensure the MCP URL matches the tenant configuration.
+
+This configuration:
+
+* Connects Cursor to the aggregated MCP endpoint
+* Routes LLM requests through the AI Gateway with OpenAI-compatible transforms
+* Includes authentication headers
+
+== Monitor Cursor usage
+
+Track Cursor activity through gateway observability features.
+
+=== View request logs
+
+. Navigate to *AI Gateway* > *Observability* > *Logs*
+. Filter by gateway ID: `cursor-gateway`
+. Review:
++
+* Request timestamps and duration
+* Model used per request (with vendor prefix)
+* Token usage (prompt and completion tokens)
+* Estimated cost per request
+* HTTP status codes and errors
+* Transform operations (OpenAI to provider-native format)
+
+Cursor generates different request patterns:
+
+* Code completion: Many short requests with low token counts
+* Chat: Longer requests with context and multi-turn conversations
+* Inline edit: Medium-length requests with code context
+
+=== Analyze metrics
+
+. Navigate to *AI Gateway* > *Observability* > *Metrics*
+. Select the Cursor gateway
+. Review:
++
+[cols="1,2"]
+|===
+|Metric |Purpose
+
+|Request volume by provider
+|Identify which providers are most used via model prefix routing
+
+|Token usage by model
+|Track consumption patterns (completion vs chat)
+
+|Estimated spend by provider
+|Monitor costs across providers with transforms
+
+|Latency (p50, p95, p99)
+|Detect transform overhead and provider-specific performance issues
+
+|Error rate by provider
+|Identify failing providers or transform issues
+
+|Transform success rate
+|Monitor OpenAI-to-provider format conversion success
+|===
+
+For detailed metrics configuration, see xref:ai-agents:ai-gateway/observability-metrics.adoc[].
+
+=== Query logs via API
+
+Programmatically access logs for integration with monitoring systems:
+
+[source,bash]
+----
+curl https://{CLUSTER_ID}.cloud.redpanda.com/api/ai-gateway/logs \
+  -H "Authorization: Bearer YOUR_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "gateway_id": "GATEWAY_ID",
+    "start_time": "2026-01-01T00:00:00Z",
+    "end_time": "2026-01-14T23:59:59Z",
+    "limit": 100
+  }'
+----
+
+== Security considerations
+
+Apply these security best practices for Cursor deployments.
+
+=== Limit token scope
+
+Create tokens with minimal required scopes:
+
+* `ai-gateway:read`: Required for MCP tool discovery
+* `ai-gateway:write`: Required for LLM requests and tool execution
+
+Avoid granting broader scopes like `admin` or `cluster:write`.
+
+=== Implement network restrictions
+
+If Cursor clients connect from known networks, configure network policies:
+
+. Use cloud provider security groups to restrict access to AI Gateway endpoints
+. Allowlist only the IP ranges where Cursor clients operate
+. Monitor for unauthorized access attempts in request logs
+
+=== Enforce token expiration
+
+Set short token lifetimes for high-security environments:
+
+* Development environments: 90 days
+* Production environments: 30 days
+
+Automate token rotation to reduce manual overhead.
+
+=== Audit tool access
+
+Review which MCP tools Cursor clients can access:
+
+. Periodically audit the MCP servers configured in the gateway
+. Remove unused or deprecated MCP servers
+. Monitor tool execution logs for unexpected behavior
+. Ensure total tool count stays within Cursor's 40-tool limit
+
+=== Protect API keys in configuration
+
+Cursor stores the API token in plain text in `config.json`. Remind users to:
+
+* Never commit `config.json` to version control
+* Use file system permissions to restrict access (for example, `chmod 600 ~/.cursor/config.json` on Unix-like systems)
+* Rotate tokens if they suspect compromise
+* Consider using environment variables for API keys (if Cursor supports this)
+
+=== Monitor transform operations
+
+Because Cursor requires OpenAI-compatible transforms for non-OpenAI providers:
+
+. Review transform success rates in metrics
+. Monitor for transform failures that may leak request details
+. Test transforms thoroughly before production deployment
+. Keep transform logic updated as provider APIs evolve
+
+== Troubleshooting
+
+Common issues and solutions when configuring AI Gateway for Cursor.
+
+=== Cursor cannot connect to gateway
+
+Symptom: Connection errors when Cursor tries to discover tools or send LLM requests.
+
+Causes and solutions:
+
+* **Invalid base URL**: Verify `apiBaseUrl` matches the gateway endpoint (including multi-tenant prefix if applicable)
+* **Expired token**: Generate a new API token and update the Cursor configuration
+* **Network connectivity**: Verify the cluster endpoint is accessible from the client network
+* **Provider not enabled**: Ensure at least one provider is enabled and has models in the catalog
+* **Missing gateway ID**: If using header-based routing, verify the `rp-aigw-id` header is configured (or use alternative multi-tenant strategy)
+
+=== Model not found errors
+
+Symptom: Cursor shows "model not found" or similar errors.
+
+Causes and solutions:
+
+* **Model not enabled in catalog**: Enable the model in the gateway's model catalog
+* **Incorrect model prefix**: Use the correct vendor prefix (for example, `anthropic/claude-sonnet-4-5` not just `claude-sonnet-4-5`)
+* **Transform not configured**: Verify OpenAI-compatible transform is enabled for non-OpenAI providers
+* **Routing rule mismatch**: Check that routing rules correctly match the model prefix
+
+=== Transform errors or unexpected responses
+
+Symptom: Responses are malformed or Cursor reports format errors.
+
+Causes and solutions:
+
+* **Transform disabled**: Ensure OpenAI-compatible transform is enabled for Anthropic and other non-OpenAI providers
+* **Transform version mismatch**: Verify the transform is compatible with the current provider API version
+* **Model-specific transform issues**: Some models may require specific transform configurations
+* **Check transform logs**: Review logs for transform errors and stack traces
+
+=== Tools not appearing in Cursor
+
+Symptom: Cursor does not discover MCP tools.
+
+Causes and solutions:
+
+* **MCP configuration missing**: Ensure `experimental.mcpServers` is configured in Cursor settings
+* **MCP servers not configured in gateway**: Add MCP server endpoints in the gateway's MCP tab
+* **Exceeds 40-tool limit**: Reduce the number of aggregated tools or enable deferred tool loading
+* **Deferred loading enabled but search failing**: Check that the search tool is correctly configured
+* **MCP server authentication failing**: Verify MCP server authentication credentials in the gateway configuration
+
+=== High costs or token usage
+
+Symptom: Token usage and costs exceed expectations.
+
+Causes and solutions:
+
+* **Code completion using expensive model**: Configure completion mode to use `openai/gpt-4o-mini` instead of larger models
+* **Deferred tool loading disabled**: Enable deferred tool loading to reduce tokens by 80-90%
+* **No rate limits**: Apply per-minute rate limits to prevent runaway usage
+* **Missing spending limits**: Set monthly budget limits with blocking enforcement
+* **Chat using wrong model**: Route chat requests to cost-effective models (for example, `anthropic/claude-sonnet-4-5` instead of `anthropic/claude-opus-4-5`)
+* **Transform overhead**: Monitor if transforms add significant token overhead
+
+=== Requests failing with 429 errors
+
+Symptom: Cursor receives HTTP 429 Too Many Requests errors.
+
+Causes and solutions:
+
+* **Rate limit exceeded**: Review and increase rate limits if usage is legitimate (code completion needs higher limits)
+* **Upstream provider rate limits**: Check if the upstream LLM provider is rate-limiting; configure failover to alternate providers
+* **Budget exhausted**: Verify monthly spending limit has not been reached
+* **Per-user limits too restrictive**: Adjust per-user rate limits if using multi-tenant strategies
+
+=== Multi-tenant routing failures
+
+Symptom: Requests route to wrong gateway or fail authorization.
+
+Causes and solutions:
+
+* **Subdomain not configured**: Verify DNS records and SSL certificates for tenant-specific subdomains
+* **Path prefix mismatch**: Check that path-based routing rules correctly extract tenant identity
+* **Query parameter missing**: Ensure query parameter is appended to all requests
+* **Token metadata incorrect**: Verify token is tagged with correct tenant metadata
+* **Routing rule conflicts**: Check for overlapping routing rules that may cause unexpected routing
+
+== Next steps
+
+* xref:ai-agents:ai-gateway/observability-logs.adoc[]: Analyze detailed request logs and transform operations
+* xref:ai-agents:ai-gateway/observability-metrics.adoc[]: Set up metrics dashboards
+* xref:ai-agents:ai-gateway/cel-routing-cookbook.adoc[]: Implement advanced routing rules for model prefix routing
+* xref:ai-agents:mcp/remote/overview.adoc[]: Deploy Remote MCP servers for custom tools

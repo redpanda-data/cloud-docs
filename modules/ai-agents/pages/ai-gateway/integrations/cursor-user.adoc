@@ -1,0 +1,837 @@
+= Configure Cursor IDE with AI Gateway
+:description: Configure Cursor IDE to use Redpanda AI Gateway for unified LLM access, MCP tool integration, and AI-assisted coding.
+:page-topic-type: how-to
+:page-personas: ai_agent_developer, app_developer
+:learning-objective-1: Configure Cursor IDE to route LLM requests through AI Gateway
+:learning-objective-2: Set up MCP server integration for tool access through the gateway
+:learning-objective-3: Optimize Cursor settings for multi-tenancy and cost control
+
+After xref:ai-agents:ai-gateway/ai-gateway.adoc[configuring your AI Gateway], set up Cursor IDE to route LLM requests and access MCP tools through the gateway's unified endpoints.
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
+
+== Prerequisites
+
+Before configuring Cursor IDE, ensure you have:
+
+* Cursor IDE installed (download from https://cursor.sh[cursor.sh^])
+* An active Redpanda AI Gateway with:
+** At least one LLM provider enabled (see xref:ai-agents:ai-gateway/ai-gateway.adoc#step-1-enable-a-provider[Enable a provider])
+** A gateway created and configured (see xref:ai-agents:ai-gateway/ai-gateway.adoc#step-3-create-a-gateway[Create a gateway])
+* Your AI Gateway credentials:
+** Gateway endpoint URL (for example, `https://gw.ai.panda.com`)
+** Gateway ID (for example, `gateway-abc123`)
+** API key with access to the gateway
+
+== About Cursor IDE
+
+Cursor IDE is an AI-powered code editor built on VS Code that provides:
+
+* Chat interface for code questions and generation
+* AI-powered autocomplete with context awareness
+* Codebase indexing for semantic search
+* Inline code editing with AI assistance
+* Terminal integration for command suggestions
+* Native integration with multiple LLM providers
+
+By routing Cursor through AI Gateway, you gain centralized observability, cost controls, provider flexibility, and the ability to aggregate multiple MCP servers into a single interface.
+
+== Configuration methods
+
+Cursor IDE supports two configuration approaches for connecting to AI Gateway:
+
+[cols="1,2,2"]
+|===
+|Method |Best for |Trade-offs
+
+|Settings UI
+|Visual configuration, quick setup
+|Limited to single provider configuration
+
+|Configuration file
+|Multiple providers, environment-specific settings, version control
+|Manual file editing required
+|===
+
+Choose the method that matches your workflow. The Settings UI is faster for getting started, while the configuration file provides more flexibility for production use.
+
+== Configure using Settings UI
+
+The Settings UI provides a visual interface for configuring Cursor's AI providers.
+
+=== Configure AI provider
+
+. Open Cursor Settings:
+** macOS: *Cursor* > *Settings* or `Cmd+,`
+** Windows/Linux: *File* > *Preferences* > *Settings* or `Ctrl+,`
+. Navigate to *Features* > *AI*
+. Under *OpenAI API*, configure the base URL and API key:
+
+[source,text]
+----
+Override OpenAI Base URL: https://gw.ai.panda.com/v1
+Override OpenAI API Key: YOUR_REDPANDA_API_KEY
+----
+
+[start=4]
+. Scroll to *Advanced Settings* and add custom headers:
+
+[source,json]
+----
+{
+  "openai.additionalHeaders": {
+    "rp-aigw-id": "GATEWAY_ID"
+  }
+}
+----
+
+Replace placeholder values:
+
+* `YOUR_REDPANDA_API_KEY` - Your Redpanda API key
+* `GATEWAY_ID` - Your gateway ID from the AI Gateway UI
+
+=== Select models
+
+In the AI settings, configure which models to use:
+
+. Under *Model Selection*, choose your preferred model from the dropdown
+. Cursor will automatically use the gateway endpoint configured above
+. Models available depend on what you've enabled in your AI Gateway
+
+Model selection options:
+
+* `gpt-4o` - Routes to OpenAI GPT-4o through your gateway
+* `gpt-4o-mini` - Routes to OpenAI GPT-4o-mini (cost-effective)
+* `claude-sonnet-4-5` - Routes to Anthropic Claude Sonnet (if enabled in gateway)
+* `claude-opus-4-5` - Routes to Anthropic Claude Opus (if enabled in gateway)
+
+Note: When routing through AI Gateway, Cursor uses the OpenAI SDK format. The gateway automatically translates requests to the appropriate provider based on the model name.
+
+== Configure using configuration file
+
+For more control over provider settings, multi-environment configurations, or version control, edit Cursor's configuration file directly.
+
+=== Locate configuration file
+
+Cursor stores configuration in `settings.json`:
+
+* macOS: `~/Library/Application Support/Cursor/User/settings.json`
+* Windows: `%APPDATA%\Cursor\User\settings.json`
+* Linux: `~/.config/Cursor/User/settings.json`
+
+Create the directory structure if it doesn't exist:
+
+[,bash]
+----
+# macOS
+mkdir -p ~/Library/Application\ Support/Cursor/User
+
+# Linux
+mkdir -p ~/.config/Cursor/User
+----
+
+=== Basic configuration
+
+Create or edit `settings.json` with the following structure:
+
+[,json]
+----
+{
+  "cursor.overrideOpenAIBaseUrl": "https://gw.ai.panda.com/v1",
+  "cursor.overrideOpenAIApiKey": "YOUR_REDPANDA_API_KEY",
+  "openai.additionalHeaders": {
+    "rp-aigw-id": "GATEWAY_ID"
+  },
+  "cursor.cpp.defaultModel": "gpt-4o",
+  "cursor.chat.defaultModel": "gpt-4o"
+}
+----
+
+Replace placeholder values:
+
+* `YOUR_REDPANDA_API_KEY` - Your Redpanda API key
+* `GATEWAY_ID` - Your gateway ID
+
+Configuration fields:
+
+* `cursor.overrideOpenAIBaseUrl` - Gateway endpoint (always ends with `/v1` for OpenAI compatibility)
+* `cursor.overrideOpenAIApiKey` - Your Redpanda API key (used for authentication)
+* `openai.additionalHeaders` - Custom headers sent with every request
+* `cursor.cpp.defaultModel` - Model for autocomplete (c++ refers to copilot++)
+* `cursor.chat.defaultModel` - Model for chat interactions
+
+=== Multiple environment configuration
+
+To switch between development and production gateways, use workspace-specific settings.
+
+Create `.vscode/settings.json` in your project root:
+
+[,json]
+----
+{
+  "cursor.overrideOpenAIBaseUrl": "https://gw.staging.ai.panda.com/v1",
+  "openai.additionalHeaders": {
+    "rp-aigw-id": "staging-gateway-123",
+    "x-environment": "staging"
+  }
+}
+----
+
+Workspace settings override global settings. Use this to:
+
+* Route different projects through different gateways
+* Use cost-effective models for internal projects
+* Use premium models for customer-facing projects
+* Add project-specific tracking headers
+
+=== Configuration with environment variables
+
+For sensitive credentials, use environment variables instead of hardcoding values.
+
+In `settings.json`:
+
+[,json]
+----
+{
+  "cursor.overrideOpenAIBaseUrl": "${REDPANDA_GATEWAY_URL}/v1",
+  "cursor.overrideOpenAIApiKey": "${REDPANDA_API_KEY}",
+  "openai.additionalHeaders": {
+    "rp-aigw-id": "${REDPANDA_GATEWAY_ID}"
+  }
+}
+----
+
+Set environment variables before launching Cursor:
+
+[,bash]
+----
+export REDPANDA_GATEWAY_URL="https://gw.ai.panda.com"
+export REDPANDA_GATEWAY_ID="gateway-abc123"
+export REDPANDA_API_KEY="your-api-key"
+
+# Launch Cursor from terminal to inherit environment
+cursor .
+----
+
+On Windows (PowerShell):
+
+[,powershell]
+----
+$env:REDPANDA_GATEWAY_URL = "https://gw.ai.panda.com"
+$env:REDPANDA_GATEWAY_ID = "gateway-abc123"
+$env:REDPANDA_API_KEY = "your-api-key"
+
+# Launch Cursor
+& "C:\Users\YourName\AppData\Local\Programs\cursor\Cursor.exe"
+----
+
+== Configure MCP server integration
+
+Cursor IDE supports MCP (Model Context Protocol) integration to access tools from MCP servers through AI Gateway.
+
+=== Understanding MCP tool limits
+
+Cursor IDE has a 40-tool limit for MCP integration. When you have many MCP servers with numerous tools, this limit is quickly exceeded.
+
+AI Gateway solves this through deferred tool loading:
+
+* Without deferred loading: All tools from all MCP servers load upfront (often 50+ tools)
+* With deferred loading: Only 2 tools load initially (search + orchestrator)
+* Agent queries for specific tools only when needed
+* 80-90% token reduction, depending on configuration
+
+See xref:ai-agents:ai-gateway/mcp-aggregation-guide.adoc[] for details on configuring deferred tool loading.
+
+=== Add MCP server connection
+
+Edit `settings.json` to add the MCP configuration:
+
+[,json]
+----
+{
+  "cursor.overrideOpenAIBaseUrl": "https://gw.ai.panda.com/v1",
+  "cursor.overrideOpenAIApiKey": "YOUR_REDPANDA_API_KEY",
+  "openai.additionalHeaders": {
+    "rp-aigw-id": "GATEWAY_ID"
+  },
+  "cursor.mcp": {
+    "servers": {
+      "redpanda-ai-gateway": {
+        "command": "node",
+        "args": [
+          "-e",
+          "require('http').request({hostname:'gw.ai.panda.com',path:'/mcp',method:'GET',headers:{'Authorization':'Bearer YOUR_REDPANDA_API_KEY','rp-aigw-id':'GATEWAY_ID'}}).end()"
+        ]
+      }
+    }
+  }
+}
+----
+
+This configuration uses Node.js to make HTTP requests to the gateway's MCP endpoint. The gateway returns tool definitions that Cursor can use.
+
+Replace placeholder values:
+
+* `YOUR_REDPANDA_API_KEY` - Your Redpanda API key
+* `GATEWAY_ID` - Your gateway ID
+
+=== Enable deferred tool loading
+
+To work within Cursor's 40-tool limit, configure deferred tool loading in your AI Gateway:
+
+. Navigate to your gateway configuration in the AI Gateway UI
+. Under *MCP Settings*, enable *Deferred Tool Loading*
+. Save the gateway configuration
+
+When deferred loading is enabled:
+
+* Cursor receives only the search tool and orchestrator tool initially (2 tools total)
+* When you ask Cursor to perform a task requiring a specific tool, it queries the gateway
+* The gateway returns only the relevant tool definitions
+* Total tool count stays well under the 40-tool limit
+
+== Verify configuration
+
+After configuring Cursor IDE, verify it connects correctly to your AI Gateway.
+
+=== Test chat interface
+
+. Open Cursor IDE
+. Press `Cmd+L` (macOS) or `Ctrl+L` (Windows/Linux) to open the chat panel
+. Type a simple question: "What does this function do?" (with a file open)
+. Wait for response
+
+Then verify in the AI Gateway dashboard:
+
+. Open the Redpanda Cloud Console
+. Navigate to your gateway's observability dashboard
+. Filter by gateway ID
+. Verify:
+** Request appears in logs
+** Model shows correct format (for example, `gpt-4o`)
+** Token usage and cost are recorded
+** Request succeeded (status 200)
+
+If the request doesn't appear, see <<troubleshooting>>.
+
+=== Test inline code completion
+
+. Open a code file in Cursor
+. Start typing a function definition
+. Wait for inline suggestions to appear
+
+Autocomplete requests appear in the gateway dashboard with:
+
+* Lower token counts than chat requests
+* Higher request frequency
+* The autocomplete model you configured
+
+=== Test MCP tool integration
+
+If you configured MCP servers:
+
+. Open Cursor chat (`Cmd+L` or `Ctrl+L`)
+. Ask a question that requires a tool: "What's the current date?"
+. Cursor should:
+** Discover available tools from the gateway
+** Invoke the appropriate tool
+** Return the result
+
+Check the gateway dashboard for MCP tool invocation logs.
+
+== Advanced configuration
+
+=== Custom request tracking headers
+
+Add custom headers for request tracking, user attribution, or routing policies:
+
+[,json]
+----
+{
+  "openai.additionalHeaders": {
+    "rp-aigw-id": "GATEWAY_ID",
+    "x-user-id": "developer-123",
+    "x-team": "backend",
+    "x-project": "api-service"
+  }
+}
+----
+
+Use these headers with gateway CEL routing to:
+
+* Track costs per developer or team
+* Route based on project type
+* Apply different rate limits per user
+* Generate team-specific usage reports
+
+=== Model-specific settings
+
+Configure different settings for chat vs autocomplete:
+
+[,json]
+----
+{
+  "cursor.chat.defaultModel": "claude-sonnet-4-5",
+  "cursor.cpp.defaultModel": "gpt-4o-mini",
+  "cursor.chat.temperature": 0.7,
+  "cursor.cpp.temperature": 0.2,
+  "cursor.chat.maxTokens": 4096,
+  "cursor.cpp.maxTokens": 512
+}
+----
+
+Settings explained:
+
+* Chat uses Claude Sonnet for reasoning depth
+* Autocomplete uses GPT-4o-mini for speed and cost efficiency
+* Chat temperature (0.7) allows creative responses
+* Autocomplete temperature (0.2) produces deterministic code
+* Chat allows longer responses (4096 tokens)
+* Autocomplete limits responses (512 tokens) for speed
+
+=== Multi-tenancy with team-specific gateways
+
+For organizations with multiple teams sharing Cursor but requiring separate cost tracking and policies:
+
+[,json]
+----
+{
+  "cursor.overrideOpenAIBaseUrl": "https://gw.ai.panda.com/v1",
+  "cursor.overrideOpenAIApiKey": "${TEAM_API_KEY}",
+  "openai.additionalHeaders": {
+    "rp-aigw-id": "${TEAM_GATEWAY_ID}",
+    "x-team": "${TEAM_NAME}"
+  }
+}
+----
+
+Each team configures their own:
+
+* `TEAM_API_KEY` - Team-specific API key
+* `TEAM_GATEWAY_ID` - Gateway with team budget and rate limits
+* `TEAM_NAME` - Identifier for usage reports
+
+This approach enables:
+
+* Per-team cost attribution
+* Separate budgets and rate limits
+* Team-specific model access policies
+* Independent observability dashboards
+
+=== Request timeout configuration
+
+Configure timeout for LLM and MCP requests:
+
+[,json]
+----
+{
+  "cursor.requestTimeout": 30000,
+  "cursor.mcp.requestTimeout": 15000
+}
+----
+
+Timeout values are in milliseconds. Defaults:
+
+* LLM requests: 30000ms (30 seconds)
+* MCP requests: 15000ms (15 seconds)
+
+Increase timeouts for:
+
+* Long-running MCP tools (database queries, web searches)
+* High-latency network environments
+* Complex reasoning tasks requiring extended processing
+
+=== Debug mode
+
+Enable debug logging to troubleshoot connection issues:
+
+[,json]
+----
+{
+  "cursor.debug": true,
+  "cursor.logLevel": "debug"
+}
+----
+
+Debug mode shows:
+
+* HTTP request and response headers
+* Model selection decisions
+* Token usage calculations
+* Error details with stack traces
+
+View debug logs:
+
+. Open Command Palette (`Cmd+Shift+P` or `Ctrl+Shift+P`)
+. Type "Developer: Show Logs"
+. Select "Extension Host"
+. Filter by "cursor"
+
+[[troubleshooting]]
+== Troubleshooting
+
+=== Cursor shows connection error
+
+**Symptom**: Cursor displays "Failed to connect to AI provider" or requests return errors.
+
+**Causes and solutions**:
+
+. **Incorrect base URL format**
++
+Verify the URL includes `/v1` at the end:
++
+[,text]
+----
+# Correct
+"cursor.overrideOpenAIBaseUrl": "https://gw.ai.panda.com/v1"
+
+# Incorrect
+"cursor.overrideOpenAIBaseUrl": "https://gw.ai.panda.com"
+----
+
+. **Authentication failure**
++
+Verify your API key is valid:
++
+[,bash]
+----
+curl -H "Authorization: Bearer YOUR_API_KEY" \
+     -H "rp-aigw-id: GATEWAY_ID" \
+     https://gw.ai.panda.com/v1/models
+----
++
+You should receive a list of available models. If you get `401 Unauthorized`, regenerate your API key in the Redpanda Cloud Console.
+
+. **Gateway ID mismatch**
++
+Check that the `rp-aigw-id` header matches your gateway ID exactly (case-sensitive). Copy it directly from the AI Gateway UI.
+
+. **Missing headers**
++
+Ensure `openai.additionalHeaders` is configured in settings:
++
+[,json]
+----
+{
+  "openai.additionalHeaders": {
+    "rp-aigw-id": "GATEWAY_ID"
+  }
+}
+----
+
+. **Invalid JSON syntax**
++
+Validate your `settings.json` file:
++
+[,bash]
+----
+# macOS/Linux
+python3 -m json.tool ~/Library/Application\ Support/Cursor/User/settings.json
+
+# Or use jq
+jq . ~/Library/Application\ Support/Cursor/User/settings.json
+----
++
+Fix any syntax errors reported.
+
+=== Autocomplete not working
+
+**Symptom**: Inline autocomplete suggestions don't appear or are very slow.
+
+**Causes and solutions**:
+
+. **No autocomplete model configured**
++
+Verify `cursor.cpp.defaultModel` is set in `settings.json`:
++
+[,json]
+----
+{
+  "cursor.cpp.defaultModel": "gpt-4o-mini"
+}
+----
+
+. **Model too slow**
++
+Use a faster, cost-effective model for autocomplete:
++
+[,json]
+----
+{
+  "cursor.cpp.defaultModel": "gpt-4o-mini",
+  "cursor.cpp.maxTokens": 256
+}
+----
++
+Smaller models like GPT-4o-mini or Claude Haiku provide faster responses ideal for autocomplete.
+
+. **Network latency**
++
+Check gateway latency in the observability dashboard. If p95 latency is over 500ms, autocomplete will feel slow. Consider:
++
+* Using a gateway in a closer geographic region
+* Switching to a faster model
+* Reducing `cursor.cpp.maxTokens` to 256 or lower
+
+. **Autocomplete disabled in settings**
++
+Verify autocomplete is enabled:
++
+. Open Settings (`Cmd+,` or `Ctrl+,`)
+. Search for "cursor autocomplete"
+. Ensure "Enable Autocomplete" is checked
+
+=== MCP tools not appearing
+
+**Symptom**: Cursor doesn't show tools from MCP servers, or shows error "Too many tools".
+
+**Causes and solutions**:
+
+. **40-tool limit exceeded**
++
+Cursor has a hard limit of 40 MCP tools. If your MCP servers expose more than 40 tools combined, enable deferred tool loading in your AI Gateway configuration.
++
+With deferred loading, only 2 tools (search + orchestrator) are sent to Cursor initially, staying well under the limit.
+
+. **MCP configuration missing**
++
+Verify the `cursor.mcp.servers` section exists in `settings.json`:
++
+[,json]
+----
+{
+  "cursor.mcp": {
+    "servers": {
+      "redpanda-ai-gateway": {
+        "command": "node",
+        "args": [/* ... */]
+      }
+    }
+  }
+}
+----
+
+. **No MCP servers in gateway**
++
+Verify your gateway has at least one MCP server configured in the AI Gateway UI.
+
+. **MCP endpoint unreachable**
++
+Test connectivity to the MCP endpoint:
++
+[,bash]
+----
+curl -H "Authorization: Bearer YOUR_API_KEY" \
+     -H "rp-aigw-id: GATEWAY_ID" \
+     https://gw.ai.panda.com/mcp
+----
++
+You should receive a valid MCP protocol response.
+
+. **Cursor restart needed**
++
+MCP configuration changes require restarting Cursor:
++
+. Close all Cursor windows
+. Relaunch Cursor
+. Wait for MCP servers to initialize (may take 5-10 seconds)
+
+=== Requests not appearing in gateway dashboard
+
+**Symptom**: Cursor works, but requests don't appear in the AI Gateway observability dashboard.
+
+**Causes and solutions**:
+
+. **Wrong gateway ID**
++
+Verify that the `rp-aigw-id` header in your configuration matches the gateway you're viewing in the dashboard.
+
+. **Missing header**
++
+Ensure the `rp-aigw-id` header is in the `openai.additionalHeaders` section:
++
+[,json]
+----
+{
+  "openai.additionalHeaders": {
+    "rp-aigw-id": "GATEWAY_ID"
+  }
+}
+----
+
+. **Using direct provider connection**
++
+If `cursor.overrideOpenAIBaseUrl` points directly to a provider (for example, `https://api.openai.com`), requests won't route through the gateway. Verify it points to your gateway endpoint.
+
+. **Log ingestion delay**
++
+Gateway logs can take 5-10 seconds to appear in the dashboard. Wait briefly and refresh.
+
+. **Workspace settings override**
++
+Check if `.vscode/settings.json` in your project root overrides global settings with different gateway configuration.
+
+=== High latency after gateway integration
+
+**Symptom**: Requests are slower after routing through the gateway.
+
+**Causes and solutions**:
+
+. **Gateway geographic distance**
++
+If your gateway is in a different region than you or the upstream provider, this adds network latency. Check gateway region in the Redpanda Cloud Console.
+
+. **Provider pool failover**
++
+If your gateway is configured with fallback providers, check the logs to see if requests are failing over. Failover adds latency.
+
+. **Model mismatch**
++
+Verify you're using fast models for autocomplete:
++
+[,json]
+----
+{
+  "cursor.cpp.defaultModel": "gpt-4o-mini"  // Fast model
+}
+----
+
+. **MCP tool aggregation overhead**
++
+Aggregating tools from multiple MCP servers adds processing time. Use deferred tool loading to reduce this overhead (see xref:ai-agents:ai-gateway/mcp-aggregation-guide.adoc[]).
+
+=== Configuration changes not taking effect
+
+**Symptom**: Changes to `settings.json` don't apply.
+
+**Solutions**:
+
+. **Restart Cursor**
++
+Configuration changes require restarting Cursor:
++
+. Close all Cursor windows
+. Relaunch Cursor
+
+. **Invalid JSON syntax**
++
+Validate JSON syntax:
++
+[,bash]
+----
+python3 -m json.tool ~/Library/Application\ Support/Cursor/User/settings.json
+----
+
+. **Workspace settings overriding**
++
+Check if `.vscode/settings.json` in your project root overrides global settings.
+
+. **File permissions**
++
+Verify Cursor can read the configuration file:
++
+[,bash]
+----
+# macOS
+ls -la ~/Library/Application\ Support/Cursor/User/settings.json
+
+# Linux
+ls -la ~/.config/Cursor/User/settings.json
+----
++
+Fix permissions if needed:
++
+[,bash]
+----
+chmod 600 ~/Library/Application\ Support/Cursor/User/settings.json
+----
+
+== Cost optimization tips
+
+=== Use different models for chat and autocomplete
+
+Chat interactions benefit from reasoning depth, while autocomplete needs speed:
+
+[,json]
+----
+{
+  "cursor.chat.defaultModel": "claude-sonnet-4-5",
+  "cursor.cpp.defaultModel": "gpt-4o-mini"
+}
+----
+
+This can reduce costs by 5-10x for autocomplete while maintaining quality for chat.
+
+=== Limit token usage
+
+Reduce the maximum tokens for autocomplete to prevent runaway costs:
+
+[,json]
+----
+{
+  "cursor.cpp.maxTokens": 256,
+  "cursor.chat.maxTokens": 2048
+}
+----
+
+Autocomplete rarely needs more than 256 tokens, while chat responses can vary.
+
+=== Use MCP tools for documentation
+
+Instead of pasting large documentation into chat, create MCP tools that fetch relevant sections on-demand. This reduces token costs by including only needed information.
+
+=== Monitor usage patterns
+
+Use the AI Gateway dashboard to identify optimization opportunities:
+
+. Navigate to your gateway's observability dashboard
+. Filter by Cursor requests (use custom header if configured)
+. Analyze:
+** Token usage per request type (chat vs autocomplete)
+** Most expensive queries
+** High-frequency low-value requests
+
+=== Team-based cost attribution
+
+Use custom headers to track costs per developer or team:
+
+[,json]
+----
+{
+  "openai.additionalHeaders": {
+    "rp-aigw-id": "GATEWAY_ID",
+    "x-user-id": "${USER_EMAIL}",
+    "x-team": "backend"
+  }
+}
+----
+
+Generate team-specific cost reports from the gateway dashboard.
+
+=== Enable deferred MCP tool loading
+
+Configure deferred tool loading to reduce token costs by 80-90%:
+
+. Navigate to your gateway configuration
+. Enable *Deferred Tool Loading* under MCP Settings
+. Save configuration
+
+This sends only search + orchestrator tools initially, reducing token usage significantly.
+
+== Next steps
+
+* xref:ai-agents:ai-gateway/mcp-aggregation-guide.adoc[]: Configure deferred tool loading to work within Cursor's 40-tool limit
+* xref:ai-agents:ai-gateway/observability-logs.adoc[]: Monitor Cursor requests in the gateway dashboard
+* xref:ai-agents:ai-gateway/cel-routing-cookbook.adoc[]: Use CEL expressions to route Cursor requests based on context
+
+== Related pages
+
+* xref:ai-agents:ai-gateway/ai-gateway.adoc[]: Create and configure your AI Gateway
+* xref:ai-agents:ai-gateway/what-is-ai-gateway.adoc[]: Learn about AI Gateway architecture and benefits
+* xref:ai-agents:ai-gateway/integrations/claude-code-user.adoc[]: Configure Claude Code with AI Gateway
+* xref:ai-agents:ai-gateway/integrations/continue-user.adoc[]: Configure Continue.dev with AI Gateway
+* xref:ai-agents:ai-gateway/integrations/cline-user.adoc[]: Configure Cline with AI Gateway
