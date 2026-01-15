@@ -1,8 +1,7 @@
 = Configure AWS PrivateLink in the Cloud Console
-:description: Set up AWS PrivateLink in the Redpanda Cloud Console.
-:page-aliases: deploy:deployment-option/cloud/configure-privatelink-in-cloud-ui.adoc
+:description: Set up AWS PrivateLink in the Redpanda Cloud Console for Serverless clusters.
 
-NOTE: This guide is for configuring AWS PrivateLink using the Redpanda Cloud Console. To configure and manage PrivateLink on an existing public cluster, you must use the xref:networking:aws-privatelink.adoc[Redpanda Cloud API].
+NOTE: This guide is for configuring AWS PrivateLink on Serverless clusters using the Redpanda Cloud Console. To configure and manage PrivateLink on an existing public cluster, you must use the xref:networking:serverless/aws/privatelink-api.adoc[Redpanda Cloud API].
 
 The Redpanda AWS PrivateLink endpoint service provides secure access to Redpanda Cloud from your own VPC. Traffic over PrivateLink does not go through the public internet because these connections are treated as their own private AWS service. While your VPC has access to the Redpanda VPC, Redpanda cannot access your VPC.
 
@@ -12,16 +11,16 @@ Consider using the endpoint service if you have multiple VPCs and could benefit 
 ====
 * Each client VPC can have one endpoint connected to the PrivateLink service.
 * PrivateLink allows overlapping xref:networking:cidr-ranges.adoc[CIDR ranges] in VPC networks.
-* The number of connections is limited only by your Redpanda usage tier. PrivateLink does not add extra connection limits. However, VPC peering is limited to 125 connections. See https://aws.amazon.com/privatelink/faqs/[How scalable is AWS PrivateLink?^]
+* PrivateLink does not add extra connection limits. However, VPC peering is limited to 125 connections. See https://aws.amazon.com/privatelink/faqs/[How scalable is AWS PrivateLink?^]
 * You control which AWS principals are allowed to connect to the endpoint service.
 ====
 
 == Requirements
 
-* Your Redpanda cluster and VPC must be in the same region.
+* Your Redpanda Serverless cluster and VPC must be in the same region.
 * Use the https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html[AWS CLI] to create a new client VPC or modify an existing one to use the PrivateLink endpoint.
 
-TIP: In Kafka clients, set `connections.max.idle.ms` to a value less than 350 seconds. 
+TIP: In Kafka clients, set `connections.max.idle.ms` to a value less than 350 seconds.
 
 == DNS resolution with PrivateLink
 
@@ -31,9 +30,9 @@ include::networking:partial$dns_resolution.adoc[]
 
 . In the Redpanda Cloud Console, select your https://cloud.redpanda.com/clusters[cluster^], and go to the *Cluster settings* page.
 . For AWS PrivateLink, click *Enable*.
-. On the Enable PrivateLink page, for Allowed principal ARNs, click *Add*, and enter the Amazon Resource Names (ARNs) for each AWS principal allowed to access the endpoint service. For example, for all principals in a specific account, use `arn:aws:iam::<account-id>:root`. See the AWS documentation on https://docs.aws.amazon.com/vpc/latest/privatelink/configure-endpoint-service.html#add-remove-permission[configuring an endpoint service^] for details. 
-. Click *Add* after entering each ARN, and when finished, click *Enable*. 
-. It may take several minutes for your cluster to update. When the update is complete, the AWS PrivateLink status on the Cluster settings page changes from *In progress* to *Enabled*.
+. On the Enable PrivateLink page, for Allowed principal ARNs, click *Add*, and enter the Amazon Resource Names (ARNs) for each AWS principal allowed to access the endpoint service. For example, for all principals in a specific account, use `arn:aws:iam::<account-id>:root`. See the AWS documentation on https://docs.aws.amazon.com/vpc/latest/privatelink/configure-endpoint-service.html#add-remove-permission[configuring an endpoint service^] for details.
+. Click *Add* after entering each ARN, and when finished, click *Enable*.
+. It may take several minutes for your cluster to update. When the update is complete, the AWS PrivateLink status on the Cluster settings page changes to *Enabled*.
 
 NOTE: For help with issues when enabling PrivateLink, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda support^].
 
@@ -51,8 +50,10 @@ include::networking:partial$private-links-test-connection.adoc[]
 
 == Disable endpoint service
 
-On the Cluster settings page for the cluster, click *Disable* for PrivateLink. Existing connections are closed after the AWS PrivateLink service is disabled. To connect using PrivateLink again, you must re-enable the service.
+On the Cluster settings page for the cluster, click *Disable* for PrivateLink. Existing connections are closed after the AWS PrivateLink service is disabled.
+
+NOTE: Disabling private access in Redpanda Cloud does not delete the PrivateLink endpoint in your AWS account. The endpoint remains provisioned and continues to incur charges until you explicitly delete it from your AWS account.
 
 include::shared:partial$suggested-reading.adoc[]
 
-* xref:networking:aws-privatelink.adoc[]
+* xref:networking:serverless/aws/privatelink-api.adoc[]
