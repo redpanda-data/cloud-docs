@@ -6,12 +6,11 @@ NOTE: AI Gateway is supported on BYOC clusters running Redpanda version 25.3 and
 
 The Redpanda AI Gateway is a production-grade proxy that provides unified access to multiple Large Language Model (LLM) providers and Model Context Protocol (MCP) servers through a single endpoint. MCP servers expose tools that agents can discover and call. An AI Gateway maintains centralized control over routing, rate limiting, cost optimization, security, and observability.
 
-Common gateway patterns:
+After completing this quickstart, you will be able to:
 
-* *Team isolation*: Create separate gateways for each team to track usage and enforce budgets independently.
-* *Environment separation*: Use different gateways for staging and production with appropriate rate limits.
-* *Failover*: Configure a primary provider pool with a fallback pool for high availability.
-* *A/B testing*: Distribute traffic across providers to compare performance and cost.
+* Route your first LLM request through AI Gateway using the Cloud Console and verify it in the observability dashboard.
+* Configure a provider and gateway with correct authentication and routing policies.
+* Test failover behavior and CEL routing rules in a development environment.
 
 == Prerequisites
 
@@ -344,3 +343,9 @@ const openai = new OpenAI({
 ----
 
 == Next steps
+
+* xref:ai-agents:ai-gateway/ai-gateway-overview.adoc[]: Learn about AI Gateway architecture, deployment models, and common usage patterns.
+* xref:ai-agents:ai-gateway/cel-routing-cookbook.adoc[]: Explore advanced CEL routing patterns for traffic distribution, cost optimization, and failover.
+* xref:ai-agents:ai-gateway/mcp-aggregation-guide.adoc[]: Configure MCP server aggregation and deferred tool loading for AI agents.
+* xref:ai-agents:ai-gateway/observability-logs.adoc[]: Monitor request logs, token usage, and costs through the observability dashboard.
+* xref:ai-agents:ai-gateway/integrations/index.adoc[]: Connect AI development tools like Claude Code, Cursor, and Continue to your gateway.
