@@ -6,12 +6,6 @@ NOTE: AI Gateway is supported on BYOC clusters running Redpanda version 25.3 and
 
 The Redpanda AI Gateway is a production-grade proxy that provides unified access to multiple Large Language Model (LLM) providers and Model Context Protocol (MCP) servers through a single endpoint. MCP servers expose tools that agents can discover and call. An AI Gateway maintains centralized control over routing, rate limiting, cost optimization, security, and observability.
 
-After completing this quickstart, you will be able to:
-
-* Route your first LLM request through AI Gateway using the Cloud Console and verify it in the observability dashboard.
-* Configure a provider and gateway with correct authentication and routing policies.
-* Test failover behavior and CEL routing rules in a development environment.
-
 == Prerequisites
 
 * Access to the AI Gateway UI (provided by your administrator)
@@ -50,7 +44,7 @@ from openai import OpenAI
 
 client = OpenAI(
     base_url="https://gw.ai.panda.com", <1>
-    api_key="your-api-key",
+    api_key="<your-api-key>",
 )
 
 # Add header per request
@@ -99,7 +93,7 @@ On the Gateways page, select the *MCP* tab to configure your MCP tool discovery 
 
 * Display name: When you drag a provider pool, you give it a name.
 * Model dropdown: Choose a model from the available models in the catalog.
-* Load Balancing options: If you have multiple providers, you can load balance requests between them; for example, round robin.
+* Load balancing options: If you have multiple providers, you can load balance requests between them; for example, round robin.
 
 MCP tools include a data catalog API, the memory store, a vector search service, and an MCP orchestrator. The *MCP orchestrator* is a built-in MCP server that enables programmatic tool calling. Agents can generate code to call multiple tools in a single orchestrated step, which reduces the number of round trips. For example, a workflow requiring 47 file reads can be reduced from 49 round trips to just 1. To add other tools, (for example, Slack), add the Slack MCP server endpoint.
 
@@ -137,28 +131,28 @@ The editor in the UI helps you discover available request fields (headers, path,
 
 Route based on model family:
 
-[,cel]
+[source,cel]
 ----
 request.body.model.startsWith("anthropic/")
 ----
 
 Apply a rule to all requests:
 
-[,cel]
+[source,cel]
 ----
 true
 ----
 
 Route based on a header (for example, product tier):
 
-[,cel]
+[source,cel]
 ----
 request.headers['tier'][0] == "premium"
 ----
 
 Guard for field existence:
 
-[,cel]
+[source,cel]
 ----
 has(request.body.max_tokens) && request.body.max_tokens > 1000
 ----
@@ -174,8 +168,8 @@ If you've configured MCP tools in your gateway, AI agents can connect to the agg
 * MCP endpoint URL: `https://gw.ai.panda.com/mcp`
 
 * Headers required:
-** `Authorization: Bearer your-api-key` 
-** `rp-aigw-id: your-gateway-id`
+** `Authorization: Bearer <your-api-key>` 
+** `rp-aigw-id: <your-gateway-id>`
 
 This endpoint aggregates all MCP servers configured in your gateway, providing a unified interface for tool discovery and execution.
 
@@ -186,8 +180,8 @@ For consistent configuration across tools, set these environment variables:
 [source,bash]
 ----
 export REDPANDA_GATEWAY_URL="https://gw.ai.panda.com"
-export REDPANDA_GATEWAY_ID="your-gateway-id" 
-export REDPANDA_API_KEY="your-api-key"
+export REDPANDA_GATEWAY_ID="<your-gateway-id>" 
+export REDPANDA_API_KEY="<your-api-key>"
 ----
 
 Many tools and SDKs can automatically use these environment variables when configured appropriately.
@@ -203,8 +197,8 @@ Use the `claude mcp add` command to configure the HTTP transport:
 [source,bash]
 ----
 claude mcp add --transport http redpanda-aigateway https://gw.ai.panda.com/mcp \
-  --header "Authorization: Bearer YOUR_API_KEY" \
-  --header "rp-aigw-id: GATEWAY_ID"
+  --header "Authorization: Bearer <your-api-key>" \
+  --header "rp-aigw-id: <your-gateway-id>"
 ----
 
 *Alternative configuration via config file:*
@@ -219,8 +213,8 @@ Create or edit `~/.claude/config.json`:
       "transport": "http",
       "url": "https://gw.ai.panda.com/mcp",
       "headers": {
-        "Authorization": "Bearer YOUR_API_KEY",
-        "rp-aigw-id": "GATEWAY_ID"
+        "Authorization": "Bearer <your-api-key>",
+        "rp-aigw-id": "<your-gateway-id>"
       }
     }
   },
@@ -228,7 +222,7 @@ Create or edit `~/.claude/config.json`:
     "redpanda": {
       "baseURL": "https://gw.ai.panda.com",
       "headers": {
-        "rp-aigw-id": "your-gateway-id"
+        "rp-aigw-id": "<your-gateway-id>"
       }
     }
   }
@@ -252,10 +246,10 @@ Edit your Continue config file (`~/.continue/config.json`):
       "provider": "openai",
       "model": "openai/gpt-4",
       "apiBase": "https://gw.ai.panda.com",
-      "apiKey": "your-api-key",
+      "apiKey": "<your-api-key>",
       "requestOptions": {
         "headers": {
-          "rp-aigw-id": "your-gateway-id"
+          "rp-aigw-id": "<your-gateway-id>"
         }
       }
     },
@@ -264,10 +258,10 @@ Edit your Continue config file (`~/.continue/config.json`):
       "provider": "anthropic", 
       "model": "anthropic/claude-3-5-sonnet-20241022",
       "apiBase": "https://gw.ai.panda.com",
-      "apiKey": "your-api-key",
+      "apiKey": "<your-api-key>",
       "requestOptions": {
         "headers": {
-          "rp-aigw-id": "your-gateway-id"
+          "rp-aigw-id": "<your-gateway-id>"
         }
       }
     }
@@ -288,7 +282,7 @@ Configure Cursor to route requests through the AI Gateway:
 {
   "cursor.ai.providers.openai.apiBase": "https://gw.ai.panda.com",
   "cursor.ai.providers.openai.defaultHeaders": {
-    "rp-aigw-id": "your-gateway-id"
+    "rp-aigw-id": "<your-gateway-id>"
   }
 }
 ----
@@ -305,9 +299,9 @@ from openai import OpenAI
 
 client = OpenAI(
     base_url="https://gw.ai.panda.com",
-    api_key="your-api-key",
+    api_key="<your-api-key>",
     default_headers={
-        "rp-aigw-id": "your-gateway-id"
+        "rp-aigw-id": "<your-gateway-id>"
     }
 )
 ----
@@ -320,9 +314,9 @@ from anthropic import Anthropic
 
 client = Anthropic(
     base_url="https://gw.ai.panda.com",
-    api_key="your-api-key",
+    api_key="<your-api-key>",
     default_headers={
-        "rp-aigw-id": "your-gateway-id"
+        "rp-aigw-id": "<your-gateway-id>"
     }
 )
 ----
@@ -337,7 +331,7 @@ const openai = new OpenAI({
   baseURL: 'https://gw.ai.panda.com',
   apiKey: process.env.OPENAI_API_KEY,
   defaultHeaders: {
-    'rp-aigw-id': 'your-gateway-id'
+    'rp-aigw-id': '<your-gateway-id>'
   }
 });
 ----

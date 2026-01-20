@@ -2,6 +2,8 @@
 :description: Overview of Redpanda AI Gateway, its features, benefits, architecture, supported providers, deployment models, and common usage patterns.
 :page-personas: app_developer, platform_admin
 
+NOTE: AI Gateway is supported on BYOC clusters running Redpanda version 25.3 and later.
+
 Redpanda AI Gateway is a unified access layer for LLM providers and AI tools that sits between your applications and the AI services they use. It provides centralized routing, policy enforcement, cost management, and observability for all your AI traffic.
 
 After reading this page, you will be able to:
@@ -12,35 +14,15 @@ After reading this page, you will be able to:
 
 == The problem
 
-Modern AI applications face several critical challenges:
+Modern AI applications face four critical challenges that increase costs, reduce reliability, and slow down development.
 
-Provider fragmentation
+First, applications typically hardcode provider-specific SDKs. An application using OpenAI's SDK cannot easily switch to Anthropic or Google without code changes and redeployment. This tight coupling makes testing across providers time-consuming and error-prone, and means provider outages directly impact your application availability.
 
-* Applications hardcode provider-specific SDKs (OpenAI, Anthropic, Google, etc.)
-* Switching providers requires code changes and redeployment
-* Testing across providers is time-consuming and error-prone
-* Provider outages directly impact your application
+Second, costs can spiral without visibility into usage patterns. Without a centralized view of token consumption across teams and applications, it's difficult to attribute costs to specific customers, features, or environments. Testing and debugging can generate unexpected bills, and there's no way to enforce budgets or rate limits per team or customer.
 
-Cost spirals without visibility
+Third, AI agents that use MCP (Model Context Protocol) servers face tool coordination challenges. Managing tool discovery and execution is repetitive across projects, and agents typically load all available tools upfront, which creates high token costs. There's also no centralized governance over which tools agents can access.
 
-* No centralized view of token usage across teams and applications
-* Difficult to attribute costs to specific customers, features, or environments
-* Testing and debugging can rack up unexpected bills
-* No way to enforce budgets or rate limits per team/customer
-
-Tool coordination complexity
-
-* Agents need access to multiple MCP (Model Context Protocol) servers
-* Managing tool discovery and execution is repetitive across projects
-* High token costs from loading all available tools upfront
-* No centralized governance over which tools agents can access
-
-Observability gaps
-
-* Requests scattered across multiple provider dashboards
-* Can't reconstruct user sessions that span multiple models
-* No unified view of latency, errors, and costs
-* Debugging "the AI gave the wrong answer" requires manual log diving
+Finally, observability is fragmented across provider dashboards. You cannot reconstruct user sessions that span multiple models, compare latency and costs across providers in a unified view, or efficiently debug issues. Troubleshooting "the AI gave the wrong answer" requires manual log diving across different systems.
 
 == What AI Gateway solves
 
@@ -48,12 +30,14 @@ Redpanda AI Gateway addresses these challenges through four core capabilities:
 
 === 1. Unified LLM access (single endpoint for all providers)
 
+AI Gateway provides a single OpenAI-compatible endpoint that routes requests to multiple LLM providers. Instead of integrating with each provider's SDK separately, you configure your application once and switch providers by changing only the model parameter.
+
 // PLACEHOLDER: Add architecture diagram showing:
 // - Application → AI Gateway → Multiple LLM Providers (OpenAI, Anthropic, etc.)
 // - Single baseURL configuration
 // - Model routing via vendor/model_id format
 
-Before (direct integration)
+Without AI Gateway, you need different SDKs and patterns for each provider:
 
 [source,python]
 ----
@@ -75,7 +59,7 @@ response = client.messages.create(
 )
 ----
 
-After (AI Gateway - OpenAI-compatible)
+With AI Gateway, you use the OpenAI SDK for all providers:
 
 [source,python]
 ----
@@ -101,13 +85,13 @@ response = client.chat.completions.create(
 )
 ----
 
-Result: Change `model` parameter to switch providers. No code redeployment needed.
+To switch providers, you change only the `model` parameter from `openai/gpt-4o` to `anthropic/claude-sonnet-3.5`. No code changes or redeployment needed.
 
 === 2. Policy-based routing and cost control
 
-Define routing rules, rate limits, and budgets once; enforce them automatically:
+AI Gateway lets you define routing rules, rate limits, and budgets once, then enforces them automatically for all requests.
 
-Example: Tier-based routing
+You can route requests to different models based on user attributes. For example, to direct premium users to a more capable model while routing free tier users to a cost-effective option, use a CEL expression:
 
 [source,cel]
 ----
@@ -117,7 +101,7 @@ request.headers["x-user-tier"] == "premium"
   : "anthropic/claude-sonnet-3.5"
 ----
 
-Example: Environment-based budget
+You can also set different rate limits and spend limits per environment to prevent staging or development traffic from consuming production budgets:
 
 // PLACEHOLDER: Confirm exact policy configuration format
 
@@ -132,43 +116,23 @@ spend_limits:
   production: $50000/month
 ----
 
-Example: Automatic failover
+For reliability, you can configure provider pools with automatic failover. If you configure OpenAI GPT-4 as your primary model and Anthropic Claude Opus as the fallback, the gateway automatically routes requests to the fallback when it detects rate limits or timeouts from the primary provider. This configuration can achieve 99.9% uptime even during provider outages.
 
 // PLACEHOLDER: Add details on pool configuration and failback behavior
 
-* Primary: OpenAI GPT-4
-* Fallback: Anthropic Claude Opus on rate limits or timeouts
-* Result: 99.9% uptime even during provider outages
-
 === 3. MCP aggregation and orchestration
 
-Agent tool access without the overhead
+AI Gateway aggregates multiple MCP (Model Context Protocol) servers and provides deferred tool loading, which dramatically reduces token costs for AI agents.
 
-Before: Agent loads all tools from multiple MCP servers upfront
+Without AI Gateway, agents typically load all available tools from multiple MCP servers at startup. This approach sends 50+ tool definitions with every request, creating high token costs (thousands of tokens per request), slow agent startup times, and no centralized governance over which tools agents can access.
 
-* Sends 50+ tool definitions with every request
-* High token costs (thousands of tokens per request)
-* Slow agent startup
-* No centralized governance
+With AI Gateway, you configure approved MCP servers once, and the gateway loads only search and orchestrator tools initially. Agents query for specific tools only when needed, which reduces token usage by 80-90% depending on your configuration. You also gain centralized approval and governance over which MCP servers your agents can access.
 
-After: AI Gateway aggregates MCP servers
-
-* Deferred tool loading: Only search + orchestrator tools loaded initially
-* 80-90% token reduction, depending on configuration
-* Agent queries for specific tools only when needed
-* Centralized approval of MCP servers
-
-Orchestrator for complex workflows
-
-* Single JavaScript-based orchestrator tool
-* Reduces multi-step workflows from multiple round trips to one call
-* Example: "Search vector DB → if results insufficient → fallback to web search"
-
-// PLACEHOLDER: Add link to MCP aggregation guide when ready
+For complex workflows, AI Gateway provides a JavaScript-based orchestrator tool that reduces multi-step workflows from multiple round trips to a single call. For example, you can create a workflow that searches a vector database and, if the results are insufficient, falls back to web search—all in one orchestration step.
 
 === 4. Unified observability and cost tracking
 
-Single dashboard for all LLM traffic
+AI Gateway provides a single dashboard that tracks all LLM traffic across providers, eliminating the need to switch between multiple provider dashboards.
 
 // PLACEHOLDER: Add screenshots of:
 // - Request logs view
@@ -176,110 +140,32 @@ Single dashboard for all LLM traffic
 // - Latency histogram
 // - Error rate tracking
 
-Track across all requests:
+The dashboard tracks request volume per gateway, model, and provider, along with token usage for both prompt and completion tokens. You can view estimated spend per model with cross-provider comparisons, latency metrics (p50, p95, p99), and errors broken down by type, provider, and model.
 
-* Volume (requests per gateway, model, provider)
-* Token usage (prompt + completion tokens)
-* Estimated spend (per model, with cross-provider comparison)
-* Latency (p50, p95, p99)
-* Errors (by type, provider, model)
-
-Use cases:
-
-* "Which model is the most cost-effective for our use case?"
-* "Why did this specific user request fail?"
-* "How much does our staging environment cost us per week?"
-* "What's the latency difference between OpenAI and Anthropic for our workload?"
-
-== Cost comparison example
-
-// PLACEHOLDER: Insert real customer data or anonymized case study
-
-Scenario: SaaS chatbot with 1M requests/month, averaging 500 prompt + 300 completion tokens
-
-[cols="1,1,2"]
-|===
-|Configuration |Monthly Cost |Notes
-
-|Direct integration (no gateway)
-|// PLACEHOLDER: $X,XXX
-|No caching, no routing optimization
-
-|AI Gateway (basic routing)
-|// PLACEHOLDER: $X,XXX
-|Provider failover, unified observability
-
-|Caching
-|// PLACEHOLDER: $X,XXX
-|// PLACEHOLDER: X% reduction from cache hits
-
-|Deferred tool loading
-|// PLACEHOLDER: $X,XXX
-|80-90% token reduction for agent workloads
-
-|Tier-based routing
-|// PLACEHOLDER: $X,XXX
-|Premium users → better model, free → cost-effective
-|===
-
-Total savings: // PLACEHOLDER: $X,XXX/month (XX% reduction)
-
-Hidden savings:
-
-* Developer time: No more managing multiple provider SDKs
-* Incident response: Automatic failover reduces downtime costs
-* Experimentation: Safe A/B testing without risking production
+This unified view helps you answer critical questions such as which model is the most cost-effective for your use case, why a specific user request failed, how much your staging environment costs per week, and what the latency difference is between providers for your workload.
 
 == Common gateway patterns
 
-=== Pattern 1: Team isolation
+=== Team isolation
 
-Use case: Multiple teams sharing infrastructure, need separate budgets and policies
+When multiple teams share infrastructure but need separate budgets and policies, create one gateway per team. For example, you might configure Team A's gateway with a $5K/month budget for both staging and production environments, while Team B's gateway has a $10K/month budget with different rate limits. Each team sees only their own traffic in the observability dashboards, providing clear cost attribution and isolation.
 
-Setup: Create one gateway per team
+=== Environment separation
 
-* Team A Gateway: $5K/month budget, staging + production environments
-* Team B Gateway: $10K/month budget, different rate limits
-* Each team sees only their traffic in observability dashboards
+To prevent staging traffic from affecting production metrics, create separate gateways for each environment. Configure the staging gateway with lower rate limits, restricted model access, and aggressive cost controls to prevent runaway expenses. The production gateway can have higher rate limits, access to all models, and alerting configured to detect anomalies.
 
-// PLACEHOLDER: Link to multi-tenancy guide
+=== Primary and fallback for reliability
 
-=== Pattern 2: Environment separation
+To ensure uptime during provider outages, configure provider pools with automatic failover. For example, you can set OpenAI as your primary provider (preferred for quality) and configure Anthropic as the fallback that activates when the gateway detects rate limits or timeouts from OpenAI. Monitor the fallback rate to detect primary provider issues early, before they impact your users.
 
-Use case: Prevent staging traffic from affecting production metrics
-
-Setup: Separate gateways for staging vs production
-
-* Staging Gateway: Lower rate limits, restricted model access, aggressive cost controls
-* Production Gateway: High rate limits, all models enabled, alerting on anomalies
-
-=== Pattern 3: Primary and fallback for reliability
-
-Use case: Ensure uptime during provider outages
-
-Setup: Configure provider pools with automatic failover
-
-* Primary: OpenAI (preferred for quality)
-* Fallback: Anthropic (activates on OpenAI rate limits or timeouts)
-* Monitor fallback rate to detect primary provider issues early
-
-=== Pattern 4: A/B testing models
-
-Use case: Compare model quality/cost without dual integration
-
-Setup: Route percentage of traffic to different models
+=== A/B testing models
+To compare model quality and cost without dual integration, route a percentage of traffic to different models. For example, you can send 80% of traffic to `claude-sonnet-3.5` and 20% to `claude-opus-4`, then compare quality metrics and costs in the observability dashboard before adjusting the split.
 
 // PLACEHOLDER: Confirm if percentage-based routing is supported, or if it's header-based only
 
-* 80% traffic → claude-sonnet-3.5
-* 20% traffic → claude-opus-4
-* Compare quality metrics and costs, then adjust
+=== Customer-based routing
 
-=== Pattern 5: Customer-based routing
-
-Use case: SaaS product with tiered pricing (free, pro, enterprise)
-
-Setup: CEL routing based on request headers
+For SaaS products with tiered pricing (free, pro, enterprise), use CEL routing based on request headers to match users with appropriate models:
 
 [source,cel]
 ----
@@ -288,29 +174,9 @@ request.headers["x-customer-tier"] == "pro" ? "anthropic/claude-sonnet-3.5" :
 "anthropic/claude-haiku"
 ----
 
-== Deployment model
-
-// PLACEHOLDER: Verify BYOC availability and any managed offering plans
-
-BYOC (Bring Your Own Cloud)
-
-* Currently available: BYOC version for // PLACEHOLDER: specific Redpanda version
-* Deployment: Within your Redpanda Cloud cluster
-* Data residency: All traffic stays in your cloud account
-* Supported clouds: // PLACEHOLDER: AWS, GCP, Azure?
-
-// PLACEHOLDER: If managed offering is planned, add:
-// *Managed (Redpanda Cloud)*
-// - Coming soon: Fully managed AI Gateway
-// - No infrastructure management
-// - Global deployment regions
-// - Uptime SLA
-
 == What's supported today
 
 LLM providers
-
-// PLACEHOLDER: Confirm currently supported providers
 
 * OpenAI
 * Anthropic
@@ -346,8 +212,7 @@ Observability
 * Latency metrics
 * // PLACEHOLDER: Metrics export? OpenTelemetry support?
 
-== What's not supported yet
-
+// What's not supported yet
 // PLACEHOLDER: List current limitations, for example:
 // - Custom model deployments (Azure OpenAI BYOK, AWS Bedrock custom models)
 // - Response caching
@@ -358,6 +223,8 @@ Observability
 // - Budget alerts/notifications
 
 == Architecture
+
+AI Gateway consists of three planes: a control plane for configuration and management, a data plane for request processing and routing, and an observability plane for monitoring and analytics.
 
 // PLACEHOLDER: Add architecture diagram showing:
 // 1. Control Plane:
@@ -378,7 +245,7 @@ Observability
 //    - Metrics aggregation
 //    - Dashboard UI
 
-Request lifecycle:
+When a request flows through AI Gateway, it passes through several policy and routing stages before reaching the LLM provider. Understanding this lifecycle helps you configure policies effectively and troubleshoot issues:
 
 . Application sends request to gateway endpoint with `rp-aigw-id` header
 . Gateway authenticates request
@@ -390,7 +257,9 @@ Request lifecycle:
 . Response returned to application
 . Request logged with tokens, cost, latency, status
 
-MCP request lifecycle:
+Each policy evaluation happens synchronously in the request path. If rate limits or spend limits reject the request, the gateway returns an error immediately without calling the LLM provider, which helps you control costs.
+
+For MCP tool requests, the lifecycle differs slightly to support deferred tool loading:
 
 . Application discovers tools via `/mcp` endpoint
 . Gateway aggregates tools from approved MCP servers
@@ -399,6 +268,8 @@ MCP request lifecycle:
 . Gateway routes to appropriate MCP server
 . Tool execution result returned
 . Request logged with execution time, status
+
+The gateway only loads and exposes specific tools when requested, which dramatically reduces the token overhead compared to loading all tools upfront.
 
 == Next steps
 
