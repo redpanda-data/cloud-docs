@@ -1,0 +1,234 @@
+= Agent Architecture Patterns
+:description: Design maintainable agent systems with single-agent and multi-agent patterns based on domain complexity.
+:page-topic-type: best-practices
+:learning-objective-1: Evaluate single-agent versus multi-agent architectures for your use case
+:learning-objective-2: Choose appropriate LLM models based on task requirements
+:learning-objective-3: Apply agent boundary design principles for maintainability
+
+Design agent systems that are maintainable, discoverable, and reliable by choosing the right architecture pattern and applying clear boundary principles.
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
+
+== Single-agent pattern
+
+Use a single-agent architecture when your problem domain is focused and doesn't require specialized subsystems.
+
+=== When to use
+
+Single-agent architectures work best for:
+
+* Narrow domain with limited scope
+* Single data source or simple integrations
+* Tasks that don't require specialized subsystems
+
+=== Example use cases
+
+Single agents are appropriate for:
+
+* **Customer order lookup agent**: Retrieves order history and status from a single topic
+* **Weather information agent**: Queries weather APIs and returns formatted data
+* **Product inventory checker**: Checks stock levels across warehouses
+
+=== Trade-offs
+
+Single agents offer simplicity at the cost of scalability:
+
+* **Simpler to build and maintain**: One system prompt, one tool set, one deployment
+* **Limited by single system prompt and tool set**: All capabilities must coexist in one agent
+* **Difficult to scale to complex multi-domain problems**: Adding features increases complexity rapidly
+
+Use single agents when your domain won't expand significantly over time.
+
+== Root agent with subagents pattern
+
+Use a multi-agent architecture when your problem spans multiple domains, requires specialized expertise, or involves governance boundaries.
+
+=== When to use
+
+Multi-agent architectures are appropriate for:
+
+* Complex domains spanning multiple areas
+* Multiple data sources requiring different access patterns
+* Tasks requiring specialized expertise or governance boundaries
+
+=== Architecture
+
+In a multi-agent system:
+
+* **Root agent orchestrates and delegates**: Interprets user requests and routes them to appropriate subagents
+* **Each subagent has focused domain expertise**: Owns a specific business area or capability
+* **Explicit boundaries between agents**: Clear separation of responsibilities and tools
+* **Subagents expose domain-specific tools**: Tools are scoped to the agent that needs them
+
+=== Example: E-commerce platform
+
+A typical e-commerce agent system includes:
+
+* **Root agent**: Interprets user requests and delegates to specialists
+* **Order agent**: Order processing, history lookup, status updates
+* **Inventory agent**: Stock checks, availability, warehouse operations
+* **Customer agent**: Profile management, preferences, history
+
+=== Benefits
+
+Multi-agent architectures provide:
+
+* **Changes isolated to specific domains**: Update the order agent without affecting inventory
+* **Easier debugging**: Narrow scope per agent means fewer potential failure points
+* **Clear governance boundaries**: Different teams can own different agents
+* **Parallel development**: Multiple teams can build agents simultaneously
+
+Use multi-agent architectures when you expect the system to grow, require team boundaries, or need governance separation.
+
+== Model selection guide
+
+Choose models based on task complexity, latency requirements, and cost constraints.
+
+=== Task complexity
+
+Match model capability to reasoning requirements:
+
+[cols="1,2,3"]
+|===
+| Task Type | Recommended Models | Description
+
+| Simple queries
+| Haiku 4.5, GPT-5 mini
+| Basic lookups, straightforward responses, minimal reasoning required
+
+| Balanced workloads
+| Sonnet 4.5, Gemini 3.0 pro flash
+| Moderate complexity tasks requiring some analysis and reasoning
+
+| Complex reasoning
+| Opus 4.5, GPT-5.2, Gemini 3.0 pro
+| Multi-step problem solving, advanced analysis, sophisticated reasoning chains
+|===
+
+=== Latency requirements
+
+Match model speed to user expectations:
+
+.Real-time responses
+Choose faster models for interactive use cases:
+
+* Haiku 4.5
+* GPT-5 mini
+* Gemini 3.0 pro flash
+
+.Batch processing
+Optimize for accuracy over speed when users don't wait for results.
+
+=== Cost constraints
+
+Balance capability with usage volume:
+
+.High volume
+Use cost-effective models for frequent requests:
+
+* Haiku 4.5
+* GPT-5 mini
+
+.Critical accuracy
+Use premium models when errors are costly:
+
+* Opus 4.5
+* GPT-5.2
+
+=== Model families
+
+Reference external documentation for model details:
+
+* OpenAI GPT: link:https://platform.openai.com/docs/models[GPT-5, GPT-5 mini^]
+* Google Gemini: link:https://ai.google.dev/gemini-api/docs[Gemini 3.0 pro, Gemini 3.0 pro flash^]
+* Anthropic Claude: link:https://docs.anthropic.com/claude/docs/models-overview[Opus 4.5, Sonnet 4.5, Haiku 4.5^]
+
+== Design principles
+
+Follow these principles to create maintainable agent systems.
+
+=== Explicit agent boundaries
+
+Each agent should have clear scope and responsibilities.
+
+Define each agent with:
+
+* Clear scope definition in system prompt
+* Specific tool set for its domain
+* Well-defined inputs and outputs
+
+Do not create agents with overlapping responsibilities. Overlapping domains create confusion about which agent handles which requests.
+
+=== Tool scoping per agent
+
+Assign tools to the agent that needs them. Don't give all agents access to all tools.
+
+.Do
+Give each agent only the tools it needs:
+
+[,yaml]
+----
+# Order agent
+tools:
+  - get_orders
+  - update_order_status
+
+# Inventory agent
+tools:
+  - check_stock
+  - reserve_inventory
+----
+
+.Don't
+Don't share all tools across agents:
+
+[,yaml]
+----
+# Both agents have access to all tools
+tools:
+  - get_orders
+  - update_order_status
+  - check_stock
+  - reserve_inventory
+----
+
+Tool scoping reduces the risk of tool misuse and makes debugging easier.
+
+=== Error handling and fallbacks
+
+Design agents to handle failures gracefully.
+
+Implement error handling that:
+
+* Uses retry logic for transient failures
+* Provides clear error messages to users
+* Logs errors for debugging
+
+Distinguish between transient failures (network timeouts) and permanent failures (invalid parameters). Retry the first, report the second immediately.
+
+== Summary
+
+Choose architecture patterns based on domain complexity and organizational needs:
+
+[cols="1,2,2"]
+|===
+| Pattern | Use When | Trade-off
+
+| Single agent
+| Narrow domain, simple tasks
+| Limited scalability
+
+| Multi-agent
+| Complex domains, multiple systems
+| Higher operational complexity
+|===
+
+== Next steps
+
+* xref:ai-agents:mcp/remote/tool-patterns.adoc[]: Explore tool design patterns
+* xref:ai-agents:agents/fundamentals.adoc[]: Review agent component fundamentals
+* xref:ai-agents:mcp/remote/best-practices.adoc[]: Learn MCP tool best practices

@@ -1,0 +1,282 @@
+= System Prompt Best Practices
+:description: Write system prompts that produce reliable, predictable agent behavior through clear constraints and tool guidance.
+:page-topic-type: best-practices
+:personas: ai_agent_developer
+:learning-objective-1: Identify effective system prompt patterns for agent reliability
+:learning-objective-2: Apply constraint patterns to prevent unintended agent behavior
+:learning-objective-3: Evaluate system prompts for clarity and completeness
+
+Write system prompts that produce reliable, predictable agent behavior. Good prompts define scope, specify constraints, and guide tool usage.
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
+
+== Role definition
+
+=== Be specific about agent identity
+
+Define what the agent does, not what it is.
+
+.Do
+[,text]
+----
+You are an order fulfillment agent for an e-commerce platform. You help customers track orders, update shipping addresses, and process returns.
+----
+
+.Don't
+[,text]
+----
+You are a helpful assistant.
+----
+
+=== Define what the agent does and doesn't do
+
+Explicitly state boundaries:
+
+* What tasks the agent handles
+* What tasks it should refuse or delegate
+* When to ask for human assistance
+
+[,text]
+----
+Responsibilities:
+- Track customer orders
+- Update shipping addresses
+- Process returns up to $500
+
+Do not:
+- Provide product recommendations (redirect to website)
+- Process refunds above $500 (escalate to manager)
+- Access orders from other customers
+----
+
+== Tool specification
+
+=== List available tools
+
+Name each tool the agent can use:
+
+[,text]
+----
+Available tools:
+- get_customer_orders: Retrieve order history for a customer
+- update_order_status: Change order state (shipped, delivered, canceled)
+- calculate_refund: Compute refund amount based on return policy
+----
+
+=== Explain when to use each tool
+
+Provide decision criteria for tool selection.
+
+.Do
+[,text]
+----
+Use get_customer_orders when:
+- Customer asks about order history
+- You need order details to answer a question
+
+Use update_order_status only when:
+- Customer explicitly requests a cancellation
+- You have confirmed the order is eligible for status changes
+----
+
+.Don't
+[,text]
+----
+Use the tools as needed.
+----
+
+== Constraints and safety
+
+=== Specify hard limits
+
+Use "never" for absolute constraints:
+
+[,text]
+----
+Never:
+- Expose customer payment information
+- Process refunds above $500 without manager approval
+- Access orders from other customers
+----
+
+=== Define data boundaries
+
+Specify what data the agent can access:
+
+[,text]
+----
+Data access:
+- Only orders from the last 90 days
+- Only data for the authenticated customer
+- No access to employee records or internal systems
+----
+
+=== Set response guidelines
+
+Control output format and content:
+
+[,text]
+----
+Response guidelines:
+- Present order details as tables
+- Always include order numbers in responses
+- State the analysis time window when showing trends
+- If you cannot complete a task, explain why and suggest alternatives
+----
+
+== Context and conversation management
+
+=== Handle ambiguous requests
+
+Guide the agent on how to clarify:
+
+[,text]
+----
+When request is unclear:
+1. Ask clarifying questions
+2. Suggest common interpretations
+3. Do not guess customer intent
+----
+
+=== Define conversation boundaries
+
+Set limits on conversation scope:
+
+[,text]
+----
+Conversation scope:
+- Answer questions about orders, shipping, and returns
+- Do not provide product recommendations (redirect to website)
+- Do not engage in general conversation unrelated to orders
+----
+
+== Output formatting
+
+=== Specify structure
+
+Define how the agent presents information:
+
+[,text]
+----
+Output format:
+- Use tables for multiple items
+- Use bulleted lists for steps or options
+- Use code blocks for tracking numbers or order IDs
+- Include units (dollars, kilograms) in all numeric values
+----
+
+== Testing your prompt
+
+Evaluate system prompts by testing:
+
+* **Boundary adherence**: Does the agent refuse out-of-scope requests?
+* **Tool selection**: Does it choose the right tool for each task?
+* **Constraint compliance**: Does it follow "never" rules?
+* **Clarity under ambiguity**: Does it ask questions when unclear?
+
+== Example: Complete system prompt
+
+This example demonstrates all best practices:
+
+[,text]
+----
+You are an order analytics agent for Acme E-commerce.
+
+Responsibilities:
+- Answer questions about customer order trends
+- Analyze order data from Redpanda topics
+- Provide insights on order patterns
+
+Available tools:
+- get_customer_orders: Retrieve order history (parameters: customer_id, start_date, end_date)
+- analyze_recent_orders: Compute order statistics (parameters: time_window, group_by)
+
+When to use tools:
+- Use get_customer_orders for individual customer queries
+- Use analyze_recent_orders for trend analysis across multiple orders
+
+Never:
+- Expose customer payment information or addresses
+- Analyze data older than 90 days unless explicitly requested
+- Make business recommendations without data to support them
+
+Data access:
+- Only orders from the authenticated customer account
+- Maximum of 90 days of historical data
+
+Response guidelines:
+- Present structured data as tables
+- Always state the analysis time window
+- Include order counts in trend summaries
+- If data is unavailable, explain the limitation
+
+When request is unclear:
+- Ask which time period to analyze
+- Confirm whether to include canceled orders
+- Do not assume customer intent
+----
+
+== Common anti-patterns
+
+=== Vague role definition
+
+.Don't
+[,text]
+----
+You are a helpful AI assistant.
+----
+
+Why: Doesn't constrain behavior or set expectations.
+
+=== Missing constraints
+
+.Don't
+[,text]
+----
+You can access customer data to help answer questions.
+----
+
+Why: No boundaries on what data or how much history.
+
+=== Implicit tool selection
+
+.Don't
+[,text]
+----
+Use the available tools to complete tasks.
+----
+
+Why: Agent must guess which tool applies when.
+
+== Summary
+
+[cols="1,2,2"]
+|===
+| Element | Purpose | Example
+
+| Role definition
+| Sets agent identity and scope
+| "You are an order fulfillment agent"
+
+| Tool specification
+| Guides tool selection
+| "Use get_orders when customer asks about history"
+
+| Constraints
+| Prevents unsafe behavior
+| "Never expose payment information"
+
+| Response format
+| Controls output structure
+| "Present order details as tables"
+|===
+
+== Next steps
+
+* xref:ai-agents:agents/quickstart.adoc[]: Create an agent with your system prompt
+* xref:ai-agents:agents/fundamentals.adoc[]: Review agent components
+* xref:ai-agents:mcp/remote/best-practices.adoc[]: Learn MCP tool design patterns

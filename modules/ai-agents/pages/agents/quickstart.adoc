@@ -1,0 +1,80 @@
+= AI Agent Quickstart
+:description: Get started with AI agents using Redpanda Cloud by creating a cluster, deploying a tool, and connecting an AI client.
+:page-topic-type: tutorial
+:personas: ai_agent_developer, evaluator
+:learning-objective-1: Create a Redpanda Cloud cluster with Remote MCP enabled
+:learning-objective-2: Deploy your first MCP tool
+:learning-objective-3: Connect an AI client to your agent tools
+
+This quickstart gets you up and running with your first AI agent using Redpanda Cloud. You'll create a cluster, deploy a simple tool, and connect an AI client.
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
+
+== Prerequisites
+
+* Redpanda Cloud account
+* Claude Code, Claude Desktop, or another MCP-compatible AI client
+* Basic familiarity with YAML
+
+== What you'll build
+
+A simple agent that can query data from a Redpanda topic using a custom MCP tool.
+
+== Create a cluster
+
+. Log in to the Redpanda Cloud Console.
+. Create a new cluster.
+. During cluster creation, enable Remote MCP.
+. Enable the Secrets Store.
+. Wait for the cluster to become ready.
+
+For detailed cluster creation steps, see the Redpanda Cloud documentation.
+
+== Deploy your first MCP tool
+
+You'll create a simple tool that queries recent data from a topic.
+
+For step-by-step instructions on creating and deploying MCP tools, see xref:ai-agents:mcp/remote/quickstart.adoc[].
+
+The MCP quickstart walks you through:
+
+* Writing a Redpanda Connect configuration with a component and meta block
+* Defining tool parameters and descriptions
+* Deploying the tool to your cluster
+* Testing tool execution
+
+== Connect your AI client
+
+Once your MCP tool is deployed, connect your AI client:
+
+. Get your cluster's MCP server URL from the Redpanda Cloud Console.
+. Configure your AI client with the MCP server URL.
+. Authenticate using your Redpanda Cloud credentials.
+
+For client-specific setup instructions, see xref:ai-agents:mcp/remote/quickstart.adoc[].
+
+== Test your agent
+
+Try a natural language query that uses your tool:
+
+[.no-copy]
+----
+Show me the last 10 messages from the orders topic
+----
+
+The agent will:
+
+. Understand your intent
+. Discover the available tool
+. Invoke the tool with appropriate parameters
+. Return formatted results
+
+== Next steps
+
+* xref:ai-agents:agents/fundamentals.adoc[]: Learn core concepts for building agents
+* xref:ai-agents:agents/architecture-patterns.adoc[]: Explore common architecture patterns
+* xref:ai-agents:mcp/remote/tool-patterns.adoc[]: Find reusable tool patterns

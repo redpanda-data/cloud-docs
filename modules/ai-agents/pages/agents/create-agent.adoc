@@ -1,0 +1,198 @@
+= Create an Agent
+:description: Configure agents with model selection, system prompts, tool connections, and execution parameters.
+:page-topic-type: how-to
+:personas: ai_agent_developer
+:learning-objective-1: Configure an agent with model selection and system prompt
+:learning-objective-2: Connect MCP servers and select tools for your agent
+:learning-objective-3: Set agent execution parameters including max iterations
+
+Create a new AI agent through the Redpanda Cloud Console. This guide walks you through configuring the agent's model, system prompt, tools, and execution settings.
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
+
+== Prerequisites
+
+* Redpanda Cloud cluster with Remote MCP enabled
+* At least one MCP server deployed with tools
+* LLM provider API key (OpenAI, Google, or Anthropic)
+* System prompt prepared (see xref:ai-agents:agents/prompt-best-practices.adoc[])
+
+== Access the agents UI
+
+. Log in to the Redpanda Cloud Console.
+. Navigate to your cluster.
+. Click *Agents* in the left navigation.
+
+== Create a new agent
+
+=== Configure basic settings
+
+. Click *Create Agent*.
+. Enter an agent name.
+. Optionally, add a description.
+
+=== Choose a model
+
+. In the *Model* section, select your LLM provider:
++
+* OpenAI (GPT models)
+* Google (Gemini models)
+* Anthropic (Claude models)
+
+. Select the specific model version:
++
+* For balanced performance: Sonnet 4.5, Gemini 3.0 pro flash, GPT-5 mini
+* For complex reasoning: Opus 4.5, Gemini 3.0 pro, GPT-5.2
+* For cost-effective tasks: Haiku 4.5, GPT-5 mini
+
+For model selection guidance, see xref:ai-agents:agents/architecture-patterns.adoc[].
+
+=== Add API keys as secrets
+
+. In the *API Key* section, click *Add Secret*.
+. Choose one:
++
+* *Use existing secret*: Select from your Secrets Store
+* *Create new secret*: Enter your LLM provider API key
+
+. Name your secret (for example: `openai-api-key`).
+. Click *Save*.
+
+=== Write the system prompt
+
+. In the *System Prompt* section, enter your prompt.
+. Follow these guidelines:
++
+* Define agent role and responsibilities
+* List available tools
+* Specify constraints and safety rules
+* Set output format expectations
+
+. Use the *Preview* button to review formatted prompt.
+
+Example system prompt structure:
+
+[,text]
+----
+You are an [agent role].
+
+Responsibilities:
+- [Task 1]
+- [Task 2]
+
+Available tools:
+- [tool_name]: [description]
+
+Never:
+- [Constraint 1]
+- [Constraint 2]
+
+Response format:
+- [Format guideline]
+----
+
+For complete prompt guidelines, see xref:ai-agents:agents/prompt-best-practices.adoc[].
+
+=== Add MCP servers and select tools
+
+. In the *Tools* section, click *Add MCP Server*.
+. Select an MCP server from your cluster.
+. The UI displays all tools exposed by that server.
+. Select which tools this agent can use:
++
+* Check the box next to each tool
+* Review tool descriptions to confirm they match agent needs
+
+. Repeat to add tools from multiple MCP servers.
+. Verify your tool selection:
++
+* Ensure tools match those listed in your system prompt
+* Remove tools the agent doesn't need (principle of least privilege)
+
+=== Add subagents (optional)
+
+For multi-agent architectures:
+
+. In the *Subagents* section, click *Add Subagent*.
+. Select an existing agent to use as a subagent.
+. The root agent can delegate tasks to subagents.
+. Configure delegation:
++
+* Define when to use this subagent
+* Set access permissions
+
+For multi-agent design patterns, see xref:ai-agents:agents/a2a-workflows.adoc[].
+
+=== Set max iterations
+
+. In the *Execution Settings* section, configure *Max Iterations*.
+. This limits how many tool calls the agent can make per request.
+. Recommended values:
++
+* Simple queries: 3-5 iterations
+* Complex workflows: 10-15 iterations
+* Multi-step analysis: 20+ iterations
+
+. Higher limits increase:
++
+* Agent capability (can complete complex tasks)
+* Cost (more LLM calls)
+* Latency (longer response times)
+
+=== Review and create
+
+. Review all settings:
++
+* Model and API key
+* System prompt
+* Selected tools
+* Max iterations
+
+. Click *Create Agent*.
+. Wait for agent creation to complete.
+
+== Test your agent
+
+. In the agent details view, click *Test*.
+. Enter a test query.
+. Verify the agent:
++
+* Selects appropriate tools
+* Follows system prompt constraints
+* Returns expected output format
+
+. Iterate on system prompt or tool selection as needed.
+
+== Examples
+
+=== Simple query agent
+
+* *Model*: Haiku 4.5 (fast, cost-effective)
+* *Tools*: Single MCP server with `get_orders` tool
+* *Max iterations*: 5
+* *Use case*: Customer order lookups
+
+=== Complex analytics agent
+
+* *Model*: Sonnet 4.5 (balanced)
+* *Tools*: Multiple servers with data query, aggregation, and formatting tools
+* *Max iterations*: 15
+* *Use case*: Multi-step data analysis
+
+=== Multi-agent orchestrator
+
+* *Model*: Opus 4.5 (advanced reasoning)
+* *Tools*: Agent delegation tools
+* *Subagents*: Order Agent, Inventory Agent, Customer Agent
+* *Max iterations*: 20
+* *Use case*: E-commerce operations
+
+== Next steps
+
+* xref:ai-agents:agents/prompt-best-practices.adoc[]: Refine your system prompts
+* xref:ai-agents:mcp/remote/create-tool.adoc[]: Create additional tools
+* xref:ai-agents:agents/architecture-patterns.adoc[]: Design multi-agent systems
