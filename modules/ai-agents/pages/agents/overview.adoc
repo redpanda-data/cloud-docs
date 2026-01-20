@@ -1,9 +1,10 @@
 = AI Agents Overview
 :description: Learn what AI agents are and how Redpanda Cloud supports agent development with real-time streaming.
 :page-topic-type: overview
-:learning-objective-1: Identify what AI agents are and their primary use cases
-:learning-objective-2: Identify the benefits of using Redpanda Cloud for agent development
-:learning-objective-3: Evaluate whether building agents with Redpanda Cloud fits your requirements
+:personas: evaluator, ai_agent_developer, app_developer, streaming_developer
+:learning-objective-1: Describe what AI agents are and their essential components
+:learning-objective-2: Explain how Redpanda Cloud streaming infrastructure benefits agent architectures
+:learning-objective-3: Identify use cases where Redpanda Cloud agents provide value
 
 AI agents are systems that combine large language models with the ability to execute actions and process data. Redpanda Cloud provides real-time streaming infrastructure and standardized tool access to support agent development.
 
@@ -15,42 +16,53 @@ After reading this page, you will be able to:
 
 == What is an AI agent?
 
-An AI agent is a system built around a large language model that can:
+An AI agent is a system built around a large language model that can interpret user intent, decide which actions are required, invoke external tools, process live and historical data, and chain multiple steps into a workflow. AI agents differ from text-only LLMs by executing actions and invoking external tools.
 
-* Interpret user intent
-* Decide which actions are required
-* Invoke external tools
-* Process live and historical data
-* Chain multiple steps into a workflow
+== How agents work
 
-AI agents differ from text-only LLMs by executing actions and invoking external tools.
+Every AI agent consists of four essential components:
+
+* *System prompt*: Defines the agent's role, responsibilities, and constraints
+* *LLM*: Interprets user intent and decides which tools to invoke
+* *Tools*: External capabilities exposed through the Model Context Protocol (MCP)
+* *Context*: Conversation history, tool results, and real-time events from Redpanda topics
+
+Agents can invoke Redpanda Connect components as tools on-demand. Redpanda Connect pipelines can also invoke agents for event-driven processing. This bidirectional integration supports both interactive workflows and automated streaming.
+
+When a user makes a request, the LLM receives the system prompt and context, decides which tools to invoke, and processes the results. This cycle repeats until the task completes.
+
+For a deeper understanding of how agents execute, manage context, and maintain state, see xref:ai-agents:agents/concepts.adoc[].
 
 == Key benefits
 
-Redpanda Cloud provides:
-
-* Real-time streaming data: Access live events instead of batch snapshots
-* Remote MCP support: Standardized tool access via Model Context Protocol
-* Managed infrastructure: Deployment, scaling, and security handled for you
-* Low-latency execution: Tools run close to your data
-* Integrated secrets: Securely manage API keys and credentials
+Redpanda Cloud provides real-time streaming data so agents access live events instead of batch snapshots. Remote MCP support enables standardized tool access. Managed infrastructure handles deployment, scaling, and security for you. Low-latency execution means tools run close to your data. Integrated secrets management securely stores API keys and credentials.
 
 == Use cases
 
-Agents built with Redpanda Cloud are ideal for:
+AI agents in Redpanda Cloud unlock new capabilities across multiple fields.
 
-* Real-time customer support: Agents that query order history, inventory status, and shipping data from streaming topics
-* Operational intelligence: Agents that analyze live metrics and logs to answer questions about system health
-* Data enrichment workflows: Agents that augment streaming data with external API calls or database lookups
-* Multi-system orchestration: Agents that coordinate actions across multiple services using streaming events as triggers
+=== For AI agent developers
+
+Build agents grounded in real-time data instead of static snapshots. Connect your agent to live order status, inventory levels, and customer history so responses reflect current business state, not stale training data.
+
+=== For application developers
+
+Add conversational AI to existing applications without rebuilding your backend. Expose your services as MCP tools and let agents orchestrate complex multi-step workflows through natural language.
+
+=== For streaming developers
+
+Process every event with AI reasoning at scale. Invoke agents automatically from pipelines for fraud detection, content moderation, or sentiment analysis. No batch jobs, no delayed insights.
 
 == Limitations
 
-* Remote MCP requires a Redpanda Cloud cluster
-* Tool execution latency depends on data source and processing complexity
-* Agent quality depends on LLM selection and system prompt design
+* Agents are available only on xref:get-started:cluster-types/byoc/index.adoc[BYOC clusters]
+* MCP servers must be hosted in Redpanda Cloud clusters
+* Cross-agent calling between separate agents hosted in Redpanda Cloud is not currently supported (use internal subagents for delegation within a single agent)
 
 == Next steps
 
 * xref:ai-agents:agents/quickstart.adoc[]: Get your first agent running
-* xref:ai-agents:agents/fundamentals.adoc[]: Learn the four essential components
+* xref:ai-agents:agents/concepts.adoc[]: Understand agent execution, context, and state management
+* xref:ai-agents:agents/architecture-patterns.adoc[]: Explore agent design patterns
+* xref:ai-agents:agents/integration-overview.adoc[]: Choose between agents invoking tools and pipelines calling agents
+* xref:ai-agents:agents/create-agent.adoc[]: Create an agent through the Cloud Console

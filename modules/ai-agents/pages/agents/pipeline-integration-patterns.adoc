@@ -1,0 +1,143 @@
+= Pipeline Integration Patterns
+:description: Build Redpanda Connect pipelines that invoke agents for event-driven processing and streaming enrichment.
+:page-topic-type: best-practices
+:personas: streaming_developer, ai_agent_developer
+:learning-objective-1: Identify when pipelines should call agents for stream processing
+:learning-objective-2: pass:q[Design event-driven agent invocation using the `a2a_message` processor]
+:learning-objective-3: Implement streaming enrichment with AI-generated fields
+
+Build Redpanda Connect pipelines that invoke agents for automated, event-driven processing. Pipelines use the `a2a_message` processor to call agents for each event in a stream when you need AI reasoning, classification, or enrichment at scale.
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
+
+This page focuses on pipelines calling agents (pipeline-initiated integration). For agents invoking MCP tools, see xref:ai-agents:agents/integration-overview.adoc#agent-needs-capabilities[Agent needs capabilities]. For external applications calling agents, see xref:ai-agents:agents/integration-overview.adoc#external-system-calls-agent[External system calls agent].
+
+== How pipelines invoke agents
+
+Pipelines use the xref:develop:connect/components/processors/a2a_message.adoc[`a2a_message`] processor to invoke agents for each event in a stream. The processor uses the xref:ai-agents:agents/a2a-concepts.adoc[A2A protocol] to discover and communicate with agents.
+
+When the `a2a_message` processor receives an event, it sends the event data to the specified agent along with any prompt you provide. The agent processes the event using its reasoning capabilities and returns a response. The processor then adds the agent's response to the event for further processing or output.
+
+The pipeline determines when to invoke agents based on events, not agent reasoning.
+
+== When to use this pattern
+
+Use the `a2a_message` processor when pipelines need AI reasoning for every event in a stream.
+
+The `a2a_message` processor is appropriate when:
+
+* **Every event needs AI analysis:** Each message requires reasoning, classification, or decision-making.
+* **You need streaming enrichment:** Add AI-generated fields to events at scale.
+* **Processing is fully automated:** No human in the loop, event-driven workflows.
+* **Batch latency is acceptable:** Agent reasoning time is tolerable for your use case.
+* **You're handling high-volume streams:** Processing thousands or millions of events.
+
+== Use cases
+
+Use the `a2a_message` processor in pipelines for these common patterns.
+
+=== Event-driven agent invocation
+
+Invoke agents automatically for each event:
+
+[source,yaml]
+----
+include::ai-agents:example$pipelines/event-driven-invocation.yaml[]
+----
+
+Replace `AGENT_CARD_URL` with your actual agent card URL. See xref:ai-agents:agents/a2a-concepts.adoc#agent-card-location[Agent card location].
+
+**Use case:** Real-time fraud detection on every transaction.
+
+=== Streaming data enrichment
+
+Add AI-generated metadata to events:
+
+[source,yaml]
+----
+include::ai-agents:example$pipelines/streaming-enrichment.yaml[tag=processors,indent=0]
+----
+
+Replace `AGENT_CARD_URL` with your actual agent card URL. See xref:ai-agents:agents/a2a-concepts.adoc#agent-card-location[Agent card location].
+
+**Use case:** Add sentiment scores to every customer review in real-time.
+
+=== Asynchronous workflows
+
+Process events in the background:
+
+[source,yaml]
+----
+include::ai-agents:example$pipelines/async-workflows.yaml[tag=pipeline,indent=0]
+----
+
+Replace `AGENT_CARD_URL` with your actual agent card URL. See xref:ai-agents:agents/a2a-concepts.adoc#agent-card-location[Agent card location].
+
+**Use case:** Nightly batch summarization of reports where latency is acceptable.
+
+=== Multi-agent pipeline orchestration
+
+Chain multiple agents in sequence:
+
+[source,yaml]
+----
+include::ai-agents:example$pipelines/multi-agent-orchestration.yaml[tag=processors,indent=0]
+----
+
+Replace the agent URL variables with your actual agent card URLs. See xref:ai-agents:agents/a2a-concepts.adoc#agent-card-location[Agent card location].
+
+**Use case:** Translate feedback, analyze sentiment, then route to appropriate team.
+
+=== Agent as transformation node
+
+Use agent reasoning for complex transformations:
+
+[source,yaml]
+----
+include::ai-agents:example$pipelines/agent-transformation.yaml[tag=processors,indent=0]
+----
+
+Replace `AGENT_CARD_URL` with your actual agent card URL. See xref:ai-agents:agents/a2a-concepts.adoc#agent-card-location[Agent card location].
+
+**Use case:** Convert natural language queries to SQL for downstream processing.
+
+== When not to use this pattern
+
+Do not use the `a2a_message` processor when:
+
+* Users need to interact with agents interactively.
+* The transformation is simple and does not require AI reasoning.
+* Agents need to dynamically decide what data to fetch based on context.
+
+For a detailed comparison between pipeline-initiated and agent-initiated integration patterns, see xref:ai-agents:agents/integration-overview.adoc#pattern-comparison[Pattern comparison].
+
+== Example: Real-time fraud detection
+
+This example shows a complete pipeline that analyzes every transaction with an agent.
+
+=== Pipeline configuration
+
+[source,yaml]
+----
+include::ai-agents:example$pipelines/fraud-detection-routing.yaml[]
+----
+
+Replace `AGENT_CARD_URL` with your agent card URL. See xref:ai-agents:agents/a2a-concepts.adoc#agent-card-location[Agent card location].
+
+This pipeline:
+
+* Consumes every transaction from the `transactions` topic.
+* Sends each transaction to the fraud detection agent using `a2a_message`.
+* Routes transactions to different topics based on fraud score.
+* Runs continuously, analyzing every transaction in real-time.
+
+== Next steps
+
+* xref:ai-agents:mcp/remote/tool-patterns.adoc[]: Explore MCP tool patterns for agent-initiated integration
+* xref:ai-agents:agents/integration-overview.adoc[]: Review all integration patterns
+* xref:ai-agents:agents/a2a-concepts.adoc[]: Learn how the `a2a_message` processor uses the A2A protocol
+* xref:develop:connect/components/processors/about.adoc[]: Learn about Redpanda Connect processors

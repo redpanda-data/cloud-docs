@@ -1,0 +1,435 @@
+= Troubleshoot AI Agents
+:description: Diagnose and fix common issues with AI agents including deployment failures, runtime behavior problems, and tool execution errors.
+:page-topic-type: troubleshooting
+:personas: ai_agent_developer, app_developer, streaming_developer
+:learning-objective-1: Diagnose deployment failures and resource allocation errors
+:learning-objective-2: Resolve runtime behavior issues including tool selection and iteration limits
+:learning-objective-3: Fix tool execution problems and authentication failures
+
+Use this page to diagnose and fix common issues with AI agents, including deployment failures, runtime behavior problems, tool execution errors, and integration issues.
+
+== Deployment issues
+
+Fix issues that prevent agents from connecting to required resources.
+
+=== MCP server connection failures
+
+**Symptoms:** Agent starts but the tools don't respond or return connection errors.
+
+**Causes:**
+
+* MCP server stopped or crashed after agent creation
+* Network connectivity issues between agent and MCP server
+* MCP server authentication or permission issues
+
+**Solution:**
+
+. Verify MCP server status in *Agentic AI* > *Remote MCP*.
+. Check MCP server logs for errors.
+. Restart the MCP server if needed.
+. Verify agent has permission to access the MCP server.
+
+**Prevention:**
+
+* Monitor MCP server health
+* Use appropriate retry logic in tools
+
+== Runtime behavior issues
+
+Resolve problems with agent decision-making, tool selection, and response generation.
+
+=== Agent not calling tools
+
+**Symptoms:** Agent responds without calling any tools, or fabricates information instead of using tools.
+
+**Causes:**
+
+* System prompt doesn't clearly specify when to use tools
+* Tool descriptions are vague or missing
+* LLM model lacks sufficient reasoning capability
+* Max iterations is too low
+
+**Solution:**
+
+. Strengthen tool usage guidance in your system prompt:
++
+[,text]
+----
+ALWAYS use get_order_status when customer mentions an order ID.
+NEVER respond about order status without calling the tool first.
+----
+
+. Review tool descriptions in your MCP server configuration.
+. Use a more capable model (GPT-4, Claude Sonnet, or equivalent).
+. Increase max iterations if the agent is stopping before reaching tools.
+
+**Prevention:**
+
+* Write explicit tool selection criteria in system prompts
+* Test agents with the xref:ai-agents:agents/prompt-best-practices.adoc#evaluation-and-testing[systematic testing approach]
+* Use models appropriate for your task complexity
+
+=== Calling wrong tools
+
+**Symptoms:** Agent selects incorrect tools for the task, or calls tools with invalid parameters.
+
+**Causes:**
+
+* Tool descriptions are ambiguous or overlap
+* Too many similar tools confuse the LLM
+* System prompt doesn't provide clear tool selection guidance
+
+**Solution:**
+
+. Make tool descriptions more specific and distinct.
+. Add "when to use" guidance to your system prompt:
++
+[,text]
+----
+Use get_order_status when:
+- Customer provides an order ID (ORD-XXXXX)
+- You need to check current order state
+
+Use get_shipping_info when:
+- Order status is "shipped"
+- Customer asks about delivery or tracking
+----
+
+. Reduce the number of tools you expose to the agent.
+. Use subagents to partition tools by domain.
+
+**Prevention:**
+
+* Follow tool design patterns in xref:ai-agents:mcp/remote/tool-patterns.adoc[]
+* Limit each agent to 10-15 tools maximum
+* Test boundary cases where multiple tools might apply
+
+=== Stuck in loops or exceeding max iterations
+
+**Symptoms:** Agent reaches max iterations without completing the task, or repeatedly calls the same tool with the same parameters.
+
+**Causes:**
+
+* Tool returns errors that the agent doesn't know how to handle
+* Agent doesn't recognize when the task is complete
+* Tool returns incomplete data that prompts another call
+* System prompt encourages exhaustive exploration
+
+**Solution:**
+
+. Add completion criteria to your system prompt:
++
+[,text]
+----
+When you have retrieved all requested information:
+1. Present the results to the user
+2. Stop calling additional tools
+3. Do not explore related data unless asked
+----
+
+. Add error handling guidance:
++
+[,text]
+----
+If a tool fails after 2 attempts:
+- Explain what went wrong
+- Do not retry the same tool again
+- Move on or ask for user guidance
+----
+
+. Review tool output to ensure it signals completion clearly.
+. Increase max iterations if the task legitimately requires many steps.
+
+**Prevention:**
+
+* Design tools to return complete information in one call
+* Set max iterations appropriate for task complexity (see xref:ai-agents:agents/concepts.adoc#why-iterations-matter[Why iterations matter])
+* Test with ambiguous requests that might cause loops
+
+=== Making up information
+
+**Symptoms:** Agent provides plausible-sounding answers without calling tools, or invents data when tools fail.
+
+**Causes:**
+
+* System prompt doesn't explicitly forbid fabrication
+* Agent treats tool failures as suggestions rather than requirements
+* Model is hallucinating due to lack of constraints
+
+**Solution:**
+
+. Add explicit constraints to your system prompt:
++
+[,text]
+----
+Critical rules:
+- NEVER make up order numbers, tracking numbers, or customer data
+- If a tool fails, explain the failure - do not guess
+- If you don't have information, say so explicitly
+----
+
+. Test error scenarios by temporarily disabling tools.
+. Use a more capable model that follows instructions better.
+
+**Prevention:**
+
+* Include "never fabricate" rules in all system prompts
+* Test with requests that require unavailable data
+* Monitor transcripts and session topic for fabricated responses
+
+== Performance issues
+
+Diagnose and fix issues related to agent speed and resource consumption.
+
+=== Slow response times
+
+**Symptoms:** Agent takes 10+ seconds to respond to simple queries.
+
+**Causes:**
+
+* LLM model is slow (large context processing)
+* Too many tool calls in sequence
+* Tools themselves are slow (database queries, API calls)
+* Large context window from long conversation history
+
+**Solution:**
+
+. Use a faster model for simple queries:
+.. Haiku or GPT-4o Mini for straightforward tasks
+.. Reserve larger models for complex reasoning
+. Review conversation history in Inspector to identify unnecessary tool calls.
+. Optimize tool implementations:
+.. Add caching where appropriate
+.. Reduce query complexity
+.. Return only needed data (use pagination, filters)
+. Clear conversation history in Inspector if context is very large.
+
+**Prevention:**
+
+* Right-size model selection based on task complexity
+* Design tools to execute quickly (< 2 seconds ideal)
+* Set appropriate max iterations to prevent excessive exploration
+* Monitor token usage and conversation length
+
+=== High token costs
+
+**Symptoms:** Token usage is higher than expected, costs are increasing rapidly.
+
+**Causes:**
+
+* Max iterations configured too high
+* Agent making unnecessary tool calls
+* Large tool results filling context window
+* Long conversation history not being managed
+* Using expensive models for simple tasks
+
+**Solution:**
+
+. Review token usage in the tasks topic.
+. Lower max iterations for this agent.
+. Optimize tool responses to return less data:
++
+[,text]
+----
+Bad:  Return all 10,000 customer records
+Good: Return paginated results, 20 records at a time
+----
+
+. Add cost control guidance to system prompt:
++
+[,text]
+----
+Efficiency guidelines:
+- Request only the data you need
+- Stop when you have enough information
+- Do not call tools speculatively
+----
+
+. Switch to a more cost-effective model for simple queries.
+. Clear conversation history periodically in Inspector.
+
+**Prevention:**
+
+* Set appropriate max iterations (10-20 for simple, 30-40 for complex)
+* Design tools to return minimal necessary data
+* Monitor token usage trends
+* See cost calculation guidance in xref:ai-agents:agents/concepts.adoc#cost-calculation[Cost calculation]
+
+== Tool execution issues
+
+Fix problems with timeouts, invalid parameters, and error responses.
+
+=== Tool timeouts
+
+**Symptoms:** Tools fail with timeout errors, agent receives incomplete results.
+
+**Causes:**
+
+* External API is slow or unresponsive
+* Database query is too complex
+* Network latency between tool and external system
+* Tool processing large datasets in memory
+
+**Solution:**
+
+. Add timeout handling to tool implementation:
++
+[,yaml]
+----
+http:
+  url: https://api.example.com/data
+  timeout: "5s"  # Set explicit timeout
+----
+
+. Optimize external queries:
+.. Add database indexes
+.. Reduce query scope
+.. Cache frequent queries
+. Increase tool timeout if operation legitimately takes longer.
+. Add retry logic for transient failures.
+
+**Prevention:**
+
+* Set explicit timeouts in all tool configurations
+* Test tools under load
+* Monitor external API performance
+* Design tools to fail fast on unavailable services
+
+=== Invalid parameters
+
+**Symptoms:** Tools return validation errors about missing or incorrectly formatted parameters.
+
+**Causes:**
+
+* Tool schema doesn't match implementation
+* Agent passes wrong data types
+* Required parameters not marked as required in schema
+* Agent misunderstands parameter purpose
+
+**Solution:**
+
+. Verify tool schema matches implementation:
++
+[,yaml]
+----
+input_schema:
+  properties:
+    order_id:
+      type: string  # Must match what tool expects
+      description: "Order ID in format ORD-12345"
+----
+
+. Add parameter validation to tools.
+. Improve parameter descriptions in tool schema.
+. Add examples to tool descriptions:
++
+[,yaml]
+----
+description: |
+  Get order status by order ID.
+  Example: get_order_status(order_id="ORD-12345")
+----
+
+**Prevention:**
+
+* Write detailed parameter descriptions
+* Include format requirements and examples
+* Test tools with invalid inputs to verify error messages
+* Use JSON Schema validation in tool implementations
+
+=== Tool returns errors
+
+**Symptoms:** Tools execute but return error responses or unexpected data formats.
+
+**Causes:**
+
+* External API returned error
+* Tool implementation has bugs
+* Data format changed in external system
+* Tool lacks error handling
+
+**Solution:**
+
+. Check tool logs in MCP server.
+. Test tool directly (outside agent context).
+. Verify external system is operational.
+. Add error handling to tool implementation:
++
+[,yaml]
+----
+processors:
+  - try:
+      - http:
+          url: ${API_URL}
+    catch:
+      - mapping: |
+          root.error = "API unavailable: " + error()
+----
+
+. Update agent system prompt to handle this error type.
+
+**Prevention:**
+
+* Implement comprehensive error handling in tools
+* Monitor external system health
+* Add retries for transient failures
+* Log all tool errors for analysis
+
+== Integration issues
+
+Fix problems with external applications calling agents and pipeline-to-agent integration.
+
+=== Pipeline integration failures
+
+**Symptoms:** Pipelines using `a2a_message` processor fail or timeout.
+
+**Causes:**
+
+* Agent URL is incorrect in pipeline configuration
+* Agent is not running or restarting
+* Agent timeout is too low for pipeline workload
+* Authentication issues between pipeline and agent
+* High event volume overwhelming agent
+
+**Solution:**
+
+. Verify agent URL in pipeline configuration:
++
+[,yaml]
+----
+processors:
+  - a2a_message:
+      agent_card_url: "https://CORRECT-AGENT-URL/.well-known/agent-card.json"
+----
+
+. Check agent status and resource allocation.
+. Increase agent resource tier for high-volume pipelines.
+. Add error handling in pipeline:
++
+[,yaml]
+----
+processors:
+  - try:
+      - a2a_message:
+          agent_card_url: ${AGENT_URL}
+    catch:
+      - log:
+          message: "Agent invocation failed: ${! error() }"
+----
+
+**Prevention:**
+
+* Test pipeline-agent integration with low volume first
+* Size agent resources appropriately for event rate
+* See integration patterns in xref:ai-agents:agents/pipeline-integration-patterns.adoc[]
+
+== Monitor and debug agents
+
+For comprehensive guidance on monitoring agent activity, analyzing conversation history, tracking token usage, and debugging issues, see xref:ai-agents:observability/monitor-agents.adoc[].
+
+== Next steps
+
+* xref:ai-agents:agents/prompt-best-practices.adoc[]: Write better system prompts to prevent common issues
+* xref:ai-agents:agents/concepts.adoc[]: Understand agent execution and context management
+* xref:ai-agents:mcp/remote/tool-patterns.adoc[]: Design reliable tools
+* xref:ai-agents:agents/architecture-patterns.adoc[]: Apply scalable design patterns

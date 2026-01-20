@@ -1,7 +1,7 @@
 = System Prompt Best Practices
 :description: Write system prompts that produce reliable, predictable agent behavior through clear constraints and tool guidance.
 :page-topic-type: best-practices
-:personas: ai_agent_developer
+:personas: ai_agent_developer, app_developer, streaming_developer
 :learning-objective-1: Identify effective system prompt patterns for agent reliability
 :learning-objective-2: Apply constraint patterns to prevent unintended agent behavior
 :learning-objective-3: Evaluate system prompts for clarity and completeness
@@ -15,6 +15,8 @@ After reading this page, you will be able to:
 * [ ] {learning-objective-3}
 
 == Role definition
+
+Define what your agent does and the boundaries of its responsibilities. A clear role prevents scope creep and helps the agent refuse out-of-scope requests appropriately.
 
 === Be specific about agent identity
 
@@ -34,11 +36,7 @@ You are a helpful assistant.
 
 === Define what the agent does and doesn't do
 
-Explicitly state boundaries:
-
-* What tasks the agent handles
-* What tasks it should refuse or delegate
-* When to ask for human assistance
+Explicitly state boundaries: what tasks the agent handles, what tasks it should refuse or delegate, and when to ask for human assistance.
 
 [,text]
 ----
@@ -54,6 +52,8 @@ Do not:
 ----
 
 == Tool specification
+
+Tell the agent which tools are available and when to use them. Explicit tool guidance reduces errors and prevents the agent from guessing when to invoke capabilities.
 
 === List available tools
 
@@ -91,17 +91,7 @@ Use the tools as needed.
 
 == Constraints and safety
 
-=== Specify hard limits
-
-Use "never" for absolute constraints:
-
-[,text]
-----
-Never:
-- Expose customer payment information
-- Process refunds above $500 without manager approval
-- Access orders from other customers
-----
+Set explicit boundaries to prevent unintended agent behavior.
 
 === Define data boundaries
 
@@ -130,6 +120,8 @@ Response guidelines:
 
 == Context and conversation management
 
+Guide the agent on how to handle unclear requests and stay within conversation scope. These guidelines keep interactions focused and prevent the agent from making assumptions.
+
 === Handle ambiguous requests
 
 Guide the agent on how to clarify:
@@ -154,7 +146,60 @@ Conversation scope:
 - Do not engage in general conversation unrelated to orders
 ----
 
+== Error handling
+
+Guide agents to handle failures gracefully through clear prompt instructions. Agent errors fall into two categories: tool failures (external system issues) and reasoning failures (agent confusion or limits).
+
+=== Tool failure types
+
+Tools can fail for multiple reasons. Transient failures include network timeouts, temporary unavailability, and rate limits. Permanent failures include invalid parameters, permission denied, and resource not found errors. Partial failures occur when tools return incomplete data or warnings.
+
+=== Graceful degradation
+
+Design prompts so agents continue when tools fail:
+
+.Example prompt guidance for graceful degradation
+[,text]
+----
+When a tool fails:
+1. Attempt an alternative tool if available
+2. If no alternative exists, explain the limitation
+3. Offer partial results if you retrieved some data before failure
+4. Do not make up information to fill gaps
+----
+
+Agents that degrade gracefully provide value even when systems are partially down.
+
+Implement retries in tools, not in agent prompts. The tool should retry network calls automatically before returning an error to the agent.
+
+=== Escalation patterns
+
+Some failures require human intervention. Budget exceeded errors occur when max iterations are reached before task completion. Insufficient tools means no tool is available for the required action. Ambiguous requests happen when the agent can't determine user intent after clarification attempts. Data access failures occur when multiple tools fail with no alternative path.
+
+Design prompts to recognize escalation conditions:
+
+.Example prompt guidance for escalation
+[,text]
+----
+When you cannot complete the task:
+1. Explain what you tried and why it didn't work
+2. Tell the user what information or capability is missing
+3. Suggest how they can help (provide more details, contact support, etc.)
+----
+
+=== Common error scenarios
+
+Include guidance for specific error types in your system prompt:
+
+**Timeout during tool execution:** When a tool takes longer than the agent timeout limit, the agent receives a timeout error in context. The agent should explain the delay to the user and suggest a retry.
+
+**Invalid tool parameters:** When the agent passes a wrong data type or missing required field, the tool returns a validation error. The agent should reformat parameters and retry, or ask the user for correct input.
+
+**Authentication failure:** When a tool can't access a protected resource, it returns a permission denied error. The agent should explain the access limitation without exposing credentials or internal details.
+
 == Output formatting
+
+Control how the agent presents information to users. Consistent formatting makes responses easier to read and ensures critical information appears in predictable locations.
 
 === Specify structure
 
@@ -169,14 +214,83 @@ Output format:
 - Include units (dollars, kilograms) in all numeric values
 ----
 
-== Testing your prompt
+[[evaluation-and-testing]]
+== Evaluation and testing
 
-Evaluate system prompts by testing:
+Test system prompts systematically to verify behavior matches intent.
 
-* **Boundary adherence**: Does the agent refuse out-of-scope requests?
-* **Tool selection**: Does it choose the right tool for each task?
-* **Constraint compliance**: Does it follow "never" rules?
-* **Clarity under ambiguity**: Does it ask questions when unclear?
+Follow this process to validate prompts:
+
+[cols="1,2,2"]
+|===
+| Test Type | What to Test | Example
+
+| Boundary cases
+| Requests at edge of agent scope
+| Just inside: "Track order 123" (should work) +
+Just outside: "Recommend products" (should refuse) +
+Ambiguous: "Help with my order" (should clarify)
+
+| Tool selection
+| Agent chooses correct tools
+| Create requests requiring each tool +
+Test multiple applicable tools (verify best choice) +
+Test no applicable tools (verify explanation)
+
+| Constraint compliance
+| Agent follows "never" rules
+| Explicit forbidden: "Show payment methods" +
+Indirect forbidden: "What's the credit card number?" +
+Verify refusal with explanation
+
+| Error handling
+| Tool failures and limitations
+| Disable MCP server tool temporarily +
+Send request requiring disabled tool +
+Verify graceful response (no fabricated data)
+
+| Ambiguous requests
+| Clarification behavior
+| Vague: "Check my stuff" +
+Verify specific questions: "Orders, returns, or account?" +
+Ensure no guessing of user intent
+|===
+
+== Design principles
+
+Apply these principles when writing system prompts to create reliable agent systems.
+
+=== Design for inspectability
+
+Make agent reasoning transparent so you can debug by reading conversation history. Your system prompt should encourage clear explanations:
+
+[,text]
+----
+Response format:
+- State what you're doing before calling each tool
+- Explain why you chose this tool over alternatives
+- If a tool fails, describe what went wrong and what you tried
+----
+
+Log all tool invocations with parameters, record tool results in structured format, and store agent responses with reasoning traces. Opaque agents that "just work" are impossible to fix when they break.
+
+=== Design for testability
+
+Test agents with boundary cases (requests at the edge of agent capability), error injection (simulate tool failures to verify graceful degradation), context limits (long conversations approaching token limits), and ambiguous requests (unclear user input to verify clarification behavior).
+
+Use the systematic testing approach in <<evaluation-and-testing>>.
+
+=== Design for cost control
+
+Write clear system prompts that reduce wasted iterations. Vague prompts cause agent confusion and unnecessary tool calls. Each wasted iteration costs tokens.
+
+Guide agents to:
+
+* Request only needed data from tools (use pagination, filters)
+* Avoid redundant tool calls (check context before calling)
+* Stop when the task completes (don't continue exploring)
+
+For cost management strategies including iteration limits and monitoring, see xref:ai-agents:agents/concepts.adoc[].
 
 == Example: Complete system prompt
 
@@ -222,7 +336,13 @@ When request is unclear:
 
 == Common anti-patterns
 
+Avoid these patterns that lead to unpredictable agent behavior.
+
 === Vague role definition
+
+Define specific agent responsibilities and scope.
+
+Generic role definitions fail because the agent has no guidance on what tasks to handle, what requests to refuse, or when to escalate to humans.
 
 .Don't
 [,text]
@@ -230,9 +350,25 @@ When request is unclear:
 You are a helpful AI assistant.
 ----
 
-Why: Doesn't constrain behavior or set expectations.
+This doesn't constrain behavior or set expectations. The agent might attempt tasks outside its capabilities or handle requests it should refuse.
+
+.Do
+[,text]
+----
+You are an order fulfillment agent for an e-commerce platform. You help customers track orders, update shipping addresses, and process returns up to $500.
+
+Do not:
+- Provide product recommendations (redirect to website)
+- Process refunds above $500 (escalate to manager)
+----
+
+Clear scope prevents the agent from attempting out-of-scope tasks and defines escalation boundaries.
 
 === Missing constraints
+
+Set explicit boundaries on data access and operations.
+
+Without constraints, agents may access sensitive data, process excessive historical records, or perform operations beyond their authorization.
 
 .Don't
 [,text]
@@ -240,9 +376,24 @@ Why: Doesn't constrain behavior or set expectations.
 You can access customer data to help answer questions.
 ----
 
-Why: No boundaries on what data or how much history.
+This provides no boundaries on what data, how much history, or which customers. The agent might retrieve payment information, access other customers' data, or query years of records.
+
+.Do
+[,text]
+----
+Data access:
+- Only orders from the authenticated customer
+- Maximum of 90 days of historical data
+- No access to payment methods or billing addresses
+----
+
+Explicit boundaries prevent unauthorized access and scope queries to reasonable limits.
 
 === Implicit tool selection
+
+Specify when to use each tool with clear decision criteria.
+
+Vague tool guidance forces agents to guess based on tool names alone, leading to wrong tool choices, unnecessary calls, or skipped tools.
 
 .Don't
 [,text]
@@ -250,33 +401,24 @@ Why: No boundaries on what data or how much history.
 Use the available tools to complete tasks.
 ----
 
-Why: Agent must guess which tool applies when.
+The agent must guess which tool applies when. This leads to calling the wrong tool first, calling all tools unnecessarily, or fabricating answers without using tools.
 
-== Summary
+.Do
+[,text]
+----
+Use get_customer_orders when:
+- Customer asks about order history
+- You need order details to answer a question
 
-[cols="1,2,2"]
-|===
-| Element | Purpose | Example
+Use update_order_status only when:
+- Customer explicitly requests a cancellation
+- You have confirmed the order is eligible for status changes
+----
 
-| Role definition
-| Sets agent identity and scope
-| "You are an order fulfillment agent"
-
-| Tool specification
-| Guides tool selection
-| "Use get_orders when customer asks about history"
-
-| Constraints
-| Prevents unsafe behavior
-| "Never expose payment information"
-
-| Response format
-| Controls output structure
-| "Present order details as tables"
-|===
+Decision criteria enable reliable tool selection based on request context.
 
 == Next steps
 
 * xref:ai-agents:agents/quickstart.adoc[]: Create an agent with your system prompt
-* xref:ai-agents:agents/fundamentals.adoc[]: Review agent components
+* xref:ai-agents:agents/overview.adoc[]: Review agent components
 * xref:ai-agents:mcp/remote/best-practices.adoc[]: Learn MCP tool design patterns

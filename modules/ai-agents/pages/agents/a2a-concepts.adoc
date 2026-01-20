@@ -1,0 +1,158 @@
+= A2A Protocol
+:description: Learn how the A2A protocol enables agent discovery and communication.
+:page-topic-type: concepts
+:page-aliases: agents/external-app-integration.adoc
+:personas: ai_agent_developer, app_developer, streaming_developer
+:learning-objective-1: Describe the A2A protocol and its role in agent communication
+:learning-objective-2: Explain how agent cards enable discovery
+:learning-objective-3: Identify how authentication secures agent communication
+
+The Agent-to-Agent (A2A) protocol is an open standard for agent communication and discovery. Redpanda Cloud uses A2A for both external integration and internal pipeline-to-agent communication.
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
+
+== What is the A2A protocol?
+
+The Agent-to-Agent (A2A) protocol is an open standard that defines how agents discover, communicate with, and invoke each other.
+
+Agents that implement A2A expose their capabilities through a standardized agent card. This allows other systems to interact with them without prior knowledge of their implementation.
+
+The protocol provides:
+
+* **Standardized discovery:** Agent cards describe capabilities in a machine-readable format.
+* **Platform independence:** Any system can call any A2A-compliant agent.
+* **Version negotiation:** Protocol versions ensure compatibility between agents.
+* **Communication mode flexibility:** Supports synchronous request/response and streaming.
+
+For the complete specification, see link:https://a2a.ag/spec[a2a.ag/spec^].
+
+== Agent cards
+
+Every A2A-compliant agent exposes an agent card at a well-known URL.
+
+The agent card is a JSON document that describes what the agent can do and how to interact with it.
+
+[#agent-card-location]
+=== Agent card location
+
+Redpanda Cloud agents expose their agent cards at the `/.well-known/agent-card.json` subpath of the agent URL. You can find the agent URL on the agent overview page in the Redpanda Cloud Console under *Agentic AI* > *AI Agents*.
+
+For example, if your agent URL is `\https://my-agent.ai-agents.abc123.cloud.redpanda.com`, your agent card URL is `\https://my-agent.ai-agents.abc123.cloud.redpanda.com/.well-known/agent-card.json`.
+
+The `.well-known` path follows internet standards for service discovery, making agents discoverable without configuration.
+
+=== Agent card contents
+
+An agent card describes:
+
+* **Agent capabilities:** Skills and tools the agent provides.
+* **Input/output formats:** Expected request and response structures.
+* **Protocol version:** A2A specification version the agent supports.
+* **Communication modes:** Whether the agent supports synchronous calls, streaming, or both.
+
+Example agent card structure:
+
+[source,json]
+----
+{
+  "a2a_version": "1.0",
+  "name": "Fraud Detection Agent",
+  "description": "Analyzes transactions for fraudulent activity",
+  "capabilities": {
+    "streaming": true,
+    "synchronous": true
+  },
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "transaction": {
+        "type": "object"
+      }
+    }
+  }
+}
+----
+
+== Where A2A is used in Redpanda Cloud
+
+Redpanda Cloud uses the A2A protocol in two contexts:
+
+=== External integration
+
+External applications and agents hosted outside Redpanda Cloud use A2A to call Redpanda Cloud agents. This includes backend services, CLI tools, custom UIs, and agents hosted on other platforms.
+
+For integration pattern guidance, see xref:ai-agents:agents/integration-overview.adoc[].
+
+=== Internal pipeline-to-agent integration
+
+Redpanda Connect pipelines use the xref:develop:connect/components/processors/a2a_message.adoc[`a2a_message`] processor to invoke agents for each event in a stream:
+
+----
+Redpanda Connect Pipeline sends events to a2a_message (A2A) which invokes Redpanda Cloud Agent
+----
+
+Use cases:
+
+* Real-time fraud detection on every transaction.
+* Streaming data enrichment with AI-generated fields.
+* Event-driven agent invocation for automated processing.
+
+The xref:develop:connect/components/processors/a2a_message.adoc[`a2a_message`] processor uses A2A protocol internally to discover and call agents. For pipeline patterns, see xref:ai-agents:agents/pipeline-integration-patterns.adoc[].
+
+== How agents discover each other
+
+A2A enables dynamic discovery without hardcoded configuration:
+
+. The caller fetches the agent card from the well-known URL.
+. The caller checks the protocol version and supported communication modes.
+. The caller uses the input schema from the agent card to format the request properly.
+. The caller sends the request to the agent's endpoint.
+
+This discovery model allows:
+
+* New agents to become available immediately once deployed
+* Existing agents to update their capabilities while callers adapt dynamically
+* Callers to understand exactly what agents do through self-describing agent cards
+
+== Authentication
+
+A2A-compliant agents require authentication to prevent unauthorized access.
+
+Redpanda Cloud agents use OAuth2 client credentials flow. When you create an agent, the system provisions a service account with a client ID and secret.
+
+External callers use these credentials to obtain access tokens:
+
+. Agent creation automatically provisions a service account with credentials.
+. Applications exchange the client ID and secret for a time-limited access token via OAuth2.
+. Applications include the access token in the Authorization header when calling the agent endpoint.
+. When tokens expire, applications exchange credentials again for a new token.
+
+This flow ensures:
+
+* **Credentials stay secure:** Applications never send them directly to agents, only access tokens.
+* **Exposure is limited:** Tokens expire, reducing the window for compromised credentials.
+* **Integration is standard:** Applications can use existing OAuth2 libraries.
+
+=== External integration
+
+External applications must authenticate using the service account credentials. Each agent has its own service account.
+
+For step-by-step authentication instructions, see xref:security:cloud-authentication.adoc[].
+
+=== Internal integration
+
+The `a2a_message` processor handles authentication automatically. Pipelines don't need to manage credentials explicitly because they run within the Redpanda Cloud cluster with appropriate permissions.
+
+== Protocol versions
+
+The A2A protocol uses semantic versioning (major.minor.patch). Agents declare their supported version in the agent card.
+
+== Next steps
+
+* xref:ai-agents:agents/integration-overview.adoc[]: Choose the right integration pattern for your use case
+* xref:ai-agents:agents/create-agent.adoc[]: Create an agent that exposes an A2A agent card
+* link:https://a2a.ag/spec[A2A Protocol Specification^]: Complete technical reference

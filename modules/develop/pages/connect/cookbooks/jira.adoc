@@ -1,0 +1,158 @@
+= Work with Jira Issues
+:description: Learn how to query, filter, and create Jira issues using Redpanda Connect pipelines.
+:page-aliases: cookbooks:jira.adoc
+:page-topic-type: cookbook
+:personas: streaming_developer, data_engineer
+:learning-objective-1: Query Jira issues using JQL patterns with the Jira processor
+:learning-objective-2: Combine generate input with Jira processor for scheduled queries
+:learning-objective-3: Create Jira issues using the HTTP processor and REST API
+
+The Jira processor enables querying Jira issues using JQL (Jira Query Language) and returning structured data. Unlike traditional connectors, the Jira processor only supports queries and can be used as both an input (with `generate`) and an output (with `drop`).
+
+Use this cookbook to:
+
+* [ ] Query Jira issues on a schedule or on-demand
+* [ ] Filter issues using JQL patterns
+* [ ] Create Jira issues using the HTTP processor
+
+== Prerequisites
+
+The examples in this cookbook use the Secrets Store for Jira credentials. This keeps sensitive credentials secure and separate from your pipeline configuration.
+
+. link:https://id.atlassian.com/manage-profile/security/api-tokens[Generate a Jira API token^].
+
+. Add your Jira credentials to the xref:develop:connect/configuration/secret-management.adoc[Secrets Store]:
++
+- `JIRA_BASE_URL`: Your Jira instance URL (for example, `\https://your-domain.atlassian.net`)
+- `JIRA_USERNAME`: Your Jira account email address
+- `JIRA_API_TOKEN`: The API token generated from your Atlassian account
+- `JIRA_AUTH_TOKEN` (optional, for creating issues): Base64-encoded `username:api_token` string
+
+== Use Jira as an input
+
+To use Jira as an input, combine the `generate` input with the Jira processor. This pattern triggers Jira queries at regular intervals or on-demand.
+
+TIP: Replace `MYPROJECT` in the examples with your actual Jira project key.
+
+=== Query Jira periodically
+
+This example queries Jira every 30 seconds for recent issues:
+
+[source,yaml]
+----
+include::develop:example$cookbooks/jira/input-periodic.yaml[tag=config,indent=0]
+----
+
+=== One-time query
+
+For a single query, use `count` instead of `interval`:
+
+[source,yaml]
+----
+include::develop:example$cookbooks/jira/input-once.yaml[tag=config,indent=0]
+----
+
+== Input message format
+
+The Jira processor expects input messages containing valid Jira queries in JSON format:
+
+[source,json]
+----
+{
+  "jql": "project = MYPROJECT AND status = Open",
+  "maxResults": 50,
+  "fields": ["key", "summary", "status", "assignee"]
+}
+----
+
+=== Required fields
+
+- `jql`: The JQL (Jira Query Language) query string
+
+=== Optional fields
+
+- `maxResults`: Maximum number of results to return (default: 50)
+- `fields`: Array of field names to include in the response
+
+== JQL query patterns
+
+Here are common JQL patterns for filtering issues:
+
+=== Recent issues by project
+
+[source,jql]
+----
+project = <YOUR_PROJECT> AND created >= -7d ORDER BY created DESC
+----
+
+=== Issues assigned to current user
+
+[source,jql]
+----
+assignee = currentUser() AND status != Done
+----
+
+=== Issues by status
+
+[source,jql]
+----
+project = <YOUR_PROJECT> AND status IN (Open, 'In Progress', 'To Do')
+----
+
+=== Issues by priority
+
+[source,jql]
+----
+project = <YOUR_PROJECT> AND priority = High ORDER BY created DESC
+----
+
+== Output message format
+
+The Jira processor returns individual issue messages, rather than a response object with an `issues` array.
+
+Each message output by the Jira processor represents a single issue:
+
+[source,json]
+----
+{
+  "id": "12345",
+  "key": "DOC-123",
+  "fields": {
+    "summary": "Example issue",
+    "status": {
+      "name": "In Progress"
+    },
+    "assignee": {
+      "displayName": "John Doe"
+    }
+  }
+}
+----
+
+== Pagination handling
+
+The Jira processor automatically handles pagination internally. The processor:
+
+. Makes the initial request with `startAt=0`.
+. Checks if more results are available.
+. Automatically fetches subsequent pages until all results are retrieved.
+. Outputs each issue as an individual message.
+
+You don't need to handle pagination manually.
+
+== Create and update Jira issues
+
+The Jira processor is read-only and only supports querying. To create or update Jira issues, use the xref:develop:connect/components/processors/http.adoc[`http` processor] with the Jira REST API.
+
+=== Create a Jira issue
+
+[source,yaml]
+----
+include::develop:example$cookbooks/jira/create-issue.yaml[tag=config,indent=0]
+----
+
+== See also
+
+- xref:develop:connect/components/processors/jira.adoc[Jira processor reference]
+- https://developer.atlassian.com/cloud/jira/platform/rest/v3/intro/[Jira REST API documentation^]
+- https://www.atlassian.com/software/jira/guides/jql[JQL query guide^]

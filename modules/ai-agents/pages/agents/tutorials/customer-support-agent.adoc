@@ -1,0 +1,336 @@
+= Learn Multi-Tool Agent Orchestration
+:description: Learn how agents coordinate multiple tools, make decisions based on conversation context, and handle errors through building a customer support agent.
+:page-topic-type: tutorial
+:personas: ai_agent_developer, streaming_developer
+:learning-objective-1: Explain how agents use conversation context to decide which tools to invoke
+:learning-objective-2: Apply tool orchestration patterns to handle multi-step workflows
+:learning-objective-3: Evaluate how system prompt design affects agent tool selection
+
+Build a customer support agent to learn how agents orchestrate multiple tools, make context-aware decisions, and handle incomplete data.
+
+After completing this tutorial, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
+
+== What you'll learn
+
+Agents become powerful when they coordinate multiple tools to solve complex problems. A single-tool agent can retrieve order status. A multi-tool agent can check order status, fetch tracking information, look up customer history, and decide which tools to invoke based on conversation context.
+
+This tutorial teaches multi-tool orchestration through a customer support scenario. You'll see how agents:
+
+* **Use conversation context to choose tools**: The agent analyzes what the user said and what data it already has to decide which tool to call next.
+* **Chain tools in sequence**: When an order is "shipped", the agent follows up with tracking information automatically.
+* **Handle missing information**: When users provide incomplete requests, the agent asks clarifying questions instead of guessing.
+* **Recover from errors**: When tools return no data, the agent explains the limitation without fabricating information.
+
+The patterns you practice here apply to any multi-tool scenario: data analysis agents coordinating query and visualization tools, workflow automation agents chaining approval and notification tools, or research agents combining search and summarization tools.
+
+== The scenario
+
+Customer support teams handle repetitive questions: "Where is my order?", "What's my tracking number?", "Show me my order history." Human agents waste time on lookups that could be automated.
+
+An effective support agent needs three capabilities:
+
+1. **Order status lookup**: Check current order state and contents
+2. **Shipping information**: Retrieve tracking numbers and delivery estimates
+3. **Order history**: Show past purchases for a customer
+
+The challenge: users phrase requests differently ("Where's my package?", "Track order ORD-12345", "My recent orders"), and agents must choose the right tool based on context.
+
+== Prerequisites
+
+* A xref:get-started:cluster-types/byoc/index.adoc[BYOC cluster] with Remote MCP enabled.
+* LLM provider API key (this tutorial uses OpenAI).
+
+== Design the MCP tools
+
+Before an agent can orchestrate tools, you need tools to orchestrate. The design principle: each tool should do one thing well, returning structured data the agent can reason about.
+
+=== Tool granularity matters
+
+You could create a single `handle_customer_request` tool that takes a natural language query and returns an answer. This approach fails because:
+
+* The agent can't inspect intermediate results
+* Tool chaining becomes impossible (no way to pass order status to shipping lookup)
+* Error handling is opaque (did the order lookup fail or the shipping lookup?)
+
+Instead, create focused tools:
+
+* `get_order_status`: Returns order state and contents
+* `get_shipping_info`: Returns tracking data
+* `get_customer_history`: Returns past orders
+
+This granularity enables the agent to chain tools (check order status, see it's shipped, fetch tracking info) and handle errors at each step.
+
+=== Deploy the tools
+
+. Navigate to your cluster in the link:https://cloud.redpanda.com[Redpanda Cloud Console^]
+. Go to *Agentic AI* > *Remote MCP*
+. Click *Create MCP Server*
+. Configure the server:
++
+* *Name*: `customer-support-tools`
+* *Description*: `Tools for customer support agent`
+
+. Add the first tool with this YAML configuration:
++
+[,yaml]
+----
+include::ai-agents:example$mcp-tools/processors/get_order_status.yaml[]
+----
++
+This tool uses the `mapping` processor to return mock data. The mock approach enables testing without external dependencies. In production, replace `mapping` with `http` to call your actual order API.
++
+Notice the tool's design:
++
+* **Single responsibility**: Only retrieves order status, nothing else
+* **Structured output**: Returns JSON the agent can parse
+* **Predictable format**: Always includes `order_id`, `status`, `items`, `total`
+
+. Select *Processor* from the component type dropdown, then click *Lint* to validate.
+
+. Click *Add Tool* and add the second tool:
++
+[,yaml]
+----
+include::ai-agents:example$mcp-tools/processors/get_shipping_info.yaml[]
+----
++
+This tool demonstrates conditional data: it only returns tracking information when the order has shipped. When an order hasn't shipped yet, the tool returns an empty result. The agent must handle this case.
++
+Select *Processor* from the component type dropdown, then click *Lint*.
+
+. Click *Add Tool* and add the third tool:
++
+[,yaml]
+----
+include::ai-agents:example$mcp-tools/processors/get_customer_history.yaml[]
+----
++
+This tool returns multiple orders, demonstrating list-handling. The agent must format multiple results clearly for users.
++
+Select *Processor* from the component type dropdown, then click *Lint*.
+
+. Click *Create MCP Server*
+
+Wait for the server status to show *Running*. You now have three focused tools the agent can orchestrate.
+
+== Write the system prompt
+
+The system prompt teaches the agent how to orchestrate tools. Without explicit guidance, the agent must guess when to use each tool, often choosing incorrectly or ignoring tools entirely.
+
+=== Implicit tool selection
+
+Make tool usage explicit.
+
+When the prompt doesn't specify when to use tools, the agent must guess based on tool names and descriptions alone. This leads to wrong tool choices, unnecessary calls, or skipped tools entirely.
+
+.Don't
+[,text]
+----
+You have access to order, shipping, and customer history tools.
+----
+
+The agent sees three tools but lacks decision criteria. When a user asks "Where's my order?", the agent might call the wrong tool first, call all tools unnecessarily, or skip tools and fabricate an answer.
+
+.Do
+[,text]
+----
+When to use tools:
+- Use get_order_status when customer provides an order ID
+- Use get_shipping_info when order status is "shipped"
+- Use get_customer_history when customer asks about past orders
+----
+
+Explicit criteria create reliable tool selection. The agent follows clear rules instead of guessing.
+
+=== Implicit tool chaining
+
+Specify how tool results inform the next action.
+
+Without chaining instructions, agents treat each tool call as independent. They miss opportunities to combine data or make redundant calls.
+
+.Don't
+[,text]
+----
+Use get_order_status to check orders.
+Use get_shipping_info for tracking information.
+----
+
+The agent calls `get_order_status`, receives status "shipped", but doesn't know to follow up with shipping information. Users get incomplete answers.
+
+.Do
+[,text]
+----
+If order is "shipped", follow up with get_shipping_info to provide tracking details.
+----
+
+The agent uses the first tool's result (whether the status is "shipped") to decide whether to invoke the second tool. This creates context-aware behavior.
+
+=== Missing error constraints
+
+Prevent fabrication when tools fail.
+
+Without explicit constraints, agents invent plausible-sounding data when tools return errors or empty results. This creates hallucinations.
+
+.Don't
+[,text]
+----
+Help customers track their orders.
+----
+
+When `get_order_status` returns no data, the agent might invent an order status, tracking number, or delivery date that sounds real but is completely fabricated.
+
+.Do
+[,text]
+----
+Never:
+- Make up tracking numbers or delivery dates
+- Guess customer intent
+
+If order not found, ask customer to verify the order ID.
+----
+
+Explicit constraints force the agent to acknowledge limitations instead of fabricating information.
+
+=== Create the agent
+
+Create the customer support agent with the designed system prompt.
+
+. Go to *Agentic AI* > *AI Agents*
+. Click *Create Agent*
+. Configure the agent:
++
+* *Name*: `customer-support-agent`
+* *Description*: `Helps customers track orders and shipping`
+* *Resource Tier*: Medium
+* *Model*: OpenAI GPT-4o or Claude Sonnet (models with strong reasoning)
+* *API Key*: Your LLM provider API key
+* *MCP Server*: Select `customer-support-tools`
+* *Max Iterations*: 30
+
+. In the *System Prompt* field, enter this configuration:
++
+[source,text]
+----
+You are a customer support agent for Acme E-commerce.
+
+Responsibilities:
+- Help customers track their orders
+- Provide shipping information and estimated delivery dates
+- Look up customer order history
+- Answer questions about order status
+
+Available tools:
+- get_order_status: Use when customer asks about a specific order
+- get_shipping_info: Use when customer needs tracking or delivery information
+- get_customer_history: Use when customer asks about past orders or "my orders"
+
+When to use each tool:
+- If customer provides an order ID (ORD-XXXXX), use get_order_status first
+- If customer asks "where is my order?", ask for the order ID before using tools
+- If order is "shipped", follow up with get_shipping_info to provide tracking details
+- If customer asks about "all my orders" or past purchases, use get_customer_history
+
+Never:
+- Expose customer payment information (credit cards, billing addresses)
+- Make up tracking numbers or delivery dates
+- Guarantee delivery dates (use "estimated" language)
+- Process refunds or cancellations (escalate to human agent)
+
+Error handling:
+- If order not found, ask customer to verify the order ID
+- If shipping info unavailable, explain the order may not have shipped yet
+- If customer history is empty, confirm the customer ID and explain no orders found
+
+Response format:
+- Start with a friendly greeting
+- Present order details in a clear, structured way
+- For order status, include: order ID, status, items, total
+- For shipping, include: carrier, tracking number, estimated delivery, last known location
+- Always include next steps or offer additional help
+
+Example response structure:
+1. Acknowledge the customer's question
+2. Present the information from tools
+3. Provide next steps or additional context
+4. Ask if they need anything else
+----
+
+. Click *Create Agent*.
+
+Wait for the agent status to show *Running*.
+
+== Observe orchestration in action
+
+Testing reveals how the agent makes decisions. Watch the conversation panel in the built-in chat interface to see the agent's reasoning process unfold.
+
+. Go to *Agentic AI* > *AI Agents*
+. Click on `customer-support-agent`.
+. Open the *Inspector* tab.
+
+=== Tool chaining based on status
+
+.Query
+----
+Hi, I'd like to check on order ORD-12345
+----
+
+The agent uses the first tool's result (whether the status is "shipped") to decide whether to invoke the second tool. This demonstrates context-aware tool chaining.
+
+Try changing ORD-12345 to ORD-67890. This order has status "processing", so the agent calls only `get_order_status` (no shipping info exists yet). The agent chains tools only when appropriate.
+
+=== Clarification before tool invocation
+
+Clear the conversation history to reset context. Then test this query:
+
+.Query
+----
+Where is my order?
+----
+
+The agent recognizes incomplete requests and asks clarifying questions instead of guessing or calling tools with missing parameters. This demonstrates pre-condition checking.
+
+Notice the agent calls zero tools. Effective orchestration includes knowing when NOT to invoke tools.
+
+=== List handling
+
+.Query
+----
+Can you show me my recent orders? My customer ID is CUST-100.
+----
+
+The agent handles list results by formatting them clearly for users. Try CUST-999 (returns empty list) to see how the agent handles the no-results case.
+
+=== Error recovery
+
+.Query
+----
+Check order ORD-99999
+----
+
+The agent detects tool failures and handles them gracefully. Critically, the agent does NOT fabricate tracking numbers or order details. This demonstrates error recovery without hallucination.
+
+Compare this to what happens without the "Never make up tracking numbers" constraint: remove that line from the system prompt and retest. The agent might invent plausible-sounding but fake tracking information.
+
+== Troubleshoot
+
+For comprehensive troubleshooting guidance, see xref:ai-agents:agents/troubleshooting.adoc[].
+
+=== Test with mock data
+
+The mock tools in this tutorial only recognize specific test IDs:
+
+* Orders: ORD-12345, ORD-67890, ORD-99999
+* Customers: CUST-100, CUST-999
+
+Use these documented test IDs when testing the agent. If you replace the mock tools with real API calls, verify that your API endpoints return the expected data structures.
+
+== Next steps
+
+* xref:ai-agents:mcp/remote/tool-patterns.adoc#call-external-apis[Call external APIs]: Replace mock tools with HTTP API calls
+* xref:ai-agents:agents/prompt-best-practices.adoc[]: Learn more system prompt patterns
+* xref:ai-agents:agents/architecture-patterns.adoc[]: Design multi-agent systems
+* xref:ai-agents:agents/troubleshooting.adoc[]: Debug agent behavior issues

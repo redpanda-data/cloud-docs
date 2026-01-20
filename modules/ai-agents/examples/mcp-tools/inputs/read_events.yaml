@@ -1,0 +1,21 @@
+# Read events from Redpanda
+# Example of input tool
+# tag::complete[]
+label: read-events
+
+redpanda:  # <1>
+  seed_brokers: ["${REDPANDA_BROKERS}"]
+  topics: ["events"]
+  consumer_group: "mcp-reader"
+  tls:
+    enabled: true
+  sasl:
+    - mechanism: SCRAM-SHA-256
+      username: "${secrets.MCP_USERNAME}"
+      password: "${secrets.MCP_PASSWORD}"
+
+meta:
+  mcp:
+    enabled: true
+    description: "Read events from Redpanda"
+# end::complete[]

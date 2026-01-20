@@ -1,0 +1,75 @@
+# Fraud detection pipeline with score-based routing
+# Analyzes every transaction and routes to different topics based on fraud score
+input:
+  redpanda:
+    seed_brokers: ["${REDPANDA_BROKERS}"]
+    topics: [transactions]
+    consumer_group: fraud-detector
+    tls:
+      enabled: true
+    sasl:
+      - mechanism: SCRAM-SHA-256
+        username: "${REDPANDA_USERNAME}"
+        password: "${REDPANDA_PASSWORD}"
+
+pipeline:
+  processors:
+    - branch:
+        request_map: |
+          root.transaction_id = this.id
+          root.amount = this.amount
+          root.merchant = this.merchant
+          root.user_id = this.user_id
+        processors:
+          - a2a_message:
+              agent_card_url: "${AGENT_CARD_URL}"
+              prompt: |
+                Analyze this transaction for fraud:
+                Amount: ${! json("amount") }
+                Merchant: ${! json("merchant") }
+                User: ${! json("user_id") }
+
+                Return JSON: { "fraud_score": 0-100, "reason": "explanation", "recommend_block": true/false }
+        result_map: |
+          root = this
+          root.fraud_analysis = content()
+
+    - mapping: |
+        root = this
+        meta fraud_score = this.fraud_analysis.fraud_score
+
+output:
+  switch:
+    cases:
+      - check: 'meta("fraud_score") >= 80'
+        output:
+          redpanda:
+            seed_brokers: ["${REDPANDA_BROKERS}"]
+            topic: fraud-alerts-high
+            tls:
+              enabled: true
+            sasl:
+              - mechanism: SCRAM-SHA-256
+                username: "${REDPANDA_USERNAME}"
+                password: "${REDPANDA_PASSWORD}"
+      - check: 'meta("fraud_score") >= 50'
+        output:
+          redpanda:
+            seed_brokers: ["${REDPANDA_BROKERS}"]
+            topic: fraud-alerts-medium
+            tls:
+              enabled: true
+            sasl:
+              - mechanism: SCRAM-SHA-256
+                username: "${REDPANDA_USERNAME}"
+                password: "${REDPANDA_PASSWORD}"
+      - output:
+          redpanda:
+            seed_brokers: ["${REDPANDA_BROKERS}"]
+            topic: transactions-cleared
+            tls:
+              enabled: true
+            sasl:
+              - mechanism: SCRAM-SHA-256
+                username: "${REDPANDA_USERNAME}"
+                password: "${REDPANDA_PASSWORD}"

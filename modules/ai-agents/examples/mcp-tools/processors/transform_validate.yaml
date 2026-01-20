@@ -1,0 +1,40 @@
+# Transform and validate data with Bloblang
+# Use for parsing, validation, filtering, enrichment
+label: transform-user-data
+
+processors:
+  # tag::mapping[]
+  - mapping: |
+      # Parse and validate incoming data
+      root.user_id = this.user_id.or(throw("user_id is required"))
+      root.timestamp = now().ts_format("2006-01-02T15:04:05Z07:00")
+
+      # Transform and enrich
+      root.email_domain = this.email.split("@").index(1)
+      root.is_premium = this.subscription_tier == "premium"
+
+      # Filter sensitive data
+      root.profile = this.profile.without("ssn", "credit_card")
+  # end::mapping[]
+
+meta:
+  mcp:
+    enabled: true
+    description: "Transform and validate user data"
+    properties:
+      - name: user_id
+        type: string
+        description: "User identifier"
+        required: true
+      - name: email
+        type: string
+        description: "User email address"
+        required: true
+      - name: subscription_tier
+        type: string
+        description: "Subscription level"
+        required: false
+      - name: profile
+        type: object
+        description: "User profile data"
+        required: false

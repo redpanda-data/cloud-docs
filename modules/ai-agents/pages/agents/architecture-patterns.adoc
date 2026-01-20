@@ -1,6 +1,7 @@
 = Agent Architecture Patterns
 :description: Design maintainable agent systems with single-agent and multi-agent patterns based on domain complexity.
 :page-topic-type: best-practices
+:personas: ai_agent_developer, streaming_developer
 :learning-objective-1: Evaluate single-agent versus multi-agent architectures for your use case
 :learning-objective-2: Choose appropriate LLM models based on task requirements
 :learning-objective-3: Apply agent boundary design principles for maintainability
@@ -13,139 +14,219 @@ After reading this page, you will be able to:
 * [ ] {learning-objective-2}
 * [ ] {learning-objective-3}
 
-== Single-agent pattern
+== Why architecture matters
 
-Use a single-agent architecture when your problem domain is focused and doesn't require specialized subsystems.
+Agent architecture determines how you manage complexity as your system grows. The right pattern depends on your domain complexity, organizational structure, and how you expect requirements to evolve.
 
-=== When to use
+=== When simple agents become unmaintainable
 
-Single-agent architectures work best for:
+Single agents work well initially but break down as complexity grows.
 
-* Narrow domain with limited scope
-* Single data source or simple integrations
-* Tasks that don't require specialized subsystems
+Warning signs include system prompts exceeding 2000 words, too many tools for the LLM to select correctly, multiple teams modifying the same agent, and changes in one domain breaking others. These symptoms indicate you need architectural boundaries, not just better prompts.
 
-=== Example use cases
+=== Domain complexity drives architecture
 
-Single agents are appropriate for:
+Match agent architecture to domain structure:
 
-* **Customer order lookup agent**: Retrieves order history and status from a single topic
-* **Weather information agent**: Queries weather APIs and returns formatted data
-* **Product inventory checker**: Checks stock levels across warehouses
+[cols="2,3,3"]
+|===
+| Domain Characteristics | Architecture Fit | Reasoning
+
+| Single business area, stable requirements
+| Single agent
+| Simplicity outweighs flexibility needs
+
+| Multiple business areas, shared infrastructure
+| Root agent with internal subagents
+| Domain separation without deployment complexity
+
+| Cross-organization workflows, independent evolution
+| External agent-to-agent
+| Organizational boundaries require system boundaries
+|===
 
 === Trade-offs
 
-Single agents offer simplicity at the cost of scalability:
+Every architecture pattern involves trade-offs.
 
-* **Simpler to build and maintain**: One system prompt, one tool set, one deployment
-* **Limited by single system prompt and tool set**: All capabilities must coexist in one agent
-* **Difficult to scale to complex multi-domain problems**: Adding features increases complexity rapidly
+- *Latency versus isolation:* Internal subagents have lower latency because they avoid network calls, but they share a failure domain. External agents have higher latency due to network overhead, but they provide independent failure isolation.
 
-Use single agents when your domain won't expand significantly over time.
+- *Shared state versus independence:* Single deployments share model, budget, and policies but offer less flexibility. Multiple deployments allow independent scaling and updates but add coordination complexity.
+
+- *Complexity now versus complexity later:* Starting simple means faster initial development but may require refactoring. Starting structured requires more upfront work but makes the system easier to extend.
+
+For foundational concepts on how agents execute and manage complexity, see xref:ai-agents:agents/concepts.adoc[].
+
+== Single-agent pattern
+
+A single-agent architecture uses one agent with one system prompt and one tool set to handle all requests.
+
+This pattern works best for narrow domains with limited scope, single data sources, and tasks that don't require specialized subsystems.
+
+=== When to use single agents
+
+Use single agents for focused problems that won't expand significantly.
+
+Examples include order lookup agents that retrieve history from a single topic, weather agents that query APIs and return formatted data, and inventory checkers that report stock levels.
+
+=== Trade-offs
+
+Single agents are simpler to build and maintain. You have one system prompt, one tool set, and one deployment.
+
+However, all capabilities must coexist in one agent. Adding features increases complexity rapidly, making single agents difficult to scale to multi-domain problems.
 
 == Root agent with subagents pattern
 
-Use a multi-agent architecture when your problem spans multiple domains, requires specialized expertise, or involves governance boundaries.
+A multi-agent architecture uses a root agent that delegates to specialized internal subagents.
 
-=== When to use
+This pattern works for complex domains spanning multiple areas, multiple data sources with different access patterns, and tasks requiring specialized expertise within one deployment.
 
-Multi-agent architectures are appropriate for:
+NOTE: Subagents in Redpanda Cloud are internal specialists within a single agent. They share the parent agent's model, budget, and policies, but each can have different names, descriptions, system prompts, and MCP tools.
 
-* Complex domains spanning multiple areas
-* Multiple data sources requiring different access patterns
-* Tasks requiring specialized expertise or governance boundaries
+=== How it works
 
-=== Architecture
+The root agent interprets user requests and routes them to appropriate subagents.
 
-In a multi-agent system:
+Each subagent owns a specific business area with focused expertise. Subagents access only the MCP tools they need.
 
-* **Root agent orchestrates and delegates**: Interprets user requests and routes them to appropriate subagents
-* **Each subagent has focused domain expertise**: Owns a specific business area or capability
-* **Explicit boundaries between agents**: Clear separation of responsibilities and tools
-* **Subagents expose domain-specific tools**: Tools are scoped to the agent that needs them
+All subagents share the same LLM model and budget from the parent agent.
 
 === Example: E-commerce platform
 
-A typical e-commerce agent system includes:
+A typical e-commerce agent includes a root agent that interprets requests and delegates to specialists, an order subagent for processing, history, and status updates, an inventory subagent for stock checks and warehouse operations, and a customer subagent for profiles, preferences, and history. All subagents share the same model but have different system prompts and tool access.
 
-* **Root agent**: Interprets user requests and delegates to specialists
-* **Order agent**: Order processing, history lookup, status updates
-* **Inventory agent**: Stock checks, availability, warehouse operations
-* **Customer agent**: Profile management, preferences, history
+=== Why choose internal subagents
 
-=== Benefits
+Internal subagents provide domain isolation, allowing you to update the order subagent without affecting inventory. Debugging is easier because each subagent has narrow scope and fewer potential failure points. All subagents share resources, reducing complexity and cost compared to separate deployments. Use internal subagents when you need domain separation within a single agent deployment.
 
-Multi-agent architectures provide:
+== External agent-to-agent pattern
 
-* **Changes isolated to specific domains**: Update the order agent without affecting inventory
-* **Easier debugging**: Narrow scope per agent means fewer potential failure points
-* **Clear governance boundaries**: Different teams can own different agents
-* **Parallel development**: Multiple teams can build agents simultaneously
+External A2A integration connects agents across organizational boundaries, platforms, or independent systems.
 
-Use multi-agent architectures when you expect the system to grow, require team boundaries, or need governance separation.
+NOTE: Cross-agent calling between separate Redpanda Cloud agents is not supported. This pattern applies to connecting Redpanda Cloud agents with external agents you host elsewhere.
+
+=== When to use external A2A
+
+Use external A2A for multi-organization workflows that coordinate agents across company boundaries, for platform integration connecting Redpanda Cloud agents with agents hosted elsewhere, and when agents require different deployment environments such as GPU clusters, air-gapped networks, or regional constraints.
+
+=== How it works
+
+Agents communicate using the xref:ai-agents:agents/a2a-concepts.adoc[A2A protocol], a standard HTTP-based protocol for discovery and invocation. Each agent manages its own credentials and access control independently, and can deploy, scale, and update without coordinating with other agents. Agent cards define capabilities without exposing implementation details.
+
+=== Example: Multi-platform customer service
+
+A customer service workflow might span multiple platforms:
+
+* Redpanda Cloud agent accesses real-time order and inventory data
+* CRM agent hosted elsewhere manages customer profiles and support tickets
+* Payment agent from a third party handles transactions in a secure environment
+
+Each agent runs on its optimal infrastructure while coordinating through A2A.
+
+=== Why choose external A2A
+
+External A2A lets different teams own and deploy their agents independently, with each agent choosing its own LLM, tools, and infrastructure. Sensitive operations stay in controlled environments with security isolation, and you can add agents incrementally without rewriting existing systems.
+
+=== Trade-offs
+
+External A2A adds network latency on every cross-agent call, and authentication complexity multiplies with each agent requiring credential management. Removing capabilities or changing contracts requires coordination across consuming systems, and debugging requires tracing requests across organizational boundaries.
+
+=== Choosing between patterns
+
+[cols="1,2,2"]
+|===
+| Use Case | Internal Subagents | External A2A
+
+| Domain separation within one team
+| Recommended
+| Unnecessary complexity
+
+| Cross-organization workflows
+| Not possible
+| Required
+
+| Shared infrastructure acceptable
+| Simpler
+| Use external if independence needed
+
+| Different deployment requirements
+| Limited (same cluster)
+| Full flexibility
+
+| Real-time performance critical
+| Lower latency
+| Higher latency
+|===
+
+For implementation details on external A2A integration, see xref:ai-agents:agents/integration-overview.adoc[].
+
+== Common anti-patterns
+
+Avoid these architecture mistakes that lead to unmaintainable agent systems.
+
+=== The monolithic prompt
+
+A monolithic prompt is a single 3000+ word system prompt covering multiple domains.
+
+This pattern fails because LLM confusion increases with prompt length, multiple teams modify the same prompt creating conflicts and unclear ownership, and changes to one domain risk breaking others.
+
+Split into domain-specific subagents instead. Each subagent gets a focused prompt under 500 words.
+
+=== The tool explosion
+
+A tool explosion occurs when a single agent has 30+ tools from every MCP server in the cluster.
+
+This pattern fails because the LLM struggles to choose correctly from large tool sets, tool descriptions compete for limited prompt space, and the agent invokes wrong tools with similar names, wasting iteration budget on selection mistakes.
+
+Limit tools per agent. Use subagents to partition tools by domain. For tool design patterns, see xref:ai-agents:mcp/remote/tool-patterns.adoc[].
+
+=== Premature A2A splitting
+
+Premature splitting creates three separate A2A agents when all logic could fit in one agent with internal subagents.
+
+This pattern fails because network latency affects every cross-agent call, authentication complexity multiplies with three sets of credentials, debugging requires correlating logs across systems, and you manage three deployments instead of one.
+
+Start with internal subagents for domain separation. Split to external A2A only when you need organizational boundaries or different infrastructure.
+
+=== Unbounded tool chaining
+
+Unbounded chaining sets max iterations to 100, returns hundreds of items from tools, and places no constraints on tool call frequency.
+
+This pattern fails because the context window fills with tool results, requests time out before completion, costs spiral with many iterations multiplied by large context, and the agent loses track of the original goal.
+
+Design workflows to complete in 20-30 iterations. Return paginated results from tools. Add prompt constraints like "Never call the same tool more than 3 times per request."
 
 == Model selection guide
 
-Choose models based on task complexity, latency requirements, and cost constraints.
+Choose models based on task complexity, latency requirements, and cost constraints. The Redpanda Cloud Console displays available models with descriptions when creating agents.
 
-=== Task complexity
+=== Match models to task complexity
 
-Match model capability to reasoning requirements:
+For simple queries, choose cost-effective models such as Haiku.
 
-[cols="1,2,3"]
-|===
-| Task Type | Recommended Models | Description
+For balanced workloads, choose mid-tier models. Look for standard names like base GPT versions, or Sonnet tiers.
 
-| Simple queries
-| Haiku 4.5, GPT-5 mini
-| Basic lookups, straightforward responses, minimal reasoning required
+For complex reasoning, choose premium models. Look for labels like Opus or the highest version numbers.
 
-| Balanced workloads
-| Sonnet 4.5, Gemini 3.0 pro flash
-| Moderate complexity tasks requiring some analysis and reasoning
+=== Balance latency and model size
 
-| Complex reasoning
-| Opus 4.5, GPT-5.2, Gemini 3.0 pro
-| Multi-step problem solving, advanced analysis, sophisticated reasoning chains
-|===
+For real-time responses, choose smaller models. Use models optimized for speed, such as Mini or base tiers.
 
-=== Latency requirements
+For batch processing, optimize for accuracy over speed. Use larger models when users don't wait for results.
 
-Match model speed to user expectations:
+=== Optimize for cost and volume
 
-.Real-time responses
-Choose faster models for interactive use cases:
+For high volume, use cost-effective models. Smaller tiers reduce costs while maintaining acceptable quality.
 
-* Haiku 4.5
-* GPT-5 mini
-* Gemini 3.0 pro flash
+For critical accuracy, use premium models. Higher costs are justified when errors are costly.
 
-.Batch processing
-Optimize for accuracy over speed when users don't wait for results.
+=== Model provider documentation
 
-=== Cost constraints
+For complete model specifications, capabilities, and pricing:
 
-Balance capability with usage volume:
-
-.High volume
-Use cost-effective models for frequent requests:
-
-* Haiku 4.5
-* GPT-5 mini
-
-.Critical accuracy
-Use premium models when errors are costly:
-
-* Opus 4.5
-* GPT-5.2
-
-=== Model families
-
-Reference external documentation for model details:
-
-* OpenAI GPT: link:https://platform.openai.com/docs/models[GPT-5, GPT-5 mini^]
-* Google Gemini: link:https://ai.google.dev/gemini-api/docs[Gemini 3.0 pro, Gemini 3.0 pro flash^]
-* Anthropic Claude: link:https://docs.anthropic.com/claude/docs/models-overview[Opus 4.5, Sonnet 4.5, Haiku 4.5^]
+* link:https://platform.openai.com/docs/models[OpenAI Models^]
+* link:https://docs.anthropic.com/claude/docs/models-overview[Anthropic Claude Models^]
+* link:https://ai.google.dev/gemini-api/docs/models[Google Gemini Models^]
 
 == Design principles
 
@@ -153,62 +234,23 @@ Follow these principles to create maintainable agent systems.
 
 === Explicit agent boundaries
 
-Each agent should have clear scope and responsibilities.
-
-Define each agent with:
-
-* Clear scope definition in system prompt
-* Specific tool set for its domain
-* Well-defined inputs and outputs
+Each agent should have clear scope and responsibilities. Define scope explicitly in the system prompt, assign a specific tool set for the agent's domain, and specify well-defined inputs and outputs.
 
 Do not create agents with overlapping responsibilities. Overlapping domains create confusion about which agent handles which requests.
 
 === Tool scoping per agent
 
-Assign tools to the agent that needs them. Don't give all agents access to all tools.
+Assign tools to the agent that needs them. Don't give all agents access to all tools. Limit tool access based on agent purpose.
 
-.Do
-Give each agent only the tools it needs:
-
-[,yaml]
-----
-# Order agent
-tools:
-  - get_orders
-  - update_order_status
-
-# Inventory agent
-tools:
-  - check_stock
-  - reserve_inventory
-----
-
-.Don't
-Don't share all tools across agents:
-
-[,yaml]
-----
-# Both agents have access to all tools
-tools:
-  - get_orders
-  - update_order_status
-  - check_stock
-  - reserve_inventory
-----
-
-Tool scoping reduces the risk of tool misuse and makes debugging easier.
+Tool scoping reduces misuse risk and makes debugging easier.
 
 === Error handling and fallbacks
 
 Design agents to handle failures gracefully.
 
-Implement error handling that:
+Use retry logic for transient failures like network timeouts. Report permanent failures like invalid parameters immediately.
 
-* Uses retry logic for transient failures
-* Provides clear error messages to users
-* Logs errors for debugging
-
-Distinguish between transient failures (network timeouts) and permanent failures (invalid parameters). Retry the first, report the second immediately.
+Provide clear error messages to users. Log errors for debugging.
 
 == Summary
 
@@ -219,16 +261,22 @@ Choose architecture patterns based on domain complexity and organizational needs
 | Pattern | Use When | Trade-off
 
 | Single agent
-| Narrow domain, simple tasks
+| Narrow domain, single organization
 | Limited scalability
 
-| Multi-agent
-| Complex domains, multiple systems
+| Internal subagents
+| Complex domains, shared infrastructure
 | Higher operational complexity
+
+| External A2A
+| Multi-organization, independent systems
+| Network latency, coordination overhead
 |===
 
 == Next steps
 
+* xref:ai-agents:agents/integration-overview.adoc[]: Choose between agents invoking tools and pipelines calling agents
+* xref:ai-agents:agents/a2a-concepts.adoc[]: Learn how the A2A protocol enables agent communication
 * xref:ai-agents:mcp/remote/tool-patterns.adoc[]: Explore tool design patterns
-* xref:ai-agents:agents/fundamentals.adoc[]: Review agent component fundamentals
+* xref:ai-agents:agents/overview.adoc[]: Review agent components
 * xref:ai-agents:mcp/remote/best-practices.adoc[]: Learn MCP tool best practices

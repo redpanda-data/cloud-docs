@@ -40,11 +40,11 @@ include::redpanda-connect:ai-agents:partial$mcp/overview/use-cases-table.adoc[]
 
 Remote MCP servers sit between AI clients and your data:
 
-. Your AI agent connects to your MCP server using `rpk cloud mcp proxy` or direct authentication
+. Your AI agent connects to your MCP server using `rpk cloud mcp proxy` or direct authentication.
 . A user asks their AI agent something like "What's the weather in London?"
-. The server finds the matching tool and runs your Redpanda Connect configuration
-. Your configuration fetches data, transforms it, and returns a structured response
-. The AI agent gets the data and can use it to answer the user
+. The server finds the matching tool and runs your Redpanda Connect configuration.
+. Your configuration fetches data, transforms it, and returns a structured response.
+. The AI agent gets the data and can use it to answer the user.
 
 === What a tool looks like
 
@@ -54,20 +54,7 @@ Here's a minimal example that returns weather data:
 
 [source,yaml]
 ----
-http:
-  url: "https://wttr.in/${! this.city }?format=j1"
-  verb: GET
-
-meta:
-  mcp:
-    enabled: true
-    name: get_weather
-    description: "Get current weather for a city"
-    properties:
-      - name: city
-        type: string
-        description: "City name"
-        required: true
+include::ai-agents:example$mcp-tools/processors/get_weather_simple.yaml[tag=complete,indent=0]
 ----
 
 When an AI client asks about weather, it calls this tool with the city name. The tool fetches data from the weather API and returns it.
@@ -78,6 +65,7 @@ include::redpanda-connect:ai-agents:partial$mcp/overview/specification-support.a
 == Next steps
 
 * xref:ai-agents:mcp/remote/quickstart.adoc[]
+* xref:ai-agents:agents/overview.adoc[]: Learn about Redpanda AI Agents that use MCP tools
 * xref:ai-agents:mcp/remote/concepts.adoc[]: Learn about execution and component types
 * xref:ai-agents:mcp/remote/create-tool.adoc[]: Create custom tools step by step
 * link:https://modelcontextprotocol.io/[Model Context Protocol documentation^]
