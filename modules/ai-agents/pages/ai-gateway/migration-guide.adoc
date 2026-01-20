@@ -19,12 +19,13 @@ After completing this migration, you will be able to:
 Before migrating, ensure you have:
 
 * AI Gateway configured in your Redpanda Cloud account
-* Enabled providers and models (see [Admin Guide: Providers](// PLACEHOLDER: link))
-* Created gateway with appropriate policies (see [Gateway Creation Guide](// PLACEHOLDER: link))
+* Enabled providers and models in AI Gateway
+* Created gateway with appropriate policies
 * Your gateway ID (`rp-aigw-id` header value)
 * Your gateway endpoint URL
 
-<!-- PLACEHOLDER: Add verification command, for example:
+////
+PLACEHOLDER: Add verification command, for example:
 
 [source,bash]
 ----
@@ -34,7 +35,7 @@ curl https://{GATEWAY_ENDPOINT}/v1/models \
 ----
 
 Expected output: List of enabled models
--->
+////
 
 == Migration strategy
 
@@ -354,8 +355,6 @@ Common issues:
 * `Model not found` → Ensure model is enabled in gateway configuration
 * No `rp-aigw-id` header → Verify header is set in `default_headers`
 
-See [Troubleshooting Guide](// PLACEHOLDER: link) for more details.
-
 === Step 4: Verify in observability dashboard
 
 After successful test:
@@ -370,7 +369,7 @@ After successful test:
    * Token count: ~10 prompt + ~10 completion
    * Cost: // PLACEHOLDER: expected cost
 
-*If request doesn't appear*: Check [End-to-End Validation Guide](// PLACEHOLDER: link)
+*If request doesn't appear*: Verify gateway ID and authentication token are correct.
 
 === Step 5: Enable gateway for subset of traffic
 
@@ -780,7 +779,7 @@ If latency is significantly higher:
 3. Review CEL routing complexity
 4. Check for rate limiting (adds retry latency)
 
-Solution: See [Performance Optimization Guide](// PLACEHOLDER: link)
+Solution: Review geographic routing and provider pool configuration.
 
 === Issue: Requests not appearing in dashboard
 
@@ -790,7 +789,7 @@ Causes:
 2. Request failed before reaching gateway
 3. UI delay (logs may take // PLACEHOLDER: Xs to appear)
 
-Solution: See [End-to-End Validation Guide](// PLACEHOLDER: link)
+Solution: Verify gateway ID and check for UI delay (logs may take a few seconds to appear).
 
 === Issue: Different response format
 
@@ -931,12 +930,5 @@ model = "anthropic/claude-sonnet-3.5"  # Was openai/gpt-4o
 
 == Next steps
 
-* Configure routing policies → [CEL Routing Guide](// PLACEHOLDER: link)
-* Explore MCP → [MCP Aggregation Guide](// PLACEHOLDER: link)
-
-== Related pages
-
-* [Quickstart](// PLACEHOLDER: link)
-* [OpenAI Integration](// PLACEHOLDER: link)
-* [Anthropic Integration](// PLACEHOLDER: link)
-* [LangChain Integration](// PLACEHOLDER: link)
+* xref:ai-agents:ai-gateway/cel-routing-cookbook.adoc[]: Configure advanced routing policies.
+* xref:ai-agents:ai-gateway/mcp-aggregation-guide.adoc[]: Explore MCP aggregation.
