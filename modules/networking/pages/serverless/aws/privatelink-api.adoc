@@ -221,17 +221,6 @@ aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
 aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
   --group-id $SECURITY_GROUP_ID --protocol tcp --port 443 --cidr 0.0.0.0/0
 
-# Private service connectivity broker port pools
-# Kafka API per-broker ports
-aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
-  --group-id $SECURITY_GROUP_ID \
-  --ip-permissions 'IpProtocol=tcp,FromPort=32000,ToPort=32500,IpRanges=[{CidrIp=0.0.0.0/0}]'
-
-# HTTP Proxy per-broker ports
-aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
-  --group-id $SECURITY_GROUP_ID \
-  --ip-permissions 'IpProtocol=tcp,FromPort=35000,ToPort=35500,IpRanges=[{CidrIp=0.0.0.0/0}]'
-----
 
 === Create VPC subnet
 
