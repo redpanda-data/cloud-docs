@@ -23,7 +23,23 @@ TIP: In Kafka clients, set `connections.max.idle.ms` to a value less than 350 se
 
 == DNS resolution with PrivateLink
 
-include::networking:partial$dns_resolution.adoc[]
+PrivateLink changes how DNS resolution works for your cluster. When you query cluster hostnames outside the VPC that contains your PrivateLink endpoint, DNS may return private IP addresses that aren't reachable from your location.
+
+To resolve cluster hostnames from other VPCs or on-premise networks, set up DNS forwarding using Route 53 Resolver:
+
+. In the VPC that contains your PrivateLink endpoint, create a Route 53 Resolver inbound endpoint.
++
+Ensure that the inbound endpoint's security group allows inbound UDP/TCP port 53 from each VPC or on-prem network that will forward queries.
+
+. In each other VPC that must resolve the cluster domain, create a Resolver outbound endpoint and a forwarding rule for `<cluster_domain>` that targets the inbound endpoint IPs from the previous step. Associate the rule to those VPCs.
++
+The cluster domain is the suffix after the seed hostname. For example, if your bootstrap server URL is: cki01qgth38kk81ard3g.any.us-east-1.aw.priv.prd.cloud.redpanda.com:9092, then `cluster_domain` is: `cki01qgth38kk81ard3g.any.us-east-1.aw.priv.prd.cloud.redpanda.com`.
+. For on-premises DNS, create a conditional forwarder for `<cluster_domain>` that forwards to the inbound endpoint IPs from the earlier step (over VPN/Direct Connect).
++
+[IMPORTANT]
+====
+Do not configure forwarding rules to target the VPC's Amazon-provided DNS resolver (VPC base CIDR + 2). Rules must target the IP addresses of Route 53 Resolver endpoints.
+====
 
 == Enable endpoint service for existing clusters
 
@@ -36,7 +52,7 @@ NOTE: For help with issues when enabling PrivateLink, contact https://support.re
 
 After you have enabled PrivateLink for your cluster, your connection URLs are available in the *How to Connect* section of the cluster overview in the Redpanda Cloud Console.
 
-include::networking:partial$private-links-access-rp-services-through-vpc.adoc[]
+include::networking:partial$private-links-access-rp-services-serverless.adoc[]
 
 == Test the connection
 
