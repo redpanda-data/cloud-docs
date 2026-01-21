@@ -2,34 +2,77 @@
 #
 # These personas represent the target audience for Redpanda Cloud documentation.
 # Use these when assigning :personas: attributes to documentation pages.
+#
+# This persona set covers two domains:
+# 1. Streaming/Data Platform: Real-time data streaming, connectors, pipelines
+# 2. Agentic Data Platform (ADP): AI agent development, governance, enterprise AI adoption
 
 schema_version: "1.0"
 repository: cloud-docs
 
 personas:
-  - id: app_developer
-    name: Application Developer
-    description: Builds applications that produce and consume data from Redpanda Cloud
-    experience_level: intermediate
+  # ============================================================================
+  # TIER 1: Executive & Governance
+  # ============================================================================
+
+  - id: executive
+    name: Executive Stakeholder
+    description: CIO/CAIO/Head of AI Strategy driving enterprise AI adoption and governance
+    experience_level: executive
     goals:
-      - Connect applications to Redpanda Cloud clusters
-      - Produce and consume messages reliably
-      - Implement proper error handling and retries
-      - Optimize client performance
+      - Drive enterprise-wide AI adoption strategy
+      - Ensure ROI on AI investments
+      - Establish governance framework for agent deployments
+      - Manage cost and resource allocation
+      - Ensure compliance with organizational policies
     pain_points:
-      - Authentication and connection configuration
-      - Understanding Kafka client options
-      - Debugging connectivity issues
-      - Choosing the right client library
+      - Lack of visibility into agent usage and costs
+      - Difficulty enforcing governance at scale
+      - Unclear ROI metrics for AI initiatives
+      - Risk of shadow AI deployments
+      - Integration with existing enterprise systems
     content_preferences:
-      - Working code examples in multiple languages
-      - Connection configuration templates
-      - Client library comparisons
-      - Performance tuning guides
+      - High-level governance frameworks
+      - ROI and cost analysis
+      - Compliance and audit capabilities
+      - Executive dashboards and reporting
+      - Strategic planning guides
     typical_content_types:
-      - how-to
-      - tutorial
+      - overview
+      - concepts
+      - best-practices
+
+  - id: security_leader
+    name: Security & Risk Leader
+    description: CISO/Compliance Officer protecting systems and enforcing data protection policies
+    experience_level: advanced
+    goals:
+      - Enforce agent policy and access controls
+      - Maintain audit trails for compliance
+      - Protect sensitive data and credentials
+      - Manage risk across agent deployments
+      - Ensure regulatory compliance
+    pain_points:
+      - Agent access to sensitive systems
+      - Lack of visibility into agent actions
+      - Difficult to audit agent behavior
+      - Credential management and rotation
+      - Compliance with data protection regulations
+    content_preferences:
+      - Security architecture patterns
+      - Policy enforcement mechanisms
+      - Audit trail documentation
+      - Compliance certification guides
+      - Incident response procedures
+    typical_content_types:
+      - concepts
       - reference
+      - best-practices
+      - troubleshooting
+
+  # ============================================================================
+  # TIER 2: Platform Operations
+  # ============================================================================
 
   - id: platform_admin
     name: Platform Administrator
@@ -55,47 +98,97 @@ personas:
       - reference
       - best-practices
 
-  - id: data_engineer
-    name: Data Engineer
-    description: Builds data pipelines using managed connectors and Redpanda Connect
-    experience_level: intermediate
+  - id: ai_platform_engineer
+    name: AI/ML Platform Engineer
+    description: Operates agent infrastructure, runtimes, and connectivity with governance controls
+    experience_level: advanced
     goals:
-      - Set up managed connectors to move data between systems
-      - Transform and route data reliably
-      - Monitor connector and pipeline health
-      - Handle errors and retries
+      - Deploy and operate agent runtime infrastructure
+      - Configure governance controls and policies
+      - Monitor agent performance and resource usage
+      - Onboard and manage MCP servers
+      - Ensure agent observability and debugging
     pain_points:
-      - Connector configuration complexity
-      - Debugging failed connectors
-      - Schema management and evolution
-      - Performance tuning
+      - Complex agent runtime configuration
+      - Difficult to troubleshoot agent failures
+      - Managing agent resource allocation
+      - Integrating governance with existing tools
+      - Scaling agent infrastructure
     content_preferences:
-      - Connector setup guides
-      - Transformation examples
-      - Error handling patterns
-      - Monitoring and troubleshooting
+      - Infrastructure setup guides
+      - Governance configuration patterns
+      - Observability and monitoring setup
+      - Performance tuning documentation
+      - Troubleshooting workflows
     typical_content_types:
       - how-to
-      - cookbook
+      - reference
       - troubleshooting
+      - best-practices
 
-  - id: ai_agent_developer
-    name: AI Agent Developer
-    description: Builds AI agents and integrations using MCP tools and LLM frameworks
+  # ============================================================================
+  # TIER 3: Builders & Developers
+  # ============================================================================
+
+  - id: app_developer
+    name: Application Developer
+    description: Builds applications that produce and consume data from Redpanda Cloud
     experience_level: intermediate
     goals:
+      - Connect applications to Redpanda Cloud clusters
+      - Produce and consume messages reliably
+      - Implement proper error handling and retries
+      - Optimize client performance
+    pain_points:
+      - Authentication and connection configuration
+      - Understanding Kafka client options
+      - Debugging connectivity issues
+      - Choosing the right client library
+    content_preferences:
+      - Working code examples in multiple languages
+      - Connection configuration templates
+      - Client library comparisons
+      - Performance tuning guides
+    typical_content_types:
+      - how-to
+      - tutorial
+      - reference
+
+  - id: agent_developer
+    name: Agent Developer
+    description: Builds AI agents, agentic workflows, and MCP tools that integrate with Redpanda Cloud and ADP
+    experience_level: intermediate
+    goals:
+      # MCP and streaming integration
       - Create MCP tools that AI assistants can discover and use
       - Deploy MCP servers to Redpanda Cloud
       - Integrate with AI/LLM applications
       - Debug agent-tool interactions
+      # Agentic workflows and governed deployment
+      - Build agents and workflows that solve business problems
+      - Use ADP catalog, templates, and curated datasets
+      - Design reasoning patterns and tool interactions
+      - Deploy agents into governed runtime
     pain_points:
+      # MCP and integration challenges
       - MCP configuration syntax
       - Testing tools before deployment
       - Limited AI-specific examples
+      # ADP and governance challenges
+      - Hard to discover existing templates, MCP servers, datasets
+      - Unclear access policies
+      - Brittle multi-step integrations
+      - Inconsistent testing/debugging environments
     content_preferences:
+      # Code examples and patterns
       - Working code examples with AI context
       - Testing and debugging workflows
       - Integration patterns
+      # Catalog and governance
+      - Rich catalog of agent templates and tools
+      - Governance introspection (what agent can/can't do)
+      - Replay-based debugging
+      - Streamlined deployment workflows
     typical_content_types:
       - tutorial
       - how-to
@@ -127,6 +220,81 @@ personas:
       - reference
       - best-practices
 
+  # ============================================================================
+  # TIER 4: Data & Knowledge Management
+  # ============================================================================
+
+  - id: data_engineer
+    name: Data Engineer
+    description: Builds data pipelines with managed connectors AND creates curated datasets for agent consumption
+    experience_level: intermediate
+    goals:
+      # Data movement and pipelines
+      - Set up managed connectors to move data between systems
+      - Transform and route data reliably
+      - Monitor connector and pipeline health
+      - Handle errors and retries
+      # Agent-ready datasets and RAG
+      - Create agent-ready datasets with federated SQL
+      - Ensure data quality and freshness for agents
+      - Expose data safely through governed views
+      - Provide clean RAG context via MCP servers
+    pain_points:
+      # Connector and pipeline challenges
+      - Connector configuration complexity
+      - Debugging failed connectors
+      - Schema management and evolution
+      - Performance tuning
+      # Data curation for agents
+      - Siloed data across sources
+      - Fragile RAG sources
+      - Schema drift
+      - Difficulty providing agent-ready datasets quickly
+    content_preferences:
+      # Connector and transformation
+      - Connector setup guides
+      - Transformation examples
+      - Error handling patterns
+      - Monitoring and troubleshooting
+      # Federated data and RAG
+      - Federated SQL query examples
+      - Governed view patterns
+      - RAG context design
+      - Data lineage visualization
+    typical_content_types:
+      - how-to
+      - cookbook
+      - troubleshooting
+      - reference
+
+  - id: knowledge_manager
+    name: Knowledge & Operations Manager
+    description: Maintains organizational documentation and knowledge bases for agent consumption
+    experience_level: intermediate
+    goals:
+      - Ingest and maintain organizational knowledge bases
+      - Ensure content freshness and accuracy
+      - Optimize vector search for agent queries
+      - Manage knowledge base access and permissions
+    pain_points:
+      - Stale or outdated documentation
+      - Difficult to index and search content
+      - Managing content from multiple sources
+      - Ensuring agent retrieval accuracy
+    content_preferences:
+      - KB ingestion workflows
+      - Vector search optimization guides
+      - Content freshness strategies
+      - Access control patterns
+    typical_content_types:
+      - how-to
+      - best-practices
+      - troubleshooting
+
+  # ============================================================================
+  # TIER 5: Evaluation & End Users
+  # ============================================================================
+
   - id: evaluator
     name: Technical Evaluator
     description: Assessing Redpanda Cloud for their organization
@@ -150,4 +318,27 @@ personas:
       - overview
       - concepts
       - tutorial
-      - get-started
+
+  - id: business_user
+    name: Business End User
+    description: Uses agent-powered automations to complete business tasks
+    experience_level: beginner
+    goals:
+      - Complete tasks efficiently using agents
+      - Understand what agents can and cannot do
+      - Trust agent recommendations and actions
+      - Report issues when agents fail
+    pain_points:
+      - Unclear agent capabilities
+      - Unexpected agent behavior
+      - Lack of transparency in agent actions
+      - Difficulty getting help when agents fail
+    content_preferences:
+      - Simple, task-oriented guides
+      - Agent capability overviews
+      - Troubleshooting for common issues
+      - Trust and transparency documentation
+    typical_content_types:
+      - overview
+      - how-to
+      - troubleshooting
