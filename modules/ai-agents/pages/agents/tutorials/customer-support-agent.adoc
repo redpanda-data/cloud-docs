@@ -121,9 +121,9 @@ Wait for the server status to show *Running*. You now have three focused tools t
 
 The system prompt teaches the agent how to orchestrate tools. Without explicit guidance, the agent must guess when to use each tool, often choosing incorrectly or ignoring tools entirely.
 
-=== Implicit tool selection
+=== Specify when to use each tool
 
-Make tool usage explicit.
+The prompt must explicitly state when to invoke each tool.
 
 When the prompt doesn't specify when to use tools, the agent must guess based on tool names and descriptions alone. This leads to wrong tool choices, unnecessary calls, or skipped tools entirely.
 
@@ -146,7 +146,7 @@ When to use tools:
 
 Explicit criteria create reliable tool selection. The agent follows clear rules instead of guessing.
 
-=== Implicit tool chaining
+=== Define tool chaining logic
 
 Specify how tool results inform the next action.
 
@@ -169,7 +169,7 @@ If order is "shipped", follow up with get_shipping_info to provide tracking deta
 
 The agent uses the first tool's result (whether the status is "shipped") to decide whether to invoke the second tool. This creates context-aware behavior.
 
-=== Missing error constraints
+=== Set error handling constraints
 
 Prevent fabrication when tools fail.
 
@@ -273,47 +273,71 @@ Testing reveals how the agent makes decisions. Watch the conversation panel in t
 
 === Tool chaining based on status
 
-.Query
+Test how the agent chains tools based on order status.
+
+Enter this query in the Inspector:
+
 ----
 Hi, I'd like to check on order ORD-12345
 ----
 
-The agent uses the first tool's result (whether the status is "shipped") to decide whether to invoke the second tool. This demonstrates context-aware tool chaining.
+Watch the conversation panel. The agent calls `get_order_status` first, sees the status is "shipped", then automatically follows up with `get_shipping_info` to provide tracking details. The agent uses the first tool's result to decide whether to invoke the second tool.
 
-Try changing ORD-12345 to ORD-67890. This order has status "processing", so the agent calls only `get_order_status` (no shipping info exists yet). The agent chains tools only when appropriate.
+Now try this query with a different order:
+
+----
+Check order ORD-67890
+----
+
+This order has status "processing", so the agent calls only `get_order_status`. Since the order hasn't shipped yet, the agent skips `get_shipping_info`. The agent chains tools only when appropriate.
 
 === Clarification before tool invocation
 
-Clear the conversation history to reset context. Then test this query:
+Test how the agent handles incomplete information.
 
-.Query
+Click *Clear context* to clear the conversation history. Then enter this query:
+
 ----
 Where is my order?
 ----
 
-The agent recognizes incomplete requests and asks clarifying questions instead of guessing or calling tools with missing parameters. This demonstrates pre-condition checking.
+The agent recognizes the request is missing an order ID and asks the customer to provide it. Watch the conversation panel—the agent calls zero tools. Instead of guessing or fabricating information, it asks a clarifying question.
 
-Notice the agent calls zero tools. Effective orchestration includes knowing when NOT to invoke tools.
+This demonstrates pre-condition checking. Effective orchestration includes knowing when NOT to invoke tools.
 
 === List handling
 
-.Query
+Test how the agent formats multiple results.
+
+Enter this query:
+
 ----
 Can you show me my recent orders? My customer ID is CUST-100.
 ----
 
-The agent handles list results by formatting them clearly for users. Try CUST-999 (returns empty list) to see how the agent handles the no-results case.
+The agent calls `get_customer_history` and receives multiple orders. Watch how it formats the list clearly for the customer, showing details for each order.
+
+Now test the empty results case with this query:
+
+----
+Show my order history for customer ID CUST-999
+----
+
+The agent receives an empty list and explains that no orders were found, asking the customer to verify their ID.
 
 === Error recovery
 
-.Query
+Test how the agent handles missing data.
+
+Enter this query:
+
 ----
 Check order ORD-99999
 ----
 
-The agent detects tool failures and handles them gracefully. Critically, the agent does NOT fabricate tracking numbers or order details. This demonstrates error recovery without hallucination.
+The tool returns no data for this order ID. Watch how the agent responds—it explains the order wasn't found and asks the customer to verify the order ID. Critically, the agent does NOT fabricate tracking numbers or order details.
 
-Compare this to what happens without the "Never make up tracking numbers" constraint: remove that line from the system prompt and retest. The agent might invent plausible-sounding but fake tracking information.
+This demonstrates error recovery without hallucination. The "Never make up tracking numbers" constraint in the system prompt prevents the agent from inventing plausible-sounding but fake information.
 
 == Troubleshoot
 
