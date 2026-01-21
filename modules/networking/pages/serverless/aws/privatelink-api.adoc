@@ -104,11 +104,10 @@ In the example below, make sure to set your own value for the following field:
 ----
 CLUSTER_PATCH_BODY=`cat << EOF
 {
-  "aws_private_link": {
-    "enabled": true,
-    "connect_console": true,
-    "allowed_principals": ["<principal_1>","<principal_2>"]
-  }
+  "networking_config": {
+    "private": "STATE_ENABLED"
+  },
+  "private_link_id": "$SERVERLESS_PRIVATE_LINK_ID"
 }
 EOF`
 
