@@ -50,26 +50,27 @@ In the example below, make sure to set your own values for the following fields:
 --
 - `name`
 - `serverless_region`: for example, `"pro-us-east-1"`
-- `connect_console`: Whether to enable connections to Redpanda Console (boolean)
-- `allowed_principals`: Amazon Resource Names (ARNs) for the AWS principals allowed to access the endpoint service. For example, for all principals in an account, use `"arn:aws:iam::account_id:root"`. See https://docs.aws.amazon.com/vpc/latest/privatelink/configure-endpoint-service.html#add-remove-permission[Configure an endpoint service^] for details.
+- `private_link_id`: The ID of an existing PrivateLink resource in the same resource group
+- `networking_config.private` and `networking_config.public`: Valid values are `STATE_ENABLED` or `STATE_DISABLED`. At least one must be enabled. If neither is specified, `public` defaults to `STATE_ENABLED`.
 --
 +
 [,bash]
 ----
 SERVERLESS_REGION=<serverless_region>
+SERVERLESS_PRIVATE_LINK_ID=<private_link_id>
 
 CLUSTER_POST_BODY=`cat << EOF
 {
-    "serverless_cluster": {
-        "name": "<my-private-link-cluster>",
-        "resource_group_id": "$RESOURCE_GROUP_ID",
-        "serverless_region": "$SERVERLESS_REGION",
-        "aws_private_link": {
-            "enabled": true,
-            "connect_console": true,
-            "allowed_principals": ["<principal_1>","<principal_2>"]
-        }
+  "serverless_cluster": {
+    "name": "<my-private-link-cluster>",
+    "resource_group_id": "$RESOURCE_GROUP_ID",
+    "serverless_region": "$SERVERLESS_REGION",
+    "private_link_id": "$SERVERLESS_PRIVATE_LINK_ID",
+    "networking_config": {
+        "private": "STATE_ENABLED",
+        "public": "STATE_ENABLED"
     }
+  }
 }
 EOF`
 
@@ -93,11 +94,11 @@ CLUSTER_ID=<cluster_id>
 
 . Make a link:/api/doc/cloud-controlplane/operation/operation-serverlessclusterservice_updateserverlesscluster[`PATCH /v1/serverless-clusters/{cluster.id}`] request to update the cluster with the Redpanda PrivateLink Endpoint Service enabled.
 +
-In the example below, make sure to set your own value for the following field:
+In the example below, make sure to set your own value for the following fields:
 +
 --
-- `connect_console`: Whether to enable connections to Redpanda Console (boolean)
-- `allowed_principals`: Amazon Resource Names (ARNs) for the AWS principals allowed to access the endpoint service. For example, for all principals in an account, use `"arn:aws:iam::account_id:root"`. See https://docs.aws.amazon.com/vpc/latest/privatelink/configure-endpoint-service.html#add-remove-permission[Configure an endpoint service^] for details.
+- `private_link_id`: The ID of an existing PrivateLink resource in the same resource group
+- `networking_config.private`: Set to `STATE_ENABLED` to enable private access
 --
 +
 [,bash]
@@ -116,9 +117,6 @@ curl -vv -X PATCH \
   -H "Authorization: Bearer $AUTH_TOKEN" \
   -d "$CLUSTER_PATCH_BODY" $PUBLIC_API_ENDPOINT/v1/serverless/clusters/$CLUSTER_ID
 ----
-
-. Before proceeding, check the state of the Update Cluster operation by calling link:/api/doc/cloud-controlplane/operation/operation-operationservice_getoperation[`GET /v1/operations/\{id}`], and passing the operation ID returned from Update Cluster call. When the state is `STATE_READY`, proceed to the next step.
-
 
 == DNS resolution with PrivateLink
 
@@ -148,7 +146,7 @@ When you have a PrivateLink-enabled cluster, you can create an endpoint to conne
 
 Get the domain (`cluster_domain`) of the cluster from the cluster details in the Redpanda Cloud Console.
 
-For example, if the bootstrap server URL is: `cki01qgth38kk81ard3g.any.us-east-1.aw.priv.prd.cloud.redpanda.com:9092`, then `cluster_domain` is: `cki01qgth38kk81ard3g.eu-west-1.aw.priv.cloud.redpanda.com](cki01qgth38kk81ard3g.any.us-east-1.aw.priv.prd.cloud.redpanda.com`.
+For example, if the bootstrap server URL is: `cki01qgth38kk81ard3g.any.us-east-1.aw.priv.prd.cloud.redpanda.com:9092`, then `cluster_domain` is: `cki01qgth38kk81ard3g.any.us-east-1.aw.priv.prd.cloud.redpanda.com`.
 
 [,bash]
 ----
@@ -269,13 +267,13 @@ aws ec2 create-vpc-endpoint \
 
 After you have enabled PrivateLink for your cluster, your connection URLs are available in the *How to Connect* section of the cluster overview in the Redpanda Cloud Console.
 
-include::networking:partial$private-links-access-rp-services-serverless.adoc[]
+include::networking:partial$private-links-access-rp-service-serverless.adoc[]
 
 == Test the connection
 
 You can test the PrivateLink connection from any VM or container in the consumer VPC. If configuring a client isn't possible right away, you can do these checks using `rpk` or cURL:
 
-include::networking:partial$private-links-test-connection.adoc[]
+include::networking:partial$private-links-test-connection-serverless.adoc[]
 
 include::shared:partial$suggested-reading.adoc[]
 
