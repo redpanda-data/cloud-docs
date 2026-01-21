@@ -166,7 +166,7 @@ The service name is required to <<create-vpc-endpoint,create VPC private endpoin
 PL_SERVICE_NAME=`curl -X GET \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $AUTH_TOKEN" \
-  $PUBLIC_API_ENDPOINT/v1/serverless-clusters/$CLUSTER_ID | jq -r .cluster.aws_private_link.status.service_name`
+  $PUBLIC_API_ENDPOINT/v1/serverless/private-links/$SERVERLESS_PRIVATE_LINK_ID | jq -r .serverless_private_link.status.aws.vpc_endpoint_service_name`
 ----
 
 === Create client VPC
