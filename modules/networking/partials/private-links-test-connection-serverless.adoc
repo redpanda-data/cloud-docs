@@ -1,0 +1,31 @@
+. Set the following environment variables.
++
+[,bash]
+----
+export RPK_BROKERS='<kafka-api-bootstrap-server-hostname>:9092'
+export RPK_TLS_ENABLED=true
+export RPK_SASL_MECHANISM="<SCRAM-SHA-256 or SCRAM-SHA-512>"
+export RPK_USER=<user>
+export RPK_PASS=<password>
+----
+
+. Create a test topic.
++
+[,bash]
+----
+rpk topic create test-topic
+----
+
+. Produce to the test topic.
++
+[,bash]
+----
+echo 'hello world' | rpk topic produce test-topic
+----
+
+. Consume from the test topic.
++
+[,bash]
+----
+rpk topic consume test-topic -n 1
+----

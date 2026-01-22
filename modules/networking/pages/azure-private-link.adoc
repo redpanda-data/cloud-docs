@@ -1,7 +1,7 @@
 = Configure Azure Private Link with the Cloud API
 :description: Set up Azure Private Link with the Cloud API.
 
-NOTE: For UI-based configuration of Azure Private Link on new clusters, see xref:networking:azure-private-link-in-ui.adoc[Configure Azure Private Link in the Cloud UI].
+NOTE: For UI-based configuration of Azure Private Link on new clusters, see xref:networking:azure-private-link-in-ui.adoc[Configure Azure Private Link in the Cloud Console].
 
 The Redpanda Azure Private Link service provides secure access to Redpanda Cloud from your own virtual network. Traffic over Azure Private Link does not go through the public internet, but instead through Microsoft's backbone network. While clients can initiate connections against the Redpanda Cloud cluster endpoints, Redpanda Cloud services cannot access your virtual networks directly.
 
@@ -52,7 +52,7 @@ If you have not yet created a cluster in Redpanda Cloud, <<create-new-cluster-wi
 
 === Create new cluster with Private Link service enabled
 
-. In the Redpanda Cloud UI, go to https://cloud.redpanda.com/resource-groups[**Resource groups**^] and select the Redpanda Cloud resource group in which you want to create a cluster.
+. In the Redpanda Cloud Console, go to https://cloud.redpanda.com/resource-groups[**Resource groups**^] and select the Redpanda Cloud resource group in which you want to create a cluster.
 +
 NOTE: Redpanda Cloud resource groups exist in your Redpanda Cloud account only. They do not correspond to Azure resource groups and do not appear in your Azure tenant.
 +
@@ -158,7 +158,7 @@ rpk cloud byoc azure apply --redpanda-id=$CLUSTER_ID --subscription-id=$REDPANDA
 
 CAUTION: Enabling Private Link on your VNet interrupts all communication on existing Redpanda bootstrap server and broker ports due to the change of private DNS resolution. Make sure all applications running in your virtual network are ready to start using the corresponding Private Link ports.
 
-. In the Redpanda Cloud UI, go to the cluster overview and copy the cluster ID from the **Details** section.
+. In the Redpanda Cloud Console, go to the cluster overview and copy the cluster ID from the **Details** section.
 +
 [,bash]
 ----
@@ -189,7 +189,7 @@ curl -vv -X PATCH \
 
 == Configure Azure Private Link connection to Redpanda Cloud
 
-. In the Redpanda Cloud UI, go to https://cloud.redpanda.com/users?tab=users[**Users**^] and create a new user to authenticate the Private Link endpoint connections with the service. You will need the username and password to <<connect-to-redpanda-services-through-private-link-endpoints,access Redpanda services>> or <<test-the-connection,test the connection>> using `rpk` or cURL.
+. In the Redpanda Cloud Console, go to https://cloud.redpanda.com/users?tab=users[**Users**^] and create a new user to authenticate the Private Link endpoint connections with the service. You will need the username and password to <<connect-to-redpanda-services-through-private-link-endpoints,access Redpanda services>> or <<test-the-connection,test the connection>> using `rpk` or cURL.
 
 . Call the link:/api/doc/cloud-controlplane/operation/operation-clusterservice_getcluster[`GET /v1/clusters/\{id}`] endpoint to check the service status and retrieve the service ID, DNS name, and Redpanda Console URL to use.
 +
@@ -288,7 +288,7 @@ az network private-dns record-set a add-record \
 
 == Connect to Redpanda services through Private Link endpoints
 
-After you enable Private Link for your cluster, your connection URLs are available in the *How to Connect* section of the cluster overview in the Redpanda Cloud UI.
+After you enable Private Link for your cluster, your connection URLs are available in the *How to Connect* section of the cluster overview in the Redpanda Cloud Console.
 
 include::networking:partial$private-links-access-rp-services-through-vpc.adoc[]
 
