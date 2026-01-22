@@ -16,7 +16,7 @@ After reading this page, you will be able to:
 
 == What are transcripts
 
-Every agent and MCP server automatically emits OpenTelemetry traces to a topic called `redpanda.otel_traces`. These traces provide detailed observability into operations, creating complete transcripts.
+Every agent and MCP server automatically emits OpenTelemetry traces to a glossterm:topic[] called `redpanda.otel_traces`. These traces provide detailed observability into operations, creating complete transcripts.
 
 Transcripts capture:
 
@@ -37,20 +37,210 @@ OpenTelemetry traces provide a complete picture of how a request flows through y
 * A _span_ represents a single unit of work within that trace (such as a data processing operation or an external API call).
 * A trace contains one or more spans organized hierarchically, showing how operations relate to each other.
 
-[[opentelemetry-traces-topic]]
-== How Redpanda stores traces
+== Agent trace hierarchy
 
-The `redpanda.otel_traces` topic stores OpenTelemetry spans in JSON format, following the https://opentelemetry.io/docs/specs/otel/protocol/[OpenTelemetry Protocol (OTLP)^] specification. A Protobuf schema named `redpanda.otel_traces-value` is also automatically registered with the topic, enabling clients to deserialize trace data correctly.
+Agent executions create a hierarchy of spans that reflect how agents process requests. Understanding this hierarchy helps you interpret agent behavior and identify where issues occur.
 
-The `redpanda.otel_traces` topic and its schema are managed automatically by Redpanda. If you delete either the topic or the schema, they are recreated automatically. However, deleting the topic permanently deletes all trace data, and the topic comes back empty. Do not produce your own data to this topic. It is reserved for OpenTelemetry traces.
+=== Agent span types
 
-=== Topic configuration and lifecycle
+Agent traces contain these span types:
 
-The `redpanda.otel_traces` topic has a predefined retention policy. Configuration changes to this topic are not supported. If you modify settings, Redpanda reverts them to the default values.
+[cols="2,3,3", options="header"]
+|===
+| Span Type | Description | Use To
 
-The topic persists in your cluster even after all agents and MCP servers are deleted, allowing you to retain historical trace data for analysis.
+| `ai-agent`
+| Top-level span representing the entire agent invocation from start to finish. Includes all processing time, from receiving the request through executing the reasoning loop, calling tools, and returning the final response.
+| Measure total request duration and identify slow agent invocations.
 
-Trace data may contain sensitive information from your tool inputs and outputs. Consider implementing appropriate glossterm:ACL[,access control lists (ACLs)] for the `redpanda.otel_traces` topic, and review the data in traces before sharing or exporting to external systems.
+| `agent`
+| Internal agent processing that represents reasoning and decision-making. Shows time spent in the LLM reasoning loop, including context processing, tool selection, and response generation. Multiple `agent` spans may appear when the agent iterates through its reasoning loop.
+| Track reasoning time and identify iteration patterns.
+
+| `invoke_agent`
+| Agent and sub-agent invocation ( in multi-agent architectures). Represents one agent calling another via the A2A protocol.
+| Trace calls between root agents and sub-agents, measure cross-agent latency, and identify which sub-agent was invoked.
+
+| `openai`, `anthropic`, or other LLM providers
+| LLM provider API call showing calls to the language model. The span name matches the provider, and attributes typically include the model name (like `gpt-4o` or `claude-sonnet-4`).
+| Identify which model was called, measure LLM response time, and debug LLM API errors.
+
+| `rpcn-mcp`
+| MCP tool invocation representing calls to Remote MCP servers. Shows tool execution time, including network latency and tool processing. Child spans with `instrumentationScope.name` set to `redpanda-connect` represent internal Redpanda Connect processing.
+| Measure tool execution time and identify slow MCP tool calls.
+|===
+
+=== Typical agent execution flow
+
+A simple agent request creates this hierarchy:
+
+----
+ai-agent (6.65 seconds)
+├── agent (6.41 seconds)
+│   ├── invoke_agent: customer-support-agent (6.39 seconds)
+│   │   └── openai: chat gpt-4o (6.2 seconds)
+----
+
+This shows:
+
+1. Total agent invocation: 6.65 seconds
+2. Agent reasoning: 6.41 seconds
+3. Sub-agent call: 6.39 seconds (most of the time)
+4. LLM API call: 6.2 seconds (the actual bottleneck)
+
+Examine span durations to identify where time is spent and optimize accordingly.
+
+== MCP server trace hierarchy
+
+MCP server executions create a different hierarchy that reflects tool invocations and internal processing. Understanding this hierarchy helps you debug tool execution and identify performance bottlenecks.
+
+=== MCP server span types
+
+MCP server traces contain these span types:
+
+[cols="2,3,3", options="header"]
+|===
+| Span Type | Description | Use To
+
+| `mcp-{server-id}`
+| Top-level span representing the entire MCP server invocation. The server ID uniquely identifies the MCP server instance. This span encompasses all tool execution from request receipt to response completion.
+| Measure total MCP server response time and identify slow tool invocations.
+
+| `service`
+| Internal service processing span that appears at multiple levels in the hierarchy. Represents Redpanda Connect service operations including routing, processing, and component execution.
+| Track internal processing overhead and identify where time is spent in the service layer.
+
+| Tool name (e.g., `get_order_status`, `get_customer_history`)
+| The specific MCP tool being invoked. This span name matches the tool name defined in the MCP server configuration.
+| Identify which tool was called and measure tool-specific execution time.
+
+| `processors`
+| Processor pipeline execution span showing the collection of processors that process the tool's data. Appears as a child of the tool invocation span.
+| Measure total processor pipeline execution time.
+
+| Processor name (e.g., `mapping`, `http`, `branch`)
+| Individual processor execution span representing a single Redpanda Connect processor. The span name matches the processor type.
+| Identify slow processors and debug processing logic.
+|===
+
+=== Typical MCP server execution flow
+
+An MCP tool invocation creates this hierarchy:
+
+----
+mcp-d5mnvn251oos73 (4.00 seconds)
+├── service > get_order_status (4.07 seconds)
+│   └── service > processors (43 microseconds)
+│       └── service > mapping (18 microseconds)
+----
+
+This shows:
+
+1. Total MCP server invocation: 4.00 seconds
+2. Tool execution (get_order_status): 4.07 seconds
+3. Processor pipeline: 43 microseconds
+4. Mapping processor: 18 microseconds (data transformation)
+
+The majority of time (4+ seconds) is spent in tool execution, while internal processing (mapping) takes only microseconds. This indicates the tool itself (likely making external API calls or database queries) is the bottleneck, not Redpanda Connect's internal processing.
+
+== Trace layers and scope
+
+Traces contain multiple layers of instrumentation, from HTTP transport through application logic to external service calls. The `scope.name` field in each span identifies which layer of instrumentation created that span.
+
+=== Instrumentation layers
+
+A complete agent trace includes these layers:
+
+[cols="2,2,4", options="header"]
+|===
+| Layer | Scope Name | Purpose
+
+| HTTP Server
+| `go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp`
+| HTTP transport layer receiving requests. Shows request/response sizes, status codes, client addresses, and network details.
+
+| AI SDK (Agent)
+| `github.com/redpanda-data/ai-sdk-go/plugins/otel`
+| Agent application logic. Shows agent invocations, LLM calls, tool executions, conversation IDs, token usage, and model details. Includes `gen_ai.*` semantic convention attributes.
+
+| HTTP Client
+| `go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp`
+| Outbound HTTP calls from agent to MCP servers. Shows target URLs, request methods, and response codes.
+
+| MCP Server
+| `rpcn-mcp`
+| MCP server tool execution. Shows tool name, input parameters, result size, and execution time. Appears as a separate `service.name` in resource attributes.
+
+| Redpanda Connect
+| `redpanda-connect`
+| Internal Redpanda Connect component execution within MCP tools. Shows pipeline and individual component spans.
+|===
+
+=== How layers connect
+
+Layers connect through parent-child relationships in a single trace:
+
+----
+ai-agent-http-server (HTTP Server layer)
+└── invoke_agent customer-support-agent (AI SDK layer)
+    ├── chat gpt-5-nano (AI SDK layer, LLM call 1)
+    ├── execute_tool get_order_status (AI SDK layer)
+    │   └── HTTP POST (HTTP Client layer)
+    │       └── get_order_status (MCP Server layer, different service)
+    │           └── processors (Redpanda Connect layer)
+    └── chat gpt-5-nano (AI SDK layer, LLM call 2)
+----
+
+This shows:
+
+1. HTTP request arrives at agent
+2. Agent invokes sub-agent
+3. Agent makes first LLM call to decide what to do
+4. Agent executes tool, making HTTP call to MCP server
+5. MCP server processes tool through its pipeline
+6. Agent makes second LLM call with tool results
+7. Response returns through HTTP layer
+
+=== Cross-service traces
+
+When agents call MCP tools, the trace spans multiple services. Each service has a different `service.name` in the resource attributes:
+
+* Agent spans: `"service.name": "ai-agent"`
+* MCP server spans: `"service.name": "mcp-{server-id}"`
+
+Both use the same `traceId`, allowing you to follow a request across service boundaries.
+
+=== Key attributes by layer
+
+Different layers expose different attributes:
+
+HTTP Server/Client layer:
+
+- `http.request.method`, `http.response.status_code`
+- `server.address`, `url.path`, `url.full`
+- `network.peer.address`, `network.peer.port`
+- `http.request.body.size`, `http.response.body.size`
+
+AI SDK layer:
+
+- `gen_ai.operation.name`: Operation type (`invoke_agent`, `chat`, `execute_tool`)
+- `gen_ai.conversation.id`: Links spans to the same conversation
+- `gen_ai.agent.name`: Sub-agent name for multi-agent systems
+- `gen_ai.provider.name`, `gen_ai.request.model`: LLM provider and model
+- `gen_ai.usage.input_tokens`, `gen_ai.usage.output_tokens`: Token consumption
+- `gen_ai.tool.name`, `gen_ai.tool.call.arguments`: Tool execution details
+- `gen_ai.input.messages`, `gen_ai.output.messages`: Full LLM conversation context
+
+MCP Server layer:
+
+- Tool-specific attributes like `order_id`, `customer_id`
+- `result_prefix`, `result_length`: Tool result metadata
+
+Redpanda Connect layer:
+
+- Component-specific attributes from your tool configuration
+
+Use `scope.name` to filter spans by layer when analyzing traces.
 
 == Understand the trace structure
 
@@ -75,13 +265,13 @@ Each span captures a unit of work. Here's what a typical MCP tool invocation loo
 
 Key elements to understand:
 
-* **`traceId`**: Links all spans belonging to the same request. Use this to follow a tool invocation through its entire lifecycle.
-* **`name`**: The tool or operation name (`http_processor` in this example). This tells you which component was invoked.
-* **`instrumentationScope.name`**: When this is `rpcn-mcp`, the span represents an MCP tool. When it's `redpanda-connect`, it's internal processing.
-* **`attributes`**: Context about the operation, like input parameters or result metadata.
-* **`status.code`**: `0` means success, `2` means error.
+* `traceId`: Links all spans belonging to the same request. Use this to follow a tool invocation through its entire lifecycle.
+* `name`: The tool or operation name (`http_processor` in this example). This tells you which component was invoked.
+* `instrumentationScope.name`: When this is `rpcn-mcp`, the span represents an MCP tool. When it's `redpanda-connect`, it's internal processing.
+* `attributes`: Context about the operation, like input parameters or result metadata.
+* `status.code`: `0` means success, `2` means error.
 
-== Parent-child relationships
+=== Parent-child relationships
 
 Traces show how operations relate. A tool invocation (parent) may trigger internal operations (children):
 
@@ -97,7 +287,7 @@ Traces show how operations relate. A tool invocation (parent) may trigger intern
 }
 ----
 
-The `parentSpanId` links this child span to the parent tool invocation. Both share the same `traceId`, so you can reconstruct the complete operation.
+The `parentSpanId` links this child span to the parent tool invocation. Both share the same `traceId` so you can reconstruct the complete operation.
 
 == Error events in traces
 
@@ -122,6 +312,21 @@ When something goes wrong, traces capture error details:
 ----
 
 The `events` array captures what happened and when. Use `timeUnixNano` to see exactly when the error occurred within the operation.
+
+[[opentelemetry-traces-topic]]
+== How Redpanda stores traces
+
+The `redpanda.otel_traces` topic stores OpenTelemetry spans in JSON format, following the https://opentelemetry.io/docs/specs/otel/protocol/[OpenTelemetry Protocol (OTLP)^] specification. A Protobuf schema named `redpanda.otel_traces-value` is also automatically registered with the topic, enabling clients to deserialize trace data correctly.
+
+The `redpanda.otel_traces` topic and its schema are managed automatically by Redpanda. If you delete either the topic or the schema, they are recreated automatically. However, deleting the topic permanently deletes all trace data, and the topic comes back empty. Do not produce your own data to this topic. It is reserved for OpenTelemetry traces.
+
+=== Topic configuration and lifecycle
+
+The `redpanda.otel_traces` topic has a predefined retention policy. Configuration changes to this topic are not supported. If you modify settings, Redpanda reverts them to the default values.
+
+The topic persists in your cluster even after all agents and MCP servers are deleted, allowing you to retain historical trace data for analysis.
+
+Trace data may contain sensitive information from your tool inputs and outputs. Consider implementing appropriate glossterm:ACL[access control lists (ACLs)] for the `redpanda.otel_traces` topic, and review the data in traces before sharing or exporting to external systems.
 
 == Traces compared to audit logs
 

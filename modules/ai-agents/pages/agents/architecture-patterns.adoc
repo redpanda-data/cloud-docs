@@ -18,13 +18,9 @@ After reading this page, you will be able to:
 
 Agent architecture determines how you manage complexity as your system grows. The right pattern depends on your domain complexity, organizational structure, and how you expect requirements to evolve.
 
-=== When simple agents become unmaintainable
-
-Single agents work well initially but break down as complexity grows.
+Starting with a simple architecture is tempting, but can lead to unmaintainable systems as complexity increases. Planning for growth with clear boundaries prevents technical debt and costly refactoring later.
 
 Warning signs include system prompts exceeding 2000 words, too many tools for the LLM to select correctly, multiple teams modifying the same agent, and changes in one domain breaking others. These symptoms indicate you need architectural boundaries, not just better prompts.
-
-=== Domain complexity drives architecture
 
 Match agent architecture to domain structure:
 
@@ -45,7 +41,6 @@ Match agent architecture to domain structure:
 | Organizational boundaries require system boundaries
 |===
 
-=== Trade-offs
 
 Every architecture pattern involves trade-offs.
 
@@ -130,33 +125,6 @@ External A2A lets different teams own and deploy their agents independently, wit
 === Trade-offs
 
 External A2A adds network latency on every cross-agent call, and authentication complexity multiplies with each agent requiring credential management. Removing capabilities or changing contracts requires coordination across consuming systems, and debugging requires tracing requests across organizational boundaries.
-
-=== Choosing between patterns
-
-[cols="1,2,2"]
-|===
-| Use Case | Internal Subagents | External A2A
-
-| Domain separation within one team
-| Recommended
-| Unnecessary complexity
-
-| Cross-organization workflows
-| Not possible
-| Required
-
-| Shared infrastructure acceptable
-| Simpler
-| Use external if independence needed
-
-| Different deployment requirements
-| Limited (same cluster)
-| Full flexibility
-
-| Real-time performance critical
-| Lower latency
-| Higher latency
-|===
 
 For implementation details on external A2A integration, see xref:ai-agents:agents/integration-overview.adoc[].
 
@@ -252,31 +220,10 @@ Use retry logic for transient failures like network timeouts. Report permanent f
 
 Provide clear error messages to users. Log errors for debugging.
 
-== Summary
-
-Choose architecture patterns based on domain complexity and organizational needs:
-
-[cols="1,2,2"]
-|===
-| Pattern | Use When | Trade-off
-
-| Single agent
-| Narrow domain, single organization
-| Limited scalability
-
-| Internal subagents
-| Complex domains, shared infrastructure
-| Higher operational complexity
-
-| External A2A
-| Multi-organization, independent systems
-| Network latency, coordination overhead
-|===
-
 == Next steps
 
-* xref:ai-agents:agents/integration-overview.adoc[]: Choose between agents invoking tools and pipelines calling agents
-* xref:ai-agents:agents/a2a-concepts.adoc[]: Learn how the A2A protocol enables agent communication
-* xref:ai-agents:mcp/remote/tool-patterns.adoc[]: Explore tool design patterns
-* xref:ai-agents:agents/overview.adoc[]: Review agent components
-* xref:ai-agents:mcp/remote/best-practices.adoc[]: Learn MCP tool best practices
+* xref:ai-agents:agents/integration-overview.adoc[]
+* xref:ai-agents:agents/a2a-concepts.adoc[]
+* xref:ai-agents:mcp/remote/tool-patterns.adoc[]
+* xref:ai-agents:agents/overview.adoc[]
+* xref:ai-agents:mcp/remote/best-practices.adoc[]

@@ -133,8 +133,6 @@ The agent's context includes the system prompt (always present), user messages, 
 
 Agents persist conversation context within a session. When you use the *Inspector* tab in the Redpanda Cloud Console, it automatically maintains session state across multiple requests. For programmatic access, applications must pass a session ID to maintain conversation continuity across requests.
 
-All conversation data is stored in the agent's sessions topic. For details on accessing conversation history, see <<agent-data-topics>>.
-
 === Context window limits
 
 LLM context windows limit how much history fits. Small models support 8K-32K tokens, medium models support 32K-128K tokens, and large models support 128K-1M+ tokens.
@@ -145,120 +143,13 @@ Design workflows to complete within context limits. Avoid unbounded tool chainin
 
 === State across conversations
 
-Redpanda Cloud automatically persists conversation history and task execution data to agent-specific topics:
-
-* *Sessions topic* (`redpanda.aiagent.<agent-id>.sessions`): Stores all conversation messages and history
-* *Tasks topic* (`redpanda.aiagent.<agent-id>.tasks`): Stores task execution records with status and artifacts
-
-The *Inspector* tab automatically manages sessions for you. For programmatic integration, pass a session ID in API requests to maintain conversation continuity.
-
-You can consume from these topics to:
-
-* Review past conversations and agent responses
-* Analyze conversation patterns and common requests
-* Debug agent behavior by examining full conversation history
-* Build conversation analytics and monitoring dashboards
-* Implement custom conversation management in your application
-
-For complete details on topic schemas and usage, see <<agent-data-topics>>.
+Redpanda Cloud automatically persists conversation history. The *Inspector* tab automatically manages sessions for you. For programmatic integration, pass a session ID in API requests to maintain conversation continuity.
 
 If you need additional state management beyond conversation history, create tools that read/write to custom state stores, or pass relevant context in each request.
 
-[[agent-data-topics]]
-== Agent data topics
-
-Each agent automatically creates two topics for storing session and task data:
-
-* `redpanda.aiagent.<agent-id>.sessions`: Conversation history and session state
-* `redpanda.aiagent.<agent-id>.tasks`: Task execution records with status and artifacts
-
-Two schemas are also registered: `redpanda-session-value` and `redpanda-a2a-task-value`.
-
-Redpanda uses these topics internally to persist conversation history and reload context when sessions resume. This allows agents to maintain continuity across interactions.
-
-These topics and schemas are managed automatically by Redpanda. If you delete either a topic or schema, they are recreated automatically. However, deleting a topic permanently deletes all stored data (including conversation history), and the topic comes back empty. Do not produce your own data to these topics. They are reserved for agent data.
-
-For guidance on consuming these topics, analyzing conversation history, and monitoring agent performance, see xref:ai-agents:agents/monitor-agents.adoc[].
-
-=== Sessions topic
-
-The sessions topic stores conversation data, including all messages exchanged between users and the agent:
-
-[source,json]
-----
-{
-  "id": "agent-chat-abc123-WqyUmxv0fuACoSE69MCx4",
-  "messages": [
-    {
-      "role": "MESSAGE_ROLE_USER",
-      "content": [
-        {
-          "kind": "PART_KIND_TEXT",
-          "text": "What's the weather in Seattle?"
-        }
-      ]
-    },
-    {
-      "role": "MESSAGE_ROLE_ASSISTANT",
-      "content": [
-        {
-          "kind": "PART_KIND_TEXT",
-          "text": "The current weather in Seattle is 52°F with light rain."
-        }
-      ]
-    }
-  ],
-  "metadata": {}
-}
-----
-
-Use session data for debugging conversation flow, auditing agent interactions, and building conversation analytics.
-
-=== Tasks topic
-
-The tasks topic stores execution records for each agent task, including status, artifacts, message history, and token usage:
-
-[source,json]
-----
-{
-  "id": "019bc2d5-13e0-785b-9ff4-a218708e52bc",
-  "contextId": "agent-chat-abc123-oGoqyBCeH5RHTsit8qpRi",
-  "status": {
-    "state": "TASK_STATE_COMPLETED",
-    "timestamp": "2026-01-15T18:05:03.993157355Z"
-  },
-  "artifacts": [
-    {
-      "artifactId": "019bc2d5-186a-76c7-97d1-feb13c75a2d4",
-      "parts": [
-        {
-          "text": "The current weather in Seattle is 52°F with light rain."
-        }
-      ]
-    }
-  ],
-  "history": [...],
-  "metadata": {
-    "usage": {
-      "input_tokens": 64,
-      "output_tokens": 9,
-      "total_tokens": 130
-    }
-  }
-}
-----
-
-Task states include:
-
-* `TASK_STATE_COMPLETED`: Task finished successfully
-* `TASK_STATE_FAILED`: Task encountered an error
-* `TASK_STATE_RUNNING`: Task is in progress
-
-Use task data for monitoring task completion rates, tracking token usage and costs, debugging failed tasks, and building operational dashboards.
-
 == Next steps
 
-* xref:ai-agents:agents/architecture-patterns.adoc[]: Apply these concepts to design patterns
-* xref:ai-agents:agents/quickstart.adoc[]: See execution concepts in action
-* xref:ai-agents:agents/prompt-best-practices.adoc[]: Write prompts that guide agent reasoning
-* xref:ai-agents:mcp/remote/best-practices.adoc[]: Design tools that work well with agent execution
+* xref:ai-agents:agents/architecture-patterns.adoc[]
+* xref:ai-agents:agents/quickstart.adoc[]
+* xref:ai-agents:agents/prompt-best-practices.adoc[]
+* xref:ai-agents:mcp/remote/best-practices.adoc[]

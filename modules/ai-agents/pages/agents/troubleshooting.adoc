@@ -177,6 +177,28 @@ Critical rules:
 * Test with requests that require unavailable data
 * Monitor transcripts and session topic for fabricated responses
 
+=== Analyzing conversation patterns
+
+**Symptoms:** Agent behavior is inconsistent or produces unexpected results.
+
+**Solution:**
+
+Review conversation history in transcripts to identify problematic patterns:
+
+* Agents calling the same tool repeatedly: Indicates loop detection is needed
+* Large gaps between messages: Suggests tool timeout or slow execution
+* Agent responses without tool calls: Indicates a tool selection issue
+* Fabricated information: Suggests a missing "never make up data" constraint
+* Truncated early messages: Indicates the context window was exceeded
+
+**Analysis workflow:**
+
+. Use inspector to reproduce the issue.
+. Review full conversation including tool invocations.
+. Identify where agent behavior diverged from expected.
+. Check system prompt for missing guidance.
+. Verify tool responses are formatted correctly.
+
 == Performance issues
 
 Diagnose and fix issues related to agent speed and resource consumption.
@@ -225,7 +247,7 @@ Diagnose and fix issues related to agent speed and resource consumption.
 
 **Solution:**
 
-. Review token usage in the tasks topic.
+. Review token usage in transcripts.
 . Lower max iterations for this agent.
 . Optimize tool responses to return less data:
 +
@@ -429,7 +451,7 @@ For comprehensive guidance on monitoring agent activity, analyzing conversation 
 
 == Next steps
 
-* xref:ai-agents:agents/prompt-best-practices.adoc[]: Write better system prompts to prevent common issues
-* xref:ai-agents:agents/concepts.adoc[]: Understand agent execution and context management
-* xref:ai-agents:mcp/remote/tool-patterns.adoc[]: Design reliable tools
-* xref:ai-agents:agents/architecture-patterns.adoc[]: Apply scalable design patterns
+* xref:ai-agents:agents/prompt-best-practices.adoc[]
+* xref:ai-agents:agents/concepts.adoc[]
+* xref:ai-agents:mcp/remote/tool-patterns.adoc[]
+* xref:ai-agents:agents/architecture-patterns.adoc[]

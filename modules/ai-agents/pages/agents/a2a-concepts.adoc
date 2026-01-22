@@ -23,10 +23,10 @@ Agents that implement A2A expose their capabilities through a standardized agent
 
 The protocol provides:
 
-* **Standardized discovery:** Agent cards describe capabilities in a machine-readable format.
-* **Platform independence:** Any system can call any A2A-compliant agent.
-* **Version negotiation:** Protocol versions ensure compatibility between agents.
-* **Communication mode flexibility:** Supports synchronous request/response and streaming.
+* Standardized discovery: Agent cards describe capabilities in a machine-readable format.
+* Platform independence: Any system can call any A2A-compliant agent.
+* Version negotiation: Protocol versions ensure compatibility between agents.
+* Communication mode flexibility: Supports synchronous request/response and streaming.
 
 For the complete specification, see link:https://a2a.ag/spec[a2a.ag/spec^].
 
@@ -49,10 +49,10 @@ The `.well-known` path follows internet standards for service discovery, making 
 
 An agent card describes:
 
-* **Agent capabilities:** Skills and tools the agent provides.
-* **Input/output formats:** Expected request and response structures.
-* **Protocol version:** A2A specification version the agent supports.
-* **Communication modes:** Whether the agent supports synchronous calls, streaming, or both.
+* Agent capabilities: Skills and tools the agent provides.
+* Input/output formats: Expected request and response structures.
+* Protocol version: A2A specification version the agent supports.
+* Communication modes: Whether the agent supports synchronous calls, streaming, or both.
 
 Example agent card structure:
 
@@ -89,19 +89,13 @@ For integration pattern guidance, see xref:ai-agents:agents/integration-overview
 
 === Internal pipeline-to-agent integration
 
-Redpanda Connect pipelines use the xref:develop:connect/components/processors/a2a_message.adoc[`a2a_message`] processor to invoke agents for each event in a stream:
-
-----
-Redpanda Connect Pipeline sends events to a2a_message (A2A) which invokes Redpanda Cloud Agent
-----
-
-Use cases:
+Redpanda Connect pipelines use the xref:develop:connect/components/processors/a2a_message.adoc[`a2a_message`] processor to invoke agents for each event in a stream. This enables real-time interaction between streaming data and AI agents, enabling use cases like:
 
 * Real-time fraud detection on every transaction.
 * Streaming data enrichment with AI-generated fields.
 * Event-driven agent invocation for automated processing.
 
-The xref:develop:connect/components/processors/a2a_message.adoc[`a2a_message`] processor uses A2A protocol internally to discover and call agents. For pipeline patterns, see xref:ai-agents:agents/pipeline-integration-patterns.adoc[].
+The `a2a_message` processor uses the A2A protocol internally to discover and call agents. For pipeline patterns, see xref:ai-agents:agents/pipeline-integration-patterns.adoc[].
 
 == How agents discover each other
 
@@ -133,9 +127,9 @@ External callers use these credentials to obtain access tokens:
 
 This flow ensures:
 
-* **Credentials stay secure:** Applications never send them directly to agents, only access tokens.
-* **Exposure is limited:** Tokens expire, reducing the window for compromised credentials.
-* **Integration is standard:** Applications can use existing OAuth2 libraries.
+* Credentials stay secure: Applications never send them directly to agents, only access tokens.
+* Exposure is limited: Tokens expire, reducing the window for compromised credentials.
+* Integration is standard: Applications can use existing OAuth2 libraries.
 
 === External integration
 
@@ -153,6 +147,6 @@ The A2A protocol uses semantic versioning (major.minor.patch). Agents declare th
 
 == Next steps
 
-* xref:ai-agents:agents/integration-overview.adoc[]: Choose the right integration pattern for your use case
-* xref:ai-agents:agents/create-agent.adoc[]: Create an agent that exposes an A2A agent card
-* link:https://a2a.ag/spec[A2A Protocol Specification^]: Complete technical reference
+* xref:ai-agents:agents/integration-overview.adoc[]
+* xref:ai-agents:agents/create-agent.adoc[]
+* link:https://a2a.ag/spec[A2A Protocol Specification^]
