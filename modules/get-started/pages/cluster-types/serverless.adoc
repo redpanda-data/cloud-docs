@@ -49,8 +49,6 @@ To create a Serverless cluster:
 
 . Select a cloud provider and xref:reference:tiers/serverless-regions.adoc[region]. For best performance, select the region closest to your applications. Redpanda expects your applications to be deployed in the same cloud provider and region as your Serverless cluster. 
 +
-Serverless clusters are available in the regions listed in xref:reference:tiers/serverless-regions.adoc[Serverless regions]. Redpanda expects your applications to be deployed in the same region. For best performance, select the region closest to your applications. Serverless is not guaranteed to be pinned to a particular availability zone within that region.
-+
 Clusters on AWS can enable private access between their VPC and Redpanda, so data does not traverse the public internet. Private connectivity is implemented using AWS PrivateLink for secure ingress traffic. A Serverless cluster can have both public and private access enabled. Enabling private access incurs additional charges. If you select private access, you can either create a new PrivateLink, or, if you have PrivateLinks for other Serverless clusters in this same resource group, you can use an existing PrivateLink.
 +
 You can enable or disable private access at any time from the cluster's *Settings* page. After private access is disabled, attempts to reach the private endpoints will fail. However, the PrivateLink endpoint in your AWS account and the PrivateLink resource in Redpanda Cloud both remain provisioned and continue to incur charges until you explicitly delete them.
@@ -100,6 +98,7 @@ Not all features included in BYOC clusters are available in Serverless. For exam
 
 == Next steps
 
+* xref:networking:serverless/aws/index.adoc[Set up private access for Serverless clusters]
 * xref:get-started:cloud-overview.adoc[Learn more about Redpanda Cloud]
 * xref:get-started:config-topics.adoc[Manage topics]
 * xref:billing:billing.adoc[Learn about billing]
