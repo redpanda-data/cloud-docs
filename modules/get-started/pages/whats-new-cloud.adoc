@@ -8,6 +8,15 @@ This page lists new features added to Redpanda Cloud.
 
 == January 2026
 
+=== Redpanda Connect updates
+
+* Inputs:
+** xref:develop:connect/components/inputs/otlp_grpc.adoc[otlp_grpc]: Receive OpenTelemetry traces, logs, and metrics via OTLP/gRPC protocol. Exposes an OpenTelemetry Collector gRPC receiver that accepts traces, logs, and metrics, converting them to individual Redpanda OTEL v1 protobuf messages optimized for Kafka partitioning.
+** xref:develop:connect/components/inputs/otlp_http.adoc[otlp_http]: Receive OpenTelemetry traces, logs, and metrics via OTLP/HTTP protocol. Supports both protobuf and JSON formats at standard OTLP endpoints, converting telemetry data to individual messages with embedded Resource and Scope metadata.
+* Outputs:
+** xref:develop:connect/components/outputs/otlp_grpc.adoc[otlp_grpc]: Send OpenTelemetry traces, logs, and metrics via OTLP/gRPC protocol. Accepts batches of Redpanda OTEL v1 protobuf messages and converts them to OTLP format for transmission to OpenTelemetry collectors.
+** xref:develop:connect/components/outputs/otlp_http.adoc[otlp_http]: Send OpenTelemetry traces, logs, and metrics via OTLP/HTTP protocol. Supports both protobuf and JSON content types for flexible integration with OpenTelemetry backends.
+
 === Redpanda Connect and Roles in Terraform provider
 
 The xref:manage:terraform-provider.adoc[Redpanda Terraform provider] now supports managing roles and Redpanda Connect pipelines. Use the provider to create and manage role-based access control and data pipelines in Redpanda Cloud.
