@@ -19,7 +19,7 @@ Before starting, ensure you have:
 * API key for at least one LLM provider (OpenAI or Anthropic)
 * Python 3.8+, Node.js 18+, or cURL (for testing)
 
-== Step 1: Configure a provider
+== Configure a provider
 
 Providers represent upstream LLM services (OpenAI, Anthropic) and their associated credentials. Providers are disabled by default and must be enabled explicitly.
 
@@ -33,7 +33,7 @@ AI Gateway currently supports:
 * OpenAI
 * Anthropic
 
-== Step 2: Enable models
+== Enable models
 
 After enabling a provider, enable the specific models you want to make available through your gateways.
 
@@ -52,7 +52,7 @@ Requests through AI Gateway must use the `vendor/model_id` format. For example:
 
 This format allows the gateway to route requests to the correct provider.
 
-== Step 3: Create a gateway
+== Create a gateway
 
 A gateway is a logical configuration boundary that defines routing policies, rate limits, spend limits, and observability scope. You can create separate gateways per team, environment (staging/production), or customer.
 
@@ -78,7 +78,7 @@ Common gateway patterns:
 * *Team isolation*: One gateway per team for budget tracking
 * *Customer multi-tenancy*: One gateway per customer for isolated policies
 
-== Step 4: Send your first request
+== Send your first request
 
 Now that you've configured a provider and created a gateway, send a test request to verify everything works.
 
@@ -198,7 +198,7 @@ If your request fails, check these common issues:
 * *Model not found*: Ensure the model is enabled in Step 2
 * *Missing rp-aigw-id*: Add the gateway ID header to your request
 
-== Step 5: Verify in observability dashboard
+== Verify in observability dashboard
 
 Confirm your request appears in the AI Gateway observability dashboard.
 
@@ -233,7 +233,7 @@ If your request doesn't appear:
 * Verify the gateway ID in your request matches the gateway you're viewing
 * Check that your client received a successful response
 
-== Step 6: Configure LLM routing (optional)
+== Configure LLM routing (optional)
 
 Configure rate limits, spend limits, and provider pools with failover.
 
@@ -247,7 +247,7 @@ On the Gateways page, select the *LLM* tab to configure routing policies. The LL
 
 For high availability, configure a fallback provider that activates when the primary fails:
 
-. Add a second provider (for example, Anthropic) following Step 1.
+. Add a second provider (for example, Anthropic).
 . In your gateway's *LLM* routing configuration:
 +
 * *Primary pool*: OpenAI (preferred for quality)
@@ -263,7 +263,7 @@ The gateway automatically routes to the fallback when it detects:
 
 Monitor the fallback rate in observability to detect primary provider issues early.
 
-== Step 7: Configure MCP tools (optional)
+== Configure MCP tools (optional)
 
 If you're using AI agents, configure MCP (Model Context Protocol) tool aggregation.
 
@@ -301,7 +301,7 @@ Agents then search for specific tools they need, retrieving only that subset. Th
 
 // REVIEWERS: How do users connect to the ADP catalog + MCP servers exposed through RPCN?
 
-== Step 8: Create CEL routing rule (optional)
+== Configure CEL routing rule (optional)
 
 Use CEL (Common Expression Language) expressions to route requests dynamically based on headers, content, or other request properties.
 
@@ -554,18 +554,6 @@ const openai = new OpenAI({
   }
 });
 ----
-
-== What you've accomplished
-
-After completing this quickstart, you:
-
-* ✓ Configured an LLM provider and enabled models
-* ✓ Created your first AI Gateway
-* ✓ Sent requests through the gateway
-* ✓ Verified requests in the observability dashboard
-* ✓ (Optional) Configured failover with provider pools
-* ✓ (Optional) Created CEL routing rules
-* ✓ (Optional) Set up MCP tool aggregation
 
 == Next steps
 

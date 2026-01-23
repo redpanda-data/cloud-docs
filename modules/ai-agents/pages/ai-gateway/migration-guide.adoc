@@ -72,7 +72,7 @@ Benefits:
 
 == Step-by-step migration
 
-=== Step 1: Add environment variables
+=== Add environment variables
 
 Add gateway configuration to your environment without removing existing provider keys (yet).
 
@@ -93,7 +93,7 @@ USE_AI_GATEWAY=false
 ----
 
 
-=== Step 2: Update your code
+=== Update your code
 
 ==== Option A: OpenAI SDK (recommended for most use cases)
 
@@ -303,7 +303,7 @@ else:
 ----
 
 
-=== Step 3: Test gateway connection
+=== Test gateway connection
 
 Before changing the feature flag, verify gateway connectivity:
 
@@ -355,7 +355,7 @@ Common issues:
 * `Model not found` → Ensure model is enabled in gateway configuration
 * No `rp-aigw-id` header → Verify header is set in `default_headers`
 
-=== Step 4: Verify in observability dashboard
+=== Verify in observability dashboard
 
 After successful test:
 
@@ -371,7 +371,7 @@ After successful test:
 
 *If request doesn't appear*: Verify gateway ID and authentication token are correct.
 
-=== Step 5: Enable gateway for subset of traffic
+=== Enable gateway for subset of traffic
 
 Gradually roll out gateway usage:
 
@@ -422,7 +422,7 @@ use_gateway = feature_flags.is_enabled("ai-gateway", user_context)
 ----
 
 
-=== Step 6: Monitor and compare
+=== Monitor and compare
 
 During parallel operation, compare metrics:
 
@@ -496,7 +496,7 @@ def call_llm_with_metrics(use_gateway: bool, model: str, messages: list):
 ----
 
 
-=== Step 7: Full cutover
+=== Full cutover
 
 Once metrics confirm gateway reliability:
 
@@ -724,7 +724,7 @@ Use this checklist to track your migration:
 
 == Common migration issues
 
-=== Issue: "Model not found" error
+=== "Model not found" error
 
 Symptom:
 [source,text]
@@ -745,7 +745,7 @@ Solution:
 2. Confirm format: `vendor/model_id` (for example, `openai/gpt-4o`, not `gpt-4o`)
 3. Check supported models: // PLACEHOLDER: link to model catalog
 
-=== Issue: Missing `rp-aigw-id` header
+=== Missing `rp-aigw-id` header
 
 Symptom:
 
@@ -768,7 +768,7 @@ client = OpenAI(
 ----
 
 
-=== Issue: Higher latency than expected
+=== Higher latency than expected
 
 Expected gateway overhead: // PLACEHOLDER: Xms p50, Yms p99
 
@@ -781,7 +781,7 @@ If latency is significantly higher:
 
 Solution: Review geographic routing and provider pool configuration.
 
-=== Issue: Requests not appearing in dashboard
+=== Requests not appearing in dashboard
 
 Causes:
 
@@ -791,7 +791,7 @@ Causes:
 
 Solution: Verify gateway ID and check for UI delay (logs may take a few seconds to appear).
 
-=== Issue: Different response format
+=== Different response format
 
 Symptom: Response structure differs between direct and gateway
 
@@ -804,7 +804,7 @@ Solution:
 
 == Advanced migration scenarios
 
-=== Scenario: Custom request timeouts
+=== Custom request timeouts
 
 Before
 
@@ -827,7 +827,7 @@ client = OpenAI(
 ----
 
 
-=== Scenario: Streaming responses
+=== Streaming responses
 
 // PLACEHOLDER: Verify streaming support
 
@@ -861,7 +861,7 @@ for chunk in stream:
 ----
 
 
-=== Scenario: Custom headers (for example, user tracking)
+=== Custom headers (for example, user tracking)
 
 Before
 
@@ -896,7 +896,7 @@ NOTE: Gateway may use custom headers for routing (for example, CEL expressions c
 
 After successful migration, you gain:
 
-=== 1. Simplified provider management
+Simplified provider management
 
 [source,python]
 ----
@@ -904,25 +904,24 @@ After successful migration, you gain:
 model = "anthropic/claude-sonnet-3.5"  # Was openai/gpt-4o
 ----
 
-
-=== 2. Unified observability
+Unified observability
 
 * All requests in one dashboard
 * Cross-provider cost comparison
 * Session reconstruction across models
 
-=== 3. Automatic failover
+Automatic failover
 
 * Configure once, benefit everywhere
 * No application-level retry logic needed
 
-=== 4. Cost controls
+Cost controls
 
 * Enforce budgets centrally
 * Rate limit per team/customer
 * No surprises in cloud bills
 
-=== 5. A/B testing
+A/B testing
 
 * Test new models without code changes
 * Compare quality/cost/latency

@@ -179,7 +179,7 @@ Each pattern follows this structure:
 * Verify: How to test
 * Cost/performance impact: Implications
 
-=== Pattern 1: Tier-based routing
+=== Tier-based routing
 
 When to use: Different user tiers (free, pro, enterprise) should get different model quality
 
@@ -229,7 +229,7 @@ Cost impact:
 
 Use case: SaaS product with tiered pricing where model quality is a differentiator
 
-=== Pattern 2: Environment-based routing
+=== Environment-based routing
 
 When to use: Prevent staging from using expensive models
 
@@ -272,9 +272,8 @@ Cost impact:
 
 Use case: Protect against runaway staging costs
 
-'''
 
-=== Pattern 3: Content-length guard rails
+=== Content-length guard rails
 
 When to use: Block or downgrade long prompts to prevent cost spikes
 
@@ -336,7 +335,7 @@ Cost impact:
 
 Use case: Staging cost controls, prevent prompt injection attacks that inflate token usage
 
-=== Pattern 4: Topic-based routing
+=== Topic-based routing
 
 When to use: Route different question types to specialized models
 
@@ -385,7 +384,7 @@ Cost impact:
 Use case: Multi-purpose chatbot with both coding and general queries
 
 
-=== Pattern 5: Geographic/regional routing
+=== Geographic/regional routing
 
 When to use: Route by user region for compliance or latency optimization
 
@@ -422,7 +421,7 @@ Cost impact: Neutral (same model, different region)
 Use case: GDPR compliance, data residency requirements
 
 
-=== Pattern 6: Customer-specific routing
+=== Customer-specific routing
 
 When to use: Different customers have different model access (enterprise features)
 
@@ -462,7 +461,7 @@ Cost impact:
 Use case: Enterprise contracts with premium model access
 
 
-=== Pattern 7: a/b testing (percentage-based routing)
+=== A/B testing (percentage-based routing)
 
 When to use: Test new models with a percentage of traffic
 
@@ -517,7 +516,7 @@ Cost impact:
 
 Use case: Evaluate new models in production with real traffic
 
-=== Pattern 8: Complexity-based routing
+=== Complexity-based routing
 
 When to use: Route simple queries to cheap models, complex queries to expensive models
 
@@ -568,7 +567,7 @@ Cost impact:
 
 Use case: FAQ chatbot with mix of simple lookups and complex questions
 
-=== Pattern 9: Time-based routing
+=== Time-based routing
 
 When to use: Use cheaper models during off-peak hours
 
@@ -598,7 +597,7 @@ Cost impact:
 Use case: Consumer apps with time-zone-specific usage patterns
 
 
-=== Pattern 10: Fallback chain (multi-level)
+=== Fallback chain (multi-level)
 
 When to use: Complex fallback logic beyond simple primary/secondary
 
@@ -629,7 +628,7 @@ Use case: Production systems with SLA requirements
 
 == Advanced CEL patterns
 
-=== Pattern: Default values with `has()`
+=== Default values with `has()`
 
 Problem: Field might not exist in request
 
@@ -645,7 +644,7 @@ has(request.body.max_tokens) && request.body.max_tokens > 2000
 
 What happens: Safely checks if `max_tokens` exists before comparing
 
-=== Pattern: Multiple conditions with parentheses
+=== Multiple conditions with parentheses
 
 Expression:
 
@@ -661,7 +660,7 @@ request.headers["x-environment"] == "production"
 
 What happens: Premium users OR VIP customer, AND production → GPT-4o
 
-=== Pattern: Regex matching
+=== Regex matching
 
 Expression:
 
@@ -675,7 +674,7 @@ request.body.messages[0].content.matches("(?i)(urgent|asap|emergency)")
 
 What happens: Messages containing "urgent", "ASAP", or "emergency" (case-insensitive) → GPT-4o
 
-=== Pattern: String array contains
+=== String array contains
 
 Expression:
 
@@ -689,7 +688,7 @@ Expression:
 
 What happens: Only specific customers get premium model
 
-=== Pattern: Reject invalid requests
+=== Reject invalid requests
 
 Expression:
 
