@@ -79,8 +79,8 @@ The current AI Gateway documentation is comprehensive but doesn't clearly distin
 | Access Management page | Admin | MEDIUM | Missing |
 
 ### Existing Content Gaps
-1. **ai-gateway-overview.adoc** - Too dense, mixes Admin and Builder concerns
-2. **ai-gateway.adoc (quickstart)** - Conflates Admin setup with Builder usage
+1. **gateway-architecture.adoc** - Too dense, mixes Admin and Builder concerns
+2. **gateway-quickstart.adoc (quickstart)** - Conflates Admin setup with Builder usage
 3. **index.adoc** - Too minimal, provides no guidance
 4. **No discovery mechanism** - Builders don't know which gateways they can use
 
@@ -129,13 +129,13 @@ AI Gateway/
 │       └── ...
 │
 ├── Reference/
-│   ├── ai-gateway-overview.adoc (Refactored: Technical deep-dive)
+│   ├── gateway-architecture.adoc (Refactored: Technical deep-dive)
 │   ├── cel-routing-cookbook.adoc (Existing)
 │   ├── mcp-aggregation-guide.adoc (Existing)
 │   ├── observability-logs.adoc (Existing)
 │   ├── observability-metrics.adoc (Existing)
 │   ├── migration-guide.adoc (Existing)
-│   └── quickstart-enhanced.adoc (Existing or remove if redundant)
+│   └── gateway-quickstart.adoc (Consolidated from ai-gateway.adoc and quickstart-enhanced.adoc)
 ```
 
 ---
@@ -176,7 +176,7 @@ You're building AI agents or applications and need to connect to available gatew
 == Learn More
 
 * xref:ai-gateway/what-is-ai-gateway.adoc[What is an AI Gateway?]
-* xref:ai-gateway/reference/ai-gateway-overview.adoc[Technical Architecture]
+* xref:ai-gateway/reference/gateway-architecture.adoc[Technical Architecture]
 ```
 
 **Persona Tagging:** Both
@@ -186,7 +186,7 @@ You're building AI agents or applications and need to connect to available gatew
 ### 2. Create what-is-ai-gateway.adoc (HIGH PRIORITY)
 
 **Purpose:** Standalone conceptual page answering "What is an AI gateway?"
-**Source:** Extract from ai-gateway-overview.adoc (lines 15-147)
+**Source:** Extract from gateway-architecture.adoc (lines 15-147)
 
 **Content to Include:**
 - The problem AI Gateway solves
@@ -266,7 +266,7 @@ Expected response: List of available models
 
 ---
 
-### 4. Refactor ai-gateway.adoc (quickstart)
+### 4. Refactor gateway-quickstart.adoc (quickstart)
 
 **Current Problem:** Mixes Admin setup (Steps 1-3) with Builder usage (Steps 4-5, integrations)
 
@@ -368,7 +368,7 @@ Inbound connections:
 
 ### 7. Update Existing Files
 
-#### ai-gateway-overview.adoc
+#### gateway-architecture.adoc
 **Changes:**
 - Remove conceptual "What is" content (move to what-is-ai-gateway.adoc)
 - Focus on technical architecture deep-dive
@@ -439,7 +439,7 @@ Inbound connections:
 *** xref:ai-agents:ai-gateway/builders/monitor-your-usage.adoc[Monitor Your Usage]
 *** xref:ai-agents:ai-gateway/builders/integrations/index.adoc[Integrations (Builder)]
 ** Reference
-*** xref:ai-agents:ai-gateway/reference/ai-gateway-overview.adoc[Architecture Deep Dive]
+*** xref:ai-agents:ai-gateway/reference/gateway-architecture.adoc[Architecture Deep Dive]
 *** xref:ai-agents:ai-gateway/reference/cel-routing-cookbook.adoc[CEL Routing Cookbook]
 *** xref:ai-agents:ai-gateway/reference/mcp-aggregation-guide.adoc[MCP Aggregation Guide]
 *** xref:ai-agents:ai-gateway/reference/observability-logs.adoc[Request Logs]
@@ -464,7 +464,7 @@ Inbound connections:
 5. Update observability pages with persona distinctions (MEDIUM)
 
 ### Phase 3: Polish and Optimize
-1. Refactor ai-gateway-overview.adoc (MEDIUM)
+1. Refactor gateway-architecture.adoc (MEDIUM)
 2. Update mcp-aggregation-guide.adoc with Builder sections (LOW)
 3. Create admin/builder overview pages (LOW)
 4. Reorganize integrations folders (LOW)
@@ -555,14 +555,14 @@ After implementation, evaluate:
 - `ai-gateway/builders/monitor-your-usage.adoc`
 
 ### Files to Move
-- `ai-gateway/ai-gateway-overview.adoc` → `ai-gateway/reference/ai-gateway-overview.adoc`
+- `ai-gateway/gateway-architecture.adoc` → `ai-gateway/reference/gateway-architecture.adoc`
 - `ai-gateway/cel-routing-cookbook.adoc` → `ai-gateway/reference/cel-routing-cookbook.adoc`
 - `ai-gateway/mcp-aggregation-guide.adoc` → `ai-gateway/reference/mcp-aggregation-guide.adoc`
 - `ai-gateway/observability-*.adoc` → `ai-gateway/reference/observability-*.adoc`
 
 ### Files to Refactor
-- `ai-gateway/ai-gateway.adoc` (quickstart) - split content between admin and builder paths
-- `ai-gateway/ai-gateway-overview.adoc` - extract conceptual content to what-is page
+- `ai-gateway/gateway-quickstart.adoc` (quickstart) - split content between admin and builder paths
+- `ai-gateway/gateway-architecture.adoc` - extract conceptual content to what-is page
 - `ai-gateway/observability-logs.adoc` - add persona-specific sections
 - `ai-gateway/observability-metrics.adoc` - add builder usage section
 
@@ -570,4 +570,4 @@ After implementation, evaluate:
 - `ai-gateway/integrations/*-admin.adoc`
 - `ai-gateway/integrations/*-user.adoc`
 - `ai-gateway/migration-guide.adoc`
-- `ai-gateway/quickstart-enhanced.adoc` (review if still needed)
+- `ai-gateway/gateway-quickstart.adoc` (consolidated)

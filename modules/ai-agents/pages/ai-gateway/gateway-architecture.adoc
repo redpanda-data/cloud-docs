@@ -1,0 +1,158 @@
+= AI Gateway Architecture
+:description: Technical architecture of Redpanda AI Gateway, including request lifecycle, supported providers, deployment models, and implementation details.
+:page-topic-type: concept
+:page-personas: app_developer, platform_admin
+:learning-objective-1: Describe the three architectural planes of AI Gateway
+:learning-objective-2: Explain the request lifecycle through policy evaluation stages
+:learning-objective-3: Identify supported providers, features, and current limitations
+
+include::ai-agents:partial$ai-gateway-byoc-note.adoc[]
+
+This page provides technical details about AI Gateway's architecture, request processing, and capabilities. For an introduction to AI Gateway and the problems it solves, see xref:ai-agents:ai-gateway/what-is-ai-gateway.adoc[].
+
+== Architecture overview
+
+AI Gateway consists of three planes: a control plane for configuration and management, a data plane for request processing and routing, and an observability plane for monitoring and analytics.
+
+// PLACEHOLDER: Add architecture diagram showing:
+// 1. Control Plane:
+//    - Workspace management
+//    - Provider/model configuration
+//    - Gateway creation and policy definition
+//    - Admin console
+//
+// 2. Data Plane:
+//    - Request ingestion
+//    - Policy evaluation (rate limits → spend limits → routing → execution)
+//    - Provider pool selection and failover
+//    - MCP aggregation layer
+//    - Response logging and metrics
+//
+// 3. Observability Plane:
+//    - Request logs storage
+//    - Metrics aggregation
+//    - Dashboard UI
+
+=== Control plane
+
+The control plane manages gateway configuration and policy definition:
+
+* **Workspace management**: Multi-tenant isolation with separate namespaces for different teams or environments
+* **Provider configuration**: Enable and configure LLM providers (OpenAI, Anthropic, etc.)
+* **Gateway creation**: Define gateways with specific routing rules, budgets, and rate limits
+* **Policy definition**: Create CEL-based routing policies, spend limits, and rate limits
+* **MCP server registration**: Configure which MCP servers are available to agents
+
+=== Data plane
+
+The data plane handles all runtime request processing:
+
+* **Request ingestion**: Accept requests via OpenAI-compatible API endpoints
+* **Authentication**: Validate API keys and gateway access
+* **Policy evaluation**: Apply rate limits, spend limits, and routing policies
+* **Provider pool management**: Select primary or fallback providers based on availability
+* **MCP aggregation**: Aggregate tools from multiple MCP servers with deferred loading
+* **Response transformation**: Normalize provider-specific responses to OpenAI format
+* **Metrics collection**: Record token usage, latency, and cost for every request
+
+=== Observability plane
+
+The observability plane provides monitoring and analytics:
+
+* **Request logs**: Store full request/response history with prompt and completion content
+* **Metrics aggregation**: Calculate token usage, costs, latency percentiles, and error rates
+* **Dashboard UI**: Display real-time and historical analytics per gateway, model, or provider
+* **Cost tracking**: Estimate spend based on provider pricing and token consumption
+
+== Request lifecycle
+
+When a request flows through AI Gateway, it passes through several policy and routing stages before reaching the LLM provider. Understanding this lifecycle helps you configure policies effectively and troubleshoot issues:
+
+. Application sends request to gateway endpoint with `rp-aigw-id` header
+. Gateway authenticates request
+. Rate limit policy evaluates (allow/deny)
+. Spend limit policy evaluates (allow/deny)
+. Routing policy evaluates (which model/provider to use)
+. Provider pool selects backend (primary/fallback)
+. Request forwarded to LLM provider
+. Response returned to application
+. Request logged with tokens, cost, latency, status
+
+Each policy evaluation happens synchronously in the request path. If rate limits or spend limits reject the request, the gateway returns an error immediately without calling the LLM provider, which helps you control costs.
+
+=== MCP tool request lifecycle
+
+For MCP tool requests, the lifecycle differs slightly to support deferred tool loading:
+
+. Application discovers tools via `/mcp` endpoint
+. Gateway aggregates tools from approved MCP servers
+. Application receives search + orchestrator tools (deferred loading)
+. Application invokes specific tool
+. Gateway routes to appropriate MCP server
+. Tool execution result returned
+. Request logged with execution time, status
+
+The gateway only loads and exposes specific tools when requested, which dramatically reduces the token overhead compared to loading all tools upfront.
+
+== Supported features
+
+=== LLM providers
+
+* OpenAI
+* Anthropic
+* // PLACEHOLDER: Google, AWS Bedrock, Azure OpenAI, others?
+
+=== API compatibility
+
+* OpenAI-compatible `/v1/chat/completions` endpoint
+* // PLACEHOLDER: Streaming support?
+* // PLACEHOLDER: Embeddings support?
+* // PLACEHOLDER: Other endpoints?
+
+=== Policy features
+
+* CEL-based routing expressions
+* Rate limiting (// PLACEHOLDER: per-gateway, per-header, per-tenant?)
+* Monthly spend limits (// PLACEHOLDER: per-gateway, per-workspace?)
+* Provider pools with automatic failover
+* // PLACEHOLDER: Caching support?
+
+=== MCP support
+
+* MCP server aggregation
+* Deferred tool loading (80-90% token reduction)
+* JavaScript orchestrator for multi-step workflows
+* // PLACEHOLDER: Tool execution sandboxing?
+
+=== Observability
+
+* Request logs with full prompt/response history
+* Token usage tracking
+* Estimated cost per request
+* Latency metrics
+* // PLACEHOLDER: Metrics export? OpenTelemetry support?
+
+== Current limitations
+
+// PLACEHOLDER: List current limitations, for example:
+// - Custom model deployments (Azure OpenAI BYOK, AWS Bedrock custom models)
+// - Response caching
+// - Prompt templates/versioning
+// - Guardrails (PII detection, content moderation)
+// - Multi-region active-active deployment
+// - Metrics export to external systems
+// - Budget alerts/notifications
+
+== Deployment models
+
+// PLACEHOLDER: Add deployment model details:
+// - BYOC deployment requirements
+// - Scaling characteristics
+// - High availability configuration
+// - Regional deployment options
+
+== Next steps
+
+* xref:ai-agents:ai-gateway/gateway-quickstart.adoc[]: Route your first request through AI Gateway
+* xref:ai-agents:ai-gateway/mcp-aggregation-guide.adoc[]: Configure MCP server aggregation for AI agents
+* xref:ai-agents:ai-gateway/observability-logs.adoc[]: Monitor request logs, token usage, and costs
