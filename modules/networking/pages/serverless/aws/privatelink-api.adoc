@@ -41,20 +41,23 @@ Copy and store the resource group ID (UUID) from the URL in the browser.
 export RESOURCE_GROUP_ID=<uuid>
 ----
 
-. Create a new Serverless cluster with the endpoint service enabled by calling link:/api/doc/cloud-controlplane/operation/operation-serverlessclusterservice_createserverlesscluster[`POST /v1/serverless-clusters`].
+. Create a new Serverless cluster with the endpoint service enabled by calling link:/api/doc/cloud-controlplane/operation/operation-serverlessclusterservice_createserverlesscluster[`POST /v1/serverless/clusters`].
 +
 In the example below, make sure to set your own values for the following fields:
 +
 --
 - `name`
-- `serverless_region`: for example, `"pro-us-east-1"`
-- `private_link_id`: The ID of an existing PrivateLink resource in the same resource group
+- `serverless_region`: for example, `"us-east-1"`
+- `private_link_id`: The ID of an existing PrivateLink resource in the same resource group. You can find this in the cluster overview page in the Redpanda Cloud Console.
 - `networking_config.private` and `networking_config.public`: Valid values are `STATE_ENABLED` or `STATE_DISABLED`. At least one must be enabled. If neither is specified, `public` defaults to `STATE_ENABLED`.
 --
 +
 [,bash]
 ----
+# Set the serverless region (for example, us-east-1)
 SERVERLESS_REGION=<serverless_region>
+
+# Set the PrivateLink ID
 SERVERLESS_PRIVATE_LINK_ID=<private_link_id>
 
 CLUSTER_POST_BODY=`cat << EOF
@@ -90,7 +93,14 @@ echo $CLUSTER_ID
 CLUSTER_ID=<cluster_id>
 ----
 
-. Make a link:/api/doc/cloud-controlplane/operation/operation-serverlessclusterservice_updateserverlesscluster[`PATCH /v1/serverless-clusters/{cluster.id}`] request to update the cluster with the Redpanda PrivateLink Endpoint Service enabled.
+. Get the PrivateLink ID from the cluster overview page in the Redpanda Cloud Console.
++
+[,bash]
+----
+SERVERLESS_PRIVATE_LINK_ID=<private_link_id>
+----
+
+. Make a link:/api/doc/cloud-controlplane/operation/operation-serverlessclusterservice_updateserverlesscluster[`PATCH /v1/serverless/clusters/{cluster.id}`] request to update the cluster with the Redpanda PrivateLink Endpoint Service enabled.
 +
 In the example below, make sure to set your own value for the following fields:
 +
@@ -175,6 +185,7 @@ The VPC region must be the same region where the Redpanda cluster is deployed. T
 ----
 # See https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html for
 # information on profiles and credential files
+REGION=<aws-region>
 PROFILE=<specific-profile-from-credential-file>
 
 aws ec2 create-vpc --region $REGION --profile $PROFILE --cidr-block 10.0.0.0/20

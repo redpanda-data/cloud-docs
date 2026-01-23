@@ -43,7 +43,7 @@ include::get-started:partial$get-started-serverless.adoc[]
 
 To create a Serverless cluster: 
 
-. In the https://cloud.redpanda.com[Redpanda Cloud UI^], on the **Clusters** page, click **Create cluster**, then click **Create Serverless cluster**. 
+. In the https://cloud.redpanda.com[Redpanda Cloud Console^], on the **Clusters** page, click **Create cluster**, then click **Create Serverless cluster**. 
 
 . Enter a cluster name, then select the resource group. 
 +
@@ -51,9 +51,14 @@ If you don't have an existing resource group, you can create one. Refresh the pa
 
 . Select a cloud provider and xref:reference:tiers/serverless-regions.adoc[region]. For best performance, select the region closest to your applications. Redpanda expects your applications to be deployed in the same cloud provider and region as your Serverless cluster. 
 +
-Clusters on AWS can enable private access between their VPC and Redpanda, so data does not traverse the public internet. Private connectivity is implemented using AWS PrivateLink for secure ingress traffic. A Serverless cluster can have both public and private access enabled. Enabling private access incurs additional charges. If you select private access, you can either create a new PrivateLink, or, if you have PrivateLinks for other Serverless clusters in this same resource group, you can use an existing PrivateLink.
+Clusters on AWS can enable private access between their VPC and Redpanda, so data does not traverse the public internet. Private connectivity is implemented using AWS PrivateLink for secure ingress traffic.
 +
-You can enable or disable private access at any time on the cluster's *Settings* page. After private access is disabled, attempts to reach the private endpoints will fail. However, the PrivateLink endpoint in your AWS account and the PrivateLink resource in Redpanda Cloud both remain provisioned and continue to incur charges until you explicitly delete them.
+** A Serverless cluster can have both public and private access enabled.
+** You can either create a new PrivateLink or use an existing one from the same resource group.
+** You can enable or disable private access at any time on the cluster's *Settings* page. 
+** Enabling private access incurs additional charges.
++
+NOTE: After private access is disabled, attempts to reach the private endpoints will fail. However, the PrivateLink endpoint in your AWS account and the PrivateLink resource in Redpanda Cloud both remain provisioned and continue to incur charges until you explicitly delete them.     
 
 . Click **Create cluster**.
 
@@ -67,7 +72,7 @@ The *Overview* page lists your bootstrap server URL and security settings in the
 
 Or, Redpanda can generate a sample application to interact with your cluster. Run xref:reference:rpk/rpk-generate/rpk-generate-app.adoc[`rpk generate app`], and select Go as the language. Follow the commands in the terminal to run the application, create a demo topic, produce to the topic, and consume the data back.
 
-Follow the steps in the UI to use `rpk` to interact with your cluster from the command line. Here are some helpful commands:
+Follow the steps in the Console to use `rpk` to interact with your cluster from the command line. Here are some helpful commands:
 
 * xref:reference:rpk/rpk-cloud/rpk-cloud-login.adoc[`rpk cloud login`]: Use this to log in to Redpanda Cloud or to refresh the session.
 * xref:reference:rpk/rpk-topic.adoc[`rpk topic`]: Use this to manage topics, produce data, and consume data. 
@@ -79,7 +84,7 @@ NOTE: Redpanda Serverless is opinionated about Kafka configurations. For example
 == Supported features
 
 * Redpanda Serverless supports the Kafka API. Serverless clusters work with all Kafka clients. See xref:develop:kafka-clients.adoc[].
-* Serverless clusters support all major Apache Kafka messages for managing topics, producing/consuming data (including transactions), managing groups, managing offsets, and managing ACLs. (User management is available in the Redpanda Cloud UI or with `rpk security acl`.) 
+* Serverless clusters support all major Apache Kafka messages for managing topics, producing/consuming data (including transactions), managing groups, managing offsets, and managing ACLs. (User management is available in the Redpanda Cloud Console or with `rpk security acl`.) 
 
 === Unsupported features
 
