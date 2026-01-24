@@ -302,17 +302,19 @@ Override global settings for specific projects by creating `.continuerc.json` in
       "title": "Project Gateway - Claude Haiku",
       "provider": "anthropic",
       "model": "claude-haiku",
-      "apiKey": "${PROJECT_API_KEY}",
+      "apiKey": "your_project_api_key_here",
       "apiBase": "https://gw.project.ai.panda.com",
       "requestOptions": {
         "headers": {
-          "rp-aigw-id": "${PROJECT_GATEWAY_ID}"
+          "rp-aigw-id": "your_project_gateway_id_here"
         }
       }
     }
   ]
 }
 ----
+
+IMPORTANT: `.continuerc.json` does not support environment variable interpolation. You must hardcode values in this file. For dynamic configuration, use `~/.continue/config.yaml` with `${{ secrets.* }}` syntax (see <<Configure with environment variables>>) or create a `~/.continue/config.ts` file for programmatic environment access.
 
 Project-level configuration takes precedence over global configuration. Use this to:
 
