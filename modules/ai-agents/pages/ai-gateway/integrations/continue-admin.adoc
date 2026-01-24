@@ -506,9 +506,8 @@ Alternatively, embed MCP server configuration in `~/.continue/config.yaml`:
 
 [source,yaml]
 ----
-experimental:
-  modelContextProtocolServer:
-    transport:
+mcpServers:
+  - transport:
       type: streamable-http
       url: https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/mcp
       headers:
@@ -715,7 +714,7 @@ Symptom: Continue.dev does not discover MCP tools.
 
 Causes and solutions:
 
-* **MCP configuration missing**: Ensure `experimental.modelContextProtocolServers` is configured
+* **MCP configuration missing**: Ensure `mcpServers` is configured
 * **MCP servers not configured in gateway**: Add MCP server endpoints in the gateway's MCP tab
 * **Deferred loading enabled but search failing**: Check that the search tool is correctly configured
 * **MCP server authentication failing**: Verify MCP server authentication credentials in the gateway configuration
