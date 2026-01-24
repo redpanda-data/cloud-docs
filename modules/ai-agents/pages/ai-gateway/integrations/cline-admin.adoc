@@ -455,8 +455,9 @@ Programmatically access logs for integration with monitoring systems:
 
 [source,bash]
 ----
+# Set REDPANDA_API_TOKEN environment variable before running
 curl https://{CLUSTER_ID}.cloud.redpanda.com/api/ai-gateway/logs \
-  -H "Authorization: Bearer YOUR_API_TOKEN" \
+  -H "Authorization: Bearer ${REDPANDA_API_TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{
     "gateway_id": "GATEWAY_ID",
@@ -465,6 +466,8 @@ curl https://{CLUSTER_ID}.cloud.redpanda.com/api/ai-gateway/logs \
     "limit": 100
   }'
 ----
+
+NOTE: Set the `REDPANDA_API_TOKEN` environment variable to your API token before running this command.
 
 == Security considerations
 
