@@ -268,59 +268,41 @@ If using deferred tool loading in your gateway, you'll see a search tool and MCP
 
 == Configure with environment variables
 
-For sensitive credentials or multi-environment setups, use environment variables:
+For sensitive credentials or multi-environment setups, use Continue.dev's secrets interpolation in `config.yaml`:
 
-[,json]
+[,yaml]
 ----
-{
-  "models": [
-    {
-      "title": "Gateway - Claude Sonnet",
-      "provider": "anthropic",
-      "model": "claude-sonnet-4-5",
-      "apiKey": "${REDPANDA_API_KEY}",
-      "apiBase": "${REDPANDA_GATEWAY_URL}",
-      "requestOptions": {
-        "headers": {
-          "rp-aigw-id": "${REDPANDA_GATEWAY_ID}"
-        }
-      }
-    }
-  ],
-  "experimental": {
-    "modelContextProtocolServers": [
-      {
-        "transport": {
-          "type": "http",
-          "url": "${REDPANDA_GATEWAY_URL}/mcp",
-          "headers": {
-            "Authorization": "Bearer ${REDPANDA_API_KEY}",
-            "rp-aigw-id": "${REDPANDA_GATEWAY_ID}"
-          }
-        }
-      }
-    ]
-  }
-}
+models:
+  - title: Gateway - Claude Sonnet
+    provider: anthropic
+    model: claude-sonnet-4-5
+    apiKey: ${{ secrets.REDPANDA_API_KEY }}
+    apiBase: ${{ secrets.REDPANDA_GATEWAY_URL }}
+    requestOptions:
+      headers:
+        rp-aigw-id: ${{ secrets.REDPANDA_GATEWAY_ID }}
+
+experimental:
+  modelContextProtocolServer:
+    transport:
+      type: streamable-http
+      url: ${{ secrets.REDPANDA_GATEWAY_URL }}/mcp
+      headers:
+        Authorization: Bearer ${{ secrets.REDPANDA_API_KEY }}
+        rp-aigw-id: ${{ secrets.REDPANDA_GATEWAY_ID }}
 ----
 
-Set environment variables before launching your editor:
+IMPORTANT: Continue.dev uses the `${{ secrets.* }}` syntax for interpolation in `config.yaml`. The legacy `${VAR}` syntax from `config.json` is not supported and will be treated as a literal string.
 
-[,bash]
-----
-export REDPANDA_GATEWAY_URL="https://gw.ai.panda.com"
-export REDPANDA_GATEWAY_ID="gateway-abc123"
-export REDPANDA_API_KEY="your-api-key"
-----
+Set secrets in Continue.dev settings:
 
-On Windows (PowerShell):
-
-[,powershell]
-----
-$env:REDPANDA_GATEWAY_URL = "https://gw.ai.panda.com"
-$env:REDPANDA_GATEWAY_ID = "gateway-abc123"
-$env:REDPANDA_API_KEY = "your-api-key"
-----
+. Open Continue.dev settings in your IDE
+. Navigate to the "Secrets" section
+. Add the following secrets:
++
+* `REDPANDA_GATEWAY_URL`: `https://gw.ai.panda.com`
+* `REDPANDA_GATEWAY_ID`: `gateway-abc123`
+* `REDPANDA_API_KEY`: `your-api-key`
 
 == Project-level configuration
 
