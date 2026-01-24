@@ -86,81 +86,58 @@ This approach configures VS Code to recognize your AI Gateway as a custom OpenAI
 . Open VS Code Settings:
 ** macOS: `Cmd+,`
 ** Windows/Linux: `Ctrl+,`
-. Search for `github.copilot.advanced`
+. Search for `github.copilot.chat.customOAIModels`
 . Click *Edit in settings.json*
 . Add the following configuration:
 
 [,json]
 ----
 {
-  "github.copilot.advanced": {
-    "customModels": {
-      "redpanda-gateway": {
-        "endpoint": "https://gw.ai.panda.com/v1",
-        "apiKey": "${env:REDPANDA_API_KEY}",
-        "models": [
-          {
-            "id": "anthropic/claude-sonnet-4-5",
-            "name": "Claude Sonnet 4.5 (Gateway)",
-            "type": "chat"
-          },
-          {
-            "id": "openai/gpt-4o",
-            "name": "GPT-4o (Gateway)",
-            "type": "chat"
-          },
-          {
-            "id": "openai/gpt-4o-mini",
-            "name": "GPT-4o Mini (Gateway)",
-            "type": "completion"
-          }
-        ]
-      }
+  "github.copilot.chat.customOAIModels": [
+    {
+      "id": "anthropic/claude-sonnet-4-5",
+      "name": "Claude Sonnet 4.5 (Gateway)",
+      "endpoint": "https://gw.ai.panda.com/v1",
+      "provider": "redpanda-gateway"
+    },
+    {
+      "id": "openai/gpt-4o",
+      "name": "GPT-4o (Gateway)",
+      "endpoint": "https://gw.ai.panda.com/v1",
+      "provider": "redpanda-gateway"
     }
-  }
+  ]
 }
 ----
 
 Replace `https://gw.ai.panda.com/v1` with your gateway endpoint.
 
-==== Add gateway ID header
+IMPORTANT: This experimental feature requires configuring API keys and custom headers through the Copilot Chat UI, not in `settings.json`.
 
-The custom models configuration doesn't support custom headers directly. To add the `rp-aigw-id` header, use one of these approaches:
+==== Configure API key and headers via Copilot Chat UI
 
-**Approach A: Use OAI Compatible Provider extension** (recommended, see Option 2 below)
-
-**Approach B: Configure gateway to use API key for routing** (if your gateway supports this)
-
-Check your AI Gateway documentation to see if you can embed the gateway ID in the API key or use a different authentication method that doesn't require custom headers.
-
-==== Set environment variable
-
-Set the API key as an environment variable before launching VS Code:
-
-[,bash]
-----
-export REDPANDA_API_KEY="your-api-key"
-code .
-----
-
-On Windows (PowerShell):
-
-[,powershell]
-----
-$env:REDPANDA_API_KEY = "your-api-key"
-code .
-----
+. Open Copilot Chat in VS Code (`Cmd+I` or `Ctrl+I`)
+. Click the model selector dropdown
+. Click *Manage Models* at the bottom of the dropdown
+. Click *Add Model*
+. Select your configured provider ("redpanda-gateway")
+. Enter the connection details:
+** *Base URL*: `https://gw.ai.panda.com/v1` (should match your settings.json endpoint)
+** *API Key*: Your Redpanda API key
+** *Custom Headers*: Click *Add Header*
+*** Header name: `rp-aigw-id`
+*** Header value: `gateway-abc123` (your gateway ID)
+. Click *Save*
 
 ==== Select model
 
-. Open a file in VS Code
 . Open Copilot chat with `Cmd+I` (macOS) or `Ctrl+I` (Windows/Linux)
 . Click the model selector dropdown
 . Choose a model from the "redpanda-gateway" provider
 
 === Option 2: OAI Compatible Provider extension
 
-The OAI Compatible Provider extension simplifies custom provider configuration and supports custom headers.
+The OAI Compatible Provider extension provides enhanced support for OpenAI-compatible endpoints with custom headers.
 
 ==== Install extension
 
@@ -168,73 +145,50 @@ The OAI Compatible Provider extension simplifies custom provider configuration a
 . Search for "OAI Compatible Provider"
 . Click *Install*
 
-==== Configure provider
+==== Configure base URL in settings
+
+Add the base URL configuration in VS Code settings:
 
 . Open VS Code Settings (`Cmd+,` or `Ctrl+,`)
-. Search for `oai.provider`
-. Configure the following settings:
-
-[,json]
-----
-{
-  "oai.provider.endpoint": "https://gw.ai.panda.com/v1",
-  "oai.provider.apiKey": "${env:REDPANDA_API_KEY}",
-  "oai.provider.headers": {
-    "rp-aigw-id": "gateway-abc123"
-  },
-  "oai.provider.models": [
-    {
-      "id": "anthropic/claude-sonnet-4-5",
-      "name": "Claude Sonnet 4.5",
-      "type": "chat"
-    },
-    {
-      "id": "openai/gpt-4o-mini",
-      "name": "GPT-4o Mini",
-      "type": "completion"
-    }
-  ]
-}
-----
-
-Replace placeholder values:
-
-* `https://gw.ai.panda.com/v1` - Your gateway endpoint
-* `gateway-abc123` - Your gateway ID
-
-==== Enable for Copilot
-
-. Search for `github.copilot.advanced` in settings
+. Search for `oaicopilot`
+. Click *Edit in settings.json*
 . Add the following:
 
 [,json]
 ----
 {
-  "github.copilot.advanced": {
-    "useOAIProvider": true
-  }
+  "oaicopilot.baseUrl": "https://gw.ai.panda.com/v1",
+  "oaicopilot.models": [
+    "anthropic/claude-sonnet-4-5",
+    "openai/gpt-4o",
+    "openai/gpt-4o-mini"
+  ]
 }
 ----
 
-. Reload VS Code window:
-** Command Palette (`Cmd+Shift+P` or `Ctrl+Shift+P`)
-** Type "Developer: Reload Window"
+Replace `https://gw.ai.panda.com/v1` with your gateway endpoint.
 
-==== Set environment variable
+==== Configure API key and headers via Copilot Chat UI
 
-[,bash]
-----
-export REDPANDA_API_KEY="your-api-key"
-code .
-----
+IMPORTANT: Do not configure API keys or custom headers in `settings.json`. Use the Copilot Chat UI instead.
 
-On Windows (PowerShell):
+. Open Copilot Chat in VS Code (`Cmd+I` or `Ctrl+I`)
+. Click the model selector dropdown
+. Click *Manage Models*
+. Find the OAI Compatible Provider in the list
+. Click *Configure* or *Edit*
+. Enter the connection details:
+** *API Key*: Your Redpanda API key
+** *Custom Headers*: Add the `rp-aigw-id` header
+*** Header name: `rp-aigw-id`
+*** Header value: `gateway-abc123` (your gateway ID)
+. Click *Save*
 
-[,powershell]
-----
-$env:REDPANDA_API_KEY = "your-api-key"
-code .
-----
+==== Select model
+
+. Open Copilot chat with `Cmd+I` (macOS) or `Ctrl+I` (Windows/Linux)
+. Click the model selector dropdown
+. Choose a model from the OAI Compatible Provider
 
 == Configure in JetBrains IDEs
 
