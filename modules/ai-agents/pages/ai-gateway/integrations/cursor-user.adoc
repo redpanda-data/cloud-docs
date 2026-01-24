@@ -192,12 +192,26 @@ Workspace settings override global settings. Use this to:
 
 === Configuration with environment variables
 
-For sensitive credentials, use environment variables instead of hardcoding values.
+For sensitive credentials, avoid hardcoding values in `settings.json`.
 
-In `settings.json`:
+IMPORTANT: VS Code `settings.json` does not support `${VAR}` interpolation - such placeholders will be treated as literal strings. To use environment variables, generate the settings file dynamically with a script.
 
-[,json]
+==== Option 1: Generate settings.json with a script
+
+Create a setup script that reads environment variables and writes the actual values to `settings.json`:
+
+[,bash]
 ----
+#!/bin/bash
+# setup-cursor-config.sh
+
+# Set your credentials
+export REDPANDA_GATEWAY_URL="https://gw.ai.panda.com"
+export REDPANDA_GATEWAY_ID="gateway-abc123"
+export REDPANDA_API_KEY="your-api-key"
+
+# Generate settings.json
+cat > ~/.cursor/settings.json <<EOF
 {
   "cursor.overrideOpenAIBaseUrl": "${REDPANDA_GATEWAY_URL}/v1",
   "cursor.overrideOpenAIApiKey": "${REDPANDA_API_KEY}",
@@ -205,17 +219,17 @@ In `settings.json`:
     "rp-aigw-id": "${REDPANDA_GATEWAY_ID}"
   }
 }
+EOF
+
+echo "Cursor settings.json generated successfully"
 ----
 
-Set environment variables before launching Cursor:
+Run the script before launching Cursor:
 
 [,bash]
 ----
-export REDPANDA_GATEWAY_URL="https://gw.ai.panda.com"
-export REDPANDA_GATEWAY_ID="gateway-abc123"
-export REDPANDA_API_KEY="your-api-key"
-
-# Launch Cursor from terminal to inherit environment
+chmod +x setup-cursor-config.sh
+./setup-cursor-config.sh
 cursor .
 ----
 
@@ -223,13 +237,41 @@ On Windows (PowerShell):
 
 [,powershell]
 ----
-$env:REDPANDA_GATEWAY_URL = "https://gw.ai.panda.com"
-$env:REDPANDA_GATEWAY_ID = "gateway-abc123"
-$env:REDPANDA_API_KEY = "your-api-key"
+# setup-cursor-config.ps1
+$REDPANDA_GATEWAY_URL = "https://gw.ai.panda.com"
+$REDPANDA_GATEWAY_ID = "gateway-abc123"
+$REDPANDA_API_KEY = "your-api-key"
 
-# Launch Cursor
-& "C:\Users\YourName\AppData\Local\Programs\cursor\Cursor.exe"
+$settings = @{
+  "cursor.overrideOpenAIBaseUrl" = "$REDPANDA_GATEWAY_URL/v1"
+  "cursor.overrideOpenAIApiKey" = $REDPANDA_API_KEY
+  "openai.additionalHeaders" = @{
+    "rp-aigw-id" = $REDPANDA_GATEWAY_ID
+  }
+} | ConvertTo-Json
+
+$settingsPath = "$env:USERPROFILE\.cursor\settings.json"
+$settings | Out-File -FilePath $settingsPath -Encoding utf8
+
+Write-Host "Cursor settings.json generated successfully"
 ----
+
+==== Option 2: Manually paste values
+
+Alternatively, replace the placeholders with your actual values directly in `settings.json`:
+
+[,json]
+----
+{
+  "cursor.overrideOpenAIBaseUrl": "https://gw.ai.panda.com/v1",
+  "cursor.overrideOpenAIApiKey": "your-actual-api-key-here",
+  "openai.additionalHeaders": {
+    "rp-aigw-id": "gateway-abc123"
+  }
+}
+----
+
+NOTE: This approach stores credentials in plaintext. Use file permissions to protect the settings file: `chmod 600 ~/.cursor/settings.json`
 
 == Configure MCP server integration
 
