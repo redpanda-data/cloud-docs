@@ -12,9 +12,9 @@ Configure Redpanda AI Gateway to support Continue.dev clients accessing multiple
 
 After reading this page, you will be able to:
 
-* [ ] Configure AI Gateway endpoints for Continue.dev connectivity.
-* [ ] Set up multi-provider backends with native format routing.
-* [ ] Deploy MCP tool aggregation for Continue.dev tool discovery.
+* Configure AI Gateway endpoints for Continue.dev connectivity
+* Set up multi-provider backends with native format routing
+* Deploy MCP tool aggregation for Continue.dev tool discovery
 
 == Prerequisites
 
@@ -421,10 +421,12 @@ Provide these instructions to users configuring Continue.dev in their IDE.
 
 === Configuration file location
 
-Continue.dev uses a YAML configuration file:
+Continue.dev supports both JSON and YAML configuration formats. This guide uses YAML (`config.yaml`) because it supports MCP server configuration and environment variable interpolation:
 
 * VS Code: `~/.continue/config.yaml`
 * JetBrains: `~/.continue/config.yaml`
+
+NOTE: While `config.json` is still supported for basic LLM configuration, `config.yaml` is required for MCP server integration.
 
 === Multi-provider configuration
 
@@ -497,6 +499,8 @@ transport:
     Authorization: Bearer YOUR_API_TOKEN
     rp-aigw-id: GATEWAY_ID
 ----
++
+IMPORTANT: For production deployments, use environment variable interpolation with `${{ secrets.VARIABLE }}` syntax instead of hardcoding tokens. See xref:ai-agents:ai-gateway/integrations/continue-user.adoc#configure-env-vars[Configure with environment variables] in the user guide for details.
 
 Continue.dev automatically discovers MCP server configurations in this directory.
 

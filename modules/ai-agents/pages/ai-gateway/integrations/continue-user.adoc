@@ -12,9 +12,9 @@ After xref:ai-agents:ai-gateway/gateway-quickstart.adoc[configuring your AI Gate
 
 After reading this page, you will be able to:
 
-* [ ] Configure Continue.dev to connect to AI Gateway for chat and autocomplete.
-* [ ] Set up MCP server integration through AI Gateway.
-* [ ] Optimize Continue.dev settings for cost and performance.
+* Configure Continue.dev to connect to AI Gateway for chat and autocomplete
+* Set up MCP server integration through AI Gateway
+* Optimize Continue.dev settings for cost and performance
 
 == Prerequisites
 
@@ -43,12 +43,17 @@ Continue.dev is an open-source AI coding assistant that integrates with VS Code 
 
 By routing Continue.dev through AI Gateway, you gain centralized observability, cost controls, and the ability to aggregate multiple MCP servers into a single interface.
 
-== Configuration file location
+== Configuration files
 
-Continue.dev stores configuration in `config.json`:
+Continue.dev supports two configuration file formats:
 
-* VS Code: `~/.continue/config.json`
-* JetBrains: `~/.continue/config.json` (same location)
+* `config.json` (legacy format)
+* `config.yaml` (recommended format)
+
+Both files are stored in the same location:
+
+* VS Code: `~/.continue/`
+* JetBrains: `~/.continue/`
 
 Create the directory if it doesn't exist:
 
@@ -56,6 +61,23 @@ Create the directory if it doesn't exist:
 ----
 mkdir -p ~/.continue
 ----
+
+=== Choose a configuration format
+
+[cols="1,2,2"]
+|===
+|Format |Use when |Limitations
+
+|`config.json`
+|You need basic LLM configuration without MCP servers
+|Does not support MCP server configuration or environment variable interpolation
+
+|`config.yaml`
+|You need MCP server integration or environment variable interpolation
+|Requires Continue.dev version that supports YAML (recent versions)
+|===
+
+TIP: Use `config.yaml` for new setups to take advantage of MCP server integration and the `${{ secrets.* }}` environment variable syntax.
 
 == Basic configuration
 
@@ -253,9 +275,12 @@ After adding this configuration:
 
 If using deferred tool loading in your gateway, you'll see a search tool and MCP orchestrator tool instead of all tools upfront.
 
+[[configure-env-vars]]
 == Configure with environment variables
 
-For sensitive credentials or multi-environment setups, use Continue.dev's secrets interpolation in `config.yaml`:
+For sensitive credentials or multi-environment setups, use Continue.dev's secrets interpolation in `config.yaml`.
+
+IMPORTANT: Environment variable interpolation is only supported in `config.yaml` files. The `config.json` format does not support any form of variable substitution - all values must be hardcoded.
 
 [,yaml]
 ----
@@ -278,7 +303,7 @@ mcpServers:
         rp-aigw-id: ${{ secrets.REDPANDA_GATEWAY_ID }}
 ----
 
-IMPORTANT: Continue.dev uses the `${{ secrets.* }}` syntax for interpolation in `config.yaml`. The legacy `${VAR}` syntax from `config.json` is not supported and will be treated as a literal string.
+IMPORTANT: Continue.dev uses the `${{ secrets.* }}` syntax for interpolation in `config.yaml`. Do not use the `${VAR}` shell syntax - Continue.dev treats it as a literal string rather than performing substitution.
 
 Set secrets in Continue.dev settings:
 
