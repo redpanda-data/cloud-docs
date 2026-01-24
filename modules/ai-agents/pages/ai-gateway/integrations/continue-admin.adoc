@@ -421,69 +421,54 @@ Provide these instructions to users configuring Continue.dev in their IDE.
 
 === Configuration file location
 
-Continue.dev uses a JSON configuration file:
+Continue.dev uses a YAML configuration file:
 
-* VS Code: `~/.continue/config.json`
-* JetBrains: `~/.continue/config.json`
+* VS Code: `~/.continue/config.yaml`
+* JetBrains: `~/.continue/config.yaml`
 
 === Multi-provider configuration
 
 Users configure Continue.dev with separate provider entries for each backend:
 
-[source,json]
+[source,yaml]
 ----
-{
-  "models": [
-    {
-      "title": "Claude Sonnet (Redpanda)",
-      "provider": "anthropic",
-      "model": "claude-sonnet-4-5",
-      "apiBase": "https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1/anthropic",
-      "apiKey": "YOUR_API_TOKEN",
-      "requestOptions": {
-        "headers": {
-          "rp-aigw-id": "GATEWAY_ID"
-        }
-      }
-    },
-    {
-      "title": "GPT-4o (Redpanda)",
-      "provider": "openai",
-      "model": "gpt-4o",
-      "apiBase": "https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1/openai",
-      "apiKey": "YOUR_API_TOKEN",
-      "requestOptions": {
-        "headers": {
-          "rp-aigw-id": "GATEWAY_ID"
-        }
-      }
-    },
-    {
-      "title": "GPT-4o-mini (Autocomplete)",
-      "provider": "openai",
-      "model": "gpt-4o-mini",
-      "apiBase": "https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1/openai",
-      "apiKey": "YOUR_API_TOKEN",
-      "requestOptions": {
-        "headers": {
-          "rp-aigw-id": "GATEWAY_ID"
-        }
-      }
-    }
-  ],
-  "tabAutocompleteModel": {
-    "title": "GPT-4o-mini (Autocomplete)",
-    "provider": "openai",
-    "model": "gpt-4o-mini",
-    "apiBase": "https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1/openai",
-    "apiKey": "YOUR_API_TOKEN",
-    "requestOptions": {
-      "headers": {
-        "rp-aigw-id": "GATEWAY_ID"
-      }
-    }
-  }
-}
+models:
+  - title: Claude Sonnet (Redpanda)
+    provider: anthropic
+    model: claude-sonnet-4-5
+    apiBase: https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1/anthropic
+    apiKey: YOUR_API_TOKEN
+    requestOptions:
+      headers:
+        rp-aigw-id: GATEWAY_ID
+
+  - title: GPT-4o (Redpanda)
+    provider: openai
+    model: gpt-4o
+    apiBase: https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1/openai
+    apiKey: YOUR_API_TOKEN
+    requestOptions:
+      headers:
+        rp-aigw-id: GATEWAY_ID
+
+  - title: GPT-4o-mini (Autocomplete)
+    provider: openai
+    model: gpt-4o-mini
+    apiBase: https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1/openai
+    apiKey: YOUR_API_TOKEN
+    requestOptions:
+      headers:
+        rp-aigw-id: GATEWAY_ID
+
+tabAutocompleteModel:
+  title: GPT-4o-mini (Autocomplete)
+  provider: openai
+  model: gpt-4o-mini
+  apiBase: https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1/openai
+  apiKey: YOUR_API_TOKEN
+  requestOptions:
+    headers:
+      rp-aigw-id: GATEWAY_ID
 ----
 
 Replace:
@@ -494,33 +479,50 @@ Replace:
 
 === MCP server configuration
 
-Configure Continue.dev to connect to the aggregated MCP endpoint:
+Configure Continue.dev to connect to the aggregated MCP endpoint.
 
-[source,json]
+==== Recommended: Directory-based configuration
+
+The preferred method is to create MCP server configuration files in the `~/.continue/mcpServers/` directory:
+
+. Create the directory: `mkdir -p ~/.continue/mcpServers`
+. Create `~/.continue/mcpServers/redpanda-ai-gateway.yaml`:
++
+[source,yaml]
 ----
-{
-  "experimental": {
-    "modelContextProtocolServers": [
-      {
-        "transport": {
-          "type": "http",
-          "url": "https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/mcp",
-          "headers": {
-            "Authorization": "Bearer YOUR_API_TOKEN",
-            "rp-aigw-id": "GATEWAY_ID"
-          }
-        }
-      }
-    ]
-  }
-}
+transport:
+  type: streamable-http
+  url: https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/mcp
+  headers:
+    Authorization: Bearer YOUR_API_TOKEN
+    rp-aigw-id: GATEWAY_ID
 ----
 
-This configuration:
+Continue.dev automatically discovers MCP server configurations in this directory.
 
-* Connects Continue.dev to the aggregated MCP endpoint
-* Routes LLM requests through provider-specific backends
-* Includes authentication and gateway identification headers
+==== Alternative: Inline configuration
+
+Alternatively, embed MCP server configuration in `~/.continue/config.yaml`:
+
+[source,yaml]
+----
+experimental:
+  modelContextProtocolServer:
+    transport:
+      type: streamable-http
+      url: https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/mcp
+      headers:
+        Authorization: Bearer YOUR_API_TOKEN
+        rp-aigw-id: GATEWAY_ID
+----
+
+Replace:
+
+* `{CLUSTER_ID}`: Your Redpanda cluster ID
+* `YOUR_API_TOKEN`: The API token generated earlier
+* `GATEWAY_ID`: The gateway ID from gateway creation
+
+This configuration connects Continue.dev to the aggregated MCP endpoint with authentication and gateway identification headers.
 
 === Model selection strategy
 
