@@ -96,7 +96,7 @@ request.headers["x-user-tier"] == "premium"
 
 You can also set different rate limits and spend limits per environment to prevent staging or development traffic from consuming production budgets.
 
-For reliability, you can configure provider pools with automatic failover. If you configure OpenAI GPT-4 as your primary model and Anthropic Claude Opus as the fallback, the gateway automatically routes requests to the fallback when it detects rate limits or timeouts from the primary provider. This configuration can achieve 99.9% uptime even during provider outages.
+For reliability, you can configure provider pools with automatic failover. If you configure OpenAI GPT-4 as your primary model and Anthropic Claude Opus as the fallback, the gateway automatically routes requests to the fallback when it detects rate limits or timeouts from the primary provider. This configuration can significantly improve uptime (potentially up to 99.9% in some configurations) even during provider outages.
 
 === 3. MCP aggregation and orchestration
 
@@ -104,7 +104,7 @@ AI Gateway aggregates multiple MCP (Model Context Protocol) servers and provides
 
 Without AI Gateway, agents typically load all available tools from multiple MCP servers at startup. This approach sends 50+ tool definitions with every request, creating high token costs (thousands of tokens per request), slow agent startup times, and no centralized governance over which tools agents can access.
 
-With AI Gateway, you configure approved MCP servers once, and the gateway loads only search and orchestrator tools initially. Agents query for specific tools only when needed, which reduces token usage by 80-90% depending on your configuration. You also gain centralized approval and governance over which MCP servers your agents can access.
+With AI Gateway, you configure approved MCP servers once, and the gateway loads only search and orchestrator tools initially. Agents query for specific tools only when needed, which often reduces token usage by 80-90% depending on your configuration and the number of tools aggregated. You also gain centralized approval and governance over which MCP servers your agents can access.
 
 For complex workflows, AI Gateway provides a JavaScript-based orchestrator tool that reduces multi-step workflows from multiple round trips to a single call. For example, you can create a workflow that searches a vector database and, if the results are insufficient, falls back to web search—all in one orchestration step.
 
