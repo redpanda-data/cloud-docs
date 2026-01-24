@@ -327,35 +327,22 @@ Implement token rotation for security:
 
 Provide these instructions to users configuring Cline in VS Code.
 
-=== VS Code settings configuration
+=== API provider configuration
 
-Users configure Cline through VS Code settings (either UI or `settings.json`).
+Users configure Cline's API provider and credentials through the Cline extension interface.
 
-==== Using VS Code Settings UI
+IMPORTANT: API provider configuration (API keys, base URLs, custom headers) is managed via Cline's extension global state, not VS Code `settings.json`. These settings are stored in the extension's internal state and must be configured through the Cline UI.
 
-. Open VS Code Settings (Cmd/Ctrl + ,)
-. Search for "Cline"
-. Configure the following settings:
+==== Configure via Cline UI
+
+. Open the Cline extension panel in VS Code
+. Click the settings icon or gear menu
+. Configure the API connection:
 +
-* *Cline: API Provider*: Select "Custom" or "Anthropic"
-* *Cline: API Base URL*: `https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1`
-* *Cline: API Key*: The API token generated earlier
-
-==== Using settings.json
-
-Alternatively, users can edit `.vscode/settings.json` in their workspace:
-
-[source,json]
-----
-{
-  "cline.apiProvider": "custom",
-  "cline.apiBaseUrl": "https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1",
-  "cline.apiKey": "YOUR_API_TOKEN",
-  "cline.customHeaders": {
-    "rp-aigw-id": "GATEWAY_ID"
-  }
-}
-----
+* *API Provider*: Select "Custom" or "Anthropic"
+* *API Base URL*: `https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1`
+* *API Key*: The API token generated earlier
+* *Custom Headers*: Add `rp-aigw-id` with value `GATEWAY_ID`
 
 Replace:
 
@@ -365,14 +352,30 @@ Replace:
 
 === MCP server configuration
 
-Configure Cline to connect to the aggregated MCP endpoint:
+Configure Cline to connect to the aggregated MCP endpoint through the Cline UI or by editing `cline_mcp_settings.json`.
+
+==== Enable MCP mode
+
+. Open VS Code Settings (Cmd/Ctrl + ,)
+. Search for "Cline > Mcp: Mode"
+. Enable the MCP mode toggle
+
+==== Configure MCP server via Cline UI
+
+. Open the Cline extension panel in VS Code
+. Navigate to MCP server settings
+. Add the Redpanda AI Gateway MCP server with the connection details
+
+==== Configure via cline_mcp_settings.json
+
+Alternatively, edit `cline_mcp_settings.json` (located in the Cline extension storage directory):
 
 [source,json]
 ----
 {
-  "cline.mcpServers": {
+  "mcpServers": {
     "redpanda-ai-gateway": {
-      "transport": "http",
+      "type": "streamableHttp",
       "url": "https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/mcp",
       "headers": {
         "Authorization": "Bearer YOUR_API_TOKEN",
@@ -383,30 +386,22 @@ Configure Cline to connect to the aggregated MCP endpoint:
 }
 ----
 
-This configuration:
+Replace:
 
-* Connects Cline to the aggregated MCP endpoint
-* Routes LLM requests through the AI Gateway
-* Includes authentication and gateway identification headers
+* `{CLUSTER_ID}`: Your Redpanda cluster ID
+* `YOUR_API_TOKEN`: The API token generated earlier
+* `GATEWAY_ID`: The gateway ID from gateway creation
 
-=== User settings vs workspace settings
+This configuration connects Cline to the aggregated MCP endpoint with authentication and gateway identification headers.
 
-Cline settings can be configured at two levels:
+=== Configuration scope
 
-[cols="1,2,2"]
-|===
-|Level |Location |Use Case
+Cline stores configuration in the extension's global state:
 
-|User settings
-|`~/.vscode/settings.json`
-|Personal API token, default gateway for all projects
+* *API Provider settings*: Stored globally per VS Code instance, applies to all workspaces
+* *MCP server settings*: Can be configured per workspace using `cline_mcp_settings.json`
 
-|Workspace settings
-|`.vscode/settings.json` in project
-|Project-specific gateway, shared team configuration
-|===
-
-Use workspace settings when different projects require different gateways (for example, development vs production environments).
+For project-specific MCP server configurations (for example, development vs production gateways), place `cline_mcp_settings.json` in the workspace directory and configure different MCP servers per project.
 
 == Monitor Cline usage
 
