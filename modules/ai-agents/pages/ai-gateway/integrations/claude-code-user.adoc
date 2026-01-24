@@ -94,37 +94,22 @@ For more complex configurations or when managing multiple gateways, edit the Cla
 
 Claude Code stores configuration in:
 
-* macOS/Linux: `~/.claude/config.json`
-* Windows: `%USERPROFILE%\.claude\config.json`
-
-Create the directory if it doesn't exist:
-
-[,bash]
-----
-mkdir -p ~/.claude
-----
+* macOS/Linux: `~/.claude.json` (user-level) or `.mcp.json` (project-level)
+* Windows: `%USERPROFILE%\.claude.json`
 
 === Basic configuration
 
-Create or edit `~/.claude/config.json` with the following structure:
+Create or edit `~/.claude.json` with the following structure:
 
 [,json]
 ----
 {
   "mcpServers": {
     "redpanda-ai-gateway": {
-      "transport": "http",
+      "type": "http",
       "url": "https://gw.ai.panda.com/mcp",
       "headers": {
         "Authorization": "Bearer YOUR_API_KEY",
-        "rp-aigw-id": "GATEWAY_ID"
-      }
-    }
-  },
-  "apiProviders": {
-    "redpanda": {
-      "baseURL": "https://gw.ai.panda.com",
-      "headers": {
         "rp-aigw-id": "GATEWAY_ID"
       }
     }
@@ -146,7 +131,7 @@ To configure different gateways for development and production:
 {
   "mcpServers": {
     "redpanda-staging": {
-      "transport": "http",
+      "type": "http",
       "url": "https://gw.staging.ai.panda.com/mcp",
       "headers": {
         "Authorization": "Bearer STAGING_API_KEY",
@@ -154,24 +139,10 @@ To configure different gateways for development and production:
       }
     },
     "redpanda-production": {
-      "transport": "http",
+      "type": "http",
       "url": "https://gw.ai.panda.com/mcp",
       "headers": {
         "Authorization": "Bearer PROD_API_KEY",
-        "rp-aigw-id": "prod-gateway-456"
-      }
-    }
-  },
-  "apiProviders": {
-    "redpanda-staging": {
-      "baseURL": "https://gw.staging.ai.panda.com",
-      "headers": {
-        "rp-aigw-id": "staging-gateway-123"
-      }
-    },
-    "redpanda-production": {
-      "baseURL": "https://gw.ai.panda.com",
-      "headers": {
         "rp-aigw-id": "prod-gateway-456"
       }
     }
@@ -179,7 +150,7 @@ To configure different gateways for development and production:
 }
 ----
 
-Switch between gateways by selecting the appropriate MCP server or API provider when using Claude Code.
+Switch between gateways by selecting the appropriate MCP server when using Claude Code.
 
 === Configuration with environment variables
 
@@ -190,18 +161,10 @@ For sensitive credentials, use environment variables instead of hardcoding value
 {
   "mcpServers": {
     "redpanda-ai-gateway": {
-      "transport": "http",
+      "type": "http",
       "url": "${REDPANDA_GATEWAY_URL}/mcp",
       "headers": {
         "Authorization": "Bearer ${REDPANDA_API_KEY}",
-        "rp-aigw-id": "${REDPANDA_GATEWAY_ID}"
-      }
-    }
-  },
-  "apiProviders": {
-    "redpanda": {
-      "baseURL": "${REDPANDA_GATEWAY_URL}",
-      "headers": {
         "rp-aigw-id": "${REDPANDA_GATEWAY_ID}"
       }
     }
@@ -280,7 +243,7 @@ Configure timeout for MCP requests in the configuration file:
 {
   "mcpServers": {
     "redpanda-ai-gateway": {
-      "transport": "http",
+      "type": "http",
       "url": "https://gw.ai.panda.com/mcp",
       "headers": {
         "Authorization": "Bearer YOUR_API_KEY",
@@ -293,31 +256,6 @@ Configure timeout for MCP requests in the configuration file:
 ----
 
 The `timeout` value is in milliseconds. Default is 10000 (10 seconds). Increase this for MCP tools that perform long-running operations.
-
-=== Request retry configuration
-
-Configure retry behavior for transient failures:
-
-[,json]
-----
-{
-  "apiProviders": {
-    "redpanda": {
-      "baseURL": "https://gw.ai.panda.com",
-      "headers": {
-        "rp-aigw-id": "GATEWAY_ID"
-      },
-      "retry": {
-        "maxRetries": 3,
-        "retryDelay": 1000,
-        "retryCondition": ["5xx", "timeout"]
-      }
-    }
-  }
-}
-----
-
-This configuration retries requests up to 3 times on server errors (5xx status codes) or timeouts, with a 1-second delay between retries.
 
 === Debug mode
 
@@ -396,10 +334,6 @@ If this times out, check your network configuration, firewall rules, or VPN conn
 +
 Verify that the `rp-aigw-id` header in your configuration matches the gateway you're viewing in the dashboard.
 
-. **Using direct Anthropic API**
-+
-If you didn't configure the `apiProviders` section, Claude Code may be routing directly to Anthropic instead of through your gateway. Verify the `apiProviders` section exists in your config file.
-
 . **Log ingestion delay**
 +
 Gateway logs can take 5-10 seconds to appear in the dashboard. Wait briefly and refresh.
@@ -432,7 +366,7 @@ If you're hitting rate limits, the gateway may be queuing requests. Check the ob
 
 === Configuration file not loading
 
-**Symptom**: Changes to `config.json` don't take effect.
+**Symptom**: Changes to `.claude.json` don't take effect.
 
 **Solutions**:
 
@@ -451,11 +385,11 @@ claude
 
 . **Validate JSON syntax**
 +
-Ensure your `config.json` is valid JSON. Use a JSON validator:
+Ensure your `.claude.json` is valid JSON. Use a JSON validator:
 +
 [,bash]
 ----
-python3 -m json.tool ~/.claude/config.json
+python3 -m json.tool ~/.claude.json
 ----
 
 . **Check file permissions**
@@ -464,14 +398,14 @@ Verify Claude Code can read the configuration file:
 +
 [,bash]
 ----
-ls -la ~/.claude/config.json
+ls -la ~/.claude.json
 ----
 +
 The file should be readable by your user. If not, fix permissions:
 +
 [,bash]
 ----
-chmod 600 ~/.claude/config.json
+chmod 600 ~/.claude.json
 ----
 
 == Next steps

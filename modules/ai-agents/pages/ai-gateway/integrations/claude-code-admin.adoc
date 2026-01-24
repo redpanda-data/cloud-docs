@@ -328,25 +328,17 @@ Replace:
 
 === Configuration file
 
-Alternatively, users can edit `~/.claude/config.json`:
+Alternatively, users can edit `~/.claude.json` (user-level) or `.mcp.json` (project-level):
 
 [source,json]
 ----
 {
   "mcpServers": {
     "redpanda-ai-gateway": {
-      "transport": "http",
+      "type": "http",
       "url": "https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/mcp",
       "headers": {
         "Authorization": "Bearer YOUR_API_TOKEN",
-        "rp-aigw-id": "GATEWAY_ID"
-      }
-    }
-  },
-  "apiProviders": {
-    "redpanda": {
-      "baseURL": "https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1",
-      "headers": {
         "rp-aigw-id": "GATEWAY_ID"
       }
     }
@@ -357,7 +349,6 @@ Alternatively, users can edit `~/.claude/config.json`:
 This configuration:
 
 * Connects Claude Code to the aggregated MCP endpoint
-* Routes LLM requests through the AI Gateway
 * Includes authentication and gateway identification headers
 
 == Monitor Claude Code usage
