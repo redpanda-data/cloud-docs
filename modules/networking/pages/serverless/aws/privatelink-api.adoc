@@ -30,9 +30,11 @@ NOTE: Enabling PrivateLink changes private DNS behavior for your cluster. Before
 
 include::networking:partial$private-links-api-access-token.adoc[]
 
-== Create new cluster with PrivateLink endpoint service enabled
+== Create a PrivateLink resource
 
-. In the https://cloud.redpanda.com/[Redpanda Cloud Console^], go to **Resource groups** and select the resource group in which you want to create a cluster.
+Before you can create a Serverless cluster with PrivateLink enabled, you must first create a PrivateLink resource in your resource group.
+
+. In the https://cloud.redpanda.com/[Redpanda Cloud Console^], go to **Resource groups** and select the resource group in which you want to create a PrivateLink resource.
 +
 Copy and store the resource group ID (UUID) from the URL in the browser.
 +
@@ -41,37 +43,63 @@ Copy and store the resource group ID (UUID) from the URL in the browser.
 export RESOURCE_GROUP_ID=<uuid>
 ----
 
-. Create a new Serverless cluster with the endpoint service enabled by calling link:/api/doc/cloud-controlplane/operation/operation-serverlessclusterservice_createserverlesscluster[`POST /v1/serverless/clusters`].
-+
-In the example below, make sure to set your own values for the following fields:
-+
---
-- `name`
-- `serverless_region`: for example, `"us-east-1"`
-- `private_link_id`: The ID of an existing PrivateLink resource in the same resource group. You can find this in the cluster overview page in the Redpanda Cloud Console.
-- `networking_config.private` and `networking_config.public`: Valid values are `STATE_ENABLED` or `STATE_DISABLED`. At least one must be enabled. If neither is specified, `public` defaults to `STATE_ENABLED`.
---
+. Set the Serverless region where you want to create the PrivateLink resource (for example, `us-east-1`).
 +
 [,bash]
 ----
-# Set the serverless region (for example, us-east-1)
-SERVERLESS_REGION=<serverless_region>
+export SERVERLESS_REGION=<serverless_region>
+----
 
-# Set the PrivateLink ID
-SERVERLESS_PRIVATE_LINK_ID=<private_link_id>
+. Create a new PrivateLink resource by calling link:/api/doc/cloud-controlplane/operation/operation-serverlessprivatelinkservice_createserverlessprivatelink[`POST /v1/serverless/private-links`].
++
+[,bash]
+----
+PL_POST_BODY=`cat << EOF
+{
+  "serverless_private_link": {
+    "resource_group_id": "$RESOURCE_GROUP_ID",
+    "serverless_region": "$SERVERLESS_REGION"
+  }
+}
+EOF`
 
+SERVERLESS_PRIVATE_LINK_ID=`curl -vv -X POST \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $AUTH_TOKEN" \
+    -d "$PL_POST_BODY" $PUBLIC_API_ENDPOINT/v1/serverless/private-links | jq -r .operation.metadata.serverless_private_link_id`
+
+echo $SERVERLESS_PRIVATE_LINK_ID
+----
++
+Store the PrivateLink ID for use in the following steps.
+
+== Create new cluster with PrivateLink endpoint service enabled
+
+Using the `RESOURCE_GROUP_ID` and `SERVERLESS_PRIVATE_LINK_ID` from the previous step, create a new Serverless cluster with the endpoint service enabled by calling link:/api/doc/cloud-controlplane/operation/operation-serverlessclusterservice_createserverlesscluster[`POST /v1/serverless/clusters`].
+
+In the example below, make sure to set your own values for the following fields:
+
+--
+- `name`
+- `serverless_region`: for example, `"us-east-1"`
+- `private_link_id`: The ID of the PrivateLink resource created in the previous step
+- `networking_config.private` and `networking_config.public`: Valid values are `STATE_ENABLED` or `STATE_DISABLED`. At least one must be enabled. If neither is specified, `public` defaults to `STATE_ENABLED`.
+--
+
+[,bash]
+----
 CLUSTER_POST_BODY=`cat << EOF
 {
-  "serverless_cluster": {
-    "name": "<my-private-link-cluster>",
-    "resource_group_id": "$RESOURCE_GROUP_ID",
-    "serverless_region": "$SERVERLESS_REGION",
-    "private_link_id": "$SERVERLESS_PRIVATE_LINK_ID",
-    "networking_config": {
-        "private": "STATE_ENABLED",
-        "public": "STATE_ENABLED"
+    "serverless_cluster": {
+        "name": "<my-private-link-cluster>",
+        "resource_group_id": "$RESOURCE_GROUP_ID",
+        "serverless_region": "$SERVERLESS_REGION",
+        "private_link_id": "$SERVERLESS_PRIVATE_LINK_ID",
+        "networking_config": {
+            "private": "STATE_ENABLED",
+            "public": "STATE_ENABLED"
+        }
     }
-  }
 }
 EOF`
 
@@ -84,7 +112,6 @@ echo $CLUSTER_ID
 ----
 
 == Enable PrivateLink endpoint service for existing clusters
-
 
 . In the Redpanda Cloud Console, go to the cluster overview and copy the cluster ID from the **Details** section.
 +
@@ -237,7 +264,6 @@ aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
 aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
   --group-id $SECURITY_GROUP_ID --protocol tcp --port 8081 --cidr 0.0.0.0/0
 
-
 # Allow Redpanda Cloud Data Plane API / Prometheus (if needed)
 aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
   --group-id $SECURITY_GROUP_ID --protocol tcp --port 443 --cidr 0.0.0.0/0
@@ -281,6 +307,8 @@ include::networking:partial$private-links-access-rp-service-serverless.adoc[]
 You can test the PrivateLink connection from any VM or container in the consumer VPC. If configuring a client isn't possible right away, you can do these checks using `rpk` or cURL:
 
 include::networking:partial$private-links-test-connection-serverless.adoc[]
+
+NOTE: If both public and private access are enabled for your cluster, `rpk cloud cluster select` will prompt you to choose between public or private connectivity when you select the cluster.
 
 include::shared:partial$suggested-reading.adoc[]
 
