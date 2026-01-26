@@ -1,12 +1,12 @@
 = Transcripts and AI Observability
-:description: Understand how Redpanda captures execution traces for agents and MCP servers using OpenTelemetry.
+:description: Understand how Redpanda captures execution transcripts for agents and MCP servers using OpenTelemetry.
 :page-topic-type: concepts
 :personas: agent_developer, platform_admin, data_engineer
-:learning-objective-1: Explain how traces and spans capture execution flow
-:learning-objective-2: Interpret trace structure for debugging and monitoring
-:learning-objective-3: Distinguish between observability traces and audit logs
+:learning-objective-1: Explain how transcripts and spans capture execution flow
+:learning-objective-2: Interpret transcript structure for debugging and monitoring
+:learning-objective-3: Distinguish between transcripts and audit logs
 
-Redpanda automatically captures execution traces for both AI agents and MCP servers, providing complete observability into how your agentic systems operate.
+Redpanda automatically captures execution transcripts for both AI agents and MCP servers, providing complete observability into how your agentic systems operate.
 
 After reading this page, you will be able to:
 
@@ -27,7 +27,7 @@ Transcripts capture:
 * Error conditions
 * Performance metrics
 
-With 100% sampling, every operation is captured, creating complete transcripts that you can use for debugging, monitoring, and performance analysis.
+With 100% sampling, every operation is captured, enabling comprehensive debugging, monitoring, and performance analysis.
 
 == Traces and spans
 
@@ -37,13 +37,13 @@ OpenTelemetry traces provide a complete picture of how a request flows through y
 * A _span_ represents a single unit of work within that trace (such as a data processing operation or an external API call).
 * A trace contains one or more spans organized hierarchically, showing how operations relate to each other.
 
-== Agent trace hierarchy
+== Agent transcript hierarchy
 
 Agent executions create a hierarchy of spans that reflect how agents process requests. Understanding this hierarchy helps you interpret agent behavior and identify where issues occur.
 
 === Agent span types
 
-Agent traces contain these span types:
+Agent transcripts contain these span types:
 
 [cols="2,3,3", options="header"]
 |===
@@ -90,13 +90,13 @@ This shows:
 
 Examine span durations to identify where time is spent and optimize accordingly.
 
-== MCP server trace hierarchy
+== MCP server transcript hierarchy
 
-MCP server executions create a different hierarchy that reflects tool invocations and internal processing. Understanding this hierarchy helps you debug tool execution and identify performance bottlenecks.
+MCP server tool invocations produce a different span hierarchy focused on tool execution and internal processing. This structure reveals performance bottlenecks and helps debug tool-specific issues.
 
 === MCP server span types
 
-MCP server traces contain these span types:
+MCP server transcripts contain these span types:
 
 [cols="2,3,3", options="header"]
 |===
@@ -143,13 +143,13 @@ This shows:
 
 The majority of time (4+ seconds) is spent in tool execution, while internal processing (mapping) takes only microseconds. This indicates the tool itself (likely making external API calls or database queries) is the bottleneck, not Redpanda Connect's internal processing.
 
-== Trace layers and scope
+== Transcript layers and scope
 
-Traces contain multiple layers of instrumentation, from HTTP transport through application logic to external service calls. The `scope.name` field in each span identifies which layer of instrumentation created that span.
+Transcripts contain multiple layers of instrumentation, from HTTP transport through application logic to external service calls. The `scope.name` field in each span identifies which instrumentation layer created that span.
 
 === Instrumentation layers
 
-A complete agent trace includes these layers:
+A complete agent transcript includes these layers:
 
 [cols="2,2,4", options="header"]
 |===
@@ -178,7 +178,7 @@ A complete agent trace includes these layers:
 
 === How layers connect
 
-Layers connect through parent-child relationships in a single trace:
+Layers connect through parent-child relationships in a single transcript:
 
 ----
 ai-agent-http-server (HTTP Server layer)
@@ -191,7 +191,7 @@ ai-agent-http-server (HTTP Server layer)
     └── chat gpt-5-nano (AI SDK layer, LLM call 2)
 ----
 
-This shows:
+The request flow demonstrates:
 
 1. HTTP request arrives at agent
 2. Agent invokes sub-agent
@@ -201,9 +201,9 @@ This shows:
 6. Agent makes second LLM call with tool results
 7. Response returns through HTTP layer
 
-=== Cross-service traces
+=== Cross-service transcripts
 
-When agents call MCP tools, the trace spans multiple services. Each service has a different `service.name` in the resource attributes:
+When agents call MCP tools, the transcript spans multiple services. Each service has a different `service.name` in the resource attributes:
 
 * Agent spans: `"service.name": "ai-agent"`
 * MCP server spans: `"service.name": "mcp-{server-id}"`
@@ -240,9 +240,9 @@ Redpanda Connect layer:
 
 - Component-specific attributes from your tool configuration
 
-Use `scope.name` to filter spans by layer when analyzing traces.
+Use `scope.name` to filter spans by layer when analyzing transcripts.
 
-== Understand the trace structure
+== Understand the transcript structure
 
 Each span captures a unit of work. Here's what a typical MCP tool invocation looks like:
 
@@ -273,7 +273,7 @@ Key elements to understand:
 
 === Parent-child relationships
 
-Traces show how operations relate. A tool invocation (parent) may trigger internal operations (children):
+Transcripts show how operations relate. A tool invocation (parent) may trigger internal operations (children):
 
 [,json]
 ----
@@ -289,9 +289,9 @@ Traces show how operations relate. A tool invocation (parent) may trigger intern
 
 The `parentSpanId` links this child span to the parent tool invocation. Both share the same `traceId` so you can reconstruct the complete operation.
 
-== Error events in traces
+== Error events in transcripts
 
-When something goes wrong, traces capture error details:
+When something goes wrong, transcripts capture error details:
 
 [,json]
 ----
@@ -314,11 +314,11 @@ When something goes wrong, traces capture error details:
 The `events` array captures what happened and when. Use `timeUnixNano` to see exactly when the error occurred within the operation.
 
 [[opentelemetry-traces-topic]]
-== How Redpanda stores traces
+== How Redpanda stores trace data
 
-The `redpanda.otel_traces` topic stores OpenTelemetry spans in JSON format, following the https://opentelemetry.io/docs/specs/otel/protocol/[OpenTelemetry Protocol (OTLP)^] specification. A Protobuf schema named `redpanda.otel_traces-value` is also automatically registered with the topic, enabling clients to deserialize trace data correctly.
+The `redpanda.otel_traces` topic stores OpenTelemetry spans using Redpanda's Schema Registry wire format with a custom Protobuf schema that closely follows the https://opentelemetry.io/docs/specs/otel/protocol/[OpenTelemetry Protocol (OTLP)^] specification. A schema named `redpanda.otel_traces-value` is automatically registered in the Schema Registry with the topic, enabling clients to deserialize trace data correctly.
 
-The `redpanda.otel_traces` topic and its schema are managed automatically by Redpanda. If you delete either the topic or the schema, they are recreated automatically. However, deleting the topic permanently deletes all trace data, and the topic comes back empty. Do not produce your own data to this topic. It is reserved for OpenTelemetry traces.
+Redpanda manages both the topic and its schema automatically. If you delete either the topic or the schema, they are recreated automatically. However, deleting the topic permanently deletes all trace data, and the topic comes back empty. Do not produce your own data to this topic. It is reserved for OpenTelemetry traces.
 
 === Topic configuration and lifecycle
 
@@ -326,20 +326,20 @@ The `redpanda.otel_traces` topic has a predefined retention policy. Configuratio
 
 The topic persists in your cluster even after all agents and MCP servers are deleted, allowing you to retain historical trace data for analysis.
 
-Trace data may contain sensitive information from your tool inputs and outputs. Consider implementing appropriate glossterm:ACL[access control lists (ACLs)] for the `redpanda.otel_traces` topic, and review the data in traces before sharing or exporting to external systems.
+Transcripts may contain sensitive information from your tool inputs and outputs. Consider implementing appropriate glossterm:ACL[access control lists (ACLs)] for the `redpanda.otel_traces` topic, and review the data in transcripts before sharing or exporting to external systems.
 
-== Traces compared to audit logs
+== Transcripts compared to audit logs
 
-OpenTelemetry traces are designed for observability and debugging, not audit logging or compliance.
+Transcripts are designed for observability and debugging, not audit logging or compliance.
 
-Traces provide:
+Transcripts provide:
 
 * Hierarchical view of request flow through your system (parent-child span relationships)
 * Detailed timing information for performance analysis
 * Ability to reconstruct execution paths and identify bottlenecks
 * Insights into how operations flow through distributed systems
 
-Traces are not:
+Transcripts are not:
 
 * Immutable audit records for compliance purposes
 * Designed for "who did what" accountability tracking

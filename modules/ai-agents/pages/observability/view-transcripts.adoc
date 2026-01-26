@@ -1,0 +1,220 @@
+= View Transcripts
+:description: Learn how to filter, search, and navigate the Transcripts interface to investigate agent execution traces using multiple detail views and interactive timeline navigation.
+:page-topic-type: how-to
+:personas: agent_developer, platform_admin
+:learning-objective-1: Filter and search transcripts to find specific execution traces
+:learning-objective-2: Navigate between detail views to inspect span information at different levels
+:learning-objective-3: Use the timeline interactively to navigate to specific time periods
+
+The Transcripts view provides filtering, searching, and navigation capabilities beyond basic timeline and hierarchy visualization. Use these features to efficiently locate and investigate specific execution traces.
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
+
+For basic Transcripts UI orientation, see xref:ai-agents:agents/monitor-agents.adoc[] or xref:ai-agents:mcp/remote/monitor-mcp-servers.adoc[]. For conceptual background on traces, see xref:ai-agents:observability/concepts.adoc[].
+
+== Prerequisites
+
+* Running agent with at least one execution
+* (permissions, ACL, auth)
+
+== Navigate the timeline interactively
+
+Use the timeline visualization to quickly identify when errors began or patterns changed, and navigate directly to transcripts from particular timestamps.
+
+////
+
+**When to use interactive timeline:**
+
+* Investigating issues that occurred at known times
+* Comparing behavior before and after deployments
+* Analyzing execution patterns during specific events
+* Correlating traces with external system changes
+
+////
+
+== Filter and search for transcripts
+
+Use filters and search together to narrow down transcripts and quickly locate specific executions.
+
+=== Search for specific traces
+
+The search functionality helps you find traces by operation names, types, or identifiers:
+
+* Search by span names to find specific tools used
+* Search by operation types (agent invocations, tool calls, LLM interactions)
+* Search by trace IDs when troubleshooting and correlating with other systems
+
+////
+
+**When to use search:**
+
+* Finding traces that invoked a specific tool
+* Locating a trace by ID when troubleshooting
+* Narrowing to specific operation types
+
+////
+
+=== Filter by service
+
+Service filtering shows only traces from specific agents or MCP servers:
+
+* View executions from a single agent when multiple are running
+* Isolate MCP server activity from agent activity
+* Compare behavior across different service instances
+
+////
+
+**When to use service filtering:**
+
+* Multiple agents deployed, need to focus on one
+* Debugging a specific service
+* Comparing activity across services
+
+////
+
+=== Filter by execution status
+
+Status filtering shows traces based on their execution outcome:
+
+* Show successful executions for health checks
+* Show only failed executions for error investigation
+* Toggle between success and error views to compare and analyze patterns
+
+////
+
+**When to use status filtering:**
+
+* Debugging: Focus on failures to identify error patterns
+* Monitoring: Verify recent executions succeeded
+* Analysis: Compare successful vs failed execution characteristics
+
+////
+
+=== Adjust time range
+
+Use the time range selector to focus on specific time periods (from the last five minutes up to the last 24 hours):
+
+* View recent executions (for example, over the last hour) to monitor real-time activity
+* Expand to longer periods for trend analysis over the last day
+
+////
+
+* Narrow to specific time windows when investigating incidents
+
+**When to use time range adjustment:**
+
+* Investigating issues that occurred at known times
+* Analyzing execution patterns over days or weeks
+* Focusing on recent activity for real-time monitoring
+
+////
+
+=== Combine multiple filters
+
+Filters work together for precise trace selection:
+
+* Service + Status: View only errors from a specific agent
+* Time range + Search: Find tool invocations in a specific window
+* All filters: Narrow to exact execution subset
+
+TIP: Apply broad filters first (time range, service) to reduce the trace set, then use search to narrow to specific operations.
+
+
+
+NOTE: Basic timeline pattern interpretation (spotting errors, gaps, trends) is covered in xref:ai-agents:agents/monitor-agents.adoc[].
+
+== Inspect span details
+
+Selected spans display detailed information at multiple levels, from high-level summaries to complete raw data. Understanding when to use each view helps you investigate efficiently.
+
+=== Summary view
+
+The summary view provides high-level span information:
+
+* Operation name and type
+* Execution duration and outcome
+* Key metrics relevant to the operation type
+
+**When to use summary view:**
+
+* Quick status verification
+* Duration comparison across operations
+* Initial assessment before deeper investigation
+
+**Information typically shown:**
+
+* Total nested operations (span count)
+* Execution duration
+* Token usage (for LLM operations)
+* Operation counts (LLM calls, tool calls)
+* Service identification
+
+=== Detailed attributes view
+
+The attributes view shows structured metadata about the span:
+
+* Key-value pairs describing the operation
+* Operation-specific parameters and results
+* Context information for correlation
+
+**When to use attributes view:**
+
+* Investigating operation parameters and inputs
+* Understanding error details and conditions
+* Finding correlation identifiers (conversation IDs, trace IDs)
+* Analyzing operation-specific metrics
+
+**Common attribute categories:**
+
+* Operation metadata (type, name, provider)
+* Timing and performance data
+* Input/output information (token counts, parameter values)
+* Correlation identifiers
+* Error information when applicable
+
+For details on standard attributes, see xref:ai-agents:observability/concepts.adoc#key-attributes-by-layer[].
+
+=== Raw data view
+
+The raw data view provides the complete span structure:
+
+* Full OpenTelemetry span in standard format
+* All fields including those not displayed in other views
+* Structured data suitable for export or programmatic access
+
+**When to use raw data view:**
+
+* Debugging trace instrumentation
+* Exporting span data for external analysis
+* Accessing fields not shown in summarized views
+* Understanding complete span structure for integration work
+
+**Key elements in raw structure:**
+
+* Trace and span identifiers for correlation
+* Precise timestamps
+* Complete attribute sets
+* Event records (errors, custom events)
+* Instrumentation metadata
+* Status codes and messages
+
+=== Navigate between views
+
+Different views provide different levels of detail for the same span:
+
+* Start with summary for quick assessment
+* Switch to attributes for detailed investigation
+* Use raw data when you need complete information
+
+TIP: Different views show the same span data at different levels of detail - select the view that matches your current investigation needs.
+
+== Next steps
+
+* xref:ai-agents:agents/monitor-agents.adoc[] - Agent monitoring patterns (health checks, debugging)
+* xref:ai-agents:mcp/remote/monitor-mcp-servers.adoc[] - MCP server monitoring patterns
+* xref:ai-agents:observability/concepts.adoc[] - Conceptual foundation on transcripts and spans
+* xref:ai-agents:agents/troubleshooting.adoc[] - Troubleshooting common issues
