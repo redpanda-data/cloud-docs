@@ -34,7 +34,7 @@ Ensure that the inbound endpoint's security group allows inbound UDP/TCP port 53
 
 . In each other VPC that must resolve the cluster domain, create a Resolver outbound endpoint and a forwarding rule for `<cluster_domain>` that targets the inbound endpoint IPs from the previous step. Associate the rule to those VPCs.
 +
-The cluster domain is the suffix after the seed hostname. For example, if your bootstrap server URL is: cki01qgth38kk81ard3g.any.us-east-1.aw.priv.prd.cloud.redpanda.com:9092, then `cluster_domain` is: `cki01qgth38kk81ard3g.any.us-east-1.aw.priv.prd.cloud.redpanda.com`.
+The cluster domain is the suffix after the seed hostname. For example, if your bootstrap server URL is: `cki01qgth38kk81ard3g.any.us-east-1.aw.priv.prd.cloud.redpanda.com:9092`, then `cluster_domain` is: `cki01qgth38kk81ard3g.any.us-east-1.aw.priv.prd.cloud.redpanda.com`.
 . For on-premises DNS, create a conditional forwarder for `<cluster_domain>` that forwards to the inbound endpoint IPs from the earlier step (over VPN/Direct Connect).
 +
 [IMPORTANT]
