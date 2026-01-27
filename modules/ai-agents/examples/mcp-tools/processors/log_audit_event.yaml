@@ -1,20 +1,25 @@
 label: log_audit_event
-mapping: |
-  root = {
-    "audit_id": uuid_v4(),
-    "timestamp": now(),
-    "event_type": "dispute_investigation",
-    "transaction_id": this.transaction_id,
-    "customer_id": this.customer_id,
-    "agent_decision": this.decision,
-    "risk_score": this.risk_score,
-    "evidence_reviewed": this.evidence,
-    "outcome": this.outcome,
-    "escalated": this.escalated,
-    "compliance_notes": this.notes,
-    "logged_by": "dispute-resolution-agent",
-    "status": "recorded"
-  }
+processors:
+  - mapping: |
+      root = {
+        "audit_id": uuid_v4(),
+        "timestamp": now(),
+        "event_type": "dispute_investigation",
+        "transaction_id": this.transaction_id,
+        "customer_id": this.customer_id,
+        "agent_decision": this.decision,
+        "risk_score": this.risk_score,
+        "evidence_reviewed": this.evidence,
+        "outcome": this.outcome,
+        "escalated": this.escalated,
+        "compliance_notes": this.notes,
+        "logged_by": "dispute-resolution-agent",
+        "status": "recorded"
+      }
+
+  - log:
+      level: INFO
+      message: "Compliance audit event: ${!json()}"
 
 meta:
   mcp:
