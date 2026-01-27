@@ -176,33 +176,7 @@ Choose based on task complexity:
 
 Start with 30 for most use cases.
 
-=== Review and create
-
-. Review all settings.
-
-. Configure the service account name (optional):
-+
-* Default pattern: `<cluster-type>-<cluster-id>-agent-<agent-name>-sa`
-* Custom name: 3-128 characters, cannot contain `<` or `>` characters
-* This service account authenticates the agent with cluster resources
-
-. Click *Create Agent*.
-
-. Wait for agent creation to complete.
-
-When your agent is running, Redpanda Cloud provides an HTTP endpoint URL with the pattern:
-
-----
-https://<agent-id>.ai-agents.<cluster-id>.<cluster-domain>
-----
-
-You can use this URL to call your agent programmatically or integrate it with external systems.
-
-The *Inspector* tab in the Cloud Console automatically uses this URL to connect to your agent for testing.
-
-For programmatic access or external agent integration, see xref:ai-agents:agents/integration-overview.adoc[].
-
-== Configure A2A discovery metadata (optional)
+=== Configure A2A discovery metadata
 
 After creating your agent, configure discovery metadata for external integrations. For detailed agent card design guidance, see link:https://agent2agent.info/docs/guides/create-agent-card/[Create an Agent Card^].
 
@@ -236,6 +210,32 @@ Skills describe what your agent can do for capability-based discovery. External 
 . Click *Save Changes*.
 
 The updated metadata appears immediately at `\https://your-agent-url/.well-known/agent-card.json`. For more about what these fields mean and how they're used, see xref:ai-agents:agents/a2a-concepts.adoc#agent-card-metadata[Agent card metadata].
+
+=== Review and create
+
+. Review all settings.
+
+. Configure the service account name (optional):
++
+* Default pattern: `<cluster-type>-<cluster-id>-agent-<agent-name>-sa`
+* Custom name: 3-128 characters, cannot contain `<` or `>` characters
+* This service account authenticates the agent with cluster resources
+
+. Click *Create Agent*.
+
+. Wait for agent creation to complete.
+
+When your agent is running, Redpanda Cloud provides an HTTP endpoint URL with the pattern:
+
+----
+https://<agent-id>.ai-agents.<cluster-id>.<cluster-domain>
+----
+
+You can use this URL to call your agent programmatically or integrate it with external systems.
+
+The *Inspector* tab in the Cloud Console automatically uses this URL to connect to your agent for testing.
+
+For programmatic access or external agent integration, see xref:ai-agents:agents/integration-overview.adoc[].
 
 == Test your agent
 

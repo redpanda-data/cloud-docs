@@ -22,11 +22,11 @@ Every agent request follows a reasoning loop. The agent doesn't execute all tool
 
 When an agent receives a request:
 
-. **LLM receives context**: System prompt, conversation history, user request, and previous tool results
-. **LLM decides action**: Choose to invoke a tool, request more information, or respond to user
-. **Tool executes** (if chosen): Tool runs and returns results.
-. **Context grows**: Tool results added to conversation history
-. **Loop repeats**: LLM reasons again with expanded context.
+. The LLM receives the context, including system prompt, conversation history, user request, and previous tool results.
+. The LLM chooses to invoke a tool, requests more information, or responds to user.
+. The tool runs and returns results if invoked.
+. The tool's results are added to conversation history.
+. The LLM reasons again with an expanded context.
 
 The loop continues until one of these conditions is met:
 
@@ -42,10 +42,9 @@ Each iteration includes three phases:
 . **Tool invocation**: If the agent decides to call a tool, execution happens and waits for results.
 . **Context expansion**: Tool results are added to the conversation history for the next iteration.
 
-This creates a cost/capability/latency triangle:
+With higher iteration limits, agents can complete complex tasks but costs more and takes longer.
 
-* **Higher iteration limits**: Agent can complete complex tasks but costs more and takes longer.
-* **Lower iteration limits**: Faster, cheaper responses but agent may fail on complex requests.
+With lower iteration limits, agents respond faster and cheaper but may fail on complex requests.
 
 ==== Cost calculation
 
@@ -131,9 +130,7 @@ Agents handle two types of information: conversation context (what's been discus
 
 The agent's context includes the system prompt (always present), user messages, agent responses, tool invocation requests, and tool results.
 
-Agents persist conversation context within a session. When you use the *Inspector* tab in the Redpanda Cloud Console, it automatically maintains session state across multiple requests. The context ID is displayed at the top of the *Inspector* tab.
-
-For programmatic access, applications must pass the context ID to maintain conversation continuity across requests. The context ID links to the session record in the agent's sessions topic.
+As the conversation progresses, context grows. Each tool result adds tokens to the context window, which the LLM uses for reasoning in subsequent iterations.
 
 === Context window limits
 
@@ -142,12 +139,6 @@ LLM context windows limit how much history fits. Small models support 8K-32K tok
 When context exceeds the limit, the oldest tool results get truncated, the agent loses access to early conversation details, and may ask for information it already retrieved.
 
 Design workflows to complete within context limits. Avoid unbounded tool chaining.
-
-=== State across conversations
-
-Redpanda Cloud automatically persists conversation history. The *Inspector* tab automatically manages sessions for you. For programmatic integration, pass a session ID in API requests to maintain conversation continuity.
-
-If you need additional state management beyond conversation history, create tools that read/write to custom state stores, or pass relevant context in each request.
 
 == Next steps
 
