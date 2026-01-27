@@ -78,10 +78,10 @@ for file in *.yaml; do
             echo "$output" | sed 's/^/      /'
             FAILED=$((FAILED + 1))
         else
-            # Other lint error
-            echo -e "${YELLOW}WARNING${NC}"
-            echo "$output" | sed 's/^/      /' | head -5
-            CLOUD_PROCESSOR_ERRORS=$((CLOUD_PROCESSOR_ERRORS + 1))
+            # Other lint error (unexpected)
+            echo -e "${RED}FAILED${NC}"
+            echo "$output" | sed 's/^/      /'
+            FAILED=$((FAILED + 1))
         fi
     fi
 done
