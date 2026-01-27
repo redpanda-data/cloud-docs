@@ -1,0 +1,38 @@
+label: get_customer_history
+
+processors:
+  - mapping: |
+      let customer_id = this.customer_id
+      root = if $customer_id == "CUST-100" {
+        {
+          "customer_id": $customer_id,
+          "orders": [
+            {"order_id": "ORD-12345", "status": "shipped", "total": 1299.99, "order_date": "2025-01-10"},
+            {"order_id": "ORD-67890", "status": "processing", "total": 299.98, "order_date": "2025-01-14"},
+            {"order_id": "ORD-11111", "status": "delivered", "total": 89.99, "order_date": "2024-12-20"}
+          ],
+          "total_orders": 3
+        }
+      } else if $customer_id == "CUST-999" {
+        {
+          "customer_id": $customer_id,
+          "orders": [],
+          "total_orders": 0,
+          "message": "No orders found for this customer"
+        }
+      } else {
+        {
+          "error": true,
+          "message": "Customer not found"
+        }
+      }
+
+meta:
+  mcp:
+    enabled: true
+    description: "Retrieve order history. Use CUST-100 (has orders) or CUST-999 (no orders) for testing."
+    properties:
+      - name: customer_id
+        type: string
+        description: "The customer ID (format CUST-XXX)"
+        required: true
