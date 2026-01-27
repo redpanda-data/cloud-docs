@@ -316,9 +316,9 @@ The `events` array captures what happened and when. Use `timeUnixNano` to see ex
 [[opentelemetry-traces-topic]]
 == How Redpanda stores trace data
 
-The `redpanda.otel_traces` topic stores OpenTelemetry spans using Redpanda's Schema Registry wire format with a custom Protobuf schema that closely follows the https://opentelemetry.io/docs/specs/otel/protocol/[OpenTelemetry Protocol (OTLP)^] specification. A schema named `redpanda.otel_traces-value` is automatically registered in the Schema Registry with the topic, enabling clients to deserialize trace data correctly.
+The `redpanda.otel_traces` topic stores OpenTelemetry spans using Redpanda's Schema Registry wire format with a custom Protobuf schema named `redpanda.otel_traces-value` that closely follows the https://opentelemetry.io/docs/specs/otel/protocol/[OpenTelemetry Protocol (OTLP)^] specification. This schema is automatically registered in the Schema Registry with the topic, enabling clients to deserialize trace data correctly.
 
-Redpanda manages both the topic and its schema automatically. If you delete either the topic or the schema, they are recreated automatically. However, deleting the topic permanently deletes all trace data, and the topic comes back empty. Do not produce your own data to this topic. It is reserved for OpenTelemetry traces.
+Redpanda manages both the `redpanda.otel_traces` topic and its schema automatically. If you delete either the topic or the schema, they are recreated automatically. However, deleting the topic permanently deletes all trace data, and the topic comes back empty. Do not produce your own data to this topic. It is reserved for OpenTelemetry traces.
 
 === Topic configuration and lifecycle
 
@@ -348,5 +348,6 @@ For compliance and audit requirements, use the session and task topics for agent
 
 == Next steps
 
+* xref:ai-agents:observability/view-transcripts.adoc[]
 * xref:ai-agents:agents/monitor-agents.adoc[]
 * xref:ai-agents:mcp/remote/monitor-mcp-servers.adoc[]
