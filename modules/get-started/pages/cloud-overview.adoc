@@ -1,59 +1,57 @@
 = Redpanda Cloud Overview
-:description: Learn about the Redpanda Agent Development Platform (ADP) and deployment options including BYOC, Dedicated, and Serverless clusters.
+:description: Learn about the Redpanda Agentic Data Plane (ADP) and deployment options including BYOC, Dedicated, and Serverless clusters.
 :page-aliases: cloud:dedicated-byoc.adoc, deploy:deployment-option/cloud/dedicated-byoc.adoc, deploy:deployment-option/cloud/cloud-overview.adoc
 
-Redpanda Cloud is a complete data streaming platform delivered as a fully-managed service. It provides automated upgrades and patching, data balancing, and support while continuously monitoring your clusters and underlying infrastructure to meet strict performance, availability, reliability, and security requirements. All Redpanda Cloud clusters are deployed with an integrated glossterm:Redpanda Console[], and all clusters have access to unlimited retention and 300+ data connectors with xref:develop:connect/about.adoc[Redpanda Connect].
+Redpanda Cloud is a complete data streaming and agentic data plane platform delivered as a fully-managed service. It provides automated upgrades and patching, data balancing, and support while continuously monitoring your clusters and underlying infrastructure to meet strict performance, availability, reliability, and security requirements. All Redpanda Cloud clusters are deployed with an integrated glossterm:Redpanda Console[], and all clusters have access to unlimited retention and 300+ data connectors with xref:develop:connect/about.adoc[Redpanda Connect].
 
-TIP: For more detailed information about the Redpanda platform, see xref:get-started:intro-to-events.adoc[] and xref:get-started:architecture.adoc[].
+== Redpanda Agentic Data Plane (ADP)
 
-== Redpanda Agent Development Platform (ADP)
+Redpanda ADP is an enterprise-grade infrastructure for building, deploying, and managing AI agents at scale. Redpanda ADP provides unified governance, observability, and security for agentic applications while leveraging Redpanda's streaming and analytical capabilities as the foundational data fabric.
 
-Redpanda Cloud delivers the Agent Development Platform (ADP), an enterprise-grade infrastructure for building, deploying, and managing AI agents at scale. ADP provides unified governance, observability, and security for agentic applications while leveraging Redpanda's streaming and analytical capabilities as the foundational data fabric.
+=== What is Redpanda ADP?
 
-=== What is ADP?
+Redpanda ADP combines multiple components into a cohesive platform built on open standards for maximum interoperability:
 
-ADP combines multiple components into a cohesive platform built on open standards for maximum interoperability:
-
-* **AI Agents**: Deploy declarative agents or bring your own agent frameworks (LangChain, LlamaIndex, and others). Build multi-agent systems where specialized sub-agents handle specific responsibilities, following single-responsibility principles.
-* **MCP Servers**: Build lightweight data and action interfaces using a low-code framework based on xref:develop:connect/about.adoc[Redpanda Connect]. Connect to hundreds of data sources (databases, cloud storage, APIs) and enforce fine-grained policies that programmatically prevent prompt injection and SQL injection attacks. MCP servers are extremely lightweight—run dozens on minimal resources—with OIDC-based access control and real-time debugging capabilities.
-* **AI Gateway**: Manage LLM provider access with cost controls, rate limiting, intelligent routing, and failover support across multiple providers
-* **Catalog**: Centralized view of all agents, tools, and access policies across your organization
+* **AI agents**: Deploy declarative agents or bring your own agent frameworks (LangChain, LlamaIndex, and others). Build multi-agent systems where specialized sub-agents handle specific responsibilities, following single-responsibility principles.
+* **MCP servers**: Build lightweight data and action interfaces using a low-code framework based on xref:develop:connect/about.adoc[Redpanda Connect]. Connect to hundreds of data sources (databases, cloud storage, APIs) and enforce fine-grained policies that programmatically prevent prompt injection and SQL injection attacks. MCP servers are extremely lightweight—run dozens on minimal resources—with OIDC-based access control and real-time debugging capabilities.
+* **AI Gateway**: Manage LLM provider access with cost controls, rate limiting, intelligent routing, and failover support across multiple providers.
+//* **Catalog**: Maintain a centralized repository of agents, MCP servers, tools, and policies. Share components across teams and enforce organization-wide standards.
 
 === Enterprise capabilities
 
-ADP addresses critical enterprise requirements for AI agent deployments:
+Redpanda ADP addresses critical enterprise requirements for AI agent deployments:
 
-**Security by design**:: MCP servers enforce policies at the tool level, programmatically preventing prompt injection, SQL injection, and other agent-based attacks. Policy enforcement is deterministic and controlled—agents cannot bypass security constraints even through creative prompting.
+*Security by design*: MCP servers enforce policies at the tool level, programmatically preventing prompt injection, SQL injection, and other agent-based attacks. Policy enforcement is deterministic and controlled—agents cannot bypass security constraints even through creative prompting.
 
-**Unified authorization**:: All components use OIDC-based authentication with an "on-behalf-of" authorization model. When a user invokes an agent, the agent inherits the intersection of its own permissions and the user's permissions, ensuring proper data access scoping.
+*Unified authorization*: All components use OIDC-based authentication with an "on-behalf-of" authorization model. When a user invokes an agent, the agent inherits the intersection of its own permissions and the user's permissions, ensuring proper data access scoping.
 
-**Complete observability**:: ADP provides two levels of inspection: execution logs (transcripts) capture every agent action with 100% sampling using OpenTelemetry standards, while real-time debugging tools allow inspection of individual MCP server calls. Traces span across services and go as deep as needed—down to individual tool invocations with full timing data. View detailed agent actions in Redpanda Console and replay data for agent evaluations.
+*Complete observability*: Redpanda ADP provides two levels of inspection: execution logs (transcripts) capture every agent action with 100% sampling using OpenTelemetry standards, while real-time debugging tools allow inspection of individual MCP server calls. Traces span across services and go as deep as needed—down to individual tool invocations with full timing data. View detailed agent actions in Redpanda Console and replay data for agent evaluations.
 
-**Compliance and audit**:: For industries requiring multi-year audit trails, ADP records every agent action and data source used in decision-making. Execution logs are stored in Redpanda topics and can be materialized to Iceberg tables for long-term retention and analysis.
+*Compliance and audit*: For industries requiring multi-year audit trails, Redpanda ADP records every agent action and data source used in decision-making. Execution logs are stored in Redpanda topics and can be materialized to Iceberg tables for long-term retention and analysis.
 
-=== ADP deployment model
+=== Redpanda ADP deployment model
 
-ADP is primarily deployed using the <<Bring Your Own Cloud (BYOC)>> model, where:
+Redpanda ADP is deployed using the <<Bring Your Own Cloud (BYOC)>> model, where:
 
 * The **control plane** (managed by Redpanda) handles provisioning, monitoring, and policy management
-* The **data plane** (deployed in your cloud account) runs the ADP components and Redpanda cluster
+* The **data plane** (deployed in your cloud account) runs the Redpanda ADP components and cluster
 * All your data remains in your infrastructure, providing maximum security and data sovereignty
 
-ADP is built on open standards and protocols, allowing you to pick and choose components that fit your needs. Integrate with existing agent frameworks, data processing systems, or custom code—all components use standardized protocols for seamless interoperability.
+Redpanda ADP is built on open standards and protocols, allowing you to pick and choose components that fit your needs. Integrate with existing agent frameworks, data processing systems, or custom code. All components use standardized protocols for seamless interoperability.
 
 === Use cases
 
-Organizations use ADP to:
+Organizations can use Redpanda ADP to:
 
-* **Monitor manufacturing and operations**: Deploy multi-agent systems that analyze factory machine telemetry in real-time, detect anomalies, search equipment manuals, and create maintenance tickets automatically. Use data aggregation patterns (like tumbling windows) to process high-volume sensor data before sending insights to agents.
-* **Extend enterprise productivity tools**: Integrate Microsoft Copilot or other workplace agents with internal data sources and systems that are otherwise inaccessible
-* **Automate operational workflows**: Create specialized agents for building management, infrastructure monitoring, compliance reporting, and other domain-specific tasks
+* *Automate operational workflows*: Create specialized agents for building management, infrastructure monitoring, compliance reporting, and other domain-specific tasks
+* *Monitor manufacturing and operations*: Deploy multi-agent systems that analyze factory machine telemetry in real-time, detect anomalies, search equipment manuals, and create maintenance tickets automatically. Use data aggregation patterns (like tumbling windows) to process high-volume sensor data before sending insights to agents.
+* *Extend enterprise productivity tools*: Integrate Microsoft Copilot or other workplace agents with internal data sources and systems that are otherwise inaccessible
 
 For details about building agents and MCP servers, see xref:ai-agents:index.adoc[].
 
-== Redpanda Cloud cluster types
+== Redpanda Cloud deployment options
 
-ADP and Redpanda Cloud applications are supported by three fully-managed deployment options. For ADP deployments, <<Bring Your Own Cloud (BYOC)>> is the primary model, providing the security and data sovereignty required for enterprise agent platforms. For streaming applications, all three options are available:
+Redpanda Cloud applications are supported by three fully-managed deployment options:
 
 * **<<Serverless>>**: Fastest way to get started with automatic scaling
 * **<<Dedicated>>**: Production clusters in Redpanda's cloud with enhanced isolation
@@ -73,15 +71,15 @@ ADP and Redpanda Cloud applications are supported by three fully-managed deploym
 | Production clusters requiring cloud hosting, higher throughput, and extra isolation
 | Production clusters requiring data sovereignty, the highest throughput, and added security
 
-| *ADP support*
-| Development and testing
-| Development and testing
-| Production (primary deployment model)
-
 | *Deployment*
 | Redpanda's cloud (AWS/GCP)
 | Redpanda's cloud (AWS/Azure/GCP)
 | Your cloud account (AWS/Azure/GCP)
+
+| *Redpanda ADP*
+| ✗
+| ✗
+| ✓
 
 | *Tenancy*
 | Multi-tenant
@@ -202,7 +200,7 @@ Redpanda creates a cloud organization for you and sends you a welcome email.
 
 === Bring Your Own Cloud (BYOC)
 
-BYOC is the primary deployment model for the Agent Development Platform (ADP). With BYOC clusters, the Redpanda data plane (including ADP components and Redpanda brokers) deploys into your existing VPC or VNet, ensuring all data remains in your environment.
+With BYOC clusters, the Redpanda data plane (including Redpanda ADP components and Redpanda brokers) deploys into your existing VPC or VNet, ensuring all data remains in your environment.
 
 With BYOC clusters, you deploy the Redpanda glossterm:data plane[] into your existing VPC (for AWS and GCP) or VNet (for Azure), and all data is
 contained in your own environment. This provides an additional layer of security and isolation. (See xref:get-started:byoc-arch.adoc[].) Redpanda manages provisioning, monitoring, upgrades, and security policies, and it manages required resources in your VPC or VNet, including subnets (subnetworks in GCP), IAM roles, and object storage resources (for example, S3 buckets or Azure Storage accounts). 
@@ -212,6 +210,8 @@ contained in your own environment. This provides an additional layer of security
 With BYOVPC/BYOVNet clusters, you take full control of the networking lifecycle. Compared to standard BYOC, BYOVPC/BYOVNet provides more security, but the configuration is more complex. See the xref:get-started:cloud-overview.adoc#shared-responsibility-model[shared responsibility model] to understand what you manage versus what Redpanda manages.
 
 The BYOC infrastructure that Redpanda manages should not be used to deploy any other workloads.
+
+For details about the control plane - data plane framework in BYOC, see xref:get-started:byoc-arch.adoc[BYOC architecture].
 
 ==== Sign up for BYOC
 
@@ -237,7 +237,11 @@ Consider BYOC or Dedicated if you need more control over the deployment or if yo
 
 When you sign up for a Redpanda account, Redpanda creates an organization for you. Your organization contains all your Redpanda resources, including your clusters and networks. Within your organization, Redpanda creates a default resource group to contain your resources. You can rename this resource group, and you can create more resource groups. For example, you may want different resource groups for production and testing.
 
-For details about the control plane - data plane framework in BYOC, see xref:get-started:byoc-arch.adoc[BYOC architecture].
+[TIP]
+====
+
+For more detailed information about the Redpanda platform, see xref:get-started:intro-to-events.adoc[] and xref:get-started:architecture.adoc[].
+==== 
 
 == Shared responsibility model
 
@@ -440,15 +444,14 @@ Features in beta are available for testing and feedback. They are not covered by
 
 The following features are currently in beta in Redpanda Cloud:
 
-* Serverless on GCP
 * BYOVPC for AWS
 * BYOVNet for Azure
 * Secrets Management for BYOVPC on GCP and AWS
-* xref:ai-agents:index.adoc[Agent Development Platform (ADP)] including AI agents, MCP servers, AI Gateway, and Catalog
+* xref:ai-agents:index.adoc[Redpanda ADP] including AI agents, MCP servers, AI Gateway, and Transcripts
 * Several Redpanda Connect components 
 
 == Next steps
-* xref:ai-agents:index.adoc[Build AI agents with ADP]
+* xref:ai-agents:index.adoc[Build AI agents with Redpanda ADP]
 * xref:manage:maintenance.adoc[Learn about upgrades and maintenance]
 * xref:get-started:cluster-types/serverless.adoc[Create a Serverless cluster]
 * xref:get-started:cluster-types/byoc/index.adoc[Create a BYOC cluster]
