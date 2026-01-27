@@ -202,6 +202,41 @@ The *Inspector* tab in the Cloud Console automatically uses this URL to connect 
 
 For programmatic access or external agent integration, see xref:ai-agents:agents/integration-overview.adoc[].
 
+== Configure A2A discovery metadata (optional)
+
+After creating your agent, configure discovery metadata for external integrations. For detailed agent card design guidance, see link:https://agent2agent.info/docs/guides/create-agent-card/[Create an Agent Card^].
+
+. Click on your agent.
+. Open the *A2A* tab.
+. Configure identity fields:
++
+* *Icon URL*: A publicly accessible image URL (recommended: 256x256px PNG or SVG)
+* *Documentation URL*: Link to comprehensive agent documentation
+
+. Configure provider information:
++
+* *Organization*: Your organization or team name
+* *URL*: Website or contact URL
+
+. Configure capabilities by adding skills:
++
+Skills describe what your agent can do for capability-based discovery. External systems use skills to find agents with the right capabilities.
++
+.. Click *+ Add Skill* to define what this agent can do.
+.. For each skill, configure:
++
+* *Skill ID* (required): Unique identifier using lowercase letters, numbers, and hyphens (e.g., `fraud-analysis`, `order-lookup`)
+* *Skill Name* (required): Human-readable name displayed in agent directories (e.g., "Fraud Analysis", "Order Lookup")
+* *Description* (required): Explain what this skill does and when to use it. Be specific about inputs, outputs, and use cases.
+* *Tags* (optional): Add tags for categorization and search. Use common terms like `fraud`, `security`, `finance`, `orders`.
+* *Examples* (optional): Click *+ Add Example* to provide sample queries demonstrating how to invoke this skill. Examples help users understand how to interact with your agent.
++
+.. Add multiple skills if your agent handles different types of requests. For example, a customer service agent might have separate skills for "Order Status Lookup", "Shipping Tracking", and "Returns Processing".
+
+. Click *Save Changes*.
+
+The updated metadata appears immediately at `\https://your-agent-url/.well-known/agent-card.json`. For more about what these fields mean and how they're used, see xref:ai-agents:agents/a2a-concepts.adoc#agent-card-metadata[Agent card metadata].
+
 == Test your agent
 
 . In the agent details view, click the *Inspector* tab.
@@ -214,13 +249,15 @@ For programmatic access or external agent integration, see xref:ai-agents:agents
 
 . Iterate on the system prompt or tool selection as needed.
 
+For detailed testing strategies, see xref:ai-agents:agents/monitor-agents.adoc[].
+
 == Example configurations
 
 Here are example configurations for different agent types:
 
 === Simple query agent
 
-* *Model*: Claude Haiku 4.5 (fast, cost-effective)
+* *Model*: GPT-5 Mini (fast, cost-effective)
 * *Tools*: Single MCP server with `get_orders` tool
 * *Max iterations*: 10
 * *Use case*: Customer order lookups

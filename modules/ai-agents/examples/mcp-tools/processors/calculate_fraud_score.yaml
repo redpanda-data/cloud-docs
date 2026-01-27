@@ -1,0 +1,83 @@
+label: calculate_fraud_score
+mapping: |
+  let location_risk = match {
+    this.transaction.location.country != this.customer.location_country => 35,
+    this.transaction.location.city != this.customer.primary_city => 15,
+    _ => 0
+  }
+
+  let merchant_risk = match {
+    this.merchant_reputation < 40 => 30,
+    this.merchant_reputation < 70 => 15,
+    _ => 0
+  }
+
+  let amount_risk = match {
+    this.transaction.amount > (this.customer.avg_transaction * 10) => 25,
+    this.transaction.amount > (this.customer.avg_transaction * 5) => 15,
+    this.transaction.amount > (this.customer.avg_transaction * 2) => 5,
+    _ => 0
+  }
+
+  let velocity_risk = match {
+    this.recent_transactions_count > 10 => 15,
+    this.recent_transactions_count > 5 => 8,
+    _ => 0
+  }
+
+  let category_risk = match {
+    this.transaction.merchant.category == "jewelry" && this.customer.typical_categories.contains("jewelry").not() => 20,
+    this.transaction.merchant.category == "electronics" && this.customer.typical_categories.contains("electronics").not() => 15,
+    this.transaction.merchant.category == "luxury_goods" && this.customer.typical_categories.contains("luxury_goods").not() => 15,
+    _ => 0
+  }
+
+  let total_score = $location_risk + $merchant_risk + $amount_risk + $velocity_risk + $category_risk
+
+  let risk_level = match {
+    $total_score >= 80 => "critical",
+    $total_score >= 60 => "high",
+    $total_score >= 40 => "medium",
+    $total_score >= 20 => "low",
+    _ => "minimal"
+  }
+
+  root = {
+    "transaction_id": this.transaction.transaction_id,
+    "fraud_score": $total_score,
+    "risk_level": $risk_level,
+    "score_breakdown": {
+      "location_risk": $location_risk,
+      "merchant_risk": $merchant_risk,
+      "amount_risk": $amount_risk,
+      "velocity_risk": $velocity_risk,
+      "category_risk": $category_risk
+    },
+    "factors_detected": [
+      if $location_risk > 0 { "unusual_location" },
+      if $merchant_risk > 0 { "questionable_merchant" },
+      if $amount_risk > 0 { "unusual_amount" },
+      if $velocity_risk > 0 { "high_velocity" },
+      if $category_risk > 0 { "unusual_category" }
+    ].filter(f -> f != null),
+    "recommendation": match {
+      $total_score >= 80 => "block_and_investigate",
+      $total_score >= 60 => "hold_for_review",
+      $total_score >= 40 => "monitor_closely",
+      _ => "approve"
+    }
+  }
+
+meta:
+  mcp:
+    enabled: true
+    description: "Calculate fraud risk score based on transaction patterns and risk indicators. Returns risk level and recommendation."
+    properties:
+      - name: transaction_id
+        type: string
+        description: "Transaction identifier to analyze (format TXN-XXXXX)"
+        required: true
+      - name: customer_id
+        type: string
+        description: "Customer identifier for historical analysis (format CUST-XXXX)"
+        required: true

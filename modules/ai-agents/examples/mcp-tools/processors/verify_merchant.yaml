@@ -1,0 +1,119 @@
+label: verify_merchant
+mapping: |
+  root = match {
+    this.merchant_name == "LUXURY WATCHES INT" => {
+      "merchant_name": "LUXURY WATCHES INT",
+      "merchant_id": "MER-99912",
+      "reputation_score": 12,
+      "reputation_level": "high_risk",
+      "verification_status": "unverified",
+      "fraud_reports": {
+        "total_reports": 247,
+        "recent_reports_30d": 42,
+        "confirmed_fraud_cases": 89
+      },
+      "business_details": {
+        "country": "Singapore",
+        "years_in_operation": 1,
+        "registration_verified": false
+      },
+      "red_flags": [
+        "High volume of fraud reports",
+        "Recently established business",
+        "Unverified business registration",
+        "Operates in high-risk category",
+        "Pattern of chargebacks"
+      ],
+      "recommendation": "block_merchant"
+    },
+    this.merchant_name == "EXAMPLE MKTPLACE" => {
+      "merchant_name": "EXAMPLE MKTPLACE",
+      "merchant_id": "MER-00001",
+      "reputation_score": 98,
+      "reputation_level": "excellent",
+      "verification_status": "verified",
+      "fraud_reports": {
+        "total_reports": 1203,
+        "recent_reports_30d": 15,
+        "confirmed_fraud_cases": 0
+      },
+      "business_details": {
+        "country": "USA",
+        "years_in_operation": 20,
+        "registration_verified": true,
+        "parent_company": "Example Organization"
+      },
+      "red_flags": [],
+      "recommendation": "trusted_merchant"
+    },
+    this.merchant_name == "EXAMPLE STREAMING" => {
+      "merchant_name": "EXAMPLE STREAMING",
+      "merchant_id": "MER-45678",
+      "reputation_score": 65,
+      "reputation_level": "moderate",
+      "verification_status": "verified",
+      "fraud_reports": {
+        "total_reports": 892,
+        "recent_reports_30d": 67,
+        "confirmed_fraud_cases": 12
+      },
+      "business_details": {
+        "country": "USA",
+        "years_in_operation": 5,
+        "registration_verified": true
+      },
+      "red_flags": [
+        "Known billing system issues",
+        "Frequent duplicate charge complaints",
+        "Difficult cancellation process"
+      ],
+      "common_issues": [
+        "Duplicate subscriptions",
+        "Failed cancellation processing",
+        "Unclear billing descriptors"
+      ],
+      "recommendation": "verify_subscription_details"
+    },
+    this.merchant_name == "HOTEL PARIS" => {
+      "merchant_name": "HOTEL PARIS",
+      "merchant_id": "MER-78234",
+      "reputation_score": 88,
+      "reputation_level": "trusted",
+      "verification_status": "verified",
+      "fraud_reports": {
+        "total_reports": 45,
+        "recent_reports_30d": 2,
+        "confirmed_fraud_cases": 0
+      },
+      "business_details": {
+        "country": "France",
+        "years_in_operation": 15,
+        "registration_verified": true,
+        "chain": "Independent Boutique Hotels"
+      },
+      "red_flags": [],
+      "pricing": {
+        "average_room_rate_eur": 280,
+        "typical_range_eur": "220-350"
+      },
+      "recommendation": "legitimate_merchant"
+    },
+    _ => {
+      "merchant_name": this.merchant_name,
+      "reputation_score": 50,
+      "reputation_level": "unknown",
+      "verification_status": "not_found",
+      "message": "Merchant not found in verification database",
+      "recommendation": "manual_review_required"
+    }
+  }
+
+meta:
+  mcp:
+    enabled: true
+    description: "Verify merchant reputation and fraud history. Use LUXURY WATCHES INT (high risk), EXAMPLE MKTPLACE (trusted), EXAMPLE STREAMING (moderate), or HOTEL PARIS (trusted) for testing."
+    properties:
+      - name: merchant_name
+        type: string
+        description: "Merchant name as it appears on transaction"
+        required: true

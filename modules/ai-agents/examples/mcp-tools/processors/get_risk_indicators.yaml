@@ -1,0 +1,123 @@
+label: get_risk_indicators
+mapping: |
+  root = match {
+    this.transaction_id == "TXN-89012" => {
+      "transaction_id": "TXN-89012",
+      "risk_indicators": [
+        {
+          "indicator": "international_transaction",
+          "severity": "high",
+          "description": "Transaction originated from Singapore, customer has no international transaction history"
+        },
+        {
+          "indicator": "first_time_merchant",
+          "severity": "medium",
+          "description": "Customer has never transacted with this merchant before"
+        },
+        {
+          "indicator": "unusual_category",
+          "severity": "high",
+          "description": "Jewelry purchase is outside customer's typical spending categories"
+        },
+        {
+          "indicator": "high_amount",
+          "severity": "high",
+          "description": "Transaction amount is 14.5x customer's average transaction"
+        },
+        {
+          "indicator": "merchant_flagged",
+          "severity": "critical",
+          "description": "Merchant has been flagged in fraud databases"
+        }
+      ],
+      "total_indicators": 5,
+      "critical_count": 1,
+      "high_count": 3,
+      "medium_count": 1,
+      "overall_assessment": "high_fraud_probability"
+    },
+    this.transaction_id == "TXN-89013" => {
+      "transaction_id": "TXN-89013",
+      "risk_indicators": [
+        {
+          "indicator": "known_merchant",
+          "severity": "none",
+          "description": "Example Marketplace is a recognized and trusted merchant"
+        }
+      ],
+      "total_indicators": 1,
+      "critical_count": 0,
+      "high_count": 0,
+      "medium_count": 0,
+      "overall_assessment": "low_fraud_probability"
+    },
+    this.transaction_id == "TXN-89014" => {
+      "transaction_id": "TXN-89014",
+      "risk_indicators": [
+        {
+          "indicator": "recurring_billing",
+          "severity": "low",
+          "description": "Subscription service with recurring charges"
+        },
+        {
+          "indicator": "merchant_billing_issues",
+          "severity": "medium",
+          "description": "Merchant has known history of duplicate billing complaints"
+        },
+        {
+          "indicator": "duplicate_charge_pattern",
+          "severity": "medium",
+          "description": "Multiple charges detected from same merchant in short timeframe"
+        }
+      ],
+      "total_indicators": 3,
+      "critical_count": 0,
+      "high_count": 0,
+      "medium_count": 2,
+      "overall_assessment": "medium_fraud_probability"
+    },
+    this.transaction_id == "TXN-89015" => {
+      "transaction_id": "TXN-89015",
+      "risk_indicators": [
+        {
+          "indicator": "international_transaction",
+          "severity": "low",
+          "description": "Transaction in France matches customer's travel history"
+        },
+        {
+          "indicator": "travel_category",
+          "severity": "none",
+          "description": "Hotel charge is consistent with customer's frequent travel patterns"
+        },
+        {
+          "indicator": "timing_matches_travel",
+          "severity": "none",
+          "description": "Transaction date aligns with customer's Paris trip"
+        }
+      ],
+      "total_indicators": 3,
+      "critical_count": 0,
+      "high_count": 0,
+      "medium_count": 0,
+      "overall_assessment": "low_fraud_probability"
+    },
+    _ => {
+      "transaction_id": this.transaction_id,
+      "risk_indicators": [],
+      "total_indicators": 0,
+      "critical_count": 0,
+      "high_count": 0,
+      "medium_count": 0,
+      "overall_assessment": "insufficient_data"
+    }
+  }
+
+meta:
+  mcp:
+    enabled: true
+    description: "Retrieve fraud risk indicators for a transaction including severity levels and overall assessment. Use TXN-89012 through TXN-89015 for testing."
+    properties:
+      - name: transaction_id
+        type: string
+        description: "Transaction identifier to analyze (format TXN-XXXXX)"
+        required: true

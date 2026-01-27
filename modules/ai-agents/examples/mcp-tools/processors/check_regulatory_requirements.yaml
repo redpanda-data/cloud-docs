@@ -1,0 +1,124 @@
+label: check_regulatory_requirements
+mapping: |
+  root = match {
+    this.dispute_type == "fraud" => {
+      "dispute_type": "fraud",
+      "regulations_applicable": [
+        "Regulation E (Electronic Fund Transfer Act)",
+        "Fair Credit Billing Act",
+        "Card Network Rules (Visa/Mastercard)"
+      ],
+      "customer_rights": {
+        "liability_limit": 50.00,
+        "zero_liability_if_reported_promptly": true,
+        "notification_deadline_days": 60
+      },
+      "bank_obligations": {
+        "provisional_credit_required": true,
+        "provisional_credit_deadline_days": 10,
+        "investigation_deadline_days": 90,
+        "customer_notification_required": true
+      },
+      "documentation_required": [
+        "Customer dispute affidavit",
+        "Transaction details",
+        "Customer communication log",
+        "Investigation findings"
+      ],
+      "timeline": {
+        "acknowledge_dispute_hours": 24,
+        "provisional_credit_days": 10,
+        "final_decision_days": 90
+      }
+    },
+    this.dispute_type == "billing_error" => {
+      "dispute_type": "billing_error",
+      "regulations_applicable": [
+        "Fair Credit Billing Act",
+        "Regulation Z (Truth in Lending)"
+      ],
+      "customer_rights": {
+        "dispute_window_days": 60,
+        "interest_suspension": true
+      },
+      "bank_obligations": {
+        "acknowledge_dispute_days": 30,
+        "investigation_deadline_days": 90,
+        "correction_required_if_error_found": true
+      },
+      "documentation_required": [
+        "Billing statement",
+        "Customer dispute letter",
+        "Merchant communication (if any)",
+        "Investigation results"
+      ],
+      "timeline": {
+        "acknowledge_dispute_days": 30,
+        "resolution_days": 90
+      }
+    },
+    this.dispute_type == "service_not_received" => {
+      "dispute_type": "service_not_received",
+      "regulations_applicable": [
+        "Fair Credit Billing Act",
+        "Card Network Chargeback Rules"
+      ],
+      "customer_rights": {
+        "chargeback_eligibility": true,
+        "dispute_window_days": 120
+      },
+      "bank_obligations": {
+        "verify_merchant_response": true,
+        "chargeback_processing_days": 45
+      },
+      "documentation_required": [
+        "Proof of non-delivery or service failure",
+        "Merchant communication attempts",
+        "Order/booking confirmation",
+        "Merchant response (if obtained)"
+      ],
+      "timeline": {
+        "merchant_response_wait_days": 15,
+        "chargeback_filing_days": 120
+      }
+    },
+    _ => {
+      "dispute_type": "general",
+      "regulations_applicable": [
+        "Fair Credit Billing Act"
+      ],
+      "customer_rights": {
+        "dispute_right": true,
+        "dispute_window_days": 60
+      },
+      "bank_obligations": {
+        "investigation_required": true,
+        "customer_notification_required": true
+      },
+      "documentation_required": [
+        "Customer dispute statement",
+        "Transaction evidence"
+      ],
+      "timeline": {
+        "standard_review_days": 30
+      }
+    }
+  }
+
+meta:
+  mcp:
+    enabled: true
+    description: "Check regulatory requirements for dispute resolution based on transaction type, amount, and jurisdiction."
+    properties:
+      - name: transaction_type
+        type: string
+        description: "Type of transaction (card_not_present, international, recurring, travel)"
+        required: true
+      - name: amount
+        type: number
+        description: "Transaction amount in USD"
+        required: true
+      - name: jurisdiction
+        type: string
+        description: "Geographic jurisdiction (USA, EU, APAC)"
+        required: true

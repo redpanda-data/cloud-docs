@@ -131,7 +131,9 @@ Agents handle two types of information: conversation context (what's been discus
 
 The agent's context includes the system prompt (always present), user messages, agent responses, tool invocation requests, and tool results.
 
-Agents persist conversation context within a session. When you use the *Inspector* tab in the Redpanda Cloud Console, it automatically maintains session state across multiple requests. For programmatic access, applications must pass a session ID to maintain conversation continuity across requests.
+Agents persist conversation context within a session. When you use the *Inspector* tab in the Redpanda Cloud Console, it automatically maintains session state across multiple requests. The context ID is displayed at the top of the *Inspector* tab.
+
+For programmatic access, applications must pass the context ID to maintain conversation continuity across requests. The context ID links to the session record in the agent's sessions topic.
 
 === Context window limits
 

@@ -60,7 +60,7 @@ NEVER respond about order status without calling the tool first.
 ----
 
 . Review tool descriptions in your MCP server configuration.
-. Use a more capable model (GPT-4, Claude Sonnet, or equivalent).
+. Use a more capable model (GPT-5.2, Claude Sonnet 4.5, or equivalent).
 . Increase max iterations if the agent is stopping before reaching tools.
 
 **Prevention:**
@@ -217,7 +217,7 @@ Diagnose and fix issues related to agent speed and resource consumption.
 **Solution:**
 
 . Use a faster model for simple queries:
-.. Haiku or GPT-4o Mini for straightforward tasks
+.. GPT-5 Mini for straightforward tasks
 .. Reserve larger models for complex reasoning
 . Review conversation history in the *Inspector* tab to identify unnecessary tool calls.
 . Optimize tool implementations:
@@ -401,28 +401,58 @@ processors:
 
 Fix problems with external applications calling agents and pipeline-to-agent integration.
 
+=== Agent card does not contain a URL
+
+**Symptoms:** Pipeline fails with error: `agent card does not contain a URL` or `failed to init processor <no label> path root.pipeline.processors.0`
+
+**Causes:**
+
+* The `agent_card_url` points to the base agent endpoint instead of the agent card JSON file
+
+**Solution:**
+
+The `agent_card_url` must point to the agent card JSON file, not the base agent endpoint.
+
+**Incorrect configuration:**
+
+[,yaml]
+----
+processors:
+  - a2a_message:
+      agent_card_url: "https://your-agent-id.ai-agents.your-cluster-id.cloud.redpanda.com"
+      prompt: "Analyze this transaction: ${!content()}"
+----
+
+**Correct configuration:**
+
+[,yaml]
+----
+processors:
+  - a2a_message:
+      agent_card_url: "https://your-agent-id.ai-agents.your-cluster-id.cloud.redpanda.com/.well-known/agent-card.json"
+      prompt: "Analyze this transaction: ${!content()}"
+----
+
+The agent card is always available at `/.well-known/agent-card.json` according to the A2A protocol standard.
+
+**Prevention:**
+
+* Always append `/.well-known/agent-card.json` to the agent endpoint URL
+* Test the agent card URL in a browser before using it in pipeline configuration
+* See xref:ai-agents:agents/a2a-concepts.adoc#agent-card-location[Agent card location] for details
+
 === Pipeline integration failures
 
 **Symptoms:** Pipelines using `a2a_message` processor fail or timeout.
 
 **Causes:**
 
-* Agent URL is incorrect in pipeline configuration
 * Agent is not running or restarting
 * Agent timeout is too low for pipeline workload
 * Authentication issues between pipeline and agent
 * High event volume overwhelming agent
 
 **Solution:**
-
-. Verify agent URL in pipeline configuration:
-+
-[,yaml]
-----
-processors:
-  - a2a_message:
-      agent_card_url: "https://CORRECT-AGENT-URL/.well-known/agent-card.json"
-----
 
 . Check agent status and resource allocation.
 . Increase agent resource tier for high-volume pipelines.
@@ -433,7 +463,7 @@ processors:
 processors:
   - try:
       - a2a_message:
-          agent_card_url: ${AGENT_URL}
+          agent_card_url: "https://your-agent-url/.well-known/agent-card.json"
     catch:
       - log:
           message: "Agent invocation failed: ${! error() }"

@@ -34,7 +34,7 @@ For the complete specification, see link:https://a2a.ag/spec[a2a.ag/spec^].
 
 Every A2A-compliant agent exposes an agent card at a well-known URL.
 
-The agent card is a JSON document that describes what the agent can do and how to interact with it.
+The agent card is a JSON document that describes what the agent can do and how to interact with it. For the complete agent card specification, see link:https://agent2agent.info/docs/concepts/agentcard/[Agent Card documentation^].
 
 [#agent-card-location]
 === Agent card location
@@ -45,37 +45,7 @@ For example, if your agent URL is `\https://my-agent.ai-agents.abc123.cloud.redp
 
 The `.well-known` path follows internet standards for service discovery, making agents discoverable without configuration.
 
-=== Agent card contents
-
-An agent card describes:
-
-* Agent capabilities: Skills and tools the agent provides.
-* Input/output formats: Expected request and response structures.
-* Protocol version: A2A specification version the agent supports.
-* Communication modes: Whether the agent supports synchronous calls, streaming, or both.
-
-Example agent card structure:
-
-[source,json]
-----
-{
-  "a2a_version": "1.0",
-  "name": "Fraud Detection Agent",
-  "description": "Analyzes transactions for fraudulent activity",
-  "capabilities": {
-    "streaming": true,
-    "synchronous": true
-  },
-  "input_schema": {
-    "type": "object",
-    "properties": {
-      "transaction": {
-        "type": "object"
-      }
-    }
-  }
-}
-----
+To configure these fields, see xref:ai-agents:agents/create-agent.adoc#configure-a2a-discovery-metadata-optional[Configure A2A discovery metadata].
 
 == Where A2A is used in Redpanda Cloud
 

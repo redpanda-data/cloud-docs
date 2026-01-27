@@ -1,0 +1,90 @@
+label: get_merchant_category
+mapping: |
+  root = match {
+    this.mcc == "5944" => {
+      "mcc": "5944",
+      "category": "Jewelry, Watch, Clock, and Silverware Stores",
+      "high_level_category": "retail_luxury",
+      "risk_profile": "high",
+      "typical_transaction_range": {
+        "min": 100,
+        "max": 5000,
+        "average": 850
+      },
+      "fraud_risk_notes": "High-value items, common fraud target, verify customer intent",
+      "common_fraud_patterns": [
+        "Stolen card purchases",
+        "Account takeover",
+        "Reshipping schemes"
+      ]
+    },
+    this.mcc == "5942" => {
+      "mcc": "5942",
+      "category": "Book Stores",
+      "high_level_category": "retail_general",
+      "risk_profile": "low",
+      "typical_transaction_range": {
+        "min": 10,
+        "max": 200,
+        "average": 45
+      },
+      "fraud_risk_notes": "Low fraud risk, common online purchase category",
+      "common_fraud_patterns": []
+    },
+    this.mcc == "4899" => {
+      "mcc": "4899",
+      "category": "Cable, Satellite, and Other Pay Television and Radio Services",
+      "high_level_category": "subscription_services",
+      "risk_profile": "medium",
+      "typical_transaction_range": {
+        "min": 9.99,
+        "max": 99.99,
+        "average": 29.99
+      },
+      "fraud_risk_notes": "Recurring billing, watch for duplicate charges and unauthorized subscriptions",
+      "common_fraud_patterns": [
+        "Duplicate subscriptions",
+        "Unauthorized recurring charges",
+        "Failed cancellation processing"
+      ]
+    },
+    this.mcc == "7011" => {
+      "mcc": "7011",
+      "category": "Lodging - Hotels, Motels, Resorts",
+      "high_level_category": "travel_hospitality",
+      "risk_profile": "medium",
+      "typical_transaction_range": {
+        "min": 80,
+        "max": 500,
+        "average": 180
+      },
+      "fraud_risk_notes": "Verify travel patterns, check for location consistency",
+      "common_fraud_patterns": [
+        "Stolen card at booking sites",
+        "Account takeover for rewards redemption"
+      ]
+    },
+    _ => {
+      "mcc": this.mcc,
+      "category": "Unknown Category",
+      "high_level_category": "unclassified",
+      "risk_profile": "unknown",
+      "typical_transaction_range": {
+        "min": 0,
+        "max": 0,
+        "average": 0
+      },
+      "fraud_risk_notes": "MCC not recognized, manual review recommended",
+      "common_fraud_patterns": []
+    }
+  }
+
+meta:
+  mcp:
+    enabled: true
+    description: "Retrieve merchant category information including MCC code, fraud risk level, and common patterns. Use LUXURY WATCHES INT, EXAMPLE STREAMING, or HOTEL PARIS for testing."
+    properties:
+      - name: merchant_name
+        type: string
+        description: "Merchant name as it appears on transaction"
+        required: true
