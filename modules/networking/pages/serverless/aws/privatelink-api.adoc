@@ -56,19 +56,46 @@ export SERVERLESS_REGION=<serverless_region>
 ----
 PL_POST_BODY=`cat << EOF
 {
-  "serverless_private_link": {
-    "resource_group_id": "$RESOURCE_GROUP_ID",
-    "serverless_region": "$SERVERLESS_REGION"
-  }
+    "serverless_private_link": {
+        "name": "<private-link-name>",
+        "resource_group_id": "$RESOURCE_GROUP_ID",
+        "serverless_region": "$SERVERLESS_REGION",
+        "cloudprovider": "CLOUD_PROVIDER_AWS",
+        "aws_config": {
+            "allowed_principals": [
+                "arn:aws:iam::<account-id>:root"
+            ]
+        }
+    }
 }
 EOF`
 
-SERVERLESS_PRIVATE_LINK_ID=`curl -vv -X POST \
+PL_ID=`curl -vv -X POST \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer $AUTH_TOKEN" \
     -d "$PL_POST_BODY" $PUBLIC_API_ENDPOINT/v1/serverless/private-links | jq -r .operation.metadata.serverless_private_link_id`
 
-echo $SERVERLESS_PRIVATE_LINK_ID
+echo $PL_ID
+----
++
+You can also update private links to add or remove allowed principals.
++
+[,bash]
+----
+PL_PATCH_BODY=`cat << EOF
+{
+        "aws_config": {
+            "allowed_principals": [
+                "arn:aws:iam::<account-id>:root"
+            ]
+        }
+}
+EOF`
+
+curl -vv -X PATCH \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $AUTH_TOKEN" \
+    -d "$PL_PATCH_BODY" $PUBLIC_API_ENDPOINT/v1/serverless/private-links/$PL_ID
 ----
 +
 Store the PrivateLink ID for use in the following steps.
