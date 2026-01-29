@@ -24,9 +24,9 @@ These patterns apply beyond banking to any domain requiring specialized expertis
 
 Banks handle thousands of dispute calls daily. Customers report unauthorized charges, billing errors, or unrecognized transactions. Each investigation requires cross-referencing multiple systems and applying consistent fraud detection logic.
 
-Traditionally, human agents manually open multiple systems, cross-reference data, and take notes—a 10-15 minute process prone to inconsistencies and incomplete compliance logging.
+Traditionally, human agents manually open multiple systems, cross-reference data, and take notes. A 10-15 minute process prone to inconsistencies and incomplete compliance logging.
 
-Multi-agent automation transforms this workflow by enabling instant data aggregation from all sources, consistent logic applied every time, 30-60 second resolution for simple cases, and structured results for compliance. Human agents handle only complex escalations.
+Multi-agent automation transforms this workflow by enabling instant data aggregation from all sources, consistent logic applied every time, 10-15 second resolution, and structured results for compliance. Human agents handle only complex escalations.
 
 When a customer calls saying "I see a $247.83 charge from 'ACME CORP' but I never shopped there. Is this fraud?", the system must investigate account history, calculate fraud scores, verify merchant legitimacy, and make a recommendation with structured results.
 
@@ -215,7 +215,7 @@ The root agent orchestrates sub-agents and makes final recommendations. You'll c
 
 [IMPORTANT]
 ====
-Sub-agents inherit the LLM provider, model, resource tier, and max iterations from the root agent. This tutorial uses GPT-5 Mini and max iterations of 15 to optimize performance. Using slower models (GPT-5.2, Claude Sonnet 4.5) or high max iterations (50+) will cause sub-agents to execute slowly—each sub-agent call could take 60-90 seconds instead of 10-15 seconds.
+Sub-agents inherit the LLM provider, model, resource tier, and max iterations from the root agent. This tutorial uses GPT-5 Mini and max iterations of 15 to optimize performance. Using slower models (GPT-5.2, Claude Sonnet 4.5) or high max iterations (50+) will cause sub-agents to execute slowly. Each sub-agent call could take 60-90 seconds instead of 10-15 seconds.
 ====
 
 . Go to *Agentic AI* > *AI Agents*.
@@ -229,11 +229,6 @@ Sub-agents inherit the LLM provider, model, resource tier, and max iterations fr
 * *Model*: GPT-5 Mini (fast, cost-effective for structured workflows)
 * *API Key*: Your LLM provider API key
 * *Max Iterations*: 15
-+
-[NOTE]
-====
-This tutorial uses GPT-5 Mini and reduced max iterations to optimize for tutorial speed. Multi-agent investigations typically complete in 30-90 seconds with these settings. For production deployments handling complex edge cases, consider GPT-5.2 or Claude Sonnet 4.5 with higher max iterations.
-====
 
 . In the *System Prompt* field, enter:
 +
