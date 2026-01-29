@@ -1,9 +1,7 @@
 label: get_order_status
-
-processors:
-  - mapping: |
-      let order_id = this.order_id
-      root = if $order_id == "ORD-12345" {
+mapping: |
+  let order_id = this.order_id
+  root = if $order_id == "ORD-12345" {
         {
           "order_id": $order_id,
           "status": "shipped",
@@ -23,7 +21,7 @@ processors:
         }
       } else if $order_id == "ORD-99999" {
         {
-          "error": true,
+          "error": "order_not_found",
           "message": "Order not found"
         }
       } else {

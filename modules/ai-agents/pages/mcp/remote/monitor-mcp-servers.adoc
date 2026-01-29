@@ -71,7 +71,7 @@ Example: Find all invocations of a specific tool:
 [,bash]
 ----
 rpk topic consume redpanda.otel_traces --offset start \
-  | jq 'select(.instrumentationScope.name == "rpcn-mcp" and .name == "weather")'
+  | jq '.value | select(.instrumentationScope.name == "rpcn-mcp" and .name == "weather")'
 ----
 
 === Measure performance
