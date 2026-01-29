@@ -32,7 +32,7 @@ pipeline:
                 Return JSON: { "fraud_score": 0-100, "reason": "explanation", "recommend_block": true/false }
         result_map: |
           root = this
-          root.fraud_analysis = content()
+          root.fraud_analysis = content().parse_json().catch({})
 
     - mapping: |
         root = this
