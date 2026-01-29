@@ -1,0 +1,422 @@
+= Configure Claude Code with AI Gateway
+:description: Configure Claude Code to use Redpanda AI Gateway for unified LLM access and MCP tool aggregation.
+:page-topic-type: how-to
+:personas: ai_agent_developer, app_developer
+:learning-objective-1: Configure Claude Code to connect to AI Gateway endpoints
+:learning-objective-2: Set up MCP server integration through AI Gateway
+:learning-objective-3: Verify Claude Code is routing requests through the gateway
+
+include::ai-agents:partial$ai-gateway-byoc-note.adoc[]
+
+After xref:ai-agents:ai-gateway/gateway-quickstart.adoc[configuring your AI Gateway], set up Claude Code to route LLM requests and access MCP tools through the gateway's unified endpoints.
+
+After reading this page, you will be able to:
+
+* [ ] Configure Claude Code to connect to AI Gateway endpoints.
+* [ ] Set up MCP server integration through AI Gateway.
+* [ ] Verify Claude Code is routing requests through the gateway.
+
+== Prerequisites
+
+Before configuring Claude Code, ensure you have:
+
+* Claude Code CLI installed (download from https://github.com/anthropics/claude-code[Anthropic's GitHub^])
+* An active Redpanda AI Gateway with:
+** At least one LLM provider enabled (see xref:ai-agents:ai-gateway/gateway-quickstart.adoc#step-1-enable-a-provider[Enable a provider])
+** A gateway created and configured (see xref:ai-agents:ai-gateway/gateway-quickstart.adoc#step-3-create-a-gateway[Create a gateway])
+* Your AI Gateway credentials:
+** Gateway endpoint URL (for example, `https://gw.ai.panda.com`)
+** Gateway ID (for example, `gateway-abc123`)
+** API key with access to the gateway
+
+== Configuration methods
+
+Claude Code supports two configuration approaches for connecting to AI Gateway:
+
+[cols="1,2,2"]
+|===
+|Method |Best for |Trade-offs
+
+|CLI command
+|Quick setup, single gateway
+|Must re-run if configuration changes
+
+|Configuration file
+|Multiple gateways, complex setups, version control
+|Manual file editing required
+|===
+
+Choose the method that matches your workflow. The CLI command is faster for getting started, while the configuration file provides more flexibility for production use.
+
+== Configure using CLI
+
+The `claude mcp add` command configures Claude Code to connect to your AI Gateway's MCP endpoint.
+
+=== Add MCP server connection
+
+[,bash]
+----
+claude mcp add \
+  --transport http \
+  redpanda-aigateway \
+  https://gw.ai.panda.com/mcp \
+  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "rp-aigw-id: GATEWAY_ID"
+----
+
+Replace the following values:
+
+* `https://gw.ai.panda.com/mcp` - Your gateway's MCP endpoint
+* `YOUR_API_KEY` - Your Redpanda API key
+* `GATEWAY_ID` - Your gateway ID from the AI Gateway UI
+
+This command configures the HTTP transport for MCP, which allows Claude Code to discover and invoke tools from all MCP servers configured in your gateway.
+
+=== Configure LLM routing through gateway
+
+To route Claude Code's LLM requests through the gateway instead of directly to Anthropic:
+
+[,bash]
+----
+claude config set \
+  --api-provider redpanda \
+  --base-url https://gw.ai.panda.com \
+  --header "rp-aigw-id: GATEWAY_ID"
+----
+
+This routes all Claude model requests through your gateway, giving you centralized observability and policy enforcement.
+
+== Configure using configuration file
+
+For more complex configurations or when managing multiple gateways, edit the Claude Code configuration file directly.
+
+=== Locate configuration file
+
+Claude Code stores configuration in:
+
+* macOS/Linux: `~/.claude.json` (user-level) or `.mcp.json` (project-level)
+* Windows: `%USERPROFILE%\.claude.json`
+
+=== Basic configuration
+
+Create or edit `~/.claude.json` with the following structure:
+
+[,json]
+----
+{
+  "mcpServers": {
+    "redpanda-ai-gateway": {
+      "type": "http",
+      "url": "https://gw.ai.panda.com/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR_API_KEY",
+        "rp-aigw-id": "GATEWAY_ID"
+      }
+    }
+  }
+}
+----
+
+Replace placeholder values:
+
+* `YOUR_API_KEY` - Your Redpanda API key
+* `GATEWAY_ID` - Your gateway ID
+
+=== Multiple gateway configuration
+
+To configure different gateways for development and production:
+
+[,json]
+----
+{
+  "mcpServers": {
+    "redpanda-staging": {
+      "type": "http",
+      "url": "https://gw.staging.ai.panda.com/mcp",
+      "headers": {
+        "Authorization": "Bearer STAGING_API_KEY",
+        "rp-aigw-id": "staging-gateway-123"
+      }
+    },
+    "redpanda-production": {
+      "type": "http",
+      "url": "https://gw.ai.panda.com/mcp",
+      "headers": {
+        "Authorization": "Bearer PROD_API_KEY",
+        "rp-aigw-id": "prod-gateway-456"
+      }
+    }
+  }
+}
+----
+
+Switch between gateways by selecting the appropriate MCP server when using Claude Code.
+
+=== Configuration with environment variables
+
+For sensitive credentials, use environment variables instead of hardcoding values:
+
+[,json]
+----
+{
+  "mcpServers": {
+    "redpanda-ai-gateway": {
+      "type": "http",
+      "url": "${REDPANDA_GATEWAY_URL}/mcp",
+      "headers": {
+        "Authorization": "Bearer ${REDPANDA_API_KEY}",
+        "rp-aigw-id": "${REDPANDA_GATEWAY_ID}"
+      }
+    }
+  }
+}
+----
+
+NOTE: Claude Code supports `${VAR}` interpolation syntax in the `mcpServers` section. The variables `REDPANDA_GATEWAY_URL`, `REDPANDA_GATEWAY_ID`, and `REDPANDA_API_KEY` will be resolved from environment variables at runtime.
+
+Set environment variables before launching Claude Code:
+
+[,bash]
+----
+export REDPANDA_GATEWAY_URL="https://gw.ai.panda.com"
+export REDPANDA_GATEWAY_ID="gateway-abc123"
+export REDPANDA_API_KEY="your-api-key"
+----
+
+On Windows (PowerShell):
+
+[,powershell]
+----
+$env:REDPANDA_GATEWAY_URL = "https://gw.ai.panda.com"
+$env:REDPANDA_GATEWAY_ID = "gateway-abc123"
+$env:REDPANDA_API_KEY = "your-api-key"
+----
+
+== Verify configuration
+
+After configuring Claude Code, verify it connects correctly to your AI Gateway.
+
+=== Test MCP tool discovery
+
+List available MCP tools to confirm Claude Code can reach your gateway's MCP endpoint:
+
+[,bash]
+----
+claude mcp list
+----
+
+Expected output should show:
+
+* The `redpanda-ai-gateway` server connection
+* Status: Connected
+* Available tools from your configured MCP servers
+
+If deferred tool loading is enabled in your gateway, you'll see a search tool and the MCP orchestrator tool instead of all tools upfront.
+
+=== Verify gateway routing
+
+Check that requests route through the gateway by monitoring the AI Gateway dashboard:
+
+. Open the Redpanda Cloud Console
+. Navigate to your gateway's observability dashboard
+. Send a test request from Claude Code:
++
+[,bash]
+----
+echo "Write a simple Python hello world function" | claude
+----
+
+. Refresh the dashboard and verify:
+** Request appears in the logs
+** Model shows as `anthropic/claude-sonnet-4-5` (or your configured model)
+** Request succeeded (status 200)
+** Token usage and estimated cost are recorded
+
+If the request doesn't appear in the dashboard, see <<troubleshooting>>.
+
+== Advanced configuration
+
+=== Custom request timeout
+
+Configure timeout for MCP requests in the configuration file:
+
+[,json]
+----
+{
+  "mcpServers": {
+    "redpanda-ai-gateway": {
+      "type": "http",
+      "url": "https://gw.ai.panda.com/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR_API_KEY",
+        "rp-aigw-id": "GATEWAY_ID"
+      },
+      "timeout": 30000
+    }
+  }
+}
+----
+
+The `timeout` value is in milliseconds. Default is 10000 (10 seconds). Increase this for MCP tools that perform long-running operations.
+
+=== Debug mode
+
+Enable debug logging to troubleshoot connection issues:
+
+[,bash]
+----
+export CLAUDE_DEBUG=1
+claude
+----
+
+Debug mode shows:
+
+* HTTP request and response headers
+* MCP tool discovery messages
+* Gateway routing decisions (if exposed in response headers)
+* Error details
+
+[[troubleshooting]]
+== Troubleshooting
+
+=== MCP server not connecting
+
+**Symptom**: `claude mcp list` shows "Connection failed" or no tools available.
+
+**Causes and solutions**:
+
+. **Incorrect endpoint URL**
++
+Verify your MCP endpoint is correct. It should be `{gateway-url}/mcp`, not just `{gateway-url}`.
++
+[,bash]
+----
+# Correct
+https://gw.ai.panda.com/mcp
+
+# Incorrect
+https://gw.ai.panda.com
+----
+
+. **Authentication failure**
++
+Check that your API key is valid and has access to the gateway:
++
+[,bash]
+----
+curl -H "Authorization: Bearer YOUR_API_KEY" \
+     -H "rp-aigw-id: GATEWAY_ID" \
+     https://gw.ai.panda.com/mcp
+----
++
+You should receive a valid MCP protocol response. If you get `401 Unauthorized`, regenerate your API key in the Redpanda Cloud Console.
+
+. **Gateway ID mismatch**
++
+Verify your gateway ID matches exactly (case-sensitive). Copy it directly from the AI Gateway UI rather than typing it manually.
+
+. **Network connectivity issues**
++
+Test basic connectivity to the gateway endpoint:
++
+[,bash]
+----
+curl -I https://gw.ai.panda.com/mcp
+----
++
+If this times out, check your network configuration, firewall rules, or VPN connection.
+
+=== Requests not appearing in gateway dashboard
+
+**Symptom**: Claude Code works, but you don't see requests in the AI Gateway observability dashboard.
+
+**Causes and solutions**:
+
+. **Wrong gateway configured**
++
+Verify that the `rp-aigw-id` header in your configuration matches the gateway you're viewing in the dashboard.
+
+. **Log ingestion delay**
++
+Gateway logs can take 5-10 seconds to appear in the dashboard. Wait briefly and refresh.
+
+. **Model name format error**
++
+Ensure requests use the `vendor/model_id` format (for example, `anthropic/claude-sonnet-4-5`), not just the model name (for example, `claude-sonnet-4-5`).
+
+=== High latency after gateway integration
+
+**Symptom**: Requests are slower after routing through the gateway.
+
+**Causes and solutions**:
+
+. **Gateway geographic distance**
++
+If your gateway is in a different region than you or the upstream provider, this adds network latency. Check gateway region in the Redpanda Cloud Console.
+
+. **Provider pool failover**
++
+If your gateway is configured with fallback providers, check the logs to see if requests are failing over. Failover adds latency.
+
+. **MCP tool aggregation overhead**
++
+Aggregating tools from multiple MCP servers adds processing time. Use deferred tool loading to reduce this overhead (see xref:ai-agents:ai-gateway/mcp-aggregation-guide.adoc[]).
+
+. **Rate limiting**
++
+If you're hitting rate limits, the gateway may be queuing requests. Check the observability dashboard for rate limit metrics.
+
+=== Configuration file not loading
+
+**Symptom**: Changes to `.claude.json` don't take effect.
+
+**Solutions**:
+
+. **Restart Claude Code**
++
+Configuration changes require restarting Claude Code:
++
+[,bash]
+----
+# Kill any running Claude Code processes
+pkill claude
+
+# Start Claude Code again
+claude
+----
+
+. **Validate JSON syntax**
++
+Ensure your `.claude.json` is valid JSON. Use a JSON validator:
++
+[,bash]
+----
+python3 -m json.tool ~/.claude.json
+----
+
+. **Check file permissions**
++
+Verify Claude Code can read the configuration file:
++
+[,bash]
+----
+ls -la ~/.claude.json
+----
++
+The file should be readable by your user. If not, fix permissions:
++
+[,bash]
+----
+chmod 600 ~/.claude.json
+----
+
+== Next steps
+
+* xref:ai-agents:ai-gateway/mcp-aggregation-guide.adoc[]: Configure deferred tool loading to reduce token costs
+* xref:ai-agents:ai-gateway/observability-logs.adoc[]: Monitor Claude Code requests in the gateway dashboard
+* xref:ai-agents:ai-gateway/cel-routing-cookbook.adoc[]: Use CEL expressions to route Claude Code requests based on context
+
+== Related pages
+
+* xref:ai-agents:ai-gateway/gateway-quickstart.adoc[]: Create and configure your AI Gateway
+* xref:ai-agents:ai-gateway/gateway-architecture.adoc[]: Learn about AI Gateway architecture and benefits
