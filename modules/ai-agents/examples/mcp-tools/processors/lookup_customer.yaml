@@ -1,0 +1,23 @@
+# Look up customer by ID from PostgreSQL
+# Example of sql_select processor tool
+# tag::complete[]
+label: lookup-customer # <1>
+
+sql_select: # <2>
+  driver: postgres
+  dsn: "${secrets.DATABASE_URL}"
+  table: customers
+  columns: ["id", "name", "email", "plan"]
+  where: id = ?
+  args_mapping: '[this.customer_id]'
+
+meta: # <3>
+  mcp:
+    enabled: true
+    description: "Look up a customer by ID and return their profile."
+    properties:
+      - name: customer_id
+        type: string
+        description: "The customer's unique identifier"
+        required: true
+# end::complete[]

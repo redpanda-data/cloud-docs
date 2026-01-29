@@ -1,0 +1,48 @@
+label: get_order_status
+
+processors:
+  - mapping: |
+      let order_id = this.order_id
+      root = if $order_id == "ORD-12345" {
+        {
+          "order_id": $order_id,
+          "status": "shipped",
+          "items": [{"name": "Laptop", "quantity": 1, "price": 1299.99}],
+          "total": 1299.99,
+          "order_date": "2025-01-10",
+          "customer_id": "CUST-100"
+        }
+      } else if $order_id == "ORD-67890" {
+        {
+          "order_id": $order_id,
+          "status": "processing",
+          "items": [{"name": "Headphones", "quantity": 2, "price": 149.99}],
+          "total": 299.98,
+          "order_date": "2025-01-14",
+          "customer_id": "CUST-100"
+        }
+      } else if $order_id == "ORD-99999" {
+        {
+          "error": true,
+          "message": "Order not found"
+        }
+      } else {
+        {
+          "order_id": $order_id,
+          "status": "pending",
+          "items": [{"name": "Generic Item", "quantity": 1, "price": 49.99}],
+          "total": 49.99,
+          "order_date": "2025-01-15",
+          "customer_id": "CUST-999"
+        }
+      }
+
+meta:
+  mcp:
+    enabled: true
+    description: "Retrieve order status and details. Use ORD-12345 (shipped), ORD-67890 (processing), or ORD-99999 (not found) for testing."
+    properties:
+      - name: order_id
+        type: string
+        description: "The order ID (format ORD-XXXXX)"
+        required: true

@@ -1,0 +1,25 @@
+# Publish event with timestamp
+# Example of output tool with processors
+# tag::complete[]
+label: publish-with-timestamp
+
+processors:
+  - mutation: |
+      root = this
+      root.published_at = now()
+
+redpanda:
+  seed_brokers: ["${REDPANDA_BROKERS}"]
+  topic: "processed-events"
+  tls:
+    enabled: true
+  sasl:
+    - mechanism: SCRAM-SHA-256
+      username: "${secrets.MCP_USERNAME}"
+      password: "${secrets.MCP_PASSWORD}"
+
+meta:
+  mcp:
+    enabled: true
+    description: "Add timestamp and publish to Redpanda"
+# end::complete[]

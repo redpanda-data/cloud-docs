@@ -1,0 +1,99 @@
+label: get_transaction_details
+mapping: |
+  root = match {
+    this.transaction_id == "TXN-89012" => {
+      "transaction_id": "TXN-89012",
+      "customer_id": "CUST-1001",
+      "amount": 1847.99,
+      "currency": "USD",
+      "merchant": {
+        "name": "LUXURY WATCHES INT",
+        "category": "jewelry",
+        "country": "Singapore",
+        "mcc": "5944"
+      },
+      "card_last_four": "4532",
+      "date": "2026-01-18T14:22:00Z",
+      "location": {
+        "city": "Singapore",
+        "country": "SG",
+        "coordinates": "1.3521,103.8198"
+      },
+      "status": "posted"
+    },
+    this.transaction_id == "TXN-89013" => {
+      "transaction_id": "TXN-89013",
+      "customer_id": "CUST-1001",
+      "amount": 47.83,
+      "currency": "USD",
+      "merchant": {
+        "name": "EXAMPLE MKTPLACE",
+        "category": "online_retail",
+        "country": "USA",
+        "mcc": "5942"
+      },
+      "card_last_four": "4532",
+      "date": "2026-01-15T10:15:00Z",
+      "location": {
+        "city": "Seattle",
+        "country": "US",
+        "coordinates": "47.6062,-122.3321"
+      },
+      "status": "posted"
+    },
+    this.transaction_id == "TXN-89014" => {
+      "transaction_id": "TXN-89014",
+      "customer_id": "CUST-1002",
+      "amount": 29.99,
+      "currency": "USD",
+      "merchant": {
+        "name": "EXAMPLE STREAMING",
+        "category": "subscription_service",
+        "country": "USA",
+        "mcc": "4899"
+      },
+      "card_last_four": "8821",
+      "date": "2025-12-15T00:00:01Z",
+      "location": {
+        "city": "San Francisco",
+        "country": "US",
+        "coordinates": "37.7749,-122.4194"
+      },
+      "status": "posted",
+      "recurring": true
+    },
+    this.transaction_id == "TXN-89015" => {
+      "transaction_id": "TXN-89015",
+      "customer_id": "CUST-1003",
+      "amount": 312.50,
+      "currency": "EUR",
+      "merchant": {
+        "name": "HOTEL PARIS",
+        "category": "lodging",
+        "country": "France",
+        "mcc": "7011"
+      },
+      "card_last_four": "2193",
+      "date": "2026-01-10T20:30:00Z",
+      "location": {
+        "city": "Paris",
+        "country": "FR",
+        "coordinates": "48.8566,2.3522"
+      },
+      "status": "posted"
+    },
+    _ => {
+      "error": "transaction_not_found",
+      "message": "No transaction found with ID: " + this.transaction_id
+    }
+  }
+
+meta:
+  mcp:
+    enabled: true
+    description: "Retrieve detailed transaction information including merchant, location, and amount. Use TXN-89012 through TXN-89015 for testing."
+    properties:
+      - name: transaction_id
+        type: string
+        description: "Transaction identifier (format TXN-XXXXX)"
+        required: true

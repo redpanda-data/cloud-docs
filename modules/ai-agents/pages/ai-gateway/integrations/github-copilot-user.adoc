@@ -1,0 +1,966 @@
+= Configure GitHub Copilot with AI Gateway
+:description: Configure GitHub Copilot to use Redpanda AI Gateway for unified LLM access and custom provider management.
+:page-topic-type: how-to
+:personas: ai_agent_developer, app_developer
+:learning-objective-1: Configure GitHub Copilot in VS Code and JetBrains IDEs to route requests through AI Gateway
+:learning-objective-2: Set up multi-tenancy with gateway ID headers for cost tracking
+:learning-objective-3: Configure enterprise BYOK deployments for team-wide Copilot access
+
+include::ai-agents:partial$ai-gateway-byoc-note.adoc[]
+
+After xref:ai-agents:ai-gateway/gateway-quickstart.adoc[configuring your AI Gateway], set up GitHub Copilot to route LLM requests through the gateway for centralized observability, cost management, and provider flexibility.
+
+After reading this page, you will be able to:
+
+* [ ] Configure GitHub Copilot in VS Code and JetBrains IDEs to route requests through AI Gateway.
+* [ ] Set up multi-tenancy with gateway ID headers for cost tracking.
+* [ ] Configure enterprise BYOK deployments for team-wide Copilot access.
+
+== Prerequisites
+
+Before configuring GitHub Copilot, ensure you have:
+
+* GitHub Copilot subscription (Individual, Business, or Enterprise)
+* An active Redpanda AI Gateway with:
+** At least one LLM provider enabled (see xref:ai-agents:ai-gateway/gateway-quickstart.adoc#step-1-enable-a-provider[Enable a provider])
+** A gateway created and configured (see xref:ai-agents:ai-gateway/gateway-quickstart.adoc#step-3-create-a-gateway[Create a gateway])
+* Your AI Gateway credentials:
+** Gateway endpoint URL (for example, `https://gw.ai.panda.com`)
+** Gateway ID (for example, `gateway-abc123`)
+** API key with access to the gateway
+* Your IDE:
+** VS Code with GitHub Copilot extension installed
+** Or JetBrains IDE (IntelliJ IDEA, PyCharm, etc.) with GitHub Copilot plugin
+
+== About GitHub Copilot and AI Gateway
+
+GitHub Copilot provides AI-powered code completion and chat within your IDE. By default, Copilot routes requests directly to GitHub's infrastructure, which uses OpenAI and other LLM providers.
+
+When you route Copilot through AI Gateway, you gain:
+
+* Centralized observability across all Copilot usage
+* Cost attribution per developer, team, or project
+* Provider flexibility (use your own API keys or alternative models)
+* Policy enforcement (rate limits, spend controls)
+* Multi-tenancy support for enterprise deployments
+
+== Configuration approaches
+
+GitHub Copilot supports different configuration approaches depending on your IDE and subscription tier:
+
+[cols="1,2,2,1"]
+|===
+|IDE |Method |Subscription Tier |Complexity
+
+|VS Code
+|Custom OpenAI models
+|Individual, Business, Enterprise
+|Medium
+
+|VS Code
+|OAI Compatible Provider extension
+|Individual, Business, Enterprise
+|Low
+
+|JetBrains
+|Enterprise BYOK
+|Enterprise
+|Low
+|===
+
+Choose the approach that matches your environment. VS Code users have multiple options, while JetBrains users need GitHub Copilot Enterprise with BYOK support.
+
+== Configure in VS Code
+
+VS Code offers two approaches for routing Copilot through AI Gateway:
+
+. Custom OpenAI models (manual configuration)
+. OAI Compatible Provider extension (simplified)
+
+=== Option 1: Custom OpenAI models
+
+This approach configures VS Code to recognize your AI Gateway as a custom OpenAI-compatible provider.
+
+==== Configure custom models
+
+. Open VS Code Settings:
+** macOS: `Cmd+,`
+** Windows/Linux: `Ctrl+,`
+. Search for `github.copilot.chat.customOAIModels`
+. Click *Edit in settings.json*
+. Add the following configuration:
+
+[,json]
+----
+{
+  "github.copilot.chat.customOAIModels": [
+    {
+      "id": "anthropic/claude-sonnet-4-5",
+      "name": "Claude Sonnet 4.5 (Gateway)",
+      "endpoint": "https://gw.ai.panda.com/v1",
+      "provider": "redpanda-gateway"
+    },
+    {
+      "id": "openai/gpt-4o",
+      "name": "GPT-4o (Gateway)",
+      "endpoint": "https://gw.ai.panda.com/v1",
+      "provider": "redpanda-gateway"
+    }
+  ]
+}
+----
+
+Replace `https://gw.ai.panda.com/v1` with your gateway endpoint.
+
+IMPORTANT: This experimental feature requires configuring API keys and custom headers through the Copilot Chat UI, not in `settings.json`.
+
+==== Configure API key and headers via Copilot Chat UI
+
+. Open Copilot Chat in VS Code (`Cmd+I` or `Ctrl+I`)
+. Click the model selector dropdown
+. Click *Manage Models* at the bottom of the dropdown
+. Click *Add Model*
+. Select your configured provider ("redpanda-gateway")
+. Enter the connection details:
+** *Base URL*: `https://gw.ai.panda.com/v1` (should match your settings.json endpoint)
+** *API Key*: Your Redpanda API key
+** *Custom Headers*: Click *Add Header*
+*** Header name: `rp-aigw-id`
+*** Header value: `gateway-abc123` (your gateway ID)
+. Click *Save*
+
+==== Select model
+
+. Open Copilot chat with `Cmd+I` (macOS) or `Ctrl+I` (Windows/Linux)
+. Click the model selector dropdown
+. Choose a model from the "redpanda-gateway" provider
+
+=== Option 2: OAI Compatible Provider extension
+
+The OAI Compatible Provider extension provides enhanced support for OpenAI-compatible endpoints with custom headers.
+
+==== Install extension
+
+. Open VS Code Extensions (`Cmd+Shift+X` or `Ctrl+Shift+X`)
+. Search for "OAI Compatible Provider"
+. Click *Install*
+
+==== Configure base URL in settings
+
+Add the base URL configuration in VS Code settings:
+
+. Open VS Code Settings (`Cmd+,` or `Ctrl+,`)
+. Search for `oaicopilot`
+. Click *Edit in settings.json*
+. Add the following:
+
+[,json]
+----
+{
+  "oaicopilot.baseUrl": "https://gw.ai.panda.com/v1",
+  "oaicopilot.models": [
+    "anthropic/claude-sonnet-4-5",
+    "openai/gpt-4o",
+    "openai/gpt-4o-mini"
+  ]
+}
+----
+
+Replace `https://gw.ai.panda.com/v1` with your gateway endpoint.
+
+==== Configure API key and headers via Copilot Chat UI
+
+IMPORTANT: Do not configure API keys or custom headers in `settings.json`. Use the Copilot Chat UI instead.
+
+. Open Copilot Chat in VS Code (`Cmd+I` or `Ctrl+I`)
+. Click the model selector dropdown
+. Click *Manage Models*
+. Find the OAI Compatible Provider in the list
+. Click *Configure* or *Edit*
+. Enter the connection details:
+** *API Key*: Your Redpanda API key
+** *Custom Headers*: Add the `rp-aigw-id` header
+*** Header name: `rp-aigw-id`
+*** Header value: `gateway-abc123` (your gateway ID)
+. Click *Save*
+
+==== Select model
+
+. Open Copilot chat with `Cmd+I` (macOS) or `Ctrl+I` (Windows/Linux)
+. Click the model selector dropdown
+. Choose a model from the OAI Compatible Provider
+
+== Configure in JetBrains IDEs
+
+JetBrains IDE integration requires GitHub Copilot Enterprise with Bring Your Own Key (BYOK) support.
+
+=== Prerequisites
+
+* GitHub Copilot Enterprise subscription
+* BYOK enabled for your organization
+* JetBrains IDE 2024.1 or later
+* GitHub Copilot plugin version 1.4.0 or later
+
+=== Configure BYOK with AI Gateway
+
+. Open your JetBrains IDE (IntelliJ IDEA, PyCharm, etc.)
+. Navigate to *Settings/Preferences*:
+** macOS: `Cmd+,`
+** Windows/Linux: `Ctrl+Alt+S`
+. Go to *Tools* > *GitHub Copilot*
+. Under *Advanced Settings*, find *Custom Model Configuration*
+. Configure the OpenAI-compatible endpoint:
+
+[,text]
+----
+Base URL: https://gw.ai.panda.com/v1
+API Key: your-redpanda-api-key
+----
+
+[start=6]
+. Click *Advanced Headers*
+. Add custom header:
+
+[,text]
+----
+Header Name: rp-aigw-id
+Header Value: gateway-abc123
+----
+
+Replace placeholder values:
+
+* `https://gw.ai.panda.com/v1` - Your gateway endpoint
+* `your-redpanda-api-key` - Your Redpanda API key
+* `gateway-abc123` - Your gateway ID
+
+=== Configure model selection
+
+In the GitHub Copilot settings:
+
+. Expand *Model Selection*
+. Choose your preferred models from the AI Gateway:
+** Chat model: `anthropic/claude-sonnet-4-5` or `openai/gpt-4o`
+** Code completion model: `openai/gpt-4o-mini` (faster, cost-effective)
+
+Model format uses `vendor/model_id` pattern to route through the gateway to the appropriate provider.
+
+=== Test configuration
+
+. Open a code file
+. Trigger code completion (start typing)
+. Or open Copilot chat:
+** Right-click > *Copilot* > *Open Chat*
+** Or use shortcut: `Cmd+Shift+C` (macOS) or `Ctrl+Shift+C` (Windows/Linux)
+. Verify suggestions appear
+
+Check the AI Gateway dashboard to confirm requests are logged.
+
+== Multi-tenancy configuration
+
+For organizations with multiple teams or projects sharing AI Gateway, use gateway ID headers to track usage per team.
+
+=== Approach 1: One gateway per team
+
+Create separate gateways for each team:
+
+* Team A Gateway: ID `team-a-gateway-123`
+* Team B Gateway: ID `team-b-gateway-456`
+
+Each team configures their IDE with their team's gateway ID:
+
+[,json]
+----
+{
+  "oai.provider.headers": {
+    "rp-aigw-id": "team-a-gateway-123"
+  }
+}
+----
+
+Benefits:
+
+* Isolated cost tracking per team
+* Team-specific rate limits and budgets
+* Separate observability dashboards
+
+=== Approach 2: Shared gateway with custom headers
+
+Use a single gateway with custom headers for attribution:
+
+[,json]
+----
+{
+  "oai.provider.headers": {
+    "rp-aigw-id": "shared-gateway-789",
+    "x-team": "backend-team",
+    "x-project": "api-service"
+  }
+}
+----
+
+Configure gateway CEL routing to read these headers:
+
+[,cel]
+----
+request.headers["x-team"] == "backend-team" ? "openai/gpt-4o" : "openai/gpt-4o-mini"
+----
+
+Benefits:
+
+* Single gateway to manage
+* Flexible cost attribution
+* Header-based routing policies
+
+Filter observability dashboard by `x-team` or `x-project` headers to generate team-specific reports.
+
+=== Approach 3: Environment-based gateways
+
+Separate development, staging, and production environments:
+
+[,json]
+----
+{
+  "oai.provider.headers": {
+    "rp-aigw-id": "${env:GATEWAY_ID}",
+    "x-environment": "${env:ENVIRONMENT}"
+  }
+}
+----
+
+Set environment variables per workspace:
+
+[,bash]
+----
+# Development workspace
+export GATEWAY_ID="dev-gateway-123"
+export ENVIRONMENT="development"
+
+# Production workspace
+export GATEWAY_ID="prod-gateway-456"
+export ENVIRONMENT="production"
+----
+
+Benefits:
+
+* Prevent development usage from affecting production metrics
+* Different rate limits and budgets per environment
+* Environment-specific model access policies
+
+== Enterprise BYOK at scale
+
+For large organizations deploying GitHub Copilot Enterprise with AI Gateway across hundreds or thousands of developers.
+
+=== Centralized configuration management
+
+Distribute IDE configuration files via:
+
+* **Git repository**: Store `settings.json` or IDE configuration in a shared repository
+* **Configuration management tools**: Puppet, Chef, Ansible
+* **Group Policy** (Windows environments)
+* **MDM solutions** (macOS environments)
+
+Example centralized configuration:
+
+[,json]
+----
+{
+  "oai.provider.endpoint": "https://gw.company.com/v1",
+  "oai.provider.apiKey": "${env:COPILOT_GATEWAY_KEY}",
+  "oai.provider.headers": {
+    "rp-aigw-id": "${env:COPILOT_GATEWAY_ID}",
+    "x-user-email": "${env:USER_EMAIL}",
+    "x-department": "${env:DEPARTMENT}"
+  }
+}
+----
+
+Developers set environment variables locally or receive them from identity management systems.
+
+=== API key management
+
+**Option 1: Individual API keys**
+
+Each developer gets their own Redpanda API key:
+
+* Tied to their identity (email, employee ID)
+* Revocable when they leave the organization
+* Enables per-developer cost attribution
+
+**Option 2: Team API keys**
+
+Teams share API keys:
+
+* Simpler key management
+* Cost attribution by team, not individual
+* Use custom headers for finer-grained tracking
+
+**Option 3: Service account keys**
+
+Single key for all developers:
+
+* Simplest to deploy
+* No per-developer tracking
+* Use custom headers for all attribution
+
+=== Automated provisioning workflow
+
+. Developer joins organization
+. Identity system (Okta, Azure AD, etc.) triggers provisioning:
+.. Create Redpanda API key
+.. Assign to appropriate gateway
+.. Generate IDE configuration file with embedded keys
+.. Distribute to developer workstation
+. Developer installs IDE and GitHub Copilot
+. Configuration auto-applies (via MDM or configuration management)
+. Developer starts using Copilot immediately
+
+=== Observability and governance
+
+Track usage across the organization:
+
+. Navigate to AI Gateway dashboard
+. Filter by custom headers:
+** `x-department`: View costs per department
+** `x-user-email`: Track usage per developer
+** `x-project`: Attribute costs to specific projects
+. Generate reports:
+** Top 10 users by token usage
+** Departments exceeding budget
+** Projects using deprecated models
+. Set alerts:
+** Individual developer exceeds threshold (potential misuse)
+** Department budget approaching limit
+** Unusual request patterns (security concern)
+
+=== Policy enforcement
+
+Use gateway CEL routing to enforce policies:
+
+[,cel]
+----
+// Limit junior developers to cost-effective models
+request.headers["x-user-level"] == "junior"
+  ? "openai/gpt-4o-mini"
+  : "anthropic/claude-sonnet-4-5"
+
+// Block access for contractors to expensive models
+request.headers["x-user-type"] == "contractor" &&
+request.model.contains("opus")
+  ? error("Contractors cannot use Opus models")
+  : request.model
+----
+
+== Verify configuration
+
+After configuring GitHub Copilot, verify it routes requests through your AI Gateway.
+
+=== Test code completion
+
+. Open a code file in your IDE
+. Start typing a function definition
+. Wait for code completion suggestions to appear
+
+Completion requests appear in the gateway dashboard with:
+
+* Low token counts (typically 50-200 tokens)
+* High request frequency (as you type)
+* The completion model you configured
+
+=== Test chat interface
+
+. Open Copilot chat:
+** VS Code: `Cmd+I` (macOS) or `Ctrl+I` (Windows/Linux)
+** JetBrains: Right-click > *Copilot* > *Open Chat*
+. Ask a simple question: "Explain this function"
+. Wait for response
+
+Chat requests appear in the gateway dashboard with:
+
+* Higher token counts (500-2000 tokens typical)
+* The chat model you configured
+* Response status (200 for success)
+
+=== Verify in dashboard
+
+. Open the Redpanda Cloud Console
+. Navigate to your gateway's observability dashboard
+. Filter by gateway ID
+. Verify:
+** Requests appear in logs
+** Models show correct format (for example, `anthropic/claude-sonnet-4-5`)
+** Token usage and cost are recorded
+** Custom headers appear (if configured)
+
+If requests don't appear, see <<troubleshooting>>.
+
+== Advanced configuration
+
+=== Model-specific settings
+
+Configure different models for different tasks:
+
+[,json]
+----
+{
+  "oai.provider.models": [
+    {
+      "id": "anthropic/claude-sonnet-4-5",
+      "name": "Claude Sonnet (chat)",
+      "type": "chat",
+      "temperature": 0.7,
+      "maxTokens": 4096
+    },
+    {
+      "id": "openai/gpt-4o-mini",
+      "name": "GPT-4o Mini (completion)",
+      "type": "completion",
+      "temperature": 0.2,
+      "maxTokens": 512
+    }
+  ]
+}
+----
+
+Settings explained:
+
+* Chat uses Claude Sonnet with higher temperature for creative responses
+* Completion uses GPT-4o Mini with lower temperature for deterministic code
+* Chat allows longer responses, completion limits tokens for speed
+
+=== Workspace-specific configuration
+
+Override global settings for specific projects using workspace settings.
+
+In VS Code, create `.vscode/settings.json` in your project root:
+
+[,json]
+----
+{
+  "oai.provider.headers": {
+    "rp-aigw-id": "project-gateway-123",
+    "x-project": "customer-portal"
+  }
+}
+----
+
+Benefits:
+
+* Route different projects through different gateways
+* Track costs per project
+* Use different models per project (cost-effective for internal, premium for customer-facing)
+
+=== Custom request timeouts
+
+Configure timeout for AI Gateway requests:
+
+[,json]
+----
+{
+  "oai.provider.timeout": 30000
+}
+----
+
+Timeout is in milliseconds. Default is typically 30000 (30 seconds).
+
+Increase timeouts for:
+
+* High-latency network environments
+* Complex code generation tasks
+* Large file context
+
+=== Debug mode
+
+Enable debug logging to troubleshoot issues:
+
+[,json]
+----
+{
+  "oai.provider.debug": true,
+  "github.copilot.advanced": {
+    "debug": true
+  }
+}
+----
+
+View debug logs:
+
+* VS Code: Developer Console (`Help` > `Toggle Developer Tools` > `Console` tab)
+* JetBrains: `Help` > `Diagnostic Tools` > `Debug Log Settings` > Add `github.copilot`
+
+Debug mode shows:
+
+* HTTP request and response headers
+* Model selection decisions
+* Token usage calculations
+* Error details
+
+[[troubleshooting]]
+== Troubleshooting
+
+=== Copilot shows no suggestions
+
+**Symptom**: Code completion doesn't work or Copilot shows "No suggestions available".
+
+**Causes and solutions**:
+
+. **Configuration not loaded**
++
+Reload your IDE to apply configuration changes:
++
+* VS Code: Command Palette > "Developer: Reload Window"
+* JetBrains: File > Invalidate Caches / Restart
+
+. **Incorrect endpoint URL**
++
+Verify the URL format includes `/v1` at the end:
++
+[,text]
+----
+# Correct
+https://gw.ai.panda.com/v1
+
+# Incorrect
+https://gw.ai.panda.com
+----
+
+. **Authentication failure**
++
+Verify your API key is valid:
++
+[,bash]
+----
+curl -H "Authorization: Bearer YOUR_API_KEY" \
+     -H "rp-aigw-id: GATEWAY_ID" \
+     https://gw.ai.panda.com/v1/models
+----
++
+You should receive a list of available models. If you get `401 Unauthorized`, regenerate your API key in the Redpanda Cloud Console.
+
+. **Extension/plugin disabled**
++
+Verify GitHub Copilot is enabled:
++
+* VS Code: Extensions view > GitHub Copilot > Ensure "Enabled"
+* JetBrains: Settings > Plugins > GitHub Copilot > Check "Enabled"
+
+. **Network connectivity issues**
++
+Test connectivity to the gateway:
++
+[,bash]
+----
+curl -I https://gw.ai.panda.com/v1
+----
++
+If this times out, check your network configuration, firewall rules, or VPN connection.
+
+=== Requests not appearing in gateway dashboard
+
+**Symptom**: Copilot works, but requests don't appear in the AI Gateway observability dashboard.
+
+**Causes and solutions**:
+
+. **Wrong gateway ID**
++
+Verify the `rp-aigw-id` header matches the gateway you're viewing in the dashboard (case-sensitive).
+
+. **Missing header configuration**
++
+Ensure `rp-aigw-id` header is configured:
++
+[,json]
+----
+{
+  "oai.provider.headers": {
+    "rp-aigw-id": "GATEWAY_ID"
+  }
+}
+----
++
+For VS Code custom models without extension support, you may need to use Option 2 (OAI Compatible Provider extension).
+
+. **Using direct GitHub connection**
++
+If the endpoint configuration is missing or incorrect, Copilot may route directly to GitHub instead of your gateway. Verify endpoint configuration.
+
+. **Log ingestion delay**
++
+Gateway logs can take 5-10 seconds to appear in the dashboard. Wait briefly and refresh.
+
+. **Environment variable not set**
++
+If using environment variables like `${env:REDPANDA_API_KEY}`, verify they're set before launching the IDE:
++
+[,bash]
+----
+echo $REDPANDA_API_KEY  # Should print your API key
+----
+
+=== High latency or slow suggestions
+
+**Symptom**: Code completion is slow or chat responses take a long time.
+
+**Causes and solutions**:
+
+. **Gateway geographic distance**
++
+If your gateway is in a different region than you or the upstream provider, this adds network latency. Check gateway region in the Redpanda Cloud Console.
+
+. **Slow model for completion**
++
+Use a faster model for code completion:
++
+[,json]
+----
+{
+  "oai.provider.models": [
+    {
+      "id": "openai/gpt-4o-mini",
+      "type": "completion"
+    }
+  ]
+}
+----
++
+Models like GPT-4o Mini or Claude Haiku provide faster responses ideal for code completion.
+
+. **Provider pool failover**
++
+If your gateway is configured with fallback providers, check the logs to see if requests are failing over. Failover adds latency.
+
+. **Rate limiting**
++
+If you're hitting rate limits, the gateway may be queuing requests. Check the observability dashboard for rate limit metrics.
+
+. **Token limit too high**
++
+Reduce `maxTokens` for completion models to improve speed:
++
+[,json]
+----
+{
+  "oai.provider.models": [
+    {
+      "id": "openai/gpt-4o-mini",
+      "type": "completion",
+      "maxTokens": 256
+    }
+  ]
+}
+----
+
+=== Custom headers not being sent
+
+**Symptom**: Custom headers (like `x-team` or `x-project`) don't appear in gateway logs.
+
+**Causes and solutions**:
+
+. **Extension not installed (VS Code)**
++
+Custom headers require the OAI Compatible Provider extension in VS Code. Install it from the Extensions marketplace.
+
+. **Header configuration location**
++
+Ensure headers are in the correct configuration section:
++
+[,json]
+----
+{
+  "oai.provider.headers": {
+    "rp-aigw-id": "GATEWAY_ID",
+    "x-custom": "value"
+  }
+}
+----
++
+Not:
++
+[,json]
+----
+{
+  "github.copilot.advanced": {
+    "headers": {  // Wrong location
+      "x-custom": "value"
+    }
+  }
+}
+----
+
+. **Environment variable not expanded**
++
+If using `${env:VAR_NAME}` syntax, verify the environment variable is set before launching the IDE.
+
+=== Model not recognized
+
+**Symptom**: Error message "Model not found" or "Invalid model ID".
+
+**Causes and solutions**:
+
+. **Incorrect model format**
++
+Ensure model names use the `vendor/model_id` format:
++
+[,text]
+----
+# Correct
+anthropic/claude-sonnet-4-5
+openai/gpt-4o
+
+# Incorrect
+claude-sonnet-4-5
+gpt-4o
+----
+
+. **Model not enabled in gateway**
++
+Verify the model is enabled in your AI Gateway configuration:
++
+.. Open Redpanda Cloud Console
+.. Navigate to your gateway
+.. Check enabled providers and models
+
+. **Typo in model ID**
++
+Double-check the model ID matches exactly (case-sensitive). Copy from the AI Gateway UI rather than typing manually.
+
+=== Configuration changes not taking effect
+
+**Symptom**: Changes to settings don't apply.
+
+**Solutions**:
+
+. **Reload IDE**
++
+Configuration changes require reloading:
++
+* VS Code: Command Palette > "Developer: Reload Window"
+* JetBrains: File > Invalidate Caches / Restart
+
+. **Invalid JSON syntax**
++
+Validate your `settings.json` file:
++
+[,bash]
+----
+python3 -m json.tool ~/.config/Code/User/settings.json
+----
++
+Fix any syntax errors reported.
+
+. **Workspace settings override**
++
+Check if `.vscode/settings.json` in your project root overrides global settings. Workspace settings take precedence over global settings.
+
+. **File permissions**
++
+Verify the IDE can read the configuration file:
++
+[,bash]
+----
+ls -la ~/.config/Code/User/settings.json
+----
++
+Fix permissions if needed:
++
+[,bash]
+----
+chmod 600 ~/.config/Code/User/settings.json
+----
+
+== Cost optimization tips
+
+=== Use different models for chat and completion
+
+Code completion needs speed, while chat benefits from reasoning depth:
+
+[,json]
+----
+{
+  "oai.provider.models": [
+    {
+      "id": "anthropic/claude-sonnet-4-5",
+      "type": "chat"
+    },
+    {
+      "id": "openai/gpt-4o-mini",
+      "type": "completion"
+    }
+  ]
+}
+----
+
+This can reduce costs by 5-10x for code completion while maintaining chat quality.
+
+=== Limit token usage
+
+Reduce maximum tokens for completion to prevent runaway costs:
+
+[,json]
+----
+{
+  "oai.provider.models": [
+    {
+      "id": "openai/gpt-4o-mini",
+      "type": "completion",
+      "maxTokens": 256
+    }
+  ]
+}
+----
+
+Code completion rarely needs more than 256 tokens.
+
+=== Monitor usage patterns
+
+Use the AI Gateway dashboard to identify optimization opportunities:
+
+. Navigate to your gateway's observability dashboard
+. Filter by custom headers (for example, `x-team`, `x-user-email`)
+. Analyze:
+** Token usage per developer or team
+** Most expensive queries
+** High-frequency low-value requests
+
+=== Set team-based budgets
+
+Use separate gateways or CEL routing to enforce team budgets:
+
+[,cel]
+----
+// Limit team to 1 million tokens per month
+request.headers["x-team"] == "frontend" &&
+monthly_tokens > 1000000
+  ? error("Team budget exceeded")
+  : request.model
+----
+
+Configure alerts in the dashboard when teams approach their limits.
+
+=== Track costs per project
+
+Use custom headers to attribute costs:
+
+[,json]
+----
+{
+  "oai.provider.headers": {
+    "x-project": "mobile-app"
+  }
+}
+----
+
+Generate project-specific cost reports from the gateway dashboard.
+
+== Next steps
+
+* xref:ai-agents:ai-gateway/observability-logs.adoc[]: Monitor GitHub Copilot requests in the gateway dashboard
+* xref:ai-agents:ai-gateway/cel-routing-cookbook.adoc[]: Use CEL expressions to route Copilot requests based on context
+* xref:ai-agents:ai-gateway/mcp-aggregation-guide.adoc[]: Learn about MCP tool integration (if using Copilot Workspace)
+
+== Related pages
+
+* xref:ai-agents:ai-gateway/gateway-quickstart.adoc[]: Create and configure your AI Gateway
+* xref:ai-agents:ai-gateway/gateway-architecture.adoc[]: Learn about AI Gateway architecture and benefits
+* xref:ai-agents:ai-gateway/integrations/claude-code-user.adoc[]: Configure Claude Code with AI Gateway
+* xref:ai-agents:ai-gateway/integrations/continue-user.adoc[]: Configure Continue.dev with AI Gateway
+* xref:ai-agents:ai-gateway/integrations/cursor-user.adoc[]: Configure Cursor IDE with AI Gateway

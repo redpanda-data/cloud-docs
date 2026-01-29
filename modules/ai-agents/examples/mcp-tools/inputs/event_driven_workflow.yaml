@@ -1,0 +1,35 @@
+# Event-driven workflow orchestration
+# Use for multi-step processes, saga patterns, microservice coordination
+label: order-workflow
+
+# tag::component[]
+redpanda:
+  seed_brokers: [ "${REDPANDA_BROKERS}" ]
+  topics: [ "order-events" ]
+  consumer_group: "workflow-orchestrator"
+  tls:
+    enabled: true
+  sasl:
+    - mechanism: "${REDPANDA_SASL_MECHANISM}"
+      username: "${REDPANDA_SASL_USERNAME}"
+      password: "${REDPANDA_SASL_PASSWORD}"
+  processors:
+    - switch:
+        - check: this.event_type == "order_created"
+          processors:
+            - http:
+                url: "${secrets.INVENTORY_API}/reserve"
+                verb: POST
+                body: '{"order_id": "${! this.order_id }", "items": ${! json("items") }}'
+        - check: this.event_type == "payment_confirmed"
+          processors:
+            - http:
+                url: "${secrets.FULFILLMENT_API}/ship"
+                verb: POST
+                body: '{"order_id": "${! this.order_id }"}'
+# end::component[]
+
+meta:
+  mcp:
+    enabled: true
+    description: "Process order events and orchestrate fulfillment workflow"

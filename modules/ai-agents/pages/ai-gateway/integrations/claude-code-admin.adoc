@@ -1,0 +1,504 @@
+= Configure AI Gateway for Claude Code
+:description: Configure Redpanda AI Gateway to support Claude Code clients.
+:page-topic-type: how-to
+:personas: platform_admin
+:learning-objective-1: Configure AI Gateway endpoints for Claude Code connectivity
+:learning-objective-2: Set up authentication and access control for Claude Code clients
+:learning-objective-3: Deploy MCP tool aggregation for Claude Code tool discovery
+
+include::ai-agents:partial$ai-gateway-byoc-note.adoc[]
+
+Configure Redpanda AI Gateway to support Claude Code clients accessing LLM providers and MCP tools through a unified endpoint.
+
+After reading this page, you will be able to:
+
+* [ ] Configure AI Gateway endpoints for Claude Code connectivity.
+* [ ] Set up authentication and access control for Claude Code clients.
+* [ ] Deploy MCP tool aggregation for Claude Code tool discovery.
+
+== Prerequisites
+
+* AI Gateway deployed on a BYOC cluster running Redpanda version 25.3 or later
+* Administrator access to the AI Gateway UI
+* At least one LLM provider API key (OpenAI or Anthropic)
+* Understanding of xref:ai-agents:ai-gateway/gateway-architecture.adoc[AI Gateway concepts]
+
+== Architecture overview
+
+Claude Code connects to AI Gateway through two primary endpoints:
+
+* LLM endpoint: `https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1` for chat completions
+* MCP endpoint: `https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/mcp` for tool discovery and execution
+
+The gateway handles:
+
+. Authentication via bearer tokens in the `Authorization` header
+. Gateway selection via the `rp-aigw-id` header
+. Model routing using the `vendor/model_id` format
+. MCP server aggregation for multi-tool workflows
+. Request logging and cost tracking per gateway
+
+== Enable LLM providers
+
+Claude Code requires access to LLM providers through the gateway. Enable at least one provider.
+
+=== Configure Anthropic
+
+Claude Code uses Anthropic models by default. To enable Anthropic:
+
+. Navigate to *AI Gateway* > *Providers* in the Redpanda Cloud console
+. Select *Anthropic* from the provider list
+. Click *Add configuration*
+. Enter your Anthropic API key
+. Click *Save*
+
+The gateway can now route requests to Anthropic models.
+
+=== Configure OpenAI
+
+To enable OpenAI as a provider:
+
+. Navigate to *AI Gateway* > *Providers*
+. Select *OpenAI* from the provider list
+. Click *Add configuration*
+. Enter your OpenAI API key
+. Click *Save*
+
+=== Enable models in the catalog
+
+After enabling providers, enable specific models:
+
+. Navigate to *AI Gateway* > *Models*
+. Enable the models you want Claude Code clients to access
++
+Common models for Claude Code:
++
+* `anthropic/claude-opus-4-5`
+* `anthropic/claude-sonnet-4-5`
+* `openai/gpt-4o`
+* `openai/o1-mini`
+
+. Click *Save*
+
+Models appear in the catalog with the `vendor/model_id` format that Claude Code uses in requests.
+
+== Create a gateway for Claude Code clients
+
+Create a dedicated gateway to isolate Claude Code traffic and apply specific policies.
+
+=== Gateway configuration
+
+. Navigate to *AI Gateway* > *Gateways*
+. Click *Create Gateway*
+. Enter gateway details:
++
+[cols="1,2"]
+|===
+|Field |Value
+
+|Name
+|`claude-code-gateway` (or your preferred name)
+
+|Workspace
+|Select the workspace for access control grouping
+
+|Description
+|Gateway for Claude Code IDE clients
+|===
+
+. Click *Create*
+. Copy the gateway ID from the gateway details page
+
+The gateway ID is required in the `rp-aigw-id` header for all requests.
+
+=== Configure LLM routing
+
+Set up routing policies for Claude Code requests.
+
+==== Basic routing with failover
+
+Configure a primary provider with automatic failover:
+
+. Navigate to the gateway's *LLM* tab
+. Under *Routing*, click *Add route*
+. Configure the route:
++
+[source,cel]
+----
+true  # Matches all requests
+----
+
+. Add a *Primary provider pool*:
++
+* Provider: Anthropic
+* Model: All enabled Anthropic models
+* Load balancing: Round robin (if multiple Anthropic configurations exist)
+
+. Add a *Fallback provider pool*:
++
+* Provider: OpenAI
+* Model: All enabled OpenAI models
+* Failover conditions: Rate limits, timeouts, 5xx errors
+
+. Click *Save*
+
+Claude Code requests route to Anthropic by default and fail over to OpenAI if Anthropic is unavailable.
+
+==== User-based routing
+
+Route requests based on user identity (if Claude Code passes user identifiers):
+
+[source,cel]
+----
+request.headers["x-user-tier"][0] == "premium"
+----
+
+Create separate routes:
+
+* Premium route: Claude Opus 4.5 (highest quality)
+* Standard route: Claude Sonnet 4.5 (balanced cost and quality)
+
+=== Apply rate limits
+
+Prevent runaway usage from Claude Code clients:
+
+. Navigate to the gateway's *LLM* tab
+. Under *Rate Limit*, configure:
++
+[cols="1,2"]
+|===
+|Setting |Recommended Value
+
+|Global rate limit
+|100 requests per minute
+
+|Per-user rate limit
+|10 requests per minute (if using user headers)
+|===
+
+. Click *Save*
+
+The gateway blocks requests exceeding these limits and returns HTTP 429 errors.
+
+=== Set spending limits
+
+Control LLM costs:
+
+. Under *Spend Limit*, configure:
++
+[cols="1,2"]
+|===
+|Setting |Value
+
+|Monthly budget
+|$5,000 (adjust based on expected usage)
+
+|Enforcement
+|Block requests after budget exceeded
+|===
+
+. Click *Save*
+
+The gateway tracks estimated costs per request and blocks traffic when the monthly budget is exhausted.
+
+== Configure MCP tool aggregation
+
+Enable Claude Code to discover and use tools from multiple MCP servers through a single endpoint.
+
+=== Add MCP servers
+
+. Navigate to the gateway's *MCP* tab
+. Click *Add MCP Server*
+. Enter server details:
++
+[cols="1,2"]
+|===
+|Field |Value
+
+|Display name
+|Descriptive name (for example, `redpanda-data-catalog`)
+
+|Endpoint URL
+|MCP server endpoint (for example, xref:ai-agents:mcp/remote/overview.adoc[Remote MCP server] URL)
+
+|Authentication
+|Bearer token or other authentication mechanism
+|===
+
+. Click *Save*
+
+Repeat for each MCP server you want to aggregate.
+
+=== Enable deferred tool loading
+
+Reduce token costs by deferring tool discovery:
+
+. Under *MCP Settings*, enable *Deferred tool loading*
+. Click *Save*
+
+When enabled:
+
+* Claude Code initially receives only a search tool and orchestrator tool
+* Claude Code queries for specific tools by name when needed
+* Token usage decreases by 80-90% for agents with many tools configured
+
+=== Add the MCP orchestrator
+
+The MCP orchestrator reduces multi-step workflows to single calls:
+
+. Under *MCP Settings*, enable *MCP Orchestrator*
+. Configure:
++
+[cols="1,2"]
+|===
+|Setting |Value
+
+|Orchestrator model
+|Select a model with strong code generation capabilities (for example, `anthropic/claude-sonnet-4-5`)
+
+|Execution timeout
+|30 seconds
+|===
+
+. Click *Save*
+
+Claude Code can now invoke the orchestrator tool to execute complex, multi-step operations in a single request.
+
+== Configure authentication
+
+Claude Code clients authenticate using bearer tokens.
+
+=== Generate API tokens
+
+. Navigate to *Security* > *API Tokens* in the Redpanda Cloud console
+. Click *Create Token*
+. Enter token details:
++
+[cols="1,2"]
+|===
+|Field |Value
+
+|Name
+|`claude-code-access`
+
+|Scopes
+|`ai-gateway:read`, `ai-gateway:write`
+
+|Expiration
+|Set appropriate expiration based on security policies
+|===
+
+. Click *Create*
+. Copy the token (it appears only once)
+
+Distribute this token to Claude Code users through secure channels.
+
+=== Token rotation
+
+Implement token rotation for security:
+
+. Create a new token before the existing token expires
+. Distribute the new token to users
+. Monitor usage of the old token in xref:ai-agents:ai-gateway/observability-logs.adoc[request logs]
+. Revoke the old token after all users have migrated
+
+== Configure Claude Code clients
+
+Provide these instructions to users configuring Claude Code.
+
+=== CLI configuration
+
+Users can configure Claude Code using the CLI:
+
+[source,bash]
+----
+claude mcp add \
+  --transport http \
+  redpanda-aigateway \
+  https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/mcp \
+  --header "Authorization: Bearer YOUR_API_TOKEN" \
+  --header "rp-aigw-id: GATEWAY_ID"
+----
+
+Replace:
+
+* `{CLUSTER_ID}`: Your Redpanda cluster ID
+* `YOUR_API_TOKEN`: The API token generated earlier
+* `GATEWAY_ID`: The gateway ID from gateway creation
+
+=== Configuration file
+
+Alternatively, users can edit `~/.claude.json` (user-level) or `.mcp.json` (project-level):
+
+[source,json]
+----
+{
+  "mcpServers": {
+    "redpanda-ai-gateway": {
+      "type": "http",
+      "url": "https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR_API_TOKEN",
+        "rp-aigw-id": "GATEWAY_ID"
+      }
+    }
+  }
+}
+----
+
+This configuration:
+
+* Connects Claude Code to the aggregated MCP endpoint
+* Includes authentication and gateway identification headers
+
+== Monitor Claude Code usage
+
+Track Claude Code activity through gateway observability features.
+
+=== View request logs
+
+. Navigate to *AI Gateway* > *Observability* > *Logs*
+. Filter by gateway ID: `claude-code-gateway`
+. Review:
++
+* Request timestamps and duration
+* Model used per request
+* Token usage (prompt and completion tokens)
+* Estimated cost per request
+* HTTP status codes and errors
+
+=== Analyze metrics
+
+. Navigate to *AI Gateway* > *Observability* > *Metrics*
+. Select the Claude Code gateway
+. Review:
++
+[cols="1,2"]
+|===
+|Metric |Purpose
+
+|Request volume
+|Identify usage patterns and peak times
+
+|Token usage
+|Track consumption trends
+
+|Estimated spend
+|Monitor costs against budget
+
+|Latency (p50, p95, p99)
+|Detect performance issues
+
+|Error rate
+|Identify failing requests or misconfigured clients
+|===
+
+For detailed metrics configuration, see xref:ai-agents:ai-gateway/observability-metrics.adoc[].
+
+=== Query logs via API
+
+Programmatically access logs for integration with monitoring systems:
+
+[source,bash]
+----
+curl https://{CLUSTER_ID}.cloud.redpanda.com/api/ai-gateway/logs \
+  -H "Authorization: Bearer YOUR_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "gateway_id": "GATEWAY_ID",
+    "start_time": "2026-01-01T00:00:00Z",
+    "end_time": "2026-01-14T23:59:59Z",
+    "limit": 100
+  }'
+----
+
+== Security considerations
+
+Apply these security best practices for Claude Code deployments.
+
+=== Limit token scope
+
+Create tokens with minimal required scopes:
+
+* `ai-gateway:read`: Required for MCP tool discovery
+* `ai-gateway:write`: Required for LLM requests and tool execution
+
+Avoid granting broader scopes like `admin` or `cluster:write`.
+
+=== Implement network restrictions
+
+If Claude Code clients connect from known IP ranges, configure network policies:
+
+. Use cloud provider security groups to restrict access to AI Gateway endpoints
+. Allowlist only the IP ranges where Claude Code clients operate
+. Monitor for unauthorized access attempts in request logs
+
+=== Enforce token expiration
+
+Set short token lifetimes for high-security environments:
+
+* Development environments: 90 days
+* Production environments: 30 days
+
+Automate token rotation to reduce manual overhead.
+
+=== Audit tool access
+
+Review which MCP tools Claude Code clients can access:
+
+. Periodically audit the MCP servers configured in the gateway
+. Remove unused or deprecated MCP servers
+. Monitor tool execution logs for unexpected behavior
+
+== Troubleshooting
+
+Common issues and solutions when configuring AI Gateway for Claude Code.
+
+=== Claude Code cannot connect to gateway
+
+Symptom: Connection errors when Claude Code tries to discover tools or send LLM requests.
+
+Causes and solutions:
+
+* **Invalid gateway ID**: Verify the `rp-aigw-id` header matches the gateway ID from the console
+* **Expired token**: Generate a new API token and update the Claude Code configuration
+* **Network connectivity**: Verify the cluster endpoint is accessible from the client network
+* **Provider not enabled**: Ensure at least one LLM provider is enabled and has models in the catalog
+
+=== Tools not appearing in Claude Code
+
+Symptom: Claude Code does not discover MCP tools.
+
+Causes and solutions:
+
+* **MCP servers not configured**: Add MCP server endpoints in the gateway's MCP tab
+* **Deferred loading enabled but search failing**: Check that the search tool is correctly configured
+* **MCP server authentication failing**: Verify MCP server authentication credentials in the gateway configuration
+
+=== High costs or token usage
+
+Symptom: Token usage and costs exceed expectations.
+
+Causes and solutions:
+
+* **Deferred tool loading disabled**: Enable deferred tool loading to reduce tokens by 80-90%
+* **No rate limits**: Apply per-minute rate limits to prevent runaway usage
+* **Missing spending limits**: Set monthly budget limits with blocking enforcement
+* **Expensive models**: Route to cost-effective models (for example, Claude Sonnet instead of Opus) for non-critical requests
+
+=== Requests failing with 429 errors
+
+Symptom: Claude Code receives HTTP 429 Too Many Requests errors.
+
+Causes and solutions:
+
+* **Rate limit exceeded**: Review and increase rate limits if usage is legitimate
+* **Upstream provider rate limits**: Check if the upstream LLM provider is rate-limiting; configure failover pools
+* **Budget exhausted**: Verify monthly spending limit has not been reached
+
+== Next steps
+
+* xref:ai-agents:ai-gateway/observability-logs.adoc[]: Analyze detailed request logs
+* xref:ai-agents:ai-gateway/observability-metrics.adoc[]: Set up metrics dashboards
+* xref:ai-agents:ai-gateway/cel-routing-cookbook.adoc[]: Implement advanced routing rules
+* xref:ai-agents:mcp/remote/overview.adoc[]: Deploy Remote MCP servers for custom tools

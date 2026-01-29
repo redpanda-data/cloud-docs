@@ -1,0 +1,20 @@
+# Handling optional parameters with defaults
+
+# tag::mutation[]
+mutation: |
+  root.city = this.city  # Required - will error if missing
+  root.units = this.units.or("metric")  # Optional with default
+  root.limit = this.limit.or(10).number()  # Optional, converted to number
+# end::mutation[]
+
+# tag::properties[]
+properties:
+  - name: city
+    type: string
+    description: "City name to look up"
+    required: true
+  - name: units
+    type: string
+    description: "Temperature units: 'metric' or 'imperial' (default: metric)"
+    required: false
+# end::properties[]
