@@ -20,12 +20,16 @@ redpanda:
             - http:
                 url: "${secrets.INVENTORY_API}/reserve"
                 verb: POST
+                headers:
+                  Content-Type: application/json
                 body: '{"order_id": "${! this.order_id }", "items": ${! json("items") }}'
         - check: this.event_type == "payment_confirmed"
           processors:
             - http:
                 url: "${secrets.FULFILLMENT_API}/ship"
                 verb: POST
+                headers:
+                  Content-Type: application/json
                 body: '{"order_id": "${! this.order_id }"}'
 # end::component[]
 

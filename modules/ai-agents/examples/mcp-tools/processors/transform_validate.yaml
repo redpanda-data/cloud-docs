@@ -14,7 +14,7 @@ processors:
       root.is_premium = this.subscription_tier == "premium"
 
       # Filter sensitive data
-      root.profile = this.profile.without("ssn", "credit_card")
+      root.profile = this.profile.or({}).without("ssn", "credit_card")
   # end::mapping[]
 
 meta:
