@@ -1,0 +1,94 @@
+= External Agent Integration
+:description: Integrate Redpanda Cloud agents with external systems using the A2A protocol.
+:page-aliases: agent-to-agent-integration.adoc
+:page-topic-type: best-practices
+:personas: ai_agent_developer, app_developer
+:learning-objective-1: Choose the appropriate external integration pattern for your use case
+:learning-objective-2: Apply security best practices for service account credentials
+:learning-objective-3: Identify when to use external integration versus internal patterns
+
+Integrate external applications and agents with Redpanda Cloud agents using secure, standardized patterns.
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
+
+This page covers external agent integration where Redpanda Cloud agents connect to agents hosted elsewhere using the A2A protocol. For internal integration within Redpanda Cloud (agents invoking MCP tools, or pipelines calling agents), see xref:ai-agents:agents/internal-integration.adoc[].
+
+For A2A protocol concepts, agent cards, and communication modes, see xref:ai-agents:agents/a2a-concepts.adoc[].
+
+== When to use A2A integration
+
+Use A2A integration when you need:
+
+* Programmatic access - Call agents from applications, scripts, or CI/CD pipelines.
+* External agent connections - Connect agents you host elsewhere to Redpanda Cloud agents.
+* Custom interfaces - Build custom UIs or workflows around agent capabilities.
+* Multi-system orchestration - Coordinate agents with other systems in your architecture.
+
+For testing and development, use the Redpanda Cloud UI Inspector tab instead. The Inspector automatically handles authentication and provides a testing interface.
+
+== Integration patterns
+
+=== Application-to-agent
+
+Applications send requests to your agent's HTTP endpoint using any A2A-compatible SDK:
+
+----
+Application → HTTP/A2A → Redpanda Cloud Agent
+----
+
+Use this pattern for:
+
+* Backend services calling agents as part of business logic.
+* CLI tools that need agent capabilities.
+* Batch processing systems.
+* API gateways routing requests to agents.
+
+=== External agent-to-agent
+
+Connect agents you host elsewhere to Redpanda Cloud agents:
+
+----
+Your Agent → A2A Protocol → Redpanda Cloud Agent
+----
+
+Use this pattern for:
+
+* Agent workflows spanning multiple platforms.
+* Specialized agents you develop and host separately.
+* Integration with existing agent infrastructure.
+
+== Authentication
+
+External applications authenticate using OAuth2 client credentials flow with the agent's service account. For details on how authentication works, see xref:ai-agents:agents/a2a-concepts.adoc#authentication[A2A Protocol Authentication].
+
+For step-by-step instructions on exchanging credentials for access tokens and making authenticated requests, see xref:security:cloud-authentication.adoc[].
+
+== Security considerations
+
+=== Protect service account credentials
+
+* Store client ID and secret in secure credential stores (not in code).
+* Use environment variables or secrets management systems.
+* Rotate credentials if compromised.
+* Restrict access to credentials based on principle of least privilege.
+
+=== Token scope
+
+Access tokens grant full access to the agent. Anyone with a valid token can:
+
+* Send requests to the agent.
+* Receive responses from the agent.
+* Consume agent resources (subject to rate limits).
+
+Treat access tokens like passwords. Do not log them or expose them in error messages.
+
+== Next steps
+
+* xref:ai-agents:agents/a2a-concepts.adoc[]: Learn A2A protocol concepts and agent cards
+* xref:ai-agents:agents/create-agent.adoc[]: Create an agent with service account credentials
+* xref:ai-agents:agents/architecture-patterns.adoc[]: Design multi-agent systems with internal subagents
+* link:https://a2a.ag/spec[A2A Protocol Specification^]: Complete protocol reference

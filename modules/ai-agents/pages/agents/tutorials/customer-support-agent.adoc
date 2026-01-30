@@ -36,7 +36,7 @@ The challenge: users phrase requests differently ("Where's my package?", "Track 
 
 == Prerequisites
 
-* A xref:get-started:cluster-types/byoc/index.adoc[BYOC cluster] with Remote MCP enabled.
+* A xref:get-started:cluster-types/byoc/index.adoc[BYOC cluster] on AWS running Redpanda version 25.3 and later.
 * LLM provider API key (this tutorial uses OpenAI).
 
 == Design the MCP tools
@@ -61,9 +61,9 @@ This granularity enables the agent to chain tools (check order status, see it's 
 
 Create a Remote MCP server with the three tools.
 
-. Navigate to your cluster in the link:https://cloud.redpanda.com[Redpanda Cloud Console^]
-. Go to *Agentic AI* > *Remote MCP*
-. Click *Create MCP Server*
+. Navigate to your cluster in the link:https://cloud.redpanda.com[Redpanda Cloud UI^].
+. Go to *Agentic AI* > *Remote MCP*.
+. Click *Create MCP Server*.
 . Configure the server:
 +
 * *Name*: `customer-support-tools`
@@ -113,8 +113,8 @@ The system prompt teaches the agent how to orchestrate tools. Without explicit g
 
 Create the customer support agent with the system prompt.
 
-. Go to *Agentic AI* > *AI Agents*
-. Click *Create Agent*
+. Go to *Agentic AI* > *AI Agents*.
+. Click *Create Agent*.
 . Configure the agent:
 +
 * *Name*: `customer-support-agent`
@@ -179,7 +179,7 @@ Wait for the agent status to show *Running*.
 
 == Observe orchestration in action
 
-Open the *Inspector* tab in the Redpanda Cloud Console to interact with the agent.
+Open the *Inspector* tab in the Redpanda Cloud UI to interact with the agent.
 
 Testing reveals how the agent makes decisions. Watch the conversation panel in the built-in chat interface to see the agent's reasoning process unfold.
 

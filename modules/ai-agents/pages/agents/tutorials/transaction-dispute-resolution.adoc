@@ -32,7 +32,7 @@ When a customer calls saying "I see a $247.83 charge from 'ACME CORP' but I neve
 
 == Prerequisites
 
-* A xref:get-started:cluster-types/byoc/index.adoc[BYOC cluster] with Remote MCP enabled.
+* A xref:get-started:cluster-types/byoc/index.adoc[BYOC cluster] on AWS running Redpanda version 25.3 and later.
 * LLM provider API key (this tutorial uses OpenAI GPT-5.2 or Claude Sonnet 4.5 for reasoning).
 * The xref:get-started:rpk-install.adoc[Redpanda CLI (`rpk`)] installed (for testing the pipeline with sample data).
 * Completed xref:ai-agents:agents/tutorials/customer-support-agent.adoc[] (foundational multi-tool concepts).
@@ -45,7 +45,7 @@ Before creating agents, create the tools they'll use. You'll organize tools by d
 
 Account tools retrieve customer and transaction data with PII protection.
 
-. Navigate to your cluster in the link:https://cloud.redpanda.com[Redpanda Cloud Console^].
+. Navigate to your cluster in the link:https://cloud.redpanda.com[Redpanda Cloud UI^].
 . Go to *Agentic AI* > *Remote MCP*.
 . Click *Create MCP Server*.
 . Configure the server:
@@ -441,7 +441,7 @@ https://abc123.ai-agents.def456.cloud.redpanda.com/.well-known/agent-card.json
 
 Create the topics the pipeline will use for input and output.
 
-. Go to *Topics* in the Redpanda Cloud Console.
+. Go to *Topics* in the Redpanda Cloud UI.
 . Click *Create Topic*.
 . Create the input topic:
 +
@@ -460,7 +460,7 @@ Create the topics the pipeline will use for input and output.
 
 The pipeline needs SASL credentials to read from and write to Redpanda topics.
 
-. Go to *Security* > *Users* in the Redpanda Cloud Console.
+. Go to *Security* > *Users* in the Redpanda Cloud UI.
 . Click *Create User*.
 . Configure the user:
 +
@@ -496,7 +496,7 @@ The pipeline needs SASL credentials to read from and write to Redpanda topics.
 
 The pipeline needs SASL credentials stored as secrets to authenticate with Redpanda topics.
 
-. Go to *Connect* > *Secrets* in the Redpanda Cloud Console (if not already there).
+. Go to *Connect* > *Secrets* in the Redpanda Cloud UI (if not already there).
 . Click *Create Secret*.
 . Create two secrets with these values:
 +
@@ -505,7 +505,7 @@ The pipeline needs SASL credentials stored as secrets to authenticate with Redpa
 
 === Create the pipeline
 
-. Go to *Connect* in the Redpanda Cloud Console.
+. Go to *Connect* in the Redpanda Cloud UI.
 . Click *Create Pipeline*.
 . In the numbered steps, click *4 Add permissions*.
 . Select *Service Account*.

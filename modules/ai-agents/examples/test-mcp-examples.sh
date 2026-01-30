@@ -7,8 +7,8 @@
 # 2. MCP metadata validation (enabled, description, properties)
 #
 # Usage:
-#   ./test-mcp-tools.sh              # Run all tests
-#   ./test-mcp-tools.sh --lint-only  # Only lint, skip metadata validation
+#   ./test-mcp-examples.sh              # Run all tests
+#   ./test-mcp-examples.sh --lint-only  # Only lint, skip metadata validation
 #
 # Unlike rp-connect-docs, Cloud MCP tools cannot be tested with
 # `rpk connect run` because they are standalone tool definitions, not
@@ -24,12 +24,10 @@ BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
-# Get script directory (script lives inside mcp-tools/)
+# Get script directory and set MCP tools directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
-
-# Component type directories
-COMPONENT_DIRS=("inputs" "outputs" "processors" "caches")
+MCP_TOOLS_DIR="$SCRIPT_DIR/mcp-tools"
+cd "$MCP_TOOLS_DIR"
 
 # Counters
 TOTAL_TOOLS=0
@@ -64,24 +62,20 @@ echo -e "📦 ${CYAN}SECTION 1: MCP Tool Linting${NC}"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-for dir in "${COMPONENT_DIRS[@]}"; do
-    if [[ -d "$dir" ]]; then
-        file_count=$(find "$dir" -maxdepth 1 -name "*.yaml" | wc -l | tr -d ' ')
-        if [[ $file_count -gt 0 ]]; then
-            TOTAL_TOOLS=$((TOTAL_TOOLS + file_count))
-            echo -n -e "${BLUE}📁 $dir/${NC} ($file_count files)... "
+# Count YAML files
+file_count=$(find . -maxdepth 1 -name "*.yaml" | wc -l | tr -d ' ')
+TOTAL_TOOLS=$file_count
 
-            if output=$(rpk connect mcp-server lint --skip-env-var-check "$dir" 2>&1); then
-                echo -e "${GREEN}✓ PASSED${NC}"
-                PASSED_LINT=$((PASSED_LINT + file_count))
-            else
-                echo -e "${RED}✗ FAILED${NC}"
-                echo "$output" | sed 's/^/   /' | head -20
-                FAILED_LINT=$((FAILED_LINT + file_count))
-            fi
-        fi
-    fi
-done
+echo -n -e "${BLUE}📁 mcp-tools/${NC} ($file_count files)... "
+
+if output=$(rpk connect mcp-server lint --skip-env-var-check . 2>&1); then
+    echo -e "${GREEN}✓ PASSED${NC}"
+    PASSED_LINT=$file_count
+else
+    echo -e "${RED}✗ FAILED${NC}"
+    echo "$output" | sed 's/^/   /' | head -20
+    FAILED_LINT=$file_count
+fi
 
 # ============================================================================
 # SECTION 2: MCP Metadata Validation
@@ -106,19 +100,17 @@ if $RUN_METADATA; then
     fi
 
     if $RUN_METADATA; then
-        for dir in "${COMPONENT_DIRS[@]}"; do
-            if [[ -d "$dir" ]]; then
-                for file in "$dir"/*.yaml; do
-                    if [[ -f "$file" ]]; then
-                        echo -n -e "   ${BLUE}$file${NC}... "
+        for file in *.yaml; do
+            if [[ -f "$file" ]]; then
+                echo -n -e "   ${BLUE}$file${NC}... "
 
-                        # Check if .meta.mcp exists
-                        if $use_yq; then
-                            mcp_exists=$(yq eval '.meta.mcp' "$file" 2>/dev/null)
-                            enabled=$(yq eval '.meta.mcp.enabled' "$file" 2>/dev/null)
-                            description=$(yq eval '.meta.mcp.description' "$file" 2>/dev/null)
-                        else
-                            mcp_exists=$(python3 -c "
+                # Check if .meta.mcp exists
+                if $use_yq; then
+                    mcp_exists=$(yq eval '.meta.mcp' "$file" 2>/dev/null)
+                    enabled=$(yq eval '.meta.mcp.enabled' "$file" 2>/dev/null)
+                    description=$(yq eval '.meta.mcp.description' "$file" 2>/dev/null)
+                else
+                    mcp_exists=$(python3 -c "
 import yaml
 try:
     with open('$file') as f:
@@ -129,7 +121,7 @@ try:
 except:
     print('null')
 " 2>/dev/null)
-                            enabled=$(python3 -c "
+                    enabled=$(python3 -c "
 import yaml
 try:
     with open('$file') as f:
@@ -139,7 +131,7 @@ try:
 except:
     print('null')
 " 2>/dev/null)
-                            description=$(python3 -c "
+                    description=$(python3 -c "
 import yaml
 try:
     with open('$file') as f:
@@ -149,24 +141,22 @@ try:
 except:
     print('null')
 " 2>/dev/null)
-                        fi
+                fi
 
-                        # Validate
-                        if [[ "$mcp_exists" == "null" || -z "$mcp_exists" ]]; then
-                            echo -e "${YELLOW}SKIPPED${NC} (no MCP metadata)"
-                            SKIPPED=$((SKIPPED + 1))
-                        elif [[ "$enabled" != "true" ]]; then
-                            echo -e "${YELLOW}WARNING${NC} (mcp.enabled not true)"
-                            SKIPPED=$((SKIPPED + 1))
-                        elif [[ "$description" == "null" || -z "$description" ]]; then
-                            echo -e "${RED}FAILED${NC} (missing description)"
-                            FAILED_METADATA=$((FAILED_METADATA + 1))
-                        else
-                            echo -e "${GREEN}PASSED${NC}"
-                            PASSED_METADATA=$((PASSED_METADATA + 1))
-                        fi
-                    fi
-                done
+                # Validate
+                if [[ "$mcp_exists" == "null" || -z "$mcp_exists" ]]; then
+                    echo -e "${YELLOW}SKIPPED${NC} (no MCP metadata)"
+                    SKIPPED=$((SKIPPED + 1))
+                elif [[ "$enabled" != "true" ]]; then
+                    echo -e "${YELLOW}WARNING${NC} (mcp.enabled not true)"
+                    SKIPPED=$((SKIPPED + 1))
+                elif [[ "$description" == "null" || -z "$description" ]]; then
+                    echo -e "${RED}FAILED${NC} (missing description)"
+                    FAILED_METADATA=$((FAILED_METADATA + 1))
+                else
+                    echo -e "${GREEN}PASSED${NC}"
+                    PASSED_METADATA=$((PASSED_METADATA + 1))
+                fi
             fi
         done
     fi
@@ -184,20 +174,16 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 
 secrets_issues=0
-for dir in "${COMPONENT_DIRS[@]}"; do
-    if [[ -d "$dir" ]]; then
-        for file in "$dir"/*.yaml; do
-            if [[ -f "$file" ]]; then
-                # Check for non-Cloud secrets patterns (${VAR} without secrets. prefix)
-                # Exclude:
-                #   - ${! ... } which is Bloblang interpolation
-                #   - ${REDPANDA_BROKERS} which is platform-injected
-                if grep -E '\$\{[A-Z_]+\}' "$file" | grep -v '\${secrets\.' | grep -v '\${!' | grep -v '\${REDPANDA_BROKERS}' > /dev/null 2>&1; then
-                    echo -e "   ${BLUE}$file${NC}... ${YELLOW}WARNING${NC} (uses env vars instead of \${secrets.X})"
-                    secrets_issues=$((secrets_issues + 1))
-                fi
-            fi
-        done
+for file in *.yaml; do
+    if [[ -f "$file" ]]; then
+        # Check for non-Cloud secrets patterns (${VAR} without secrets. prefix)
+        # Exclude:
+        #   - ${! ... } which is Bloblang interpolation
+        #   - ${REDPANDA_BROKERS} which is platform-injected
+        if grep -E '\$\{[A-Z_]+\}' "$file" | grep -v '\${secrets\.' | grep -v '\${!' | grep -v '\${REDPANDA_BROKERS}' > /dev/null 2>&1; then
+            echo -e "   ${BLUE}$file${NC}... ${YELLOW}WARNING${NC} (uses env vars instead of \${secrets.X})"
+            secrets_issues=$((secrets_issues + 1))
+        fi
     fi
 done
 
