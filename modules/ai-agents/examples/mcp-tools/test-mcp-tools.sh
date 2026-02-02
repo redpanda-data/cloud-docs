@@ -12,7 +12,7 @@
 #
 # Unlike rp-connect-docs, Cloud MCP tools cannot be tested with
 # `rpk connect run` because they are standalone tool definitions, not
-# full pipelines. End-to-end testing requires the Cloud UI.
+# full pipelines. End-to-end testing requires the Cloud Console.
 
 set -euo pipefail
 
