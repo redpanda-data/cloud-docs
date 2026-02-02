@@ -1,0 +1,343 @@
+= Configure AWS PrivateLink with the Cloud API
+:description: Set up AWS PrivateLink with the Cloud API for Serverless clusters.
+:page-personas: platform_admin
+
+The Redpanda AWS PrivateLink endpoint service provides secure access to Redpanda Cloud from your own VPC. Traffic over PrivateLink does not go through the public internet because a PrivateLink connection is treated as its own private AWS service. While your VPC has access to the Redpanda VPC, Redpanda cannot access your VPC.
+
+Consider using the PrivateLink endpoint service if you have multiple VPCs and could benefit from a more simplified approach to network management. You can create a new Serverless cluster with PrivateLink enabled, or enable PrivateLink for existing clusters using either the Console or the API.
+
+[NOTE]
+====
+* Each client VPC can have one endpoint connected to the PrivateLink service.
+* PrivateLink allows overlapping xref:networking:cidr-ranges.adoc[CIDR ranges] in VPC networks.
+* PrivateLink does not add extra connection limits. However, VPC peering is limited to 125 connections. See https://aws.amazon.com/privatelink/faqs/[How scalable is AWS PrivateLink?^]
+* You control which AWS principals are allowed to connect to the endpoint service.
+====
+
+After <<get-a-cloud-api-access-token,getting an access token>>, you can <<create-new-cluster-with-privatelink-endpoint-service-enabled,enable PrivateLink when creating a new Serverless cluster>>, or you can <<enable-privatelink-endpoint-service-for-existing-clusters,enable PrivateLink for existing Serverless clusters>>.
+
+== Requirements
+
+* Install `rpk`.
+* Your Redpanda Serverless cluster and <<create-client-vpc,VPC>> must be in the same region.
+* This guide uses the link:/api/doc/cloud-controlplane/topic/topic-cloud-api-overview[Redpanda Cloud API] to enable the Redpanda endpoint service for your Serverless clusters. Follow the steps below to <<get-an-access-token,get an access token>>.
+* Use the https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html[AWS CLI^] to create a new client VPC or modify an existing one to use the PrivateLink endpoint.
+
+TIP: In Kafka clients, set `connections.max.idle.ms` to a value less than 350 seconds (350000 ms).
+
+NOTE: Enabling PrivateLink changes private DNS behavior for your cluster. Before configuring connections, review <<dns-resolution-with-privatelink>>.
+
+== Get a Cloud API access token
+
+include::networking:partial$private-links-api-access-token.adoc[]
+
+== Create a PrivateLink resource
+
+Before you can create a Serverless cluster with PrivateLink enabled, you must first create a PrivateLink resource in your resource group.
+
+. In the https://cloud.redpanda.com/[Redpanda Cloud Console^], go to **Resource groups** and select the resource group in which you want to create a PrivateLink resource.
++
+Copy and store the resource group ID (UUID) from the URL in the browser.
++
+[,bash]
+----
+export RESOURCE_GROUP_ID=<uuid>
+----
+
+. Set the Serverless region where you want to create the PrivateLink resource (for example, `us-east-1`).
++
+[,bash]
+----
+export SERVERLESS_REGION=<serverless_region>
+----
+
+. Create a new PrivateLink resource by calling link:/api/doc/cloud-controlplane/operation/operation-serverlessprivatelinkservice_createserverlessprivatelink[`POST /v1/serverless/private-links`].
++
+[,bash]
+----
+PL_POST_BODY=`cat << EOF
+{
+    "serverless_private_link": {
+        "name": "<private-link-name>",
+        "resource_group_id": "$RESOURCE_GROUP_ID",
+        "serverless_region": "$SERVERLESS_REGION",
+        "cloudprovider": "CLOUD_PROVIDER_AWS",
+        "aws_config": {
+            "allowed_principals": [
+                "arn:aws:iam::<account-id>:root"
+            ]
+        }
+    }
+}
+EOF`
+
+PL_ID=`curl -vv -X POST \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $AUTH_TOKEN" \
+    -d "$PL_POST_BODY" $PUBLIC_API_ENDPOINT/v1/serverless/private-links | jq -r .operation.metadata.serverless_private_link_id`
+
+echo $PL_ID
+----
++
+You can also update private links to add or remove allowed principals.
++
+[,bash]
+----
+PL_PATCH_BODY=`cat << EOF
+{
+        "aws_config": {
+            "allowed_principals": [
+                "arn:aws:iam::<account-id>:root"
+            ]
+        }
+}
+EOF`
+
+curl -vv -X PATCH \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $AUTH_TOKEN" \
+    -d "$PL_PATCH_BODY" $PUBLIC_API_ENDPOINT/v1/serverless/private-links/$PL_ID
+----
++
+Store the PrivateLink ID for use in the following steps.
+
+== Create new cluster with PrivateLink endpoint service enabled
+
+Using the `RESOURCE_GROUP_ID` and `SERVERLESS_PRIVATE_LINK_ID` from the previous step, create a new Serverless cluster with the endpoint service enabled by calling link:/api/doc/cloud-controlplane/operation/operation-serverlessclusterservice_createserverlesscluster[`POST /v1/serverless/clusters`].
+
+In the following example, make sure to set your own values for the following fields:
+
+--
+- `name`
+- `serverless_region`: for example, `"us-east-1"`
+- `private_link_id`: The ID of the PrivateLink resource created in the previous step
+- `networking_config.private` and `networking_config.public`: Valid values are `STATE_ENABLED` or `STATE_DISABLED`. At least one must be enabled. If neither is specified, `public` defaults to `STATE_ENABLED`.
+--
+
+[,bash]
+----
+CLUSTER_POST_BODY=`cat << EOF
+{
+    "serverless_cluster": {
+        "name": "<my-private-link-cluster>",
+        "resource_group_id": "$RESOURCE_GROUP_ID",
+        "serverless_region": "$SERVERLESS_REGION",
+        "private_link_id": "$SERVERLESS_PRIVATE_LINK_ID",
+        "networking_config": {
+            "private": "STATE_ENABLED",
+            "public": "STATE_ENABLED"
+        }
+    }
+}
+EOF`
+
+CLUSTER_ID=`curl -vv -X POST \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $AUTH_TOKEN" \
+    -d "$CLUSTER_POST_BODY" $PUBLIC_API_ENDPOINT/v1/serverless/clusters | jq -r .operation.metadata.cluster_id`
+
+echo $CLUSTER_ID
+----
+
+== Enable PrivateLink endpoint service for existing clusters
+
+. In the Redpanda Cloud Console, go to the cluster Overview and copy the cluster ID from the **Details** section.
++
+[,bash]
+----
+CLUSTER_ID=<cluster_id>
+----
+
+. Get the PrivateLink ID from the cluster Overview page in the Redpanda Cloud Console.
++
+[,bash]
+----
+SERVERLESS_PRIVATE_LINK_ID=<private_link_id>
+----
+
+. Make a link:/api/doc/cloud-controlplane/operation/operation-serverlessclusterservice_updateserverlesscluster[`PATCH /v1/serverless/clusters/{cluster.id}`] request to update the cluster with the Redpanda PrivateLink Endpoint Service enabled.
++
+In the following example, make sure to set your own value for the following fields:
++
+--
+- `private_link_id`: The ID of an existing PrivateLink resource in the same resource group
+- `networking_config.private`: Set to `STATE_ENABLED` to enable private access
+--
++
+[,bash]
+----
+CLUSTER_PATCH_BODY=`cat << EOF
+{
+  "networking_config": {
+    "private": "STATE_ENABLED"
+  },
+  "private_link_id": "$SERVERLESS_PRIVATE_LINK_ID"
+}
+EOF`
+
+curl -vv -X PATCH \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $AUTH_TOKEN" \
+  -d "$CLUSTER_PATCH_BODY" $PUBLIC_API_ENDPOINT/v1/serverless/clusters/$CLUSTER_ID
+----
+
+== DNS resolution with PrivateLink
+
+PrivateLink changes how DNS resolution works for your cluster. When you query cluster hostnames outside the VPC that contains your PrivateLink endpoint, DNS may return private IP addresses that aren't reachable from your location.
+
+To resolve cluster hostnames from other VPCs or on-premise networks, set up DNS forwarding using https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver.html[Route 53 Resolver^]:
+
+. In the VPC that contains your PrivateLink endpoint, create a Route 53 Resolver inbound endpoint.
++
+Ensure that the inbound endpoint's security group allows inbound UDP/TCP port 53 from each VPC or on-prem network that will forward queries.
+
+. In each other VPC that must resolve the cluster domain, create a Resolver outbound endpoint and a forwarding rule for `<cluster_domain>` that targets the inbound endpoint IPs from the previous step. Associate the rule to those VPCs.
++
+The cluster domain is the suffix after the seed hostname. For example, if your bootstrap server URL is: `cki01qgth38kk81ard3g.any.us-east-1.aw.priv.prd.cloud.redpanda.com:9092`, then `cluster_domain` is: `cki01qgth38kk81ard3g.any.us-east-1.aw.priv.prd.cloud.redpanda.com`.
+. For on-premises DNS, create a conditional forwarder for `<cluster_domain>` that forwards to the inbound endpoint IPs from the earlier step (over VPN/Direct Connect).
++
+[IMPORTANT]
+====
+Do not configure forwarding rules to target the VPC's Amazon-provided DNS resolver (VPC base CIDR + 2). Rules must target the IP addresses of Route 53 Resolver endpoints.
+====
+
+== Configure PrivateLink connection to Redpanda Cloud
+
+When you have a PrivateLink-enabled cluster, you can create an endpoint to connect your VPC and your cluster.
+
+=== Get cluster domain
+
+Get the domain (`cluster_domain`) of the cluster from the cluster details in the Redpanda Cloud Console.
+
+For example, if the bootstrap server URL is: `cki01qgth38kk81ard3g.any.us-east-1.aw.priv.prd.cloud.redpanda.com:9092`, then `cluster_domain` is: `cki01qgth38kk81ard3g.any.us-east-1.aw.priv.prd.cloud.redpanda.com`.
+
+[,bash]
+----
+CLUSTER_DOMAIN=<cluster_domain>
+----
+
+NOTE: Use `<cluster_domain>` as the domain you target with your DNS conditional forward (optionally also `*.<cluster_domain>` if your DNS platform requires a wildcard).
+
+=== Get name of PrivateLink endpoint service
+
+The service name is required to <<create-vpc-endpoint,create VPC private endpoints>>. Run the following command to get the service name:
+
+[,bash]
+----
+PL_SERVICE_NAME=`curl -X GET \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $AUTH_TOKEN" \
+  $PUBLIC_API_ENDPOINT/v1/serverless/private-links/$SERVERLESS_PRIVATE_LINK_ID | jq -r .serverless_private_link.status.aws.vpc_endpoint_service_name`
+----
+
+=== Create client VPC
+
+If you are not using an existing VPC, you must create a new one.
+
+The VPC region must be the same region where the Redpanda cluster is deployed. To create the VPC, run:
+
+[,bash]
+----
+# See https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html for
+# information on profiles and credential files
+REGION=<aws-region>
+PROFILE=<specific-profile-from-credential-file>
+
+aws ec2 create-vpc --region $REGION --profile $PROFILE --cidr-block 10.0.0.0/20
+
+# Store the client VPC ID from the command output
+CLIENT_VPC_ID=<client_vpc_id>
+----
+
+You can also use an existing VPC. You need the VPC ID to <<modify-vpc-dns-attributes,modify its DNS attributes>>.
+
+=== Modify VPC DNS attributes
+
+To modify the VPC attributes, run:
+
+[,bash]
+----
+aws ec2 modify-vpc-attribute --region $REGION --profile $PROFILE --vpc-id $CLIENT_VPC_ID \
+    --enable-dns-hostnames "{\"Value\":true}"
+
+aws ec2 modify-vpc-attribute --region $REGION --profile $PROFILE --vpc-id $CLIENT_VPC_ID \
+    --enable-dns-support "{\"Value\":true}"
+----
+
+These commands enable DNS hostnames and resolution for instances in the VPC.
+
+=== Create security group
+
+You need the security group ID `security_group_id` from the command output to <<add-security-group-rules,add security group rules>>. To create a security group, run:
+
+[,bash]
+----
+aws ec2 create-security-group --region $REGION --profile $PROFILE --vpc-id $CLIENT_VPC_ID \
+    --description "Redpanda endpoint service client security group" \
+    --group-name "${CLUSTER_ID}-sg"
+SECURITY_GROUP_ID=<security_group_id>
+----
+
+=== Add security group rules
+
+The following example adds security group rules to allow access to Redpanda services.
+
+[,bash]
+----
+# Allow Kafka API bootstrap (seed)
+aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
+  --group-id $SECURITY_GROUP_ID --protocol tcp --port 9092 --cidr 0.0.0.0/0
+
+# Allow Schema Registry
+aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
+  --group-id $SECURITY_GROUP_ID --protocol tcp --port 8081 --cidr 0.0.0.0/0
+
+# Allow Redpanda Cloud Data Plane API / Prometheus (if needed)
+aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
+  --group-id $SECURITY_GROUP_ID --protocol tcp --port 443 --cidr 0.0.0.0/0
+----
+
+=== Create VPC subnet
+
+You need the subnet ID `subnet_id` from the command output to <<create-vpc-endpoint,create a VPC endpoint>>. Run the following command, specifying the subnet availability zone (for example, `usw2-az1`):
+
+[,bash]
+----
+aws ec2 create-subnet --region $REGION --profile $PROFILE --vpc-id $CLIENT_VPC_ID \
+    --availability-zone <zone> \
+    --cidr-block 10.0.1.0/24
+SUBNET_ID=<subnet_id>
+----
+
+=== Create VPC endpoint
+
+[,bash]
+----
+aws ec2 create-vpc-endpoint \
+    --region $REGION --profile $PROFILE \
+    --vpc-id $CLIENT_VPC_ID \
+    --vpc-endpoint-type "Interface" \
+    --ip-address-type "ipv4" \
+    --service-name $PL_SERVICE_NAME \
+    --subnet-ids $SUBNET_ID \
+    --security-group-ids $SECURITY_GROUP_ID \
+    --private-dns-enabled
+----
+
+== Access Redpanda services through VPC endpoint
+
+After you have enabled PrivateLink for your cluster, your connection URLs are available in the *How to Connect* section of the cluster overview in the Redpanda Cloud Console.
+
+include::networking:partial$private-links-access-rp-service-serverless.adoc[]
+
+== Test the connection
+
+You can test the PrivateLink connection from any VM or container in the consumer VPC. If configuring a client isn't possible right away, you can do these checks using `rpk` or cURL:
+
+include::networking:partial$private-links-test-connection-serverless.adoc[]
+
+NOTE: If both public and private access are enabled for your cluster, `rpk cloud cluster select` will prompt you to choose between public or private connectivity when you select the cluster.
+
+include::shared:partial$suggested-reading.adoc[]
+
+* link:/api/doc/cloud-controlplane/topic/topic-cloud-api-overview[Cloud API Overview]

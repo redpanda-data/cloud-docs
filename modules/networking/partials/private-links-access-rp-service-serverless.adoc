@@ -1,0 +1,43 @@
+You can access Redpanda services such as the Kafka API and Schema Registry from the client VPC or virtual network; for example, from a compute instance in the VPC or network.
+
+The bootstrap server hostname is unique to each cluster. The service attachment exposes a set of bootstrap ports for access to Redpanda services. These ports load balance requests among brokers. Make sure you use the following ports for initiating a connection from a consumer:
+
+|===
+| Redpanda service | Default bootstrap port
+
+| Kafka API | 9092
+| Schema Registry | 8081
+|===
+
+=== Access Kafka API seed service
+
+Use port `9092` to access the Kafka API seed service.
+
+[,bash]
+----
+export RPK_BROKERS='<kafka-api-bootstrap-server-hostname>:9092'
+rpk cluster info -X tls.enabled=true -X user=<user> -X pass=<password>
+----
+
+When successful, the `rpk` output should look like the following:
+
+[,bash,role=no-copy]
+----
+CLUSTER
+redpanda.rp-cki01qgth38kk81ard3g
+
+BROKERS
+ID    HOST                                                                          PORT   RACK
+0*    cki01qgth38kk81ard3g-0.any.us-east-1.aw.priv.prd.cloud.redpanda.com           9093   use1-az1
+1     cki01qgth38kk81ard3g-1.any.us-east-1.aw.priv.prd.cloud.redpanda.com           9094   use1-az1
+2     cki01qgth38kk81ard3g-2.any.us-east-1.aw.priv.prd.cloud.redpanda.com           9095   use1-az1
+----
+
+=== Access Schema Registry seed service
+
+Use port `8081` to access the Schema Registry seed service.
+
+[,bash]
+----
+curl -vv -u <user>:<password> -H "Content-Type: application/vnd.schemaregistry.v1+json" --sslv2 --http2 <schema-registry-bootstrap-server-hostname>:8081/subjects
+----

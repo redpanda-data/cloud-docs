@@ -7,8 +7,7 @@ Serverless is the fastest and easiest way to start data streaming. With Serverle
 
 [NOTE]
 ====
-* Serverless on AWS is currently in a glossterm:LA[,limited availability (LA)] release.
-* Serverless on GCP is currently in a glossterm:beta[] release. 
+Serverless on GCP is currently in a glossterm:beta[] release. 
 
 ====
 
@@ -44,15 +43,26 @@ include::get-started:partial$get-started-serverless.adoc[]
 
 To create a Serverless cluster: 
 
-. In the https://cloud.redpanda.com[Redpanda Cloud UI^], on the **Clusters** page, click **Create cluster**, then click **Create Serverless cluster**. 
+. In the https://cloud.redpanda.com[Redpanda Cloud Console^], on the **Clusters** page, click **Create cluster**, then click **Create** for Serverless. 
 
-. Enter a cluster name, then select the resource group. If you don't have an existing resource group, you can create one. Refresh the page to see newly-created resource groups. 
+. Enter a cluster name, then select the resource group. 
++
+If you don't have an existing resource group, you can create one. Refresh the page to see newly-created resource groups. 
 
 . Select a cloud provider and xref:reference:tiers/serverless-regions.adoc[region]. For best performance, select the region closest to your applications. Redpanda expects your applications to be deployed in the same cloud provider and region as your Serverless cluster. 
 +
-Serverless clusters are not guaranteed to be pinned to a particular availability zone within the selected region.
+Clusters on AWS can enable private access between their VPC and Redpanda, so data does not traverse the public internet. Private connectivity is implemented using AWS PrivateLink for secure traffic.
++
+** When you enable both public access and private access on the cluster, you can choose between the public address or the private address. When the public address is used the data flows over the public internet.
+** You can either create a new PrivateLink or use an existing one from the same resource group.
+** You can enable or disable private access at any time on the cluster's *Settings* page. 
+** Enabling private access incurs additional charges.
++
+NOTE: After private access is disabled, attempts to reach the private endpoints will fail. However, the PrivateLink endpoint in your AWS account and the PrivateLink resource in Redpanda Cloud both remain provisioned and continue to incur charges until you explicitly delete them.     
 
-. Add team members and grant them access with glossterm:ACL[,access control lists (ACLs)] on the *Security* page.
+. Click **Create cluster**.
+
+. To start working with your cluster, go to the *Topics* page to create a topic and produce messages to it. Add team members and grant them access with ACLs on the *Security* page. 
 
 == Interact with your cluster
 
@@ -62,7 +72,7 @@ The *Overview* page lists your bootstrap server URL and security settings in the
 
 Or, Redpanda can generate a sample application to interact with your cluster. Run xref:reference:rpk/rpk-generate/rpk-generate-app.adoc[`rpk generate app`], and select Go as the language. Follow the commands in the terminal to run the application, create a demo topic, produce to the topic, and consume the data back.
 
-Follow the steps in the UI to use `rpk` to interact with your cluster from the command line. Here are some helpful commands:
+Follow the steps in the Console to use `rpk` to interact with your cluster from the command line. Here are some helpful commands:
 
 * xref:reference:rpk/rpk-cloud/rpk-cloud-login.adoc[`rpk cloud login`]: Use this to log in to Redpanda Cloud or to refresh the session.
 * xref:reference:rpk/rpk-topic.adoc[`rpk topic`]: Use this to manage topics, produce data, and consume data. 
@@ -71,31 +81,23 @@ Follow the steps in the UI to use `rpk` to interact with your cluster from the c
 
 NOTE: Redpanda Serverless is opinionated about Kafka configurations. For example, automatic topic creation is disabled. Some systems expect the Kafka service to automatically create topics when a message is produced to a topic that doesn't exist. Create topics on the *Topics* page or with `rpk topic create`.
 
-The *How to connect - Kafka API* tab lists your bootstrap server URL and security settings. This area includes code examples for creating a Kafka client to interact with your cluster. Or, Redpanda can generate a sample application to interact with your cluster. Run xref:reference:rpk/rpk-generate/rpk-generate-app.adoc[`rpk generate app`], and select your preferred programming language. Follow the commands in the terminal to run the application, create a demo topic, produce to the topic, and consume the data back.
-
-Explore the rest of the UI: 
-
-* Go to the *Topics* page to create new topics for data streams. 
-* Under the *Actions* dropdown, produce messages to topics. 
-* Add team members with permissions on the *Security* page.
-
 == Supported features
 
 * Redpanda Serverless supports the Kafka API. Serverless clusters work with all Kafka clients. See xref:develop:kafka-clients.adoc[].
-* Serverless clusters support all major Apache Kafka messages for managing topics, producing/consuming data (including transactions), managing groups, managing offsets, and managing ACLs. (User management is available in the Redpanda Cloud UI or with `rpk security acl`.) 
+* Serverless clusters support all major Apache Kafka messages for managing topics, producing/consuming data (including transactions), managing groups, managing offsets, and managing ACLs. (User management is available in the https://cloud.redpanda.com[Redpanda Cloud Console^] or with `rpk security acl`.) 
 
 === Unsupported features
 
 Not all features included in BYOC clusters are available in Serverless. For example, the following features are not supported:
 
 * HTTP Proxy API
-* Private networking (VPC peering or AWS PrivateLink)
 * Multiple availability zones (AZs)
 * RBAC in the data plane and mTLS authentication for Kafka API clients
 * Kafka Connect 
 
 == Next steps
 
+* xref:networking:serverless/aws/index.adoc[Set up private access for Serverless clusters]
 * xref:get-started:cloud-overview.adoc[Learn more about Redpanda Cloud]
 * xref:get-started:config-topics.adoc[Manage topics]
 * xref:billing:billing.adoc[Learn about billing]
