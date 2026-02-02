@@ -36,8 +36,8 @@ The challenge: users phrase requests differently ("Where's my package?", "Track 
 
 == Prerequisites
 
-* A xref:get-started:cluster-types/byoc/index.adoc[BYOC cluster] on AWS running Redpanda version 25.3 and later.
-* LLM provider API key (this tutorial uses OpenAI).
+* A xref:get-started:cluster-types/byoc/index.adoc[BYOC cluster] with Remote MCP enabled.
+* xref:ai-agents:ai-gateway/gateway-quickstart.adoc[AI Gateway configured] with at least one LLM provider enabled (this tutorial uses OpenAI).
 
 == Design the MCP tools
 
@@ -120,8 +120,9 @@ Create the customer support agent with the system prompt.
 * *Name*: `customer-support-agent`
 * *Description*: `Helps customers track orders and shipping`
 * *Resource Tier*: Medium
+* *AI Gateway*: Select the gateway you configured
+* *Provider*: OpenAI or Anthropic
 * *Model*: OpenAI GPT-5.2 or Claude Sonnet 4.5 (models with strong reasoning)
-* *API Key*: Your LLM provider API key
 * *MCP Server*: Select `customer-support-tools`
 * *Max Iterations*: 15
 

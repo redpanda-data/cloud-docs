@@ -32,8 +32,8 @@ When a customer calls saying "I see a $247.83 charge from 'ACME CORP' but I neve
 
 == Prerequisites
 
-* A xref:get-started:cluster-types/byoc/index.adoc[BYOC cluster] on AWS running Redpanda version 25.3 and later.
-* LLM provider API key (this tutorial uses OpenAI GPT-5.2 or Claude Sonnet 4.5 for reasoning).
+* A xref:get-started:cluster-types/byoc/index.adoc[BYOC cluster] with Remote MCP enabled.
+* xref:ai-agents:ai-gateway/gateway-quickstart.adoc[AI Gateway configured] with at least one LLM provider enabled (this tutorial uses OpenAI GPT-5.2 or Claude Sonnet 4.5 for reasoning).
 * The xref:get-started:rpk-install.adoc[Redpanda CLI (`rpk`)] installed (for testing the pipeline with sample data).
 * Completed xref:ai-agents:agents/tutorials/customer-support-agent.adoc[] (foundational multi-tool concepts).
 
@@ -225,9 +225,9 @@ Sub-agents inherit the LLM provider, model, resource tier, and max iterations fr
 * *Name*: `dispute-resolution-agent`
 * *Description*: `Orchestrates transaction dispute investigations`
 * *Resource Tier*: Large
+* *AI Gateway*: Select the gateway you configured
 * *Provider*: OpenAI
 * *Model*: GPT-5 Mini (fast, cost-effective for structured workflows)
-* *API Key*: Your LLM provider API key
 * *Max Iterations*: 15
 
 . In the *System Prompt* field, enter:
