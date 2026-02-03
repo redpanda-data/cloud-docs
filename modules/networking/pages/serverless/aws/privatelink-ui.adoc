@@ -43,12 +43,144 @@ Do not configure forwarding rules to target the VPC's Amazon-provided DNS resolv
 
 == Enable endpoint service for existing clusters
 
-If you do not already have a PrivateLink resource for your cluster's resource group and region, create one at the organization level on the *Networking* page. For Serverless clusters, click **Create PrivateLink**.
+If you do not already have a PrivateLink resource for your cluster's resource group and region, create one at the organization level on the Networking page. For Serverless clusters, click **Create PrivateLink**.
 
 . Select your https://cloud.redpanda.com/clusters[cluster^], and go to the *Cluster settings* page.
 . Under Networking, select **Private Access** and then select an existing PrivateLink.
 
 NOTE: For help with issues enabling PrivateLink, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda support^].
+
+== Configure PrivateLink connection to Redpanda Cloud
+
+When you have a PrivateLink-enabled cluster, you can create an endpoint to connect your VPC and your cluster.
+
+=== Get cluster domain
+
+Get the domain (`cluster_domain`) of the cluster from the cluster details in the Redpanda Cloud Console.
+
+For example, if the bootstrap server URL is: `cki01qgth38kk81ard3g.any.us-east-1.aw.priv.prd.cloud.redpanda.com:9092`, then `cluster_domain` is: `cki01qgth38kk81ard3g.any.us-east-1.aw.priv.prd.cloud.redpanda.com`.
+
+[,bash]
+----
+CLUSTER_DOMAIN=<cluster_domain>
+----
+
+NOTE: Use `<cluster_domain>` as the domain you target with your DNS conditional forward (optionally also `*.<cluster_domain>` if your DNS platform requires a wildcard).
+
+=== Get name of PrivateLink endpoint service
+
+The service name is required to <<create-vpc-endpoint,create VPC private endpoints>>. You can find the service name in the Redpanda Cloud Console on the Networking page, or by using the Redpanda Cloud API.
+
+[,bash]
+----
+PL_SERVICE_NAME=<vpc_endpoint_service_name>
+----
+
+=== Create client VPC
+
+If you are not using an existing VPC, you must create a new one.
+
+The VPC region must be the same region where the Redpanda cluster is deployed. To create the VPC, run:
+
+[,bash]
+----
+# See https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html for
+# information on profiles and credential files
+REGION=<aws-region>
+PROFILE=<specific-profile-from-credential-file>
+
+aws ec2 create-vpc --region $REGION --profile $PROFILE --cidr-block 10.0.0.0/20
+
+# Store the client VPC ID from the command output
+CLIENT_VPC_ID=<client_vpc_id>
+----
+
+You can also use an existing VPC. You need the VPC ID to <<modify-vpc-dns-attributes,modify its DNS attributes>>.
+
+=== Modify VPC DNS attributes
+
+To modify the VPC attributes, run:
+
+[,bash]
+----
+aws ec2 modify-vpc-attribute --region $REGION --profile $PROFILE --vpc-id $CLIENT_VPC_ID \
+    --enable-dns-hostnames "{\"Value\":true}"
+
+aws ec2 modify-vpc-attribute --region $REGION --profile $PROFILE --vpc-id $CLIENT_VPC_ID \
+    --enable-dns-support "{\"Value\":true}"
+----
+
+These commands enable DNS hostnames and resolution for instances in the VPC.
+
+=== Create security group
+
+You need the security group ID `security_group_id` from the command output to <<add-security-group-rules,add security group rules>>. To create a security group, run:
+
+[,bash]
+----
+aws ec2 create-security-group --region $REGION --profile $PROFILE --vpc-id $CLIENT_VPC_ID \
+    --description "Redpanda endpoint service client security group" \
+    --group-name "redpanda-privatelink-sg"
+SECURITY_GROUP_ID=<security_group_id>
+----
+
+=== Add security group rules
+
+The following example adds security group rules to allow access to Redpanda services.
+
+[,bash]
+----
+# Allow Kafka API bootstrap (seed)
+aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
+  --group-id $SECURITY_GROUP_ID --protocol tcp --port 9092 --cidr 0.0.0.0/0
+
+# Allow Kafka API bootstrap (broker)
+aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
+  --group-id $SECURITY_GROUP_ID --protocol tcp --port 9093 --cidr 0.0.0.0/0
+
+# Allow Kafka API bootstrap (broker)
+aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
+  --group-id $SECURITY_GROUP_ID --protocol tcp --port 9094 --cidr 0.0.0.0/0
+
+# Allow Kafka API bootstrap (broker)
+aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
+  --group-id $SECURITY_GROUP_ID --protocol tcp --port 9095 --cidr 0.0.0.0/0
+
+# Allow Schema Registry
+aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
+  --group-id $SECURITY_GROUP_ID --protocol tcp --port 8081 --cidr 0.0.0.0/0
+
+# Allow Redpanda Cloud Data Plane API / Prometheus (if needed)
+aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
+  --group-id $SECURITY_GROUP_ID --protocol tcp --port 443 --cidr 0.0.0.0/0
+----
+
+=== Create VPC subnet
+
+You need the subnet ID `subnet_id` from the command output to <<create-vpc-endpoint,create a VPC endpoint>>. Run the following command, specifying the subnet availability zone (for example, `usw2-az1`):
+
+[,bash]
+----
+aws ec2 create-subnet --region $REGION --profile $PROFILE --vpc-id $CLIENT_VPC_ID \
+    --availability-zone <zone> \
+    --cidr-block 10.0.1.0/24
+SUBNET_ID=<subnet_id>
+----
+
+=== Create VPC endpoint
+
+[,bash]
+----
+aws ec2 create-vpc-endpoint \
+    --region $REGION --profile $PROFILE \
+    --vpc-id $CLIENT_VPC_ID \
+    --vpc-endpoint-type "Interface" \
+    --ip-address-type "ipv4" \
+    --service-name $PL_SERVICE_NAME \
+    --subnet-ids $SUBNET_ID \
+    --security-group-ids $SECURITY_GROUP_ID \
+    --private-dns-enabled
+----
 
 == Access Redpanda services through VPC endpoint
 
