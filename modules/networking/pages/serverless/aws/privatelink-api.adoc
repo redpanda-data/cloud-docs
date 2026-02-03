@@ -280,13 +280,25 @@ SECURITY_GROUP_ID=<security_group_id>
 
 === Add security group rules
 
-The following example adds security group rules to allow access to Redpanda services.
+The following example shows how to add security group rules to allow access to Redpanda services.
 
 [,bash]
 ----
 # Allow Kafka API bootstrap (seed)
 aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
   --group-id $SECURITY_GROUP_ID --protocol tcp --port 9092 --cidr 0.0.0.0/0
+
+# Allow Kafka API bootstrap (broker)
+aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
+  --group-id $SECURITY_GROUP_ID --protocol tcp --port 9093 --cidr 0.0.0.0/0
+
+# Allow Kafka API bootstrap (broker)
+aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
+  --group-id $SECURITY_GROUP_ID --protocol tcp --port 9094 --cidr 0.0.0.0/0
+
+# Allow Kafka API bootstrap (broker)
+aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
+  --group-id $SECURITY_GROUP_ID --protocol tcp --port 9095 --cidr 0.0.0.0/0
 
 # Allow Schema Registry
 aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
