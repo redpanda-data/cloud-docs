@@ -17,8 +17,8 @@ After reading this page, you will be able to:
 == Prerequisites
 
 * A xref:get-started:cluster-types/byoc/index.adoc[BYOC cluster] with Remote MCP enabled.
+* xref:ai-agents:ai-gateway/gateway-quickstart.adoc[AI Gateway configured] with at least one LLM provider enabled.
 * At least one xref:ai-agents:mcp/remote/overview.adoc[Remote MCP server] deployed with tools.
-* LLM provider API key (OpenAI, Google, or Anthropic).
 * System prompt prepared (see xref:ai-agents:agents/prompt-best-practices.adoc[System Prompt Best Practices]).
 
 == Access the agents UI
@@ -59,7 +59,11 @@ Start with Medium for production workloads. Monitor CPU and memory usage, then a
 
 Agents use large language models (LLMs) to interpret user intent and decide which tools to invoke.
 
-. In the *Model* section, select your LLM provider:
+. Select your AI Gateway:
++
+Choose the gateway that contains your configured LLM providers and API keys. If you have multiple gateways, select the appropriate one for this agent's workload (for example, production vs staging, or team-specific gateways).
+
+. Select your LLM provider from those available in the gateway:
 +
 * OpenAI (GPT models)
 * Google (Gemini models)
@@ -74,7 +78,7 @@ Agents use large language models (LLMs) to interpret user intent and decide whic
 
 . Select the specific model version from the dropdown.
 +
-The Console shows available models with descriptions.
+The dropdown shows available models with descriptions.
 
 For detailed model specifications and pricing:
 
@@ -83,17 +87,6 @@ For detailed model specifications and pricing:
 * link:https://ai.google.dev/gemini-api/docs/models[Google Gemini Models^]
 
 For model selection based on architecture patterns, see xref:ai-agents:agents/architecture-patterns.adoc#model-selection-guide[Model selection guide].
-
-== Add API keys as secrets
-
-. In the *API Key* section, click *Add Secret*.
-. Choose one:
-+
-* *Use existing secret*: Select from your Secrets Store
-* *Create new secret*: Enter your LLM provider API key
-
-. Name your secret (for example: `openai-api-key`).
-. Click *Save*.
 
 == Write the system prompt
 
