@@ -26,7 +26,7 @@ Finally, observability is fragmented across provider dashboards. You cannot reco
 
 Redpanda AI Gateway addresses these challenges through four core capabilities:
 
-=== 1. Unified LLM access (single endpoint for all providers)
+=== Unified LLM access (single endpoint for all providers)
 
 AI Gateway provides a single OpenAI-compatible endpoint that routes requests to multiple LLM providers. Instead of integrating with each provider's SDK separately, you configure your application once and switch providers by changing only the model parameter.
 
@@ -80,7 +80,7 @@ response = client.chat.completions.create(
 
 To switch providers, you change only the `model` parameter from `openai/gpt-4o` to `anthropic/claude-sonnet-3.5`. No code changes or redeployment needed.
 
-=== 2. Policy-based routing and cost control
+=== Policy-based routing and cost control
 
 AI Gateway lets you define routing rules, rate limits, and budgets once, then enforces them automatically for all requests.
 
@@ -98,7 +98,7 @@ You can also set different rate limits and spend limits per environment to preve
 
 For reliability, you can configure provider pools with automatic failover. If you configure OpenAI GPT-4 as your primary model and Anthropic Claude Opus as the fallback, the gateway automatically routes requests to the fallback when it detects rate limits or timeouts from the primary provider. This configuration can significantly improve uptime (potentially up to 99.9% in some configurations) even during provider outages.
 
-=== 3. MCP aggregation and orchestration
+=== MCP aggregation and orchestration
 
 AI Gateway aggregates multiple MCP (Model Context Protocol) servers and provides deferred tool loading, which dramatically reduces token costs for AI agents.
 
@@ -108,7 +108,7 @@ With AI Gateway, you configure approved MCP servers once, and the gateway loads 
 
 For complex workflows, AI Gateway provides a JavaScript-based orchestrator tool that reduces multi-step workflows from multiple round trips to a single call. For example, you can create a workflow that searches a vector database and, if the results are insufficient, falls back to web search—all in one orchestration step.
 
-=== 4. Unified observability and cost tracking
+=== Unified observability and cost tracking
 
 AI Gateway provides a single dashboard that tracks all LLM traffic across providers, eliminating the need to switch between multiple provider dashboards.
 
@@ -116,6 +116,7 @@ The dashboard tracks request volume per gateway, model, and provider, along with
 
 This unified view helps you answer critical questions such as which model is the most cost-effective for your use case, why a specific user request failed, how much your staging environment costs per week, and what the latency difference is between providers for your workload.
 
+ifdef::show-gateway-patterns[]
 == Common gateway patterns
 
 === Team isolation
@@ -144,6 +145,8 @@ request.headers["x-customer-tier"] == "enterprise" ? "anthropic/claude-opus-4" :
 request.headers["x-customer-tier"] == "pro" ? "anthropic/claude-sonnet-3.5" :
 "anthropic/claude-haiku"
 ----
+
+endif::[]
 
 == When to use AI Gateway
 
