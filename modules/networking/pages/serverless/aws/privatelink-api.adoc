@@ -288,6 +288,18 @@ The following example adds security group rules to allow access to Redpanda serv
 aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
   --group-id $SECURITY_GROUP_ID --protocol tcp --port 9092 --cidr 0.0.0.0/0
 
+# Allow Kafka API bootstrap (broker)
+aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
+  --group-id $SECURITY_GROUP_ID --protocol tcp --port 9093 --cidr 0.0.0.0/0
+
+# Allow Kafka API bootstrap (broker)
+aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
+  --group-id $SECURITY_GROUP_ID --protocol tcp --port 9094 --cidr 0.0.0.0/0
+
+# Allow Kafka API bootstrap (broker)
+aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
+  --group-id $SECURITY_GROUP_ID --protocol tcp --port 9095 --cidr 0.0.0.0/0
+
 # Allow Schema Registry
 aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
   --group-id $SECURITY_GROUP_ID --protocol tcp --port 8081 --cidr 0.0.0.0/0
