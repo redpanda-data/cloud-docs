@@ -1,12 +1,12 @@
-= Agent Concepts
-:description: Understand how agents execute, manage context, invoke tools, and handle errors.
+= Transcripts and AI Observability
+:description: Understand how Redpanda captures execution transcripts for agents and MCP servers using OpenTelemetry.
 :page-topic-type: concepts
-:personas: agent_developer, streaming_developer, data_engineer
-:learning-objective-1: Explain how agents execute reasoning loops and make tool invocation decisions
-:learning-objective-2: Describe how agents manage context and state across interactions
-:learning-objective-3: Identify error handling strategies for agent failures
+:personas: agent_developer, platform_admin, data_engineer
+:learning-objective-1: Explain how transcripts and spans capture execution flow
+:learning-objective-2: Interpret transcript structure for debugging and monitoring
+:learning-objective-3: Distinguish between transcripts and audit logs
 
-Agents execute through a reasoning loop where the LLM analyzes context, decides which tools to invoke, processes results, and repeats until the task completes. Understanding this execution model helps you design reliable agent systems.
+Redpanda automatically captures execution transcripts for both AI agents and MCP servers, providing complete observability into how your agentic systems operate.
 
 After reading this page, you will be able to:
 
@@ -14,135 +14,340 @@ After reading this page, you will be able to:
 * [ ] {learning-objective-2}
 * [ ] {learning-objective-3}
 
-== Agent execution model
+== What are transcripts
 
-Every agent request follows a reasoning loop. The agent doesn't execute all tool calls at once. Instead, it makes decisions iteratively.
+Every agent and MCP server automatically emits OpenTelemetry traces to a glossterm:topic[] called `redpanda.otel_traces`. These traces provide detailed observability into operations, creating complete transcripts.
 
-=== The reasoning loop
+Transcripts capture:
 
-When an agent receives a request:
+* Tool invocations and results
+* Agent reasoning steps
+* Data processing operations
+* External API calls
+* Error conditions
+* Performance metrics
 
-. The LLM receives the context, including system prompt, conversation history, user request, and previous tool results.
-. The LLM chooses to invoke a tool, requests more information, or responds to user.
-. The tool runs and returns results if invoked.
-. The tool's results are added to conversation history.
-. The LLM reasons again with an expanded context.
+With 100% sampling, every operation is captured, enabling comprehensive debugging, monitoring, and performance analysis.
 
-The loop continues until one of these conditions is met:
+== Traces and spans
 
-* Agent completes the task and responds to the user
-* Agent reaches max iterations limit
-* Agent encounters an unrecoverable error
+OpenTelemetry traces provide a complete picture of how a request flows through your system:
 
-=== Why iterations matter
+* A _trace_ represents the entire lifecycle of a request (for example, a tool invocation from start to finish).
+* A _span_ represents a single unit of work within that trace (such as a data processing operation or an external API call).
+* A trace contains one or more spans organized hierarchically, showing how operations relate to each other.
 
-Each iteration includes three phases:
+== Agent transcript hierarchy
 
-. **LLM reasoning**: The model processes the growing context to decide the next action.
-. **Tool invocation**: If the agent decides to call a tool, execution happens and waits for results.
-. **Context expansion**: Tool results are added to the conversation history for the next iteration.
+Agent executions create a hierarchy of spans that reflect how agents process requests. Understanding this hierarchy helps you interpret agent behavior and identify where issues occur.
 
-With higher iteration limits, agents can complete complex tasks but costs more and takes longer.
+=== Agent span types
 
-With lower iteration limits, agents respond faster and cheaper but may fail on complex requests.
+Agent transcripts contain these span types:
 
-==== Cost calculation
-
-Calculate the approximate cost per request by estimating average context tokens per iteration:
-
-----
-Cost per request = (iterations x context tokens x model price per token)
-----
-
-Example with 30 iterations at $0.000002 per token:
-
-----
-Iteration 1:  500 tokens x $0.000002 = $0.001
-Iteration 15: 2000 tokens x $0.000002 = $0.004
-Iteration 30: 4000 tokens x $0.000002 = $0.008
-
-Total: ~$0.013 per request
-----
-
-Actual costs vary based on:
-
-* Tool result sizes (large results increase context)
-* Model pricing (varies by provider and model tier)
-* Task complexity (determines iteration count)
-
-Setting max iterations creates a cost/capability trade-off:
-
-[cols="1,1,2,1", options="header"]
+[cols="2,3,3", options="header"]
 |===
-|Limit |Range |Use Case |Cost
+| Span Type | Description | Use To
 
-|Low
-|10-20
-|Simple queries, single tool calls
-|Cost-effective
+| `ai-agent`
+| Top-level span representing the entire agent invocation from start to finish. Includes all processing time, from receiving the request through executing the reasoning loop, calling tools, and returning the final response.
+| Measure total request duration and identify slow agent invocations.
 
-|Medium
-|30-50
-|Multi-step workflows, tool chaining
-|Balanced
+| `agent`
+| Internal agent processing that represents reasoning and decision-making. Shows time spent in the LLM reasoning loop, including context processing, tool selection, and response generation. Multiple `agent` spans may appear when the agent iterates through its reasoning loop.
+| Track reasoning time and identify iteration patterns.
 
-|High
-|50-100
-|Complex analysis, exploratory tasks
-|Higher
+| `invoke_agent`
+| Agent and sub-agent invocation ( in multi-agent architectures). Represents one agent calling another via the A2A protocol.
+| Trace calls between root agents and sub-agents, measure cross-agent latency, and identify which sub-agent was invoked.
+
+| `openai`, `anthropic`, or other LLM providers
+| LLM provider API call showing calls to the language model. The span name matches the provider, and attributes typically include the model name (like `gpt-5.2` or `claude-sonnet-4-5`).
+| Identify which model was called, measure LLM response time, and debug LLM API errors.
+
+| `rpcn-mcp`
+| MCP tool invocation representing calls to Remote MCP servers. Shows tool execution time, including network latency and tool processing. Child spans with `instrumentationScope.name` set to `redpanda-connect` represent internal Redpanda Connect processing.
+| Measure tool execution time and identify slow MCP tool calls.
 |===
 
-Iteration limits prevent runaway costs when agents encounter complex or ambiguous requests.
+=== Typical agent execution flow
 
-== MCP tool invocation patterns
+A simple agent request creates this hierarchy:
 
-MCP tools extend agent capabilities beyond text generation. Understanding when and how tools execute helps you design effective tool sets.
+----
+ai-agent (6.65 seconds)
+├── agent (6.41 seconds)
+│   ├── invoke_agent: customer-support-agent (6.39 seconds)
+│   │   └── openai: chat gpt-5.2 (6.2 seconds)
+----
 
-=== Synchronous tool execution
+This shows:
 
-In Redpanda Cloud, tool calls block the agent. When the agent decides to invoke a tool, it pauses and waits while the tool executes (querying a database, calling an API, or processing data). When the tool returns its result, the agent resumes reasoning.
+1. Total agent invocation: 6.65 seconds
+2. Agent reasoning: 6.41 seconds
+3. Sub-agent call: 6.39 seconds (most of the time)
+4. LLM API call: 6.2 seconds (the actual bottleneck)
 
-This synchronous model means latency adds up across multiple tool calls, the agent sees tool results sequentially rather than in parallel, and long-running tools can delay or fail agent requests due to timeouts.
+Examine span durations to identify where time is spent and optimize accordingly.
 
-=== Tool selection decisions
+== MCP server transcript hierarchy
 
-The LLM decides which tool to invoke based on system prompt guidance (such as "Use get_orders when customer asks about history"), tool descriptions from the MCP schema that define parameters and purpose, and conversation context where previous tool results influence the next tool choice. Agents can invoke the same tool multiple times with different parameters if the task requires it.
+MCP server tool invocations produce a different span hierarchy focused on tool execution and internal processing. This structure reveals performance bottlenecks and helps debug tool-specific issues.
 
-=== Tool chaining
+=== MCP server span types
 
-Agents chain tools when one tool's output feeds another tool's input. For example, an agent might first call `get_customer_info(customer_id)` to retrieve details, then use that data to call `get_order_history(customer_email)`.
+MCP server transcripts contain these span types:
 
-Tool chaining requires sufficient max iterations because each step in the chain consumes one iteration.
+[cols="2,3,3", options="header"]
+|===
+| Span Type | Description | Use To
 
-=== Tool granularity considerations
+| `mcp-{server-id}`
+| Top-level span representing the entire MCP server invocation. The server ID uniquely identifies the MCP server instance. This span encompasses all tool execution from request receipt to response completion.
+| Measure total MCP server response time and identify slow tool invocations.
 
-Tool design affects agent behavior. Coarse-grained tools that do many things result in fewer tool calls but less flexibility and more complex implementation. Fine-grained tools that each do one thing require more tool calls but offer higher composability and simpler implementation.
+| `service`
+| Internal service processing span that appears at multiple levels in the hierarchy. Represents Redpanda Connect service operations including routing, processing, and component execution.
+| Track internal processing overhead and identify where time is spent in the service layer.
 
-Choose granularity based on how often you'll reuse tool logic across workflows, whether intermediate results help with debugging, and how much control you want over tool invocation order.
+| Tool name (e.g., `get_order_status`, `get_customer_history`)
+| The specific MCP tool being invoked. This span name matches the tool name defined in the MCP server configuration.
+| Identify which tool was called and measure tool-specific execution time.
 
-For tool design guidance, see xref:ai-agents:mcp/remote/best-practices.adoc[].
+| `processors`
+| Processor pipeline execution span showing the collection of processors that process the tool's data. Appears as a child of the tool invocation span.
+| Measure total processor pipeline execution time.
 
-== Context and state management
+| Processor name (e.g., `mapping`, `http`, `branch`)
+| Individual processor execution span representing a single Redpanda Connect processor. The span name matches the processor type.
+| Identify slow processors and debug processing logic.
+|===
 
-Agents handle two types of information: conversation context (what's been discussed) and state (persistent data across sessions).
+=== Typical MCP server execution flow
 
-=== Conversation context
+An MCP tool invocation creates this hierarchy:
 
-The agent's context includes the system prompt (always present), user messages, agent responses, tool invocation requests, and tool results.
+----
+mcp-d5mnvn251oos73 (4.00 seconds)
+├── service > get_order_status (4.07 seconds)
+│   └── service > processors (43 microseconds)
+│       └── service > mapping (18 microseconds)
+----
 
-As the conversation progresses, context grows. Each tool result adds tokens to the context window, which the LLM uses for reasoning in subsequent iterations.
+This shows:
 
-=== Context window limits
+1. Total MCP server invocation: 4.00 seconds
+2. Tool execution (get_order_status): 4.07 seconds
+3. Processor pipeline: 43 microseconds
+4. Mapping processor: 18 microseconds (data transformation)
 
-LLM context windows limit how much history fits. Small models support 8K-32K tokens, medium models support 32K-128K tokens, and large models support 128K-1M+ tokens.
+The majority of time (4+ seconds) is spent in tool execution, while internal processing (mapping) takes only microseconds. This indicates the tool itself (likely making external API calls or database queries) is the bottleneck, not Redpanda Connect's internal processing.
 
-When context exceeds the limit, the oldest tool results get truncated, the agent loses access to early conversation details, and may ask for information it already retrieved.
+== Transcript layers and scope
 
-Design workflows to complete within context limits. Avoid unbounded tool chaining.
+Transcripts contain multiple layers of instrumentation, from HTTP transport through application logic to external service calls. The `scope.name` field in each span identifies which instrumentation layer created that span.
+
+=== Instrumentation layers
+
+A complete agent transcript includes these layers:
+
+[cols="2,2,4", options="header"]
+|===
+| Layer | Scope Name | Purpose
+
+| HTTP Server
+| `go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp`
+| HTTP transport layer receiving requests. Shows request/response sizes, status codes, client addresses, and network details.
+
+| AI SDK (Agent)
+| `github.com/redpanda-data/ai-sdk-go/plugins/otel`
+| Agent application logic. Shows agent invocations, LLM calls, tool executions, conversation IDs, token usage, and model details. Includes `gen_ai.*` semantic convention attributes.
+
+| HTTP Client
+| `go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp`
+| Outbound HTTP calls from agent to MCP servers. Shows target URLs, request methods, and response codes.
+
+| MCP Server
+| `rpcn-mcp`
+| MCP server tool execution. Shows tool name, input parameters, result size, and execution time. Appears as a separate `service.name` in resource attributes.
+
+| Redpanda Connect
+| `redpanda-connect`
+| Internal Redpanda Connect component execution within MCP tools. Shows pipeline and individual component spans.
+|===
+
+=== How layers connect
+
+Layers connect through parent-child relationships in a single transcript:
+
+----
+ai-agent-http-server (HTTP Server layer)
+└── invoke_agent customer-support-agent (AI SDK layer)
+    ├── chat gpt-5-nano (AI SDK layer, LLM call 1)
+    ├── execute_tool get_order_status (AI SDK layer)
+    │   └── HTTP POST (HTTP Client layer)
+    │       └── get_order_status (MCP Server layer, different service)
+    │           └── processors (Redpanda Connect layer)
+    └── chat gpt-5-nano (AI SDK layer, LLM call 2)
+----
+
+The request flow demonstrates:
+
+1. HTTP request arrives at agent
+2. Agent invokes sub-agent
+3. Agent makes first LLM call to decide what to do
+4. Agent executes tool, making HTTP call to MCP server
+5. MCP server processes tool through its pipeline
+6. Agent makes second LLM call with tool results
+7. Response returns through HTTP layer
+
+=== Cross-service transcripts
+
+When agents call MCP tools, the transcript spans multiple services. Each service has a different `service.name` in the resource attributes:
+
+* Agent spans: `"service.name": "ai-agent"`
+* MCP server spans: `"service.name": "mcp-{server-id}"`
+
+Both use the same `traceId`, allowing you to follow a request across service boundaries.
+
+=== Key attributes by layer
+
+Different layers expose different attributes:
+
+HTTP Server/Client layer:
+
+- `http.request.method`, `http.response.status_code`
+- `server.address`, `url.path`, `url.full`
+- `network.peer.address`, `network.peer.port`
+- `http.request.body.size`, `http.response.body.size`
+
+AI SDK layer:
+
+- `gen_ai.operation.name`: Operation type (`invoke_agent`, `chat`, `execute_tool`)
+- `gen_ai.conversation.id`: Links spans to the same conversation
+- `gen_ai.agent.name`: Sub-agent name for multi-agent systems
+- `gen_ai.provider.name`, `gen_ai.request.model`: LLM provider and model
+- `gen_ai.usage.input_tokens`, `gen_ai.usage.output_tokens`: Token consumption
+- `gen_ai.tool.name`, `gen_ai.tool.call.arguments`: Tool execution details
+- `gen_ai.input.messages`, `gen_ai.output.messages`: Full LLM conversation context
+
+MCP Server layer:
+
+- Tool-specific attributes like `order_id`, `customer_id`
+- `result_prefix`, `result_length`: Tool result metadata
+
+Redpanda Connect layer:
+
+- Component-specific attributes from your tool configuration
+
+Use `scope.name` to filter spans by layer when analyzing transcripts.
+
+== Understand the transcript structure
+
+Each span captures a unit of work. Here's what a typical MCP tool invocation looks like:
+
+[,json]
+----
+{
+    "traceId": "71cad555b35602fbb35f035d6114db54",
+    "spanId": "43ad6bc31a826afd",
+    "name": "http_processor",
+    "attributes": [
+        {"key": "city_name", "value": {"stringValue": "london"}},
+        {"key": "result_length", "value": {"intValue": "198"}}
+    ],
+    "startTimeUnixNano": "1765198415253280028",
+    "endTimeUnixNano": "1765198424660663434",
+    "instrumentationScope": {"name": "rpcn-mcp"},
+    "status": {"code": 0, "message": ""}
+}
+----
+
+Key elements to understand:
+
+* `traceId`: Links all spans belonging to the same request. Use this to follow a tool invocation through its entire lifecycle.
+* `name`: The tool or operation name (`http_processor` in this example). This tells you which component was invoked.
+* `instrumentationScope.name`: When this is `rpcn-mcp`, the span represents an MCP tool. When it's `redpanda-connect`, it's internal processing.
+* `attributes`: Context about the operation, like input parameters or result metadata.
+* `status.code`: `0` means success, `2` means error.
+
+=== Parent-child relationships
+
+Transcripts show how operations relate. A tool invocation (parent) may trigger internal operations (children):
+
+[,json]
+----
+{
+    "traceId": "71cad555b35602fbb35f035d6114db54",
+    "spanId": "ed45544a7d7b08d4",
+    "parentSpanId": "43ad6bc31a826afd",
+    "name": "http",
+    "instrumentationScope": {"name": "redpanda-connect"},
+    "status": {"code": 0, "message": ""}
+}
+----
+
+The `parentSpanId` links this child span to the parent tool invocation. Both share the same `traceId` so you can reconstruct the complete operation.
+
+== Error events in transcripts
+
+When something goes wrong, transcripts capture error details:
+
+[,json]
+----
+{
+    "traceId": "71cad555b35602fbb35f035d6114db54",
+    "spanId": "ba332199f3af6d7f",
+    "parentSpanId": "43ad6bc31a826afd",
+    "name": "http_request",
+    "events": [
+        {
+            "name": "event",
+            "timeUnixNano": "1765198420254169629",
+            "attributes": [{"key": "error", "value": {"stringValue": "type"}}]
+        }
+    ],
+    "status": {"code": 0, "message": ""}
+}
+----
+
+The `events` array captures what happened and when. Use `timeUnixNano` to see exactly when the error occurred within the operation.
+
+[[opentelemetry-traces-topic]]
+== How Redpanda stores trace data
+
+The `redpanda.otel_traces` topic stores OpenTelemetry spans using Redpanda's Schema Registry wire format, with a custom Protobuf schema named `redpanda.otel_traces-value` that follows the https://opentelemetry.io/docs/specs/otel/protocol/[OpenTelemetry Protocol (OTLP)^] specification. Spans include attributes following OpenTelemetry https://opentelemetry.io/docs/specs/semconv/gen-ai/[semantic conventions for generative AI^], such as `gen_ai.operation.name` and `gen_ai.conversation.id`. The schema is automatically registered in the Schema Registry with the topic, so Kafka clients can consume and deserialize trace data correctly.
+
+Redpanda manages both the `redpanda.otel_traces` topic and its schema automatically. If you delete either the topic or the schema, they are recreated automatically. However, deleting the topic permanently deletes all trace data, and the topic comes back empty. Do not produce your own data to this topic. It is reserved for OpenTelemetry traces.
+
+=== Topic configuration and lifecycle
+
+The `redpanda.otel_traces` topic has a predefined retention policy. Configuration changes to this topic are not supported. If you modify settings, Redpanda reverts them to the default values.
+
+The topic persists in your cluster even after all agents and MCP servers are deleted, allowing you to retain historical trace data for analysis.
+
+Transcripts may contain sensitive information from your tool inputs and outputs. Consider implementing appropriate glossterm:ACL[access control lists (ACLs)] for the `redpanda.otel_traces` topic, and review the data in transcripts before sharing or exporting to external systems.
+
+== Transcripts compared to audit logs
+
+Transcripts are designed for observability and debugging, not audit logging or compliance.
+
+Transcripts provide:
+
+* Hierarchical view of request flow through your system (parent-child span relationships)
+* Detailed timing information for performance analysis
+* Ability to reconstruct execution paths and identify bottlenecks
+* Insights into how operations flow through distributed systems
+
+Transcripts are not:
+
+* Immutable audit records for compliance purposes
+* Designed for "who did what" accountability tracking
+
+For compliance and audit requirements, use the session and task topics for agents, which provide records of agent conversations and execution.
 
 == Next steps
 
-* xref:ai-agents:agents/architecture-patterns.adoc[]
-* xref:ai-agents:agents/quickstart.adoc[]
-* xref:ai-agents:agents/prompt-best-practices.adoc[]
-* xref:ai-agents:mcp/remote/best-practices.adoc[]
+* xref:ai-agents:observability/view-transcripts.adoc[]
+* xref:ai-agents:agents/monitor-agents.adoc[]
+* xref:ai-agents:mcp/remote/monitor-mcp-servers.adoc[]
