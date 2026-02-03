@@ -1,12 +1,12 @@
 = View Transcripts
-:description: Learn how to filter, search, and navigate the Transcripts interface to investigate agent execution traces using multiple detail views and interactive timeline navigation.
+:description: Learn how to filter and navigate the Transcripts interface to investigate agent execution traces using multiple detail views and interactive timeline navigation.
 :page-topic-type: how-to
 :personas: agent_developer, platform_admin
-:learning-objective-1: Filter and search transcripts to find specific execution traces
+:learning-objective-1: Filter transcripts to find specific execution traces
 :learning-objective-2: Navigate between detail views to inspect span information at different levels
 :learning-objective-3: Use the timeline interactively to navigate to specific time periods
 
-The Transcripts view provides filtering, searching, and navigation capabilities for investigating agent and MCP server execution transcripts. Use these features to efficiently locate specific operations, analyze performance patterns, and debug issues across tool invocations, LLM calls, and agent reasoning steps.
+The Transcripts view provides filtering and navigation capabilities for investigating agent, MCP server, and AI Gateway execution glossterm:transcript[transcripts]. Use this view to quickly locate specific operations, analyze performance patterns, and debug issues across glossterm:tool[] invocations, LLM calls, and glossterm:agent[] reasoning steps.
 
 After reading this page, you will be able to:
 
@@ -14,7 +14,13 @@ After reading this page, you will be able to:
 * [ ] {learning-objective-2}
 * [ ] {learning-objective-3}
 
-For basic orientation on agent and MCP server monitoring, see xref:ai-agents:agents/monitor-agents.adoc[] or xref:ai-agents:mcp/remote/monitor-mcp-servers.adoc[]. For conceptual background on what transcripts capture and how spans are organized hierarchically, see xref:ai-agents:observability/concepts.adoc[].
+For basic orientation on monitoring each Redpanda Agentic Data Plane component, see: 
+
+* xref:ai-agents:ai-gateway/observability-metrics.adoc[]
+* xref:ai-agents:agents/monitor-agents.adoc[]
+* xref:ai-agents:mcp/remote/monitor-mcp-servers.adoc[]
+
+For conceptual background on what transcripts capture and how glossterm:span[spans] are organized hierarchically, see xref:ai-agents:observability/concepts.adoc[].
 
 == Prerequisites
 
@@ -27,37 +33,17 @@ For basic orientation on agent and MCP server monitoring, see xref:ai-agents:age
 
 Use the timeline visualization to quickly identify when errors began or patterns changed, and navigate directly to transcripts from particular timestamps.
 
-When viewing time periods with many transcripts (hundreds or thousands), the timeline displays a subset of the data to maintain performance and usability. The timeline bar indicates the actual time range of currently visible data, which may be narrower than your selected range.
+When viewing time periods with many transcripts (hundreds or thousands), the timeline displays a subset of the data to maintain performance and usability. The timeline bar indicates the actual time range of currently visible data, which may be narrower than your <<adjust-time-range,selected time range>>.
 
 TIP: See xref:ai-agents:agents/monitor-agents.adoc[] and xref:ai-agents:mcp/remote/monitor-mcp-servers.adoc[] to learn basic execution patterns and health indicators to investigate.
 
-=== Search and filter for transcripts
+=== Filter transcripts
 
-Use search and filters together to narrow down transcripts and quickly locate specific executions.
+Use filters to narrow down transcripts and quickly locate specific executions. When you use any of the filters, the transcript list updates to show only matching results. You can toggle *Full transcript* on to see the complete execution context, in grayed-out text, for the filtered transcripts.  
 
-==== Search for specific transcripts
+==== Filter by attribute
 
-The search functionality helps you find transcripts by operation names, span types, or identifiers:
-
-* Search by span names to find specific xref:ai-agents:observability/concepts.adoc#agent-span-types[agent operations] like `invoke_agent`, or xref:ai-agents:mcp/remote/create-tool.adoc[MCP tools]
-* Search by xref:ai-agents:observability/concepts.adoc#instrumentation-layers[scope] to filter by layer (for example, `rpcn-mcp` for MCP tool spans)
-* Search by trace IDs (`traceId`) when correlating with external systems or troubleshooting specific requests
-
-==== Filter by service
-
-Service filtering shows only transcripts from specific agents or MCP servers using the `service.name` resource attribute. See xref:ai-agents:observability/concepts.adoc#cross-service-transcripts[Cross-service transcripts] to understand how transcripts span multiple services.
-
-* View executions from a single agent when multiple are running (service name: `ai-agent`)
-* Isolate MCP server activity from agent activity (service name: `mcp-{server-id}`)
-* Compare behavior across different service instances
-
-==== Filter by execution status
-
-Status filtering shows transcripts based on their execution outcome:
-
-* Show successful executions for health checks
-* Show only failed executions for error investigation
-* Toggle between success and error views to compare and analyze patterns
+// Add details when available
 
 ==== Adjust time range
 
@@ -67,15 +53,13 @@ Use the time range selector to focus on specific time periods (from the last fiv
 * Expand to longer periods for trend analysis over the last day
 * Narrow to specific time windows when investigating issues that occurred at known times
 
-TIP: Apply broad filters first (time range, service) to reduce the transcript set, then use search to narrow to specific operations.
-
 == Inspect span details
 
-Each row in the transcript table represents a high-level agent or MCP server request flow. Expand each parent span to see the xref:ai-agents:observability/concepts.adoc#agent-transcript-hierarchy[hierarchical structure] of nested operations, including tool calls, LLM interactions, and internal processing steps. Parent-child spans show how operations relate: for example, an agent invocation (parent) triggers LLM calls and tool executions (children).
+Each row in the transcript table represents a high-level agent or MCP server request flow. Expand each parent glossterm:span[] to see the xref:ai-agents:observability/concepts.adoc#agent-transcript-hierarchy[hierarchical structure] of nested operations, including tool calls, LLM interactions, and internal processing steps. Parent-child spans show how operations relate: for example, an agent invocation (parent) triggers LLM calls and tool executions (children).
 
-When agents invoke remote MCP servers, transcripts fold together across service boundaries to provide a unified view of the complete operation. The trace ID originates at the initial request touchpoint and propagates across all involved services, linking spans from both the agent and MCP server under a single transcript. Use the tree view to follow the trace flow across multiple services and understand the complete request lifecycle. 
+When agents invoke remote MCP servers, transcripts fold together under a tree structure to provide a unified view of the complete operation across service boundaries. The glossterm:trace ID[] originates at the initial request touchpoint and propagates across all involved services, linking spans from both the agent and MCP server under a single transcript. Use the tree view to follow the trace flow across multiple services and understand the complete request lifecycle. 
 
-If you use external agents that directly invoke MCP servers in the Redpanda Agentic Data Plane, you may only see MCP-level parent transcripts, unless you have configured the agents to also emit traces to the Redpanda OTEL ingestion pipeline.
+If you use external agents that directly invoke MCP servers in the Redpanda Agentic Data Plane, you may only see MCP-level parent transcripts, unless you have configured the agents to also emit traces to the Redpanda glossterm:OpenTelemetry[OTEL] ingestion pipeline.
 
 Selected spans display detailed information at multiple levels, from high-level summaries to complete raw data:
 
@@ -100,7 +84,7 @@ TIP: Expand the summary panel to full view to easily read long conversations.
 
 === Detailed attributes view
 
-The attributes view shows structured metadata for each transcript span. Use this view to quickly locate an attribute value such as conversation ID, then paste it into the search box to find all operations from that conversation session. See xref:ai-agents:observability/concepts.adoc#key-attributes-by-layer[Transcripts and AI Observability] for details on standard attributes by instrumentation layer.
+The attributes view shows structured metadata for each transcript span. Use this view to inspect span attributes and understand the context of each operation. See xref:ai-agents:observability/concepts.adoc#key-attributes-by-layer[Transcripts and AI Observability] for details on standard attributes by instrumentation layer.
 
 === Raw data view
 
