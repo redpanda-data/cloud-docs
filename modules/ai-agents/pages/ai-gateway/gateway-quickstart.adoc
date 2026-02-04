@@ -16,7 +16,7 @@ Before starting, ensure you have:
 
 * Access to the AI Gateway UI (provided by your administrator)
 * Admin permissions to configure providers and gateways
-* API key for at least one LLM provider (OpenAI or Anthropic)
+* API key for at least one LLM provider (OpenAI, Anthropic, or Google AI)
 * Python 3.8+, Node.js 18+, or cURL (for testing)
 
 == Configure a provider
@@ -24,14 +24,9 @@ Before starting, ensure you have:
 Providers represent upstream LLM services (OpenAI, Anthropic) and their associated credentials. Providers are disabled by default and must be enabled explicitly.
 
 . In AI Gateways, navigate to *Providers*.
-. Select a provider (for example, OpenAI or Anthropic).
-. On the *Configuration* tab, click *Add configuration* and enter your API Key.
+. Select a provider (for example, OpenAI, Anthropic, Google AI).
+. On the Configuration tab, click *Add configuration* and enter your API Key.
 . Verify the provider status shows "Active".
-
-AI Gateway currently supports:
-
-* OpenAI
-* Anthropic
 
 == Enable models
 
@@ -60,9 +55,9 @@ A gateway is a logical configuration boundary that defines routing policies, rat
 . Click *Create Gateway*.
 . Configure the gateway:
 +
-* *Name*: Choose a descriptive name (for example, `my-first-gateway`)
-* *Workspace*: Select a workspace (conceptually similar to a resource group)
-* *Description*: Optional metadata for documentation
+* Name: Choose a descriptive name (for example, `my-first-gateway`)
+* Workspace: Select a workspace (conceptually similar to a resource group)
+* Description: Optional metadata for documentation
 
 . After creation, copy the *Gateway Endpoint* and *Gateway ID* from the gateway detail page. You'll need these for sending requests.
 
@@ -72,11 +67,11 @@ Gateway Endpoint: https://gw.ai.panda.com
 Gateway ID: gw_abc123...
 ----
 
-Common gateway patterns:
+Common gateway patterns include the following:
 
-* *Environment separation*: Create separate gateways for staging and production
-* *Team isolation*: One gateway per team for budget tracking
-* *Customer multi-tenancy*: One gateway per customer for isolated policies
+* Environment separation: Create separate gateways for staging and production
+* Team isolation: One gateway per team for budget tracking
+* Customer multi-tenancy: One gateway per customer for isolated policies
 
 == Send your first request
 
@@ -193,10 +188,10 @@ Expected response:
 
 If your request fails, check these common issues:
 
-* *401 Unauthorized*: Verify your API key is valid
-* *404 Not Found*: Confirm the base URL matches your gateway endpoint
-* *Model not found*: Ensure the model is enabled in Step 2
-* *Missing rp-aigw-id*: Add the gateway ID header to your request
+* 401 Unauthorized: Verify your API key is valid
+* 404 Not Found: Confirm the base URL matches your gateway endpoint
+* Model not found: Ensure the model is enabled in Step 2
+* Missing rp-aigw-id: Add the gateway ID header to your request
 
 == Verify in observability dashboard
 
@@ -290,7 +285,7 @@ To add external tools (for example, Slack, GitHub), add their MCP server endpoin
 
 === Deferred tool loading
 
-When many tools are aggregated, listing all tools upfront can consume significant tokens. With *deferred tool loading*, the MCP gateway initially returns only:
+When many tools are aggregated, listing all tools upfront can consume significant tokens. With deferred tool loading, the MCP gateway initially returns only:
 
 * A tool search capability
 * The MCP orchestrator
