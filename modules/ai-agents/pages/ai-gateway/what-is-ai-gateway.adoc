@@ -18,7 +18,7 @@ First, applications typically hardcode provider-specific SDKs. An application us
 
 Second, costs can spiral without visibility into usage patterns. Without a centralized view of token consumption across teams and applications, it's difficult to attribute costs to specific customers, features, or environments. Testing and debugging can generate unexpected bills, and there's no way to enforce budgets or rate limits per team or customer.
 
-Third, AI agents that use MCP (Model Context Protocol) servers face tool coordination challenges. Managing tool discovery and execution is repetitive across projects, and agents typically load all available tools upfront, which creates high token costs. There's also no centralized governance over which tools agents can access.
+Third, glossterm:AI agent[,AI agents] that use glossterm:MCP[,Model Context Protocol (MCP)] servers face tool coordination challenges. Managing tool discovery and execution is repetitive across projects, and agents typically load all available tools upfront, which creates high token costs. There's also no centralized governance over which tools agents can access.
 
 Finally, observability is fragmented across provider dashboards. You cannot reconstruct user sessions that span multiple models, compare latency and costs across providers in a unified view, or efficiently debug issues. Troubleshooting "the AI gave the wrong answer" requires manual log diving across different systems.
 
@@ -100,9 +100,9 @@ For reliability, you can configure provider pools with automatic failover. If yo
 
 === MCP aggregation and orchestration
 
-AI Gateway aggregates multiple MCP (Model Context Protocol) servers and provides deferred tool loading, which dramatically reduces token costs for AI agents.
+AI Gateway aggregates multiple glossterm:MCP server[,MCP servers] and provides deferred tool loading, which dramatically reduces token costs for AI agents.
 
-Without AI Gateway, agents typically load all available tools from multiple MCP servers at startup. This approach sends 50+ tool definitions with every request, creating high token costs (thousands of tokens per request), slow agent startup times, and no centralized governance over which tools agents can access.
+Without AI Gateway, agents typically load all available glossterm:MCP tool[,tools] from multiple MCP servers at startup. This approach sends 50+ tool definitions with every request, creating high token costs (thousands of tokens per request), slow agent startup times, and no centralized governance over which tools agents can access.
 
 With AI Gateway, you configure approved MCP servers once, and the gateway loads only search and orchestrator tools initially. Agents query for specific tools only when needed, which often reduces token usage by 80-90% depending on your configuration and the number of tools aggregated. You also gain centralized approval and governance over which MCP servers your agents can access.
 
