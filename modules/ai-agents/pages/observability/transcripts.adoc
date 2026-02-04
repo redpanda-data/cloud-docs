@@ -14,7 +14,7 @@ After reading this page, you will be able to:
 * [ ] {learning-objective-2}
 * [ ] {learning-objective-3}
 
-For basic orientation on monitoring each Redpanda Agentic Data Plane component, see: 
+For basic orientation on monitoring each Redpanda Agentic Data Plane (ADP) component, see: 
 
 * xref:ai-agents:ai-gateway/observability-metrics.adoc[]
 * xref:ai-agents:agents/monitor-agents.adoc[]
@@ -84,13 +84,13 @@ Refer to the timeline header to check the exact range and count of visible trans
 
 == Inspect span details
 
-Each row in the transcript table represents a high-level agent or MCP server request flow. The table displays the following:
+The transcript table displays the following:
 
 * Time: Timestamp when the span started (sortable)
 * Span: Span type indicator and span name, with hierarchical tree structure
 * Duration: Total duration, or duration of child spans relative to the parent span, represented as visual bars
 
-Expand each parent span to see the hierarchical structure of nested operations, including internal processing steps, LLM interactions, and tool calls. xref:ai-agents:observability/concepts.adoc#parent-child-relationships[Parent-child spans] show how operations relate: for example, an agent invocation (parent) triggers LLM calls and tool executions (children). Use the *Collapse all* option to quickly fold all expanded spans.
+Each top-level row in the transcript table represents a service-level request flow in an ADP component. Expand each parent span to see the hierarchical structure of nested operations, including internal processing steps, LLM interactions, and tool calls. xref:ai-agents:observability/concepts.adoc#parent-child-relationships[Parent-child spans] show how operations relate: for example, an agent invocation (parent) triggers LLM calls and tool executions (children). Use the *Collapse all* option to quickly fold all expanded spans.
 
 // TODO: Clarify MCP trace structure
 When agents invoke remote MCP servers, transcripts fold together under a tree structure to provide a unified view of the complete operation across service boundaries. The glossterm:trace ID[] originates at the initial request touchpoint and propagates across all involved services, linking spans from both the agent and MCP server under a single transcript. Use the tree view to follow the trace flow across multiple services and understand the complete request lifecycle. 
