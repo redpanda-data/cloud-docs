@@ -1,0 +1,437 @@
+= Use AI Hub Gateway
+:description: Connect to and use AI Hub mode gateways with pre-configured intelligent routing.
+:page-topic-type: how-to
+:personas: app_developer
+:learning-objective-1: Identify whether a gateway is running in AI Hub mode
+:learning-objective-2: Connect your application to an AI Hub gateway using the OpenAI SDK
+:learning-objective-3: Describe how intelligent routing directs requests to providers
+
+include::ai-agents:partial$ai-gateway-byoc-note.adoc[]
+
+AI Hub mode gateways provide instant access to OpenAI and Anthropic with pre-configured intelligent routing. As a builder, you benefit from zero-configuration access while your administrator manages provider credentials and routing policies.
+
+This page shows you how to discover AI Hub gateways, connect your applications, and verify your integration.
+
+After reading this page, you will be able to:
+
+* [ ] Identify whether a gateway is running in AI Hub mode
+* [ ] Connect your application to an AI Hub gateway using the OpenAI SDK
+* [ ] Describe how intelligent routing directs requests to providers
+
+== Before you begin
+
+* You have access to at least one AI Hub gateway (provided by your administrator)
+* You have a Redpanda Cloud API key
+* You have Python 3.8+ or Node.js 18+ installed (for code examples)
+
+== Identify an AI Hub gateway
+
+Gateways can operate in two modes: AI Hub mode or Custom mode. Understanding which mode your gateway uses helps you know what to expect.
+
+include::ai-agents:partial$ai-hub-mode-indicator.adoc[]
+
+== Understanding intelligent routing
+
+AI Hub mode provides pre-configured routing rules that automatically direct your requests to the right provider and backend pool.
+
+=== How requests are routed
+
+AI Hub evaluates routing rules in priority order:
+
+*Tier 1: Model Prefix* (Highest Priority)
+
+When you specify a model with a provider prefix, routing is deterministic:
+
+* `openai/gpt-4o` → Always routes to OpenAI
+* `anthropic/claude-sonnet-3.5` → Always routes to Anthropic
+
+*Tier 2: Model Name Pattern*
+
+When you specify a model without a prefix, AI Hub uses pattern matching:
+
+* `gpt-4o` → Routes to OpenAI (matches `gpt-*` pattern)
+* `claude-sonnet-3.5` → Routes to Anthropic (matches `claude-*` pattern)
+* `o1-preview` → Routes to OpenAI (matches `o1-*` pattern)
+
+*Tier 3: Special Purpose Routing*
+
+Certain request types always route to specific providers:
+
+* Embeddings requests → OpenAI only (Anthropic doesn't support embeddings)
+* Image generation (DALL-E) → OpenAI only
+* Audio/speech requests (Whisper, TTS) → OpenAI only
+
+*Tier 4: Native SDK Detection*
+
+AI Hub detects which SDK you're using:
+
+* Requests to `/v1/messages` → Anthropic native API (no transformation)
+* Requests to `/v1/chat/completions` → OpenAI-compatible API (with transformation if targeting Anthropic)
+
+*Tier 5: Streaming Detection*
+
+AI Hub automatically selects appropriate backends for streaming:
+
+* `stream: true` in request → Routes to streaming backend pools (extended timeout)
+* `stream: false` or omitted → Routes to standard backend pools
+
+=== User preferences that affect routing
+
+Your administrator may have configured preference toggles that influence routing:
+
+[cols="2,3",options="header"]
+|===
+|Preference |Effect on Your Requests
+
+|*infer_provider_from_model_name*
+|When enabled (default), `gpt-4o` routes to OpenAI and `claude-sonnet-3.5` routes to Anthropic without requiring vendor prefixes. When disabled, you must use explicit prefixes like `openai/gpt-4o`.
+
+|*auto_route_vision*
+|Requests with images automatically route to vision-capable models when enabled
+
+|*auto_route_long_context*
+|Requests with >100K tokens automatically route to Anthropic models (200K context window) when enabled
+
+|*rate_limit_resilience*
+|429 rate limit errors trigger automatic failover to alternate providers when enabled
+
+|*cost_optimization*
+|When set to `"prefer_cheaper"`, routes simple requests to cost-effective models. When `"prefer_quality"`, prefers higher-quality models.
+
+|*fallback_provider*
+|When model inference fails, determines which provider to use: `"openai"` (default), `"anthropic"`, or `"none"` (return error)
+|===
+
+You cannot modify these preferences directly. Contact your administrator if you need different routing behavior.
+
+=== What you cannot control
+
+Unlike Custom mode gateways, AI Hub gateways have protected resources:
+
+* *Cannot view routing rules*: Rules are managed by Redpanda
+* *Cannot modify backend pools*: Pools are pre-configured and immutable
+* *Cannot add custom rules*: AI Hub uses system-defined rules only
+
+If you need custom routing logic, ask your administrator about ejecting to Custom mode or creating a Custom mode gateway.
+
+== Available models
+
+AI Hub gateways expose models from OpenAI and Anthropic based on your administrator's provider configuration.
+
+=== OpenAI models
+
+Common OpenAI models available through AI Hub:
+
+* `openai/gpt-4o` - Most capable OpenAI model, multimodal
+* `openai/gpt-4o-mini` - Cost-effective, fast
+* `openai/o1-preview` - Advanced reasoning model
+* `openai/o1-mini` - Cost-effective reasoning model
+* `text-embedding-3-small` - Text embeddings (2048 dimensions)
+* `text-embedding-3-large` - Text embeddings (3072 dimensions)
+
+=== Anthropic models
+
+Common Anthropic models available through AI Hub:
+
+* `anthropic/claude-opus-4` - Most capable Anthropic model
+* `anthropic/claude-sonnet-3.5` - Balanced capability and cost
+* `anthropic/claude-haiku` - Cost-effective, fast
+
+=== Unified API format
+
+All models use the OpenAI-compatible `/v1/chat/completions` endpoint. AI Hub automatically transforms requests to Anthropic's native format when needed.
+
+[,python]
+----
+# Same code works for both providers
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://{GATEWAY_ENDPOINT}",
+    api_key="{REDPANDA_API_KEY}",
+    default_headers={"rp-aigw-id": "{GATEWAY_ID}"}
+)
+
+# OpenAI model
+response = client.chat.completions.create(
+    model="openai/gpt-4o-mini",
+    messages=[{"role": "user", "content": "Hello"}]
+)
+
+# Anthropic model (same API!)
+response = client.chat.completions.create(
+    model="anthropic/claude-sonnet-3.5",
+    messages=[{"role": "user", "content": "Hello"}]
+)
+----
+
+== Connect your application
+
+Connecting to an AI Hub gateway is identical to connecting to a Custom mode gateway. The only difference is that routing happens automatically based on AI Hub's pre-configured rules.
+
+=== Configuration requirements
+
+To connect your application, you need:
+
+* *Gateway Endpoint*: Base URL (for example, `https://gw.ai.panda.com`)
+* *Gateway ID*: Unique identifier (for example, `gw_abc123`)
+* *Redpanda API Key*: Your authentication token
+
+Your administrator provides these values when they grant you access to the gateway.
+
+=== Python example
+
+[,python]
+----
+from openai import OpenAI
+
+# Configure client
+client = OpenAI(
+    base_url="https://gw.ai.panda.com",  # Gateway endpoint
+    api_key="your-redpanda-api-key",      # Redpanda API key
+    default_headers={
+        "rp-aigw-id": "gw_abc123"         # Gateway ID
+    }
+)
+
+# Send request
+response = client.chat.completions.create(
+    model="openai/gpt-4o-mini",           # Vendor/model format
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "What is AI Gateway?"}
+    ],
+    max_tokens=100
+)
+
+print(response.choices[0].message.content)
+----
+
+=== TypeScript example
+
+[,typescript]
+----
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  baseURL: 'https://gw.ai.panda.com',
+  apiKey: process.env.REDPANDA_API_KEY,
+  defaultHeaders: {
+    'rp-aigw-id': 'gw_abc123'
+  }
+});
+
+const response = await client.chat.completions.create({
+  model: 'anthropic/claude-sonnet-3.5',
+  messages: [
+    { role: 'system', content: 'You are a helpful assistant.' },
+    { role: 'user', content: 'What is AI Gateway?' }
+  ],
+  max_tokens: 100
+});
+
+console.log(response.choices[0].message.content);
+----
+
+=== cURL example
+
+[,bash]
+----
+curl https://gw.ai.panda.com/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ${REDPANDA_API_KEY}" \
+  -H "rp-aigw-id: gw_abc123" \
+  -d '{
+    "model": "anthropic/claude-sonnet-3.5",
+    "messages": [
+      {"role": "system", "content": "You are a helpful assistant."},
+      {"role": "user", "content": "What is AI Gateway?"}
+    ],
+    "max_tokens": 100
+  }'
+----
+
+== Request patterns
+
+Follow these best practices when using AI Hub gateways.
+
+=== Model selection
+
+Always use the `vendor/model_id` format for explicit routing:
+
+[,python]
+----
+# ✅ Recommended: Explicit provider
+model = "openai/gpt-4o"
+model = "anthropic/claude-sonnet-3.5"
+
+# ⚠️ Works but relies on pattern matching
+model = "gpt-4o"  # Routes to OpenAI via pattern matching
+model = "claude-sonnet-3.5"  # Routes to Anthropic via pattern matching
+----
+
+Explicit provider prefixes ensure deterministic routing and make your code more maintainable.
+
+=== Streaming requests
+
+Enable streaming for faster time-to-first-token:
+
+[,python]
+----
+response = client.chat.completions.create(
+    model="openai/gpt-4o-mini",
+    messages=[{"role": "user", "content": "Write a story"}],
+    stream=True  # Enable streaming
+)
+
+for chunk in response:
+    if chunk.choices[0].delta.content:
+        print(chunk.choices[0].delta.content, end='')
+----
+
+AI Hub automatically routes streaming requests to streaming backend pools with extended timeouts.
+
+=== Error handling
+
+Handle provider-specific errors:
+
+[,python]
+----
+from openai import OpenAI, APIError, RateLimitError
+
+try:
+    response = client.chat.completions.create(
+        model="openai/gpt-4o",
+        messages=[{"role": "user", "content": "Hello"}]
+    )
+except RateLimitError as e:
+    # Rate limit hit (429)
+    # If rate_limit_resilience enabled, AI Hub may have already retried
+    print(f"Rate limited: {e}")
+except APIError as e:
+    # Other API errors
+    print(f"API error: {e}")
+----
+
+If your administrator enabled `rate_limit_resilience`, AI Hub automatically retries with alternate providers on 429 errors.
+
+== Test your integration
+
+Validate that your integration works correctly.
+
+=== Test connectivity
+
+Verify you can reach the gateway:
+
+[,bash]
+----
+curl https://{GATEWAY_ENDPOINT}/v1/models \
+  -H "Authorization: Bearer ${REDPANDA_API_KEY}" \
+  -H "rp-aigw-id: ${GATEWAY_ID}"
+----
+
+Expected: List of available models from configured providers.
+
+=== Test a simple request
+
+Send a minimal request:
+
+[,bash]
+----
+curl https://{GATEWAY_ENDPOINT}/v1/chat/completions \
+  -H "Authorization: Bearer ${REDPANDA_API_KEY}" \
+  -H "rp-aigw-id: ${GATEWAY_ID}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "openai/gpt-4o-mini",
+    "messages": [{"role": "user", "content": "Say hello"}],
+    "max_tokens": 10
+  }'
+----
+
+Expected: Successful completion with response content.
+
+=== Verify in observability
+
+Check the observability dashboard to confirm your requests are logged:
+
+. Navigate to *AI Gateway* → *Gateways* → Your Gateway.
+. Click *Observability*.
+. Verify your test requests appear in the logs.
+. Check token usage and estimated cost.
+
+== Differences from Custom mode
+
+Understanding how AI Hub differs from Custom mode helps you set appropriate expectations.
+
+=== What works the same
+
+*API behavior:*
+
+* Same `/v1/chat/completions` endpoint
+* Same request/response format
+* Same authentication (Redpanda API key + gateway ID)
+* Same observability dashboard
+
+*Discovery process:*
+
+* Same gateway discovery (Console or API)
+* Same connectivity testing
+* Same error handling patterns
+
+=== What is different
+
+*Routing visibility:*
+
+* *AI Hub*: Cannot view or modify routing rules (managed by system)
+* *Custom*: Can view and modify all routing rules
+
+*Backend pools:*
+
+* *AI Hub*: 6 pre-configured pools, cannot modify
+* *Custom*: User-defined pools, full control
+
+*Customization:*
+
+* *AI Hub*: Limited to 6 preference toggles
+* *Custom*: Unlimited custom CEL routing rules
+
+*Provider support:*
+
+* *AI Hub*: OpenAI and Anthropic only
+* *Custom*: Any provider (Azure OpenAI, AWS Bedrock, custom endpoints)
+
+=== Limitations
+
+AI Hub mode has intentional limitations:
+
+* Cannot add custom routing rules
+* Cannot modify backend pool configuration
+* Cannot integrate with providers other than OpenAI and Anthropic
+* Cannot use provider-specific API features not exposed through unified API
+
+If you encounter these limitations, ask your administrator about Custom mode.
+
+== When to request Custom mode
+
+Consider requesting Custom mode or gateway ejection when:
+
+* You need custom routing logic (for example, route by customer tier, geography)
+* You need to integrate with Azure OpenAI or AWS Bedrock
+* You need provider-specific features not available through the unified API
+* AI Hub's automatic routing doesn't match your requirements
+* You need visibility into routing rules for debugging
+
+Discuss your requirements with your administrator. They can either:
+
+* Adjust AI Hub preference toggles to meet your needs
+* Eject the gateway to Custom mode (one-way transition)
+* Create a new Custom mode gateway for your team
+
+== Next steps
+
+Now that you're using an AI Hub gateway:
+
+* xref:ai-agents:ai-gateway/builders/connect-your-agent.adoc[Connect Your Agent] - Integrate AI agents with advanced patterns
+* xref:ai-agents:ai-gateway/builders/discover-gateways.adoc[Discover Gateways] - Find other available gateways
+* xref:ai-agents:ai-gateway/mcp-aggregation-guide.adoc[MCP Aggregation] - Use tool aggregation with AI agents

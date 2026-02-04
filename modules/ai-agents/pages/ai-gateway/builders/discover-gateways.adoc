@@ -46,7 +46,7 @@ You can also list gateways programmatically:
 
 [source,bash]
 ----
-curl https://api.redpanda.com/v1/ai-gateway/gateways \
+curl https://api.redpanda.com/v1/gateways \
   -H "Authorization: Bearer ${REDPANDA_CLOUD_TOKEN}"
 ----
 
@@ -59,6 +59,7 @@ Response:
     {
       "id": "gw_abc123",
       "name": "production-gateway",
+      "mode": "ai_hub",
       "endpoint": "https://gw.ai.panda.com",
       "status": "active",
       "workspace_id": "ws_xyz789",
@@ -67,6 +68,7 @@ Response:
     {
       "id": "gw_def456",
       "name": "staging-gateway",
+      "mode": "custom",
       "endpoint": "https://gw-staging.ai.panda.com",
       "status": "active",
       "workspace_id": "ws_xyz789",
@@ -173,6 +175,34 @@ With deferred loading enabled, you'll receive search and orchestrator tools init
 
 // See xref:ai-gateway/builders/use-mcp-tools.adoc[] for more details.
 
+== Identify gateway mode
+
+Gateways can operate in two modes: AI Hub mode or Custom mode. Understanding which mode your gateway uses helps you know what to expect.
+
+include::ai-agents:partial$ai-hub-mode-indicator.adoc[]
+
+=== What it means for builders
+
+*AI Hub Mode:*
+
+* Routing is pre-configured and intelligent
+* Models are automatically routed based on system-managed rules
+* You cannot see or modify routing rules (they're managed by Redpanda)
+* Limited customization via administrator-configured preference toggles
+* See xref:ai-gateway/builders/use-ai-hub-gateway.adoc[] for AI Hub-specific guidance
+
+*Custom Mode:*
+
+* Routing is configured by your administrator
+* You can view configured routing rules in the console
+* Administrator has full control over backend pools and policies
+* Standard discovery and usage patterns apply (rest of this page)
+
+[TIP]
+====
+If you need specific routing behavior or custom configuration that AI Hub doesn't support, ask your administrator about ejecting to Custom mode or creating a Custom mode gateway.
+====
+
 == Check gateway availability
 
 Before integrating your application, verify that you can successfully connect to the gateway:
@@ -263,7 +293,7 @@ export REDPANDA_CLOUD_TOKEN="your-token-here"
 
 # Step 1: List all accessible gateways
 echo "=== Discovering gateways ==="
-curl -s https://api.redpanda.com/v1/ai-gateway/gateways \
+curl -s https://api.redpanda.com/v1/gateways \
   -H "Authorization: Bearer ${REDPANDA_CLOUD_TOKEN}" \
   | jq '.gateways[] | {name: .name, id: .id, endpoint: .endpoint}'
 
