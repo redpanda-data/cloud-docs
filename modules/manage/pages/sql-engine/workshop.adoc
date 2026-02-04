@@ -444,7 +444,7 @@ fleetmgmt operation create --type update \
 
 === Scale down
 
-Decrease the number of replicas to reduce resource usage:
+To decrease the number of replicas to reduce resource usage:
 
 [,bash]
 ----
@@ -454,16 +454,16 @@ fleetmgmt operation create --type update \
   --cluster-ids <cluster-id>
 ----
 
-=== Verify scaling operation
+=== Verify scaling operations
 
-Check the operation status:
+To check the operation status:
 
 [,bash]
 ----
 fleetmgmt operation get <operation-id>
 ----
 
-Verify the new replica count:
+To verify the new replica count:
 
 [,bash]
 ----
@@ -472,11 +472,11 @@ kubectl get pods -n redpanda-oxla
 
 == Delete or destroy the cluster
 
-To remove SQL Engine from your cluster or delete the entire BYOC cluster, use Fleet Management operations.
+To remove Redpanda SQL Engine from your cluster or delete the entire BYOC cluster, use Fleet Management operations.
 
 === Disable SQL Engine only
 
-To remove SQL Engine while keeping the Redpanda cluster running:
+To remove Redpanda SQL Engine while keeping the Redpanda cluster running:
 
 [,bash]
 ----
@@ -486,16 +486,16 @@ fleetmgmt operation create --type update \
   --cluster-ids <cluster-id>
 ----
 
-This stops all SQL Engine pods and removes the service from your data plane.
+This stops all Redpanda SQL Engine pods and removes the service from your data plane.
 
 === Delete the entire BYOC cluster
 
-To delete the BYOC cluster including SQL Engine:
+To delete the BYOC cluster, including Redpanda SQL Engine:
 
-. In the Redpanda Cloud UI, navigate to the cluster details page
-. Click *Delete Cluster*
-. Confirm the deletion
-. Run the Terraform destroy command from your BYOC bundle directory:
+. In the Redpanda Cloud Console, navigate to the cluster details page.
+. Click *Delete Cluster*.
+. Confirm the deletion.
+. Run the Terraform **destroy** command from your BYOC bundle directory:
 +
 [,bash]
 ----
@@ -503,7 +503,7 @@ cd <terraform-bundle-directory>
 terraform destroy
 ----
 
-. Confirm the destruction when prompted
+. Confirm the destruction when prompted.
 
 This removes all Redpanda and SQL Engine resources from your cloud account.
 
