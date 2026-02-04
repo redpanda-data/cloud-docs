@@ -1,0 +1,190 @@
+= View Transcripts
+:description: Learn how to filter and navigate the Transcripts interface to investigate agent execution traces using multiple detail views and interactive timeline navigation.
+:page-topic-type: how-to
+:personas: agent_developer, platform_admin
+:learning-objective-1: Filter transcripts to find specific execution traces
+:learning-objective-2: Use the timeline interactively to navigate to specific time periods
+:learning-objective-3: Navigate between detail views to inspect span information at different levels
+
+The Transcripts view provides filtering and navigation capabilities for investigating agent, MCP server, and AI Gateway execution glossterm:transcript[transcripts]. Use this view to quickly locate specific operations, analyze performance patterns, and debug issues across glossterm:tool[] invocations, LLM calls, and glossterm:agent[] reasoning steps.
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
+
+For basic orientation on monitoring each Redpanda Agentic Data Plane component, see: 
+
+* xref:ai-agents:ai-gateway/observability-metrics.adoc[]
+* xref:ai-agents:agents/monitor-agents.adoc[]
+* xref:ai-agents:mcp/remote/monitor-mcp-servers.adoc[]
+
+For conceptual background on what transcripts capture and how glossterm:span[spans] are organized hierarchically, see xref:ai-agents:observability/concepts.adoc[].
+
+== Prerequisites
+
+* xref:ai-agents:agents/create-agent.adoc[Running agent] or xref:ai-agents:mcp/remote/quickstart.adoc[MCP server] with at least one execution
+* Access to the Transcripts view (requires appropriate permissions to read the `redpanda.otel_traces` topic)
+
+== Navigate the Transcripts interface
+
+=== Filter transcripts
+
+Use filters to narrow down transcripts and quickly locate specific executions. When you use any of the filters, the transcript list updates to show only matching results.
+
+The Transcripts view provides several quick-filter buttons to focus on specific operation types:
+
+* *Service*: Isolate operations from a particular component in your agentic data plane (agents, MCP servers, or AI Gateway)
+* *LLM Calls*: Spans representing large language model (LLM) invocations, including chat completions and embeddings
+* *Tool Calls*: Spans where tools were executed by agents
+* *Agent Spans*: Agent invocation and reasoning spans
+* *Errors Only*: Transcripts containing failed operations or errors
+* *Slow (>5s)*: Operations that exceeded five seconds in duration, useful for performance investigation
+
+You can combine multiple filters to narrow results further. For example, use *Tool Calls* and *Errors Only* together to investigate failed tool executions.
+
+Toggle *Full traces* on to see the complete execution context, in grayed-out text, for the filtered transcripts.
+
+==== Filter by attribute
+
+Click the *Attribute* button to query exact matches on specific span metadata such as the following:
+
+* Agent names
+* LLM model names, for example, `gemini-3-flash-preview`
+* Tool names
+* Span and trace IDs
+
+You can add multiple attribute filters to refine results.
+
+==== Adjust time range
+
+Use the time range selector to focus on specific time periods (from the last five minutes up to the last 24 hours):
+
+* View recent executions, for example, over the last hour, to monitor real-time activity
+* Expand to longer periods for trend analysis over the last day
+
+=== Use the interactive timeline
+
+Use the timeline visualization to quickly identify when errors began or patterns changed, and navigate directly to transcripts from specific time windows when investigating issues that occurred at known times
+
+The timeline displays transcript volume as a bar chart. Each bar represents a time bucket that recalibrates dynamically based on your <<adjust-time-range,selected time range>>, with color-coded indicators:
+
+* Green: Successful operations
+* Red: Operations with errors
+
+Click on any bar in the timeline to zoom into transcripts from that specific time period. The transcript table automatically scrolls to show operations from the time bucket in view.
+
+[NOTE]
+====
+When viewing time ranges with many transcripts (hundreds or thousands), the table displays a subset of the data to maintain performance and usability. The timeline bar indicates the actual time range of currently loaded data, which may be narrower than your selected time range. 
+
+Refer to the timeline header to check the exact range and count of visible transcripts, for example, "Showing 100 of 299 transcripts from 13:17 to 15:16".
+====
+
+== Inspect span details
+
+Each row in the transcript table represents a high-level agent or MCP server request flow. The table displays the following:
+
+* Time: Timestamp when the span started (sortable)
+* Span: Span type indicator and span name, with hierarchical tree structure
+* Duration: Total duration, or duration of child spans relative to the parent span, represented as visual bars
+
+Expand each parent span to see the xref:ai-agents:observability/concepts.adoc#agent-transcript-hierarchy[hierarchical structure] of nested operations, including internal processing steps, LLM interactions, and tool calls. Parent-child spans show how operations relate: for example, an agent invocation (parent) triggers LLM calls and tool executions (children). Use the *Collapse all* option to quickly fold all expanded spans.
+
+// TODO: Clarify MCP trace structure
+When agents invoke remote MCP servers, transcripts fold together under a tree structure to provide a unified view of the complete operation across service boundaries. The glossterm:trace ID[] originates at the initial request touchpoint and propagates across all involved services, linking spans from both the agent and MCP server under a single transcript. Use the tree view to follow the trace flow across multiple services and understand the complete request lifecycle. 
+
+// TODO: Confirm how transcripts from external agents appear
+If you use external agents that directly invoke MCP servers in the Redpanda Agentic Data Plane, you may only see MCP-level parent transcripts, unless you have configured the agents to also emit traces to the Redpanda glossterm:OpenTelemetry[OTEL] ingestion pipeline.
+
+// TODO: Confirm how gateway traces appear
+
+Selected spans display detailed information at multiple levels, from high-level summaries to complete raw data:
+
+* Start with summary tab for quick assessment
+* Inspect attributes for detailed investigation using structured metadata
+* Use raw data when you need complete information
+
+[NOTE]
+====
+Rows labeled "awaiting root — waiting for parent span" indicate incomplete transcripts where child spans have been received but the parent span is missing or hasn't arrived yet. This can occur due to network latency between services, processing delays in the OpenTelemetry pipeline, or lost parent spans from service failures. 
+If you consistently see awaiting root entries, this suggests instrumentation or trace collection issues that should be investigated.
+====
+
+=== Summary tab
+
+Click on any span in the transcript table to open the detail panel on the right side of the interface. The first tab displays a context-specific summary based on the span type (for example, *Tool Call* for tool execution spans).
+
+For tool call spans, the detail panel shows:
+
+* *Description*: The purpose and context of the tool call
+* *Arguments*: JSON showing the parameters passed to the tool
+* *Response*: JSON showing the tool's output or result
+
+The summary panel for other span types provides high-level information such as:
+
+* Total nested operations (span count) and execution time
+* Token usage for LLM operations
+* Counts of LLM calls and tool calls
+* Full conversation history for agent spans, including user prompts, configured xref:ai-agents:agents/create-agent.adoc#write-the-system-prompt[system prompts], and LLM outputs
+
+TIP: Expand the summary panel view to easily read long conversations and complex JSON structures.
+
+=== Attributes tab
+
+The attributes view shows structured metadata for each transcript span. Use this view to inspect span attributes and understand the context of each operation. See xref:ai-agents:observability/concepts.adoc#key-attributes-by-layer[Transcripts and AI Observability] for details on standard attributes by instrumentation layer.
+
+=== Raw data tab
+
+The raw data view provides the complete span structure:
+
+* Full OpenTelemetry span in JSON format
+* All fields including those not displayed in summary or attributes views
+* Structured data suitable for export or programmatic access
+
+You can also view the raw transcript data in the `redpanda.otel_traces` topic.
+
+== Investigate and analyze operations
+
+The following patterns demonstrate how to use the Transcripts view for understanding and troubleshooting your agentic systems.
+
+=== Debug errors
+
+. Use *Errors Only* to filter for failed operations, or review the timeline to identify and zoom in to when errors began occurring.
+. Expand error spans to examine the failure context.
+. Check preceding tool call arguments and LLM responses for root cause.
+
+=== Investigate performance issues
+
+. Use the *Slow (>5s)* filter to identify operations with high latency.
+. Expand slow spans to identify bottlenecks in the execution tree.
+. Compare duration bars across similar operations to spot anomalies.
+
+=== Analyze tool usage
+
+. Apply the *Tool Calls* filter and optionally use the *Attribute* filter to focus on a specific tool.
+. Review tool execution frequency in the timeline.
+. Click individual tool call spans to inspect arguments and responses.
+.. Check the Description field to understand tool invocation context.
+.. Use the Arguments field to verify correct parameter passing.
+
+=== Monitor LLM interactions
+
+. Click *LLM Calls* to focus on model invocations and optionally filter by model name and provider using the *Attribute* filter.
+. Review token usage patterns across different time periods.
+. Examine conversation history to understand model behavior.
+. Spot unexpected model calls or token consumption spikes.
+
+=== Trace multi-service operations
+
+. Locate the parent agent or gateway span in the transcript table.
+. Use the *Attribute* filter to follow the trace ID through agent and MCP server boundaries.
+. Expand the transcript tree to reveal child spans across services.
+. Review durations to understand where latency occurs in distributed calls.
+
+== Next steps
+
+* xref:ai-agents:agents/monitor-agents.adoc[]
+* xref:ai-agents:mcp/remote/monitor-mcp-servers.adoc[]
+* xref:ai-agents:agents/troubleshooting.adoc[]
