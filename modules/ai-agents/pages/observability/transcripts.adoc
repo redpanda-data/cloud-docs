@@ -57,27 +57,15 @@ Click the *Attribute* button to query exact matches on specific span metadata su
 
 You can add multiple attribute filters to refine results.
 
-==== Adjust time range
-
-Use the time range selector to focus on specific time periods (from the last five minutes up to the last 24 hours):
-
-* View recent executions, for example, over the last hour, to monitor real-time activity
-* Expand to longer periods for trend analysis over the last day
-
 === Use the interactive timeline
 
-Use the timeline visualization to quickly identify when errors began or patterns changed, and navigate directly to transcripts from specific time windows when investigating issues that occurred at known times
-
-The timeline displays transcript volume as a bar chart. Each bar represents a time bucket that recalibrates dynamically based on your <<adjust-time-range,selected time range>>, with color-coded indicators:
-
-* Green: Successful operations
-* Red: Operations with errors
+Use the timeline visualization to quickly identify when errors began or patterns changed, and navigate directly to transcripts from specific time windows when investigating issues that occurred at known times.
 
 Click on any bar in the timeline to zoom into transcripts from that specific time period. The transcript table automatically scrolls to show operations from the time bucket in view.
 
 [NOTE]
 ====
-When viewing time ranges with many transcripts (hundreds or thousands), the table displays a subset of the data to maintain performance and usability. The timeline bar indicates the actual time range of currently loaded data, which may be narrower than your selected time range. 
+When viewing time ranges with many transcripts (hundreds or thousands), the table displays a subset of the data to maintain performance and usability. The timeline bar indicates the actual time range of data currently loaded into the view, which may be narrower than your selected time range. 
 
 Refer to the timeline header to check the exact range and count of visible transcripts, for example, "Showing 100 of 299 transcripts from 13:17 to 15:16".
 ====
@@ -90,13 +78,13 @@ The transcript table displays the following:
 * Span: Span type indicator and span name, with hierarchical tree structure
 * Duration: Total duration, or duration of child spans relative to the parent span, represented as visual bars
 
-Each top-level row in the transcript table represents a service-level request flow in an ADP component. Expand each parent span to see the hierarchical structure of nested operations, including internal processing steps, LLM interactions, and tool calls. xref:ai-agents:observability/concepts.adoc#parent-child-relationships[Parent-child spans] show how operations relate: for example, an agent invocation (parent) triggers LLM calls and tool executions (children). Use the *Collapse all* option to quickly fold all expanded spans.
+Each top-level row in the transcript table represents a service-level request flow in an ADP component. Expand each parent span to see the hierarchical structure of nested operations, including internal processing steps, LLM interactions, and tool calls. xref:ai-agents:observability/concepts.adoc#parent-child-relationships[Parent-child spans] show how operations relate: for example, an agent invocation (parent) triggers LLM calls and tool executions (children).
 
 // TODO: Clarify MCP trace structure
 When agents invoke remote MCP servers, transcripts fold together under a tree structure to provide a unified view of the complete operation across service boundaries. The glossterm:trace ID[] originates at the initial request touchpoint and propagates across all involved services, linking spans from both the agent and MCP server under a single transcript. Use the tree view to follow the trace flow across multiple services and understand the complete request lifecycle. 
 
 // TODO: Confirm how transcripts from external agents appear
-If you use external agents that directly invoke MCP servers in the Redpanda Agentic Data Plane, you may only see MCP-level parent transcripts, unless you have configured the agents to also emit traces to the Redpanda glossterm:OpenTelemetry[OTEL] ingestion pipeline.
+If you use external agents that directly invoke MCP servers in the ADP, you may only see MCP-level parent transcripts, unless you have configured the agents to also emit traces to the Redpanda glossterm:OpenTelemetry[OTEL] ingestion pipeline.
 
 // TODO: Confirm how gateway traces appear
 
@@ -114,22 +102,12 @@ If you consistently see awaiting root entries, this suggests instrumentation or 
 
 === Summary tab
 
-Click on any span in the transcript table to open the detail panel on the right side of the interface. The first tab displays a context-specific summary based on the span type.
-
-For example, for tool call spans, the summary shows:
-
-* *Description*: The purpose and context of the tool call
-* *Arguments*: JSON showing the parameters passed to the tool
-* *Response*: JSON showing the tool's output or result
-
-The summary panel for other span types provides high-level information such as:
+Click on any span in the transcript table to open the detail panel on the right side of the interface. The first tab displays a context-specific summary based on the span type, which may include:
 
 * Total nested operations (span count) and execution time
 * Token usage for LLM operations
 * Counts of LLM calls and tool calls
 * Full conversation history for agent spans, including user prompts, configured xref:ai-agents:agents/create-agent.adoc#write-the-system-prompt[system prompts], and LLM outputs
-
-TIP: Expand the summary panel view to easily read long conversations and complex JSON structures.
 
 === Attributes tab
 
