@@ -304,13 +304,31 @@ WHERE c.timestamp > NOW() - INTERVAL '1 day';
 
 All Redpanda-backed tables include metadata columns:
 
-* `redpanda.partition` - Partition ID
-* `redpanda.offset` - Record offset
-* `redpanda.timestamp` - Record timestamp
-* `redpanda.timestamp_source` - Timestamp source (broker or producer)
-* `redpanda.headers` - Message headers
-* `redpanda.key` - Raw key (populated on deserialization error with FILL_NULL policy)
-* `redpanda.value` - Raw value (populated on deserialization error with FILL_NULL policy)
+[cols="2,3"]
+|===
+| Metadata Column Name | Description
+
+| `redpanda.partition`
+| Partition ID
+
+| `redpanda.offset`
+| Record offset
+
+| `redpanda.timestamp`
+| Record timestamp
+
+| `redpanda.timestamp_source`
+| Timestamp source (broker or producer)
+
+| `redpanda.headers`
+| Message headers
+
+| `redpanda.key`
+| Raw key (populated on deserialization error with FILL_NULL policy)
+
+| `redpanda.value`
+| Raw value (populated on deserialization error with FILL_NULL policy)
+|===
 
 Query metadata columns like any other column:
 
