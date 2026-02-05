@@ -18,7 +18,7 @@ Consider using the endpoint service if you have multiple VPCs and could benefit 
 
 == Requirements
 
-* Your Redpanda cluster and VPC must be in the same region.
+* Your Redpanda cluster and VPC must be in the same region, unless you configure <<cross-region-privatelink,cross-region PrivateLink>>.
 * Use the https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html[AWS CLI] to create a new client VPC or modify an existing one to use the PrivateLink endpoint.
 
 TIP: In Kafka clients, set `connections.max.idle.ms` to a value less than 350 seconds. 
@@ -31,8 +31,9 @@ include::networking:partial$dns_resolution.adoc[]
 
 . In the Redpanda Cloud Console, select your https://cloud.redpanda.com/clusters[cluster^], and go to the *Cluster settings* page.
 . For AWS PrivateLink, click *Enable*.
-. On the Enable PrivateLink page, for Allowed principal ARNs, click *Add*, and enter the Amazon Resource Names (ARNs) for each AWS principal allowed to access the endpoint service. For example, for all principals in a specific account, use `arn:aws:iam::<account-id>:root`. See the AWS documentation on https://docs.aws.amazon.com/vpc/latest/privatelink/configure-endpoint-service.html#add-remove-permission[configuring an endpoint service^] for details. 
-. Click *Add* after entering each ARN, and when finished, click *Enable*. 
+. On the Enable PrivateLink page, for Allowed principal ARNs, click *Add*, and enter the Amazon Resource Names (ARNs) for each AWS principal allowed to access the endpoint service. For example, for all principals in a specific account, use `arn:aws:iam::<account-id>:root`. See the AWS documentation on https://docs.aws.amazon.com/vpc/latest/privatelink/configure-endpoint-service.html#add-remove-permission[configuring an endpoint service^] for details.
+. Click *Add* after entering each ARN, and when finished, click *Enable*.
+. (Optional) To enable cross-region PrivateLink, add supported regions. See <<cross-region-privatelink>>.
 . It may take several minutes for your cluster to update. When the update is complete, the AWS PrivateLink status on the Cluster settings page changes from *In progress* to *Enabled*.
 
 NOTE: For help with issues when enabling PrivateLink, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda support^].
@@ -48,6 +49,31 @@ include::networking:partial$private-links-access-rp-services-through-vpc.adoc[]
 You can test the connection to the endpoint service from any VM or container in the consumer VPC. If configuring a client isn't possible right away, you can do these checks using `rpk` or cURL:
 
 include::networking:partial$private-links-test-connection.adoc[]
+
+== Cross-region PrivateLink
+
+By default, AWS PrivateLink only allows connections from VPCs in the same region as the endpoint service. Cross-region PrivateLink enables clients in different AWS regions to connect to your Redpanda cluster through PrivateLink.
+
+For more information about AWS cross-region PrivateLink support, see the https://docs.aws.amazon.com/vpc/latest/privatelink/privatelink-share-your-services.html#endpoint-service-cross-region[AWS documentation^].
+
+=== Prerequisites
+
+* The Redpanda cluster must be deployed across multiple availability zones (multi-AZ). This is an AWS limitation for cross-region PrivateLink.
+
+=== Configure supported regions
+
+NOTE: The *Supported regions* option only appears in the UI for multi-AZ clusters.
+
+. In the Redpanda Cloud UI, select your https://cloud.redpanda.com/clusters[cluster^], and go to the cluster settings page.
+. In the AWS PrivateLink section, click *Edit* (or *Enable* if PrivateLink is not yet enabled).
+. In the *Supported regions* section, click *Add* to add a region from which PrivateLink endpoints can connect to your cluster.
+. Select an AWS region from the dropdown. The cluster's home region is automatically included and not shown in the list.
+. Repeat to add additional regions as needed.
+. Click *Save* (or *Enable*) to apply the changes.
+
+After saving, the *Supported regions* row on the cluster settings page displays your configured regions.
+
+Clients in VPCs located in the supported regions can now create PrivateLink endpoints that connect to your Redpanda cluster.
 
 == Disable endpoint service
 

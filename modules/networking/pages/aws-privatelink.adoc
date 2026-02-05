@@ -19,10 +19,10 @@ Consider using the PrivateLink endpoint service if you have multiple VPCs and co
 
 After <<get-a-cloud-api-access-token,getting an access token>>, you can <<create-new-cluster-with-privatelink-endpoint-service-enabled,enable PrivateLink when creating a new cluster>>, or you can <<enable-privatelink-endpoint-service-for-existing-clusters,enable PrivateLink for existing clusters>>.
 
-== Requirements
+== Prerequisites
 
 * Install `rpk`.
-* Your Redpanda cluster and <<create-client-vpc,VPC>> must be in the same region.
+* Your Redpanda cluster and <<create-client-vpc,VPC>> must be in the same region, unless you configure <<cross-region-privatelink,cross-region PrivateLink>>.
 * In this guide, you use the link:/api/doc/cloud-controlplane/topic/topic-cloud-api-overview[Redpanda Cloud API] to enable the Redpanda endpoint service for your clusters. Follow the steps below to <<get-an-access-token,get an access token>>.
 * Use the https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html[AWS CLI^] to create a new client VPC or modify an existing one to use the PrivateLink endpoint.
 
@@ -93,6 +93,7 @@ In the example below, make sure to set your own values for the following fields:
 - `name`
 - `connect_console`: Whether to enable connections to Redpanda Console (boolean)
 - `allowed_principals`: Amazon Resource Names (ARNs) for the AWS principals allowed to access the endpoint service. For example, for all principals in an account, use `"arn:aws:iam::account_id:root"`. See https://docs.aws.amazon.com/vpc/latest/privatelink/configure-endpoint-service.html#add-remove-permission[Configure an endpoint service^] for details.
+- `supported_regions`: (Optional) List of AWS regions from which PrivateLink endpoints can connect to Redpanda. Required only for <<cross-region-privatelink,cross-region PrivateLink>>. For example, `["us-east-1", "us-west-2"]`.
 --
 +
 [,bash]
@@ -112,7 +113,8 @@ CLUSTER_POST_BODY=`cat << EOF
         "aws_private_link": {
             "enabled": true,
             "connect_console": true,
-            "allowed_principals": ["<principal_1>","<principal_2>"]
+            "allowed_principals": ["<principal_1>","<principal_2>"],
+            "supported_regions": ["<region_1>","<region_2>"]
         }
     }
 }
@@ -158,6 +160,7 @@ In the example below, make sure to set your own value for the following field:
 --
 - `connect_console`: Whether to enable connections to Redpanda Console (boolean)
 - `allowed_principals`: Amazon Resource Names (ARNs) for the AWS principals allowed to access the endpoint service. For example, for all principals in an account, use `"arn:aws:iam::account_id:root"`. See https://docs.aws.amazon.com/vpc/latest/privatelink/configure-endpoint-service.html#add-remove-permission[Configure an endpoint service^] for details.
+- `supported_regions`: (Optional) List of AWS regions from which PrivateLink endpoints can connect to Redpanda. Required only for <<cross-region-privatelink,cross-region PrivateLink>>. For example, `["us-east-1", "us-west-2"]`.
 --
 +
 [,bash]
@@ -167,7 +170,8 @@ CLUSTER_PATCH_BODY=`cat << EOF
   "aws_private_link": {
     "enabled": true,
     "connect_console": true,
-    "allowed_principals": ["<principal_1>","<principal_2>"]
+    "allowed_principals": ["<principal_1>","<principal_2>"],
+    "supported_regions": ["<region_1>","<region_2>"]
   }
 }
 EOF`
@@ -234,7 +238,7 @@ xref:networking:byoc/aws/vpc-peering-aws.adoc[VPC peering] and PrivateLink will 
 VPC peering and PrivateLink can both be used at the same time if Kafka clients are connecting from distinct VPCs. For example, in a private Redpanda cluster, you can connect your internal Kafka clients over VPC peering, and enable PrivateLink for external services.
 ====
 
-The VPC region must be the same region where the Redpanda cluster is deployed. To create the VPC, run:
+The client VPC must be in the same region as your Redpanda cluster, unless you have configured <<cross-region-privatelink,cross-region PrivateLink>>. To create the VPC, run:
 
 [,bash]
 ----
@@ -345,6 +349,61 @@ aws ec2 create-vpc-endpoint \
 After you have enabled PrivateLink for your cluster, your connection URLs are available in the *How to Connect* section of the cluster overview in the Redpanda Cloud UI.
 
 include::networking:partial$private-links-access-rp-services-through-vpc.adoc[]
+
+== Cross-region PrivateLink
+
+By default, AWS PrivateLink only allows connections from VPCs in the same region as the endpoint service. Cross-region PrivateLink enables clients in different AWS regions to connect to your Redpanda cluster through PrivateLink.
+
+For more information about AWS cross-region PrivateLink support, see the https://docs.aws.amazon.com/vpc/latest/privatelink/privatelink-share-your-services.html#endpoint-service-cross-region[AWS documentation^].
+
+=== Requirements
+
+* The Redpanda cluster must be deployed across multiple availability zones (multi-AZ). This is an AWS limitation for cross-region PrivateLink.
+* Cross-region PrivateLink is configured through the `supported_regions` field in the `aws_private_link` configuration. This field only appears in the API response for multi-AZ clusters.
+* For BYOC clusters, the Redpanda agent IAM role must have `vpce:AllowMultiRegion` and `elasticloadbalancing:DescribeListenerAttributes` permissions.
+
+=== Configure cross-region PrivateLink
+
+To enable cross-region PrivateLink, add the `supported_regions` field to your `aws_private_link` configuration when <<create-new-cluster-with-privatelink-endpoint-service-enabled,creating a new cluster>> or <<enable-privatelink-endpoint-service-for-existing-clusters,enabling PrivateLink on an existing cluster>>.
+
+The `supported_regions` field accepts a list of AWS region identifiers where you want to allow PrivateLink connections from. For example:
+
+[,json]
+----
+"aws_private_link": {
+    "enabled": true,
+    "connect_console": true,
+    "allowed_principals": ["arn:aws:iam::123456789012:root"],
+    "supported_regions": ["us-east-1", "us-west-2", "eu-west-1"]
+}
+----
+
+With this configuration, clients in VPCs located in `us-east-1`, `us-west-2`, and `eu-west-1` can create PrivateLink endpoints that connect to your Redpanda cluster, regardless of which region the cluster is deployed in.
+
+=== Create a cross-region VPC endpoint
+
+When creating a VPC endpoint in a different region than your Redpanda cluster, use the same process as <<create-vpc-endpoint,creating a standard VPC endpoint>>, but specify both the client VPC's region and the service region where your Redpanda cluster is deployed.
+
+NOTE: The `--service-region` option requires AWS CLI version 2.22.0 or later. Run `aws --version` to check your version and https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html[update if necessary^].
+
+[,bash]
+----
+# CLIENT_REGION is the region where your client VPC is located
+# SERVICE_REGION is the region where your Redpanda cluster is deployed
+CLIENT_REGION=<client_region>
+SERVICE_REGION=<service_region>
+
+aws ec2 create-vpc-endpoint \
+    --region $CLIENT_REGION --profile $PROFILE \
+    --service-region $SERVICE_REGION \
+    --vpc-id $CLIENT_VPC_ID \
+    --vpc-endpoint-type "Interface" \
+    --ip-address-type "ipv4" \
+    --service-name $PL_SERVICE_NAME \
+    --subnet-ids $SUBNET_ID \
+    --security-group-ids $SECURITY_GROUP_ID \
+    --private-dns-enabled
+----
 
 == Test the connection
 
