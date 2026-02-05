@@ -37,8 +37,8 @@ If you're using LangChain with OpenTelemetry tracing, you can send traces to Red
 export LANGSMITH_OTEL_ENABLED=true
 export LANGSMITH_TRACING=true
 
-# Send traces to Redpanda Connect pipeline
-export OTEL_EXPORTER_OTLP_ENDPOINT="https://<otlp-receiver-address>:4318"
+# Send traces to Redpanda Connect pipeline (use your pipeline URL)
+export OTEL_EXPORTER_OTLP_ENDPOINT="https://<pipeline-id>.pipelines.<cluster-id>.clusters.rdpa.co"
 export OTEL_EXPORTER_OTLP_HEADERS="Authorization=Bearer <auth-token>"
 ----
 
@@ -110,27 +110,24 @@ The `otlp_http` input component:
 
 * Exposes an OpenTelemetry Collector HTTP receiver
 * Accepts traces at the standard `/v1/traces` endpoint
-* Listens on port 4318 by default (standard OTLP/HTTP port)
 * Converts incoming OTLP data into individual Redpanda OTEL v1 Protobuf messages and publishes them to the `redpanda.otel_traces` topic
 
-Create a file named `trace-ingestion.yaml`:
+The following example shows a minimal pipeline configuration. Redpanda Cloud automatically injects authentication handling, so you don't need to configure `auth_token` in the input.
 
 [,yaml]
 ----
 input:
-  otlp_http:
-    address: "0.0.0.0:4318"
-    auth_token: "${secrets.TRACE_AUTH_TOKEN}"
-    max_body_size: 4194304  # 4MB default
-    read_timeout: "10s"
-    write_timeout: "10s"
+  otlp_http: {}
 
 output:
   redpanda:
-    seed_brokers: ["${REDPANDA_BROKERS}"]
+    seed_brokers:
+      - "${PRIVATE_REDPANDA_BROKERS}"
+    tls:
+      enabled: ${PRIVATE_REDPANDA_TLS_ENABLED}
+    sasl:
+      - mechanism: "REDPANDA_CLOUD_SERVICE_ACCOUNT"
     topic: "redpanda.otel_traces"
-    compression: snappy
-    max_in_flight: 10
 ----
 
 The `otlp_http` input automatically handles format conversion, so no processors are needed for basic trace ingestion. Each span becomes a separate message in the `redpanda.otel_traces` topic.
@@ -143,32 +140,46 @@ If your custom agent requires gRPC transport, use the `otlp_grpc` input instead:
 [,yaml]
 ----
 input:
-  otlp_grpc:
-    address: "0.0.0.0:4317"  # Standard OTLP/gRPC port
-    auth_token: "${secrets.TRACE_AUTH_TOKEN}"
-    max_recv_msg_size: 4194304
+  otlp_grpc: {}
 
 output:
   redpanda:
-    seed_brokers: ["${REDPANDA_BROKERS}"]
+    seed_brokers:
+      - "${PRIVATE_REDPANDA_BROKERS}"
+    tls:
+      enabled: ${PRIVATE_REDPANDA_TLS_ENABLED}
+    sasl:
+      - mechanism: "REDPANDA_CLOUD_SERVICE_ACCOUNT"
     topic: "redpanda.otel_traces"
-    compression: snappy
-    max_in_flight: 10
 ----
 
-The gRPC input works identically to HTTP but uses Protobuf encoding over gRPC. Clients must include the authentication token in gRPC metadata as `authorization: Bearer <token>`.
+Clients must include the authentication token in gRPC metadata as `authorization: Bearer <token>`.
 
 === Deploy the pipeline in Redpanda Cloud
 
 . In the *Connect* page of your Redpanda Cloud cluster, click *Create Pipeline*.
 . For the input, select the *otlp_http* (or *otlp_grpc*) component.
 . Skip to *Add a topic* and select `redpanda.otel_traces` from the list of existing topics. Leave the default advanced settings.
-. In the *Add permissions* step, you can create a service account with write access to the `redpanda.otel_traces` topic.
-. In the *Create pipeline* step, enter a name for your ingestion pipeline and paste your `trace-ingestion.yaml` configuration. Ensure that you've created the TRACE_AUTH_TOKEN secret you're referencing in the configuration.
+. In the *Add permissions* step, create a service account with write access to the `redpanda.otel_traces` topic.
+. In the *Create pipeline* step, enter a name for your pipeline and paste the configuration. Redpanda Cloud automatically handles authentication for incoming requests.
 
 == Send traces from your custom agent
 
-Configure your custom agent to send OpenTelemetry traces to the ingestion endpoint. The endpoint accepts traces in OTLP format via HTTP on port 4318 at the `/v1/traces` path.
+Configure your custom agent to send OpenTelemetry traces to the pipeline endpoint. After deploying the pipeline, you can find its URL in the Redpanda Cloud UI on the pipeline details page.
+
+The endpoint URL format is:
+
+* **HTTP**: `https://<pipeline-id>.pipelines.<cluster-id>.clusters.rdpa.co/v1/traces`
+* **gRPC**: `<pipeline-id>.pipelines.<cluster-id>.clusters.rdpa.co:443`
+
+=== Authenticate to the pipeline
+
+The OTLP pipeline uses the same authentication mechanism as the Redpanda Cloud API. Obtain an access token using your service account credentials as described in xref:redpanda-cloud:security:cloud-authentication.adoc#authenticate-to-the-cloud-api[Authenticate to the Cloud API].
+
+Include the token in your requests:
+
+* **HTTP**: Set the `Authorization` header to `Bearer <token>`
+* **gRPC**: Set the `authorization` metadata field to `Bearer <token>`
 
 === Configure your OTEL exporter
 
@@ -176,7 +187,7 @@ Install the OpenTelemetry SDK for your language and configure the OTLP exporter 
 
 The exporter configuration requires:
 
-* **Endpoint**: Your pipeline's URL including the `/v1/traces` path
+* **Endpoint**: Your pipeline's URL (the SDK adds `/v1/traces` automatically for HTTP)
 * **Headers**: Authorization header with your bearer token
 * **Protocol**: HTTP to match the `otlp_http` input (or gRPC for `otlp_grpc`)
 
@@ -197,7 +208,7 @@ resource = Resource(attributes={
 
 # Configure the OTLP HTTP exporter
 exporter = OTLPSpanExporter(
-    endpoint="<otlp-receiver-address>:4318/v1/traces",
+    endpoint="https://<pipeline-id>.pipelines.<cluster-id>.clusters.rdpa.co/v1/traces",
     headers={"Authorization": "Bearer YOUR_TOKEN"}
 )
 
@@ -244,7 +255,7 @@ const resource = new Resource({
 
 // Configure OTLP HTTP exporter
 const exporter = new OTLPTraceExporter({
-  url: 'https://your-pipeline-endpoint.redpanda.cloud:4318/v1/traces',
+  url: 'https://<pipeline-id>.pipelines.<cluster-id>.clusters.rdpa.co/v1/traces',
   headers: {
     'Authorization': 'Bearer YOUR_TOKEN'
   }
@@ -276,7 +287,154 @@ processRequest().then(result => {
 });
 ----
 
+.Go example for OTLP HTTP exporter
+[,go]
+----
+package main
+
+import (
+    "context"
+    "log"
+
+    "go.opentelemetry.io/otel"
+    "go.opentelemetry.io/otel/attribute"
+    "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+    "go.opentelemetry.io/otel/sdk/resource"
+    sdktrace "go.opentelemetry.io/otel/sdk/trace"
+    semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
+    "go.opentelemetry.io/otel/trace"
+)
+
+func main() {
+    ctx := context.Background()
+
+    // Configure OTLP HTTP exporter
+    exporter, err := otlptracehttp.New(ctx,
+        otlptracehttp.WithEndpoint("<pipeline-id>.pipelines.<cluster-id>.clusters.rdpa.co"),
+        otlptracehttp.WithHeaders(map[string]string{
+            "Authorization": "Bearer YOUR_TOKEN",
+        }),
+    )
+    if err != nil {
+        log.Fatalf("Failed to create exporter: %v", err)
+    }
+
+    // Configure resource
+    res, _ := resource.New(ctx,
+        resource.WithAttributes(
+            semconv.ServiceName("my-custom-agent"),
+            semconv.ServiceVersion("1.0.0"),
+        ),
+    )
+
+    // Set up tracer provider
+    tp := sdktrace.NewTracerProvider(
+        sdktrace.WithBatcher(exporter),
+        sdktrace.WithResource(res),
+    )
+    defer tp.Shutdown(ctx)
+    otel.SetTracerProvider(tp)
+
+    tracer := tp.Tracer("my-agent")
+
+    // Create span with GenAI semantic conventions
+    _, span := tracer.Start(ctx, "invoke_agent my-assistant",
+        trace.WithSpanKind(trace.SpanKindInternal),
+    )
+    span.SetAttributes(
+        attribute.String("gen_ai.operation.name", "invoke_agent"),
+        attribute.String("gen_ai.agent.name", "my-assistant"),
+        attribute.String("gen_ai.provider.name", "openai"),
+        attribute.String("gen_ai.request.model", "gpt-4"),
+        attribute.Int("gen_ai.usage.input_tokens", 150),
+        attribute.Int("gen_ai.usage.output_tokens", 75),
+    )
+    span.End()
+
+    tp.ForceFlush(ctx)
+}
+----
+
 TIP: Use environment variables for the endpoint URL and authentication token to keep credentials out of your code.
+
+==== gRPC transport examples
+
+If you're using the `otlp_grpc` input, configure your exporter to use gRPC transport.
+
+.Python example for OTLP gRPC exporter
+[,python]
+----
+from opentelemetry import trace
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.sdk.resources import Resource
+
+resource = Resource(attributes={
+    "service.name": "my-custom-agent",
+    "service.version": "1.0.0"
+})
+
+# gRPC endpoint without https:// prefix
+exporter = OTLPSpanExporter(
+    endpoint="<pipeline-id>.pipelines.<cluster-id>.clusters.rdpa.co:443",
+    headers={"authorization": "Bearer YOUR_TOKEN"}
+)
+
+provider = TracerProvider(resource=resource)
+provider.add_span_processor(BatchSpanProcessor(exporter))
+trace.set_tracer_provider(provider)
+----
+
+.Node.js example for OTLP gRPC exporter
+[,javascript]
+----
+const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
+const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-grpc');
+const { BatchSpanProcessor } = require('@opentelemetry/sdk-trace-base');
+const { Resource } = require('@opentelemetry/resources');
+
+const resource = new Resource({
+  'service.name': 'my-custom-agent',
+  'service.version': '1.0.0'
+});
+
+// gRPC exporter with TLS
+const exporter = new OTLPTraceExporter({
+  url: 'https://<pipeline-id>.pipelines.<cluster-id>.clusters.rdpa.co:443',
+  headers: {
+    'authorization': 'Bearer YOUR_TOKEN'
+  }
+});
+
+const provider = new NodeTracerProvider({ resource });
+provider.addSpanProcessor(new BatchSpanProcessor(exporter));
+provider.register();
+----
+
+.Go example for OTLP gRPC exporter
+[,go]
+----
+package main
+
+import (
+    "context"
+
+    "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+    "google.golang.org/grpc"
+    "google.golang.org/grpc/credentials"
+)
+
+func createGRPCExporter(ctx context.Context) (*otlptracegrpc.Exporter, error) {
+    return otlptracegrpc.New(ctx,
+        otlptracegrpc.WithEndpoint("<pipeline-id>.pipelines.<cluster-id>.clusters.rdpa.co:443"),
+        otlptracegrpc.WithDialOption(grpc.WithTransportCredentials(credentials.NewTLS(nil))),
+        otlptracegrpc.WithHeaders(map[string]string{
+            "authorization": "Bearer YOUR_TOKEN",
+        }),
+    )
+}
+----
 
 === Use recommended semantic conventions
 
@@ -427,9 +585,9 @@ If your spans include the recommended token usage attributes (`gen_ai.usage.inpu
 
 If your custom agent cannot reach the ingestion endpoint:
 
-. Verify the endpoint URL includes the correct port and path:
-   * HTTP: `https://your-endpoint:4318/v1/traces`
-   * gRPC: `https://your-endpoint:4317`
+. Verify the endpoint URL format:
+   * HTTP: `https://<pipeline-id>.pipelines.<cluster-id>.clusters.rdpa.co/v1/traces`
+   * gRPC: `<pipeline-id>.pipelines.<cluster-id>.clusters.rdpa.co:443` (no `https://` prefix for gRPC clients)
 . Check network connectivity and firewall rules.
 . Ensure authentication tokens are valid and properly formatted in the `Authorization: Bearer <token>` header (HTTP) or `authorization` metadata field (gRPC).
 . Verify the Content-Type header matches your data format (`application/x-protobuf` or `application/json`).
