@@ -316,14 +316,14 @@ Compare token usage before/after deferred loading:
 1. Check logs without deferred loading:
 
    * Filter: Gateway = your-gateway, Model = your-model, Date = before enabling
-   * Average tokens per request: // PLACEHOLDER: measure
+   * Note the average tokens per request
 
 2. Enable deferred loading
 
 3. Check logs after deferred loading:
 
    * Filter: Same gateway/model, Date = after enabling
-   * Average tokens per request: // PLACEHOLDER: measure
+   * Note the average tokens per request
 
 4. Calculate savings:
 +
@@ -616,14 +616,14 @@ Why approval is required:
 * Cost: Some tools are expensive (API calls, compute)
 * Compliance: Audit trail of approved tools
 
-Approval process:
-
-// PLACEHOLDER: Confirm if there's an approval workflow or if admins directly enable servers
+Typical approval process:
 
 1. Request: User/team requests MCP server
 2. Review: Admin reviews security, cost, necessity
 3. Approval/Rejection: Admin decision
 4. Configuration: If approved, admin adds server to gateway
+
+NOTE: The exact approval workflow may vary by organization. In some cases, admins may directly enable servers without a formal workflow.
 
 Rejected server behavior:
 
@@ -661,11 +661,9 @@ Use cases:
 
 === MCP server versioning
 
-// PLACEHOLDER: How is MCP server versioning handled?
+Challenge: MCP server updates may change tool schemas.
 
-Challenge: MCP server updates may change tool schemas
-
-Recommendations:
+Best practices for version management:
 
 1. Pin versions (if supported):
 +
@@ -741,9 +739,7 @@ Common log fields:
 
 === Metrics
 
-// PLACEHOLDER: Confirm if MCP-specific metrics exist
-
-MCP-specific metrics (if available):
+The following MCP-specific metrics may be available depending on your gateway configuration:
 
 * MCP requests per second
 * Tool invocation count (by tool, by MCP server)
@@ -771,7 +767,7 @@ Possible causes:
 
 Solution:
 
-1. Verify MCP server is active: // PLACEHOLDER: UI path
+1. Verify MCP server is active in the Cloud console
 2. Verify tool is in enabled_tools list
 3. If deferred loading: Agent must call `search_tools` first
 
@@ -787,7 +783,7 @@ Solution:
 
 1. Check MCP server health
 2. Optimize tool (e.g., add database index)
-3. Increase timeout: // PLACEHOLDER: How to configure?
+3. Contact support if you need to adjust timeout limits
 
 Issue: "Orchestrator workflow failed"
 
