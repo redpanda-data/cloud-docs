@@ -1,5 +1,5 @@
 = Transcripts and AI Observability
-:description: Understand how Redpanda captures execution transcripts for agents and MCP servers using OpenTelemetry.
+:description: Understand how Redpanda captures execution transcripts using OpenTelemetry.
 :page-topic-type: concepts
 :personas: agent_developer, platform_admin, data_engineer
 :learning-objective-1: Explain how transcripts and spans capture execution flow
@@ -16,7 +16,7 @@ After reading this page, you will be able to:
 
 == What are transcripts
 
-Every agent and MCP server automatically emits OpenTelemetry traces to a glossterm:topic[] called `redpanda.otel_traces`. These traces provide detailed observability into operations, creating complete transcripts.
+The AI Gateway and every agent and MCP server in your Agentic Data Plane (ADP) automatically emit OpenTelemetry traces to a glossterm:topic[] called `redpanda.otel_traces`. These traces provide detailed observability into operations, creating complete transcripts.
 
 Transcripts capture:
 
@@ -58,7 +58,7 @@ Agent transcripts contain these span types:
 | Track reasoning time and identify iteration patterns.
 
 | `invoke_agent`
-| Agent and sub-agent invocation ( in multi-agent architectures). Represents one agent calling another via the A2A protocol.
+| Agent and sub-agent invocation in multi-agent architectures, following the https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-agent-spans/[OpenTelemetry agent invocation semantic conventions^]. Represents one agent calling another via the A2A protocol.
 | Trace calls between root agents and sub-agents, measure cross-agent latency, and identify which sub-agent was invoked.
 
 | `openai`, `anthropic`, or other LLM providers
@@ -214,17 +214,17 @@ Both use the same `traceId`, allowing you to follow a request across service bou
 
 Different layers expose different attributes:
 
-HTTP Server/Client layer:
+HTTP Server/Client layer (following https://opentelemetry.io/docs/specs/semconv/http/http-spans/[OpenTelemetry semantic conventions for HTTP^]):
 
 - `http.request.method`, `http.response.status_code`
 - `server.address`, `url.path`, `url.full`
 - `network.peer.address`, `network.peer.port`
 - `http.request.body.size`, `http.response.body.size`
 
-AI SDK layer:
+AI SDK layer (following https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-spans/[OpenTelemetry semantic conventions for generative AI^]):
 
 - `gen_ai.operation.name`: Operation type (`invoke_agent`, `chat`, `execute_tool`)
-- `gen_ai.conversation.id`: Links spans to the same conversation
+- `gen_ai.conversation.id`: Links spans to the same conversation session. A conversation may include multiple agent invocations (one per user request). Each invocation creates a separate trace that shares the same conversation ID.
 - `gen_ai.agent.name`: Sub-agent name for multi-agent systems
 - `gen_ai.provider.name`, `gen_ai.request.model`: LLM provider and model
 - `gen_ai.usage.input_tokens`, `gen_ai.usage.output_tokens`: Token consumption
