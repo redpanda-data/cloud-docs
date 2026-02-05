@@ -6,21 +6,15 @@
 :learning-objective-2: Use the timeline interactively to navigate to specific time periods
 :learning-objective-3: Navigate between detail views to inspect span information at different levels
 
-The Transcripts view provides filtering and navigation capabilities for investigating agent, MCP server, and AI Gateway execution glossterm:transcript[transcripts]. Use this view to quickly locate specific operations, analyze performance patterns, and debug issues across glossterm:tool[] invocations, LLM calls, and glossterm:agent[] reasoning steps.
+Use the Transcripts view to investigate agent, MCP server, and AI Gateway execution traces. Filter by operation type, inspect span details, and trace issues across your agentic systems.
+
+For conceptual background on spans and trace structure, see xref:ai-agents:observability/concepts.adoc[].
 
 After reading this page, you will be able to:
 
 * [ ] {learning-objective-1}
 * [ ] {learning-objective-2}
 * [ ] {learning-objective-3}
-
-For basic orientation on monitoring each Redpanda Agentic Data Plane (ADP) component, see: 
-
-* xref:ai-agents:ai-gateway/observability-metrics.adoc[]
-* xref:ai-agents:agents/monitor-agents.adoc[]
-* xref:ai-agents:mcp/remote/monitor-mcp-servers.adoc[]
-
-For conceptual background on what transcripts capture, glossterm:span[] types, and how they are organized hierarchically, see xref:ai-agents:observability/concepts.adoc[].
 
 == Prerequisites
 
@@ -72,56 +66,26 @@ Refer to the timeline header to check the exact range and count of visible trans
 
 == Inspect span details
 
-The transcript table displays the following:
+The transcript table shows:
 
-* Time: Timestamp when the span started (sortable)
-* Span: Span type indicator and span name, with hierarchical tree structure
-* Duration: Total duration, or duration of child spans relative to the parent span, represented as visual bars
+* **Time**: When the span started (sortable)
+* **Span**: Span type and name with hierarchical tree structure
+* **Duration**: Total time or relative duration shown as visual bars
 
-Each top-level row in the transcript table represents a service-level request flow in an ADP component. Expand each parent span to see the hierarchical structure of nested operations, including internal processing steps, LLM interactions, and tool calls. xref:ai-agents:observability/concepts.adoc#parent-child-relationships[Parent-child spans] show how operations relate: for example, an agent invocation (parent) triggers LLM calls and tool executions (children).
-
-// TODO: Clarify MCP trace structure
-When agents invoke remote MCP servers, transcripts fold together under a tree structure to provide a unified view of the complete operation across service boundaries. The glossterm:trace ID[] originates at the initial request touchpoint and propagates across all involved services, linking spans from both the agent and MCP server under a single transcript. Use the tree view to follow the trace flow across multiple services and understand the complete request lifecycle. 
-
-// TODO: Confirm how transcripts from external agents appear
-If you use external agents that directly invoke MCP servers in the ADP, you may only see MCP-level parent transcripts, unless you have configured the agents to also emit traces to the Redpanda glossterm:OpenTelemetry[OTEL] ingestion pipeline.
+To view nested operations, expand any parent span. To learn more about span hierarchies and cross-service traces, see xref:ai-agents:observability/concepts.adoc[].
 
 // TODO: Confirm how gateway traces appear
 
-Selected spans display detailed information at multiple levels, from high-level summaries to complete raw data:
+Click any span to view details in the right panel:
 
-* Start with summary tab for quick assessment
-* Inspect attributes for detailed investigation using structured metadata
-* Use raw data when you need complete information
+* **Summary tab**: High-level overview with token usage, operation counts, and conversation history.
+* **Attributes tab**: Structured metadata for debugging (see xref:ai-agents:observability/concepts.adoc#key-attributes-by-layer[standard attributes by layer]).
+* **Raw data tab**: Complete OpenTelemetry span in JSON format. You can also view raw transcript data in the `redpanda.otel_traces` topic.
 
 [NOTE]
 ====
-Rows labeled "awaiting root — waiting for parent span" indicate incomplete transcripts where child spans have been received but the parent span is missing or hasn't arrived yet. This can occur due to network latency between services, processing delays in the OpenTelemetry pipeline, or lost parent spans from service failures. 
-If you consistently see awaiting root entries, this suggests instrumentation or trace collection issues that should be investigated.
+Rows labeled "awaiting root — waiting for parent span" indicate incomplete traces. This occurs when child spans arrive before parent spans due to network latency or service failures. Consistent "awaiting root" entries suggest instrumentation issues.
 ====
-
-=== Summary tab
-
-Click on any span in the transcript table to open the detail panel on the right side of the interface. The first tab displays a context-specific summary based on the span type, which may include:
-
-* Total nested operations (span count) and execution time
-* Token usage for LLM operations
-* Counts of LLM calls and tool calls
-* Full conversation history for agent spans, including user prompts, configured xref:ai-agents:agents/create-agent.adoc#write-the-system-prompt[system prompts], and LLM outputs
-
-=== Attributes tab
-
-The attributes view shows structured metadata for each transcript span. Use this view to inspect span attributes and understand the context of each operation. See xref:ai-agents:observability/concepts.adoc#key-attributes-by-layer[Transcripts and AI Observability] for details on standard attributes by instrumentation layer.
-
-=== Raw data tab
-
-The raw data view provides the complete span structure:
-
-* Full OpenTelemetry span in JSON format
-* All fields including those not displayed in summary or attributes views
-* Structured data suitable for export or programmatic access
-
-You can also view the raw transcript data in the `redpanda.otel_traces` topic.
 
 == Investigate and analyze operations
 
