@@ -19,7 +19,7 @@ After reading this page, you will be able to:
 == Prerequisites
 
 * xref:ai-agents:agents/create-agent.adoc[Running agent] or xref:ai-agents:mcp/remote/quickstart.adoc[MCP server] with at least one execution
-* Access to the Transcripts view (requires appropriate permissions to read the `redpanda.otel_traces` topic)
+* Access to the Transcripts view (requires appropriate permissions to read the `redpanda.otel_traces` glossterm:topic[])
 
 == Navigate the Transcripts interface
 
@@ -68,7 +68,7 @@ Refer to the timeline header to check the exact range and count of visible trans
 
 The transcript table shows:
 
-* **Time**: When the span started (sortable)
+* **Time**: When the glossterm:span[span] started (sortable)
 * **Span**: Span type and name with hierarchical tree structure
 * **Duration**: Total time or relative duration shown as visual bars
 
@@ -80,14 +80,14 @@ Click any span to view details in the right panel:
 
 * **Summary tab**: High-level overview with token usage, operation counts, and conversation history.
 * **Attributes tab**: Structured metadata for debugging (see xref:ai-agents:observability/concepts.adoc#key-attributes-by-layer[standard attributes by layer]).
-* **Raw data tab**: Complete OpenTelemetry span in JSON format. You can also view raw transcript data in the `redpanda.otel_traces` topic.
+* **Raw data tab**: Complete glossterm:opentelemetry[OpenTelemetry] span in JSON format. You can also view raw transcript data in the `redpanda.otel_traces` topic.
 
 [NOTE]
 ====
-Rows labeled "awaiting root — waiting for parent span" indicate incomplete traces. This occurs when child spans arrive before parent spans due to network latency or service failures. Consistent "awaiting root" entries suggest instrumentation issues.
+Rows labeled "awaiting root — waiting for parent span" indicate incomplete glossterm:trace[traces]. This occurs when child spans arrive before parent spans due to network latency or service failures. Consistent "awaiting root" entries suggest instrumentation issues.
 ====
 
-== Investigate and analyze operations
+== Common investigation tasks
 
 The following patterns demonstrate how to use the Transcripts view for understanding and troubleshooting your agentic systems.
 
