@@ -16,9 +16,17 @@ NOTE: The Agentic Data Plane is supported on BYOC clusters running with AWS and 
 
 Redpanda ADP is built on open standards and protocols, allowing you to pick and choose components that fit your needs. Integrate with existing agent frameworks, data processing systems, or custom code. It includes the following key components:
 
-* **AI agents**: Deploy declarative agents or bring your own agent frameworks (LangChain, LlamaIndex, and others). Build multi-agent systems where specialized sub-agents handle specific responsibilities, following single-responsibility principles.
-* **MCP servers**: Build lightweight data and action interfaces using a low-code framework based on xref:develop:connect/about.adoc[Redpanda Connect]. Connect to hundreds of data sources (databases, cloud storage, APIs) and enforce fine-grained policies that programmatically prevent prompt injection and SQL injection attacks. MCP servers are extremely lightweight—run dozens on minimal resources—with OIDC-based access control and real-time debugging capabilities.
-* **AI Gateway**: Manage LLM provider access with cost controls, rate limiting, intelligent routing, and failover support across multiple providers.
+* **glossterm:AI agent[,AI agents]**: Deploy declarative agents or bring your own agent frameworks (LangChain, LlamaIndex, and others). Build multi-agent systems where specialized glossterm:subagent[,sub-agents] handle specific responsibilities, following single-responsibility principles.
+* **glossterm:MCP server[,MCP servers]**: Build lightweight data and action interfaces using a low-code framework based on xref:develop:connect/about.adoc[Redpanda Connect]. Connect to hundreds of data sources (databases, cloud storage, APIs) and enforce fine-grained policies that programmatically prevent prompt injection and SQL injection attacks. MCP servers are extremely lightweight—run dozens on minimal resources—with OIDC-based access control and real-time debugging capabilities.
+* **AI Gateway**: Manage large language model (LLM) provider access with cost controls, rate limiting, intelligent routing, and failover support across multiple providers.
+
+=== Serverless on AWS: GA
+
+xref:get-started:cluster-types/serverless.adoc[Serverless] on AWS is now generally available (GA). This release includes private networking with AWS PrivateLink. You can use the Cloud Console, the Cloud API, or the Redpanda Terraform provider to create and manage Serverless private links. Serverless is the easiest and fastest way to begin streaming data with Redpanda.
+
+=== Enable schema ID validation
+
+You can now enable xref:manage:schema-reg/schema-id-validation.adoc[schema ID validation] by xref:manage:cluster-maintenance/config-cluster.adoc[configuring the `enable_schema_id_validation` cluster property]. This controls whether or not Redpanda validates schema IDs in records and which topic properties are enforced. Use caution when enabling this property, because it could cause decompression across topics and increase CPU load. 
 
 == January 2026
 
@@ -34,6 +42,7 @@ Redpanda ADP is built on open standards and protocols, allowing you to pick and 
 === Redpanda Connect and Roles in Terraform provider
 
 The xref:manage:terraform-provider.adoc[Redpanda Terraform provider] now supports managing roles and Redpanda Connect pipelines. Use the provider to create and manage role-based access control and data pipelines in Redpanda Cloud.
+
 
 == December 2025
 
