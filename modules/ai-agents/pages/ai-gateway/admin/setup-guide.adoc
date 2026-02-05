@@ -19,16 +19,16 @@ After completing this guide, you will be able to:
 == Prerequisites
 
 * Access to the Redpanda Cloud Console with administrator privileges
-* API keys for at least one LLM provider (OpenAI or Anthropic)
+* API keys for at least one LLM provider (OpenAI, Anthropic, Google AI)
 * (Optional) MCP server endpoints if you plan to use tool aggregation
 
 == Enable a provider
 
-Providers represent upstream services (Anthropic, OpenAI) and associated credentials. Providers are disabled by default and must be enabled explicitly by an administrator.
+Providers represent upstream services (Anthropic, OpenAI, Google AI) and associated credentials. Providers are disabled by default and must be enabled explicitly by an administrator.
 
 . In the Redpanda Cloud Console, navigate to *AI Gateway* → *Providers*.
-. Select a provider (for example, Anthropic or OpenAI).
-. On the *Configuration* tab for the provider, click *Add configuration*.
+. Select a provider (for example, Anthropic).
+. On the Configuration tab for the provider, click *Add configuration*.
 . Enter your API Key for the provider.
 +
 TIP: Store provider API keys securely. Each provider configuration can have multiple API keys for rotation and redundancy.
@@ -69,6 +69,39 @@ Examples:
 * `openai/gpt-4o`
 * `anthropic/claude-sonnet-3.5`
 * `openai/gpt-4o-mini`
+
+== Choose a gateway mode
+
+Before creating a gateway, decide which mode fits your needs.
+
+*AI Hub Mode* is ideal when you:
+
+* Want to minimize configuration complexity
+* Need to quickly enable LLM access for multiple teams
+* Want pre-configured intelligent routing with automatic provider failover
+* Are satisfied with managed routing rules and backend pools (17 pre-configured rules)
+* Need only basic customization (provider credentials, 6 preference toggles)
+* Use OpenAI and/or Anthropic providers
+
+*Custom Mode* is ideal when you:
+
+* Need custom routing rules based on specific business logic
+* Require full control over backend pool configuration
+* Want to implement custom failover strategies
+* Need to integrate with custom infrastructure (Azure OpenAI, AWS Bedrock, other providers)
+* Have specialized requirements not covered by AI Hub's pre-configured rules
+
+[TIP]
+====
+You can start with AI Hub mode and later eject to Custom mode if you need more control. Ejection is a one-way transition. See xref:ai-gateway/admin/eject-to-custom-mode.adoc[].
+====
+
+For detailed comparison, see xref:ai-gateway/gateway-modes.adoc[].
+
+*Next sections:*
+
+* *AI Hub Mode*: See xref:ai-gateway/admin/configure-ai-hub.adoc[] for setup instructions
+* *Custom Mode*: Continue with "Create a gateway" below for manual configuration
 
 == Create a gateway
 
@@ -201,9 +234,9 @@ If a provider pool contains multiple providers, you can distribute traffic to ba
 
 == Configure MCP tools (optional)
 
-If your users will build AI agents that need access to tools via MCP (Model Context Protocol), configure MCP tool aggregation.
+If your users will build glossterm:AI agent[,AI agents] that need access to glossterm:MCP tool[,tools] via glossterm:MCP[,Model Context Protocol (MCP)], configure MCP tool aggregation.
 
-On the gateway details page, select the *MCP* tab to configure tool discovery and execution. The MCP proxy aggregates multiple MCP servers, allowing agents to find and call tools through a single endpoint.
+On the gateway details page, select the *MCP* tab to configure tool discovery and execution. The MCP proxy aggregates multiple glossterm:MCP server[,MCP servers], allowing agents to find and call tools through a single endpoint.
 
 === Add MCP servers
 

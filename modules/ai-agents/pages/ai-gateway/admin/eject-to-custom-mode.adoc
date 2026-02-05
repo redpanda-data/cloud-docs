@@ -1,0 +1,401 @@
+= Eject to Custom Mode
+:description: Transition an AI Hub gateway to Custom mode for full configuration control.
+:page-topic-type: how-to
+:personas: platform_admin
+:learning-objective-1: Evaluate the implications of ejecting from AI Hub to Custom mode
+:learning-objective-2: Prepare for ejection by documenting current configuration
+:learning-objective-3: Execute the ejection process and configure the gateway post-ejection
+
+include::ai-agents:partial$ai-gateway-byoc-note.adoc[]
+
+Ejecting a gateway from AI Hub mode to Custom mode is a one-way transition that gives you full control over all routing rules, backend pools, and policies. After ejection, the gateway behaves exactly like a Custom mode gateway.
+
+This guide walks administrators through the ejection process, from preparation to post-ejection configuration.
+
+After reading this page, you will be able to:
+
+* [ ] Evaluate the implications of ejecting from AI Hub to Custom mode
+* [ ] Prepare for ejection by documenting current configuration
+* [ ] Execute the ejection process and configure the gateway post-ejection
+
+== What ejection means
+
+Ejecting an AI Hub gateway to Custom mode is a significant configuration change that fundamentally alters how the gateway operates.
+
+=== Changes that occur
+
+When you eject an AI Hub gateway:
+
+* *Gateway mode changes*: Redpanda changes `gateway.mode` from `ai_hub` to `custom`
+* *Resources become editable*: The gateway sets all `ai_hub_managed` metadata to `false`, making previously protected resources editable and deletable
+* *Backend pools unlocked*: You can now modify, delete, or add backend pools
+* *Routing rules unlocked*: You can now modify, delete, or add routing rules
+* *Preferences removed*: The 6 preference toggles are deleted (you configure routing directly instead)
+* *Version updates stop*: No more automatic AI Hub version updates
+* *Full control*: Complete flexibility over configuration
+
+=== What stays the same
+
+Ejection preserves:
+
+* *Gateway ID*: Unchanged - applications continue using the same `rp-aigw-id`
+* *Gateway endpoint*: Unchanged - no URL changes required
+* *Provider credentials*: Retained and continue working
+* *Rate limits and spend limits*: Preserved as configured
+* *Observability history*: All historical metrics and logs remain
+
+=== Cannot be undone
+
+[WARNING]
+====
+Ejection is a one-way transition. You cannot revert a Custom mode gateway back to AI Hub mode.
+
+To get back to AI Hub mode, you must:
+
+. Create a new AI Hub gateway
+. Migrate your applications to use the new gateway ID and endpoint
+. Delete the ejected Custom mode gateway
+====
+
+== When to eject
+
+Consider ejecting when your requirements outgrow AI Hub's pre-configured capabilities.
+
+=== Use cases requiring Custom mode
+
+*Custom routing logic:*
+
+* Route based on customer tier, geography, or feature flags
+* Implement complex fallback chains beyond simple provider failover
+* Apply conditional routing based on request metadata
+
+*Custom backend pools:*
+
+* Modify timeouts or retry behavior
+* Integrate with Azure OpenAI or AWS Bedrock
+* Add custom headers or authentication patterns
+* Configure custom health check logic
+
+*Provider-specific features:*
+
+* Use Anthropic's native `/v1/messages` API with custom parameters
+* Access OpenAI features not exposed through the unified API
+* Integrate with self-hosted or custom LLM providers
+
+*Specialized requirements:*
+
+* Multi-region routing with geography-based selection
+* A/B testing with granular traffic splitting
+* Custom cost allocation logic
+* Compliance requirements for request/response handling
+
+=== Decision checklist
+
+Before ejecting, verify:
+
+* [ ] AI Hub's 17 routing rules cannot accommodate your requirements
+* [ ] The 6 user preference toggles provide insufficient control
+* [ ] You've reviewed xref:ai-agents:ai-gateway/gateway-modes.adoc[] to understand alternatives
+* [ ] Your team can maintain custom routing rules and backend pools
+* [ ] You've documented the business justification for ejection
+
+== Pre-ejection preparation
+
+Proper preparation ensures a smooth transition and helps you quickly configure the gateway post-ejection.
+
+=== Document current configuration
+
+Export your AI Hub configuration before ejecting:
+
+[,bash]
+----
+#!/bin/bash
+
+export GATEWAY_ID="gw_abc123"
+export REDPANDA_CLOUD_TOKEN="your-token"
+
+# 1. Export gateway details
+curl https://api.redpanda.com/v1/gateways/${GATEWAY_ID} \
+  -H "Authorization: Bearer ${REDPANDA_CLOUD_TOKEN}" \
+  > ai-hub-config-$(date +%Y%m%d).json
+
+# 2. Export current preferences
+curl https://api.redpanda.com/v1/gateways/${GATEWAY_ID}/ai-hub/preferences \
+  -H "Authorization: Bearer ${REDPANDA_CLOUD_TOKEN}" \
+  > ai-hub-preferences-$(date +%Y%m%d).json
+
+# 3. Export backend pools (read-only in AI Hub, but good to document)
+curl https://api.redpanda.com/v1/gateways/${GATEWAY_ID}/backend-pools \
+  -H "Authorization: Bearer ${REDPANDA_CLOUD_TOKEN}" \
+  > ai-hub-backend-pools-$(date +%Y%m%d).json
+
+# 4. Export routing rules (read-only in AI Hub, but good to document)
+curl https://api.redpanda.com/v1/gateways/${GATEWAY_ID}/routing-rules \
+  -H "Authorization: Bearer ${REDPANDA_CLOUD_TOKEN}" \
+  > ai-hub-routing-rules-$(date +%Y%m%d).json
+----
+
+Store these files securely. You'll reference them when configuring Custom mode routing rules.
+
+=== Plan custom configuration
+
+Define your post-ejection configuration:
+
+. *Routing rules*: Write CEL expressions that replicate AI Hub behavior, then add your custom rules
+. *Backend pools*: Identify modifications needed (timeouts, custom providers, etc.)
+. *Testing strategy*: Plan how you'll validate that existing functionality still works
+. *Rollout approach*: Decide whether to eject immediately or test in staging first
+
+=== Notify users
+
+Communicate the upcoming change to teams using the gateway:
+
+[,text]
+----
+Subject: [Action Required] AI Hub Gateway Ejection - [Gateway Name]
+
+Hi team,
+
+On [DATE], we will eject the AI Hub gateway "[GATEWAY_NAME]" (ID: gw_abc123) to Custom mode. This transition gives us greater flexibility for [BUSINESS JUSTIFICATION].
+
+What you need to know:
+- Gateway ID and endpoint will NOT change
+- Your applications will continue working without code changes
+- Routing behavior will remain the same initially
+- After ejection, we will implement [PLANNED CHANGES]
+
+Timeline:
+- [DATE]: Ejection scheduled
+- [DATE]: Testing and validation
+- [DATE]: Custom routing rules deployed
+
+No action required on your part. We will notify you if any changes affect your integration.
+
+Questions? Contact [ADMIN EMAIL]
+----
+
+=== Communication template for builders
+
+Provide builders with clear expectations:
+
+* Gateway ID and endpoint remain unchanged
+* API behavior stays the same initially
+* Custom routing rules will be implemented gradually
+* Migration to a new gateway is not required
+
+== Ejection process
+
+The ejection process is irreversible. Follow these steps carefully.
+
+=== Step 1: Initiate ejection
+
+. Navigate to your gateway in the console.
+. Click *Settings*.
+. Click *Eject to Custom Mode* button.
+
+=== Step 2: Confirm understanding
+
+The console presents warnings about ejection:
+
+* [ ] I understand this is a one-way transition and cannot be undone
+* [ ] I understand that backend pools and routing rules will become editable
+* [ ] I understand that AI Hub version updates will stop
+* [ ] I understand that preference toggles will be removed
+* [ ] I have documented the current configuration
+* [ ] I have notified users about this change
+
+Check all boxes to proceed.
+
+=== Step 3: Execute ejection
+
+. Enter the gateway name to confirm: `[Your Gateway Name]`
+. Click *Eject to Custom Mode*.
+
+Ejection typically completes in seconds. The gateway remains available during the transition.
+
+You can also eject via API:
+
+[,bash]
+----
+curl -X POST https://api.redpanda.com/v1/gateways/${GATEWAY_ID}/eject \
+  -H "Authorization: Bearer ${REDPANDA_CLOUD_TOKEN}"
+----
+
+Expected response:
+
+[,json]
+----
+{
+  "previous_mode": "ai_hub",
+  "new_mode": "custom",
+  "resources_unlocked": 23
+}
+----
+
+=== Step 4: Verify ejection
+
+After ejection completes:
+
+. Verify gateway mode shows as *Custom*
+. Check that backend pools are now editable
+. Check that routing rules are now editable
+. Verify AI Hub preferences section no longer appears
+
+Test with a sample request:
+
+[,bash]
+----
+curl https://${GATEWAY_ENDPOINT}/v1/chat/completions \
+  -H "Authorization: Bearer ${REDPANDA_CLOUD_TOKEN}" \
+  -H "rp-aigw-id: ${GATEWAY_ID}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "openai/gpt-4o-mini",
+    "messages": [{"role": "user", "content": "test"}],
+    "max_tokens": 5
+  }'
+----
+
+Expected: Request succeeds, proving ejection didn't break basic functionality.
+
+== Post-ejection configuration
+
+After ejection, configure the gateway to meet your custom requirements.
+
+=== Review unlocked resources
+
+The ejection preserves all backend pools and routing rules from AI Hub mode, but they're now editable:
+
+* *6 backend pools*: OpenAI (standard, streaming), Anthropic (transform standard/streaming, native standard/streaming)
+* *17 routing rules*: All AI Hub rules are preserved but can now be modified
+
+=== Replicate preference toggle behavior
+
+If you relied on AI Hub preference toggles, replicate their behavior with custom routing rules.
+
+*Example: Replicate auto_route_vision*
+
+[,cel]
+----
+// Route vision requests to GPT-4o (vision-capable)
+request.headers["content-type"].contains("multipart") ? "openai/gpt-4o" : request.model
+----
+
+*Example: Replicate auto_route_long_context*
+
+[,cel]
+----
+// Route large prompts to Claude Opus (200K context)
+request.prompt.size() > 100000 ? "anthropic/claude-opus-4" : request.model
+----
+
+*Example: Replicate fallback_provider (Anthropic)*
+
+[,cel]
+----
+// Route to Anthropic when model cannot be inferred
+!request.model.contains("/") && !request.model.startsWith("gpt-") && !request.model.startsWith("claude-")
+  ? "anthropic/claude-sonnet-3.5"
+  : request.model
+----
+
+For CEL routing patterns, see xref:ai-agents:ai-gateway/cel-routing-cookbook.adoc[].
+
+=== Implement custom routing rules
+
+Now add your custom routing logic:
+
+. Navigate to *Routing Rules*.
+. Click *Add Routing Rule*.
+. Write CEL expressions for your custom routing.
+. Set priority to control rule evaluation order.
+. Test with sample requests.
+
+=== Optimize backend pools
+
+Modify backend pools to meet your requirements:
+
+* Adjust timeouts for long-running requests
+* Add custom headers for authentication
+* Configure health check intervals
+* Add new backend pools for additional providers
+
+=== Test thoroughly
+
+Before deploying custom changes to production:
+
+. Test all existing request patterns
+. Verify routing behavior matches expectations
+. Check observability dashboard for errors
+. Monitor latency and success rates
+
+== Impact on builders
+
+Ejection has minimal impact on builder applications.
+
+=== What changes
+
+*For builders:*
+
+* Gateway mode visible as "Custom" in Console
+* Can now see and understand routing rules
+* May benefit from custom routing logic added by admins
+
+=== What stays the same
+
+*For builders:*
+
+* Gateway ID unchanged
+* Gateway endpoint unchanged
+* API contracts unchanged
+* Authentication unchanged
+* Observability unchanged
+
+=== Communication
+
+Use this template to inform builders:
+
+[,text]
+----
+Subject: [Completed] AI Hub Gateway Ejected to Custom Mode - [Gateway Name]
+
+Hi team,
+
+We've successfully ejected the "[GATEWAY_NAME]" gateway from AI Hub to Custom mode. This change gives us greater flexibility for [BUSINESS JUSTIFICATION].
+
+What this means for you:
+- ✅ No code changes required
+- ✅ Gateway ID (gw_abc123) remains the same
+- ✅ Gateway endpoint remains the same
+- ✅ Your applications continue working as before
+- ℹ️ Gateway mode now shows as "Custom" in the Console
+- ℹ️ We can now implement custom routing logic if needed
+
+Next steps:
+- [DATE]: We will implement [PLANNED CUSTOM FEATURES]
+- [DATE]: Performance optimization based on usage patterns
+
+Questions? Contact [ADMIN EMAIL]
+----
+
+== Cannot be undone
+
+If you later decide you want AI Hub mode again, you cannot revert this gateway.
+
+=== Alternative: Create new AI Hub gateway
+
+To get back to AI Hub mode:
+
+. Create a new AI Hub gateway
+. Share new gateway ID and endpoint with teams
+. Migrate applications to use new gateway (update `rp-aigw-id` header)
+. Monitor traffic shift in observability dashboard
+. Delete old Custom mode gateway when traffic reaches zero
+
+== Next steps
+
+Now that you've ejected to Custom mode:
+
+* xref:ai-agents:ai-gateway/admin/setup-guide.adoc[Complete Custom mode configuration] - Configure routing rules and backend pools
+* xref:ai-agents:ai-gateway/cel-routing-cookbook.adoc[Learn CEL routing patterns] - Write powerful routing expressions
+* xref:ai-agents:ai-gateway/gateway-architecture.adoc[Understand architecture] - Deep dive into Custom mode architecture

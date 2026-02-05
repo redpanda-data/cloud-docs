@@ -8,7 +8,7 @@
 
 include::ai-agents:partial$ai-gateway-byoc-note.adoc[]
 
-Redpanda AI Gateway provides unified access to multiple Large Language Model (LLM) providers and Model Context Protocol (MCP) servers through a single endpoint. This quickstart walks you through configuring your first gateway and routing requests through it.
+Redpanda AI Gateway provides unified access to multiple large language model (LLM) providers and glossterm:MCP[,Model Context Protocol (MCP)] servers through a single endpoint. This quickstart walks you through configuring your first gateway and routing requests through it.
 
 == Prerequisites
 
@@ -16,7 +16,7 @@ Before starting, ensure you have:
 
 * Access to the AI Gateway UI (provided by your administrator)
 * Admin permissions to configure providers and gateways
-* API key for at least one LLM provider (OpenAI or Anthropic)
+* API key for at least one LLM provider (OpenAI, Anthropic, or Google AI)
 * Python 3.8+, Node.js 18+, or cURL (for testing)
 
 == Configure a provider
@@ -24,14 +24,9 @@ Before starting, ensure you have:
 Providers represent upstream LLM services (OpenAI, Anthropic) and their associated credentials. Providers are disabled by default and must be enabled explicitly.
 
 . In AI Gateways, navigate to *Providers*.
-. Select a provider (for example, OpenAI or Anthropic).
-. On the *Configuration* tab, click *Add configuration* and enter your API Key.
+. Select a provider (for example, OpenAI, Anthropic, Google AI).
+. On the Configuration tab, click *Add configuration* and enter your API Key.
 . Verify the provider status shows "Active".
-
-AI Gateway currently supports:
-
-* OpenAI
-* Anthropic
 
 == Enable models
 
@@ -56,13 +51,28 @@ This format allows the gateway to route requests to the correct provider.
 
 A gateway is a logical configuration boundary that defines routing policies, rate limits, spend limits, and observability scope. You can create separate gateways per team, environment (staging/production), or customer.
 
+[IMPORTANT]
+====
+When creating a gateway, you choose between two modes:
+
+* *AI Hub Mode*: Zero-configuration with pre-configured routing and backend pools. Just add provider credentials and start routing requests. Ideal for quick starts and standard use cases.
+* *Custom Mode*: Full control over all routing rules, backend pools, and policies. Requires manual configuration. Ideal for custom routing logic and specialized requirements.
+
+See xref:ai-gateway/gateway-modes.adoc[] to understand which mode fits your needs. This quickstart focuses on Custom mode configuration.
+====
+
 . Navigate to *Gateways*.
 . Click *Create Gateway*.
-. Configure the gateway:
+. Select the gateway mode:
 +
-* *Name*: Choose a descriptive name (for example, `my-first-gateway`)
-* *Workspace*: Select a workspace (conceptually similar to a resource group)
-* *Description*: Optional metadata for documentation
+* *AI Hub*: Choose this for pre-configured intelligent routing (see xref:ai-gateway/admin/configure-ai-hub.adoc[] for setup)
+* *Custom*: Choose this for full configuration control (continue with steps below)
+
+. Configure the gateway (for Custom mode):
++
+* Name: Choose a descriptive name (for example, `my-first-gateway`)
+* Workspace: Select a workspace (conceptually similar to a resource group)
+* Description: Optional metadata for documentation
 
 . After creation, copy the *Gateway Endpoint* and *Gateway ID* from the gateway detail page. You'll need these for sending requests.
 
@@ -72,11 +82,11 @@ Gateway Endpoint: https://gw.ai.panda.com
 Gateway ID: gw_abc123...
 ----
 
-Common gateway patterns:
+Common gateway patterns include the following:
 
-* *Environment separation*: Create separate gateways for staging and production
-* *Team isolation*: One gateway per team for budget tracking
-* *Customer multi-tenancy*: One gateway per customer for isolated policies
+* Environment separation: Create separate gateways for staging and production
+* Team isolation: One gateway per team for budget tracking
+* Customer multi-tenancy: One gateway per customer for isolated policies
 
 == Send your first request
 
@@ -193,10 +203,10 @@ Expected response:
 
 If your request fails, check these common issues:
 
-* *401 Unauthorized*: Verify your API key is valid
-* *404 Not Found*: Confirm the base URL matches your gateway endpoint
-* *Model not found*: Ensure the model is enabled in Step 2
-* *Missing rp-aigw-id*: Add the gateway ID header to your request
+* 401 Unauthorized: Verify your API key is valid
+* 404 Not Found: Confirm the base URL matches your gateway endpoint
+* Model not found: Ensure the model is enabled in Step 2
+* Missing rp-aigw-id: Add the gateway ID header to your request
 
 == Verify in observability dashboard
 
@@ -265,9 +275,9 @@ Monitor the fallback rate in observability to detect primary provider issues ear
 
 == Configure MCP tools (optional)
 
-If you're using AI agents, configure MCP (Model Context Protocol) tool aggregation.
+If you're using glossterm:AI agent[,AI agents], configure glossterm:MCP[,Model Context Protocol (MCP)] tool aggregation.
 
-On the Gateways page, select the *MCP* tab to configure tool discovery and execution. The MCP proxy aggregates multiple MCP servers behind a single endpoint, allowing agents to discover and call tools through the gateway.
+On the Gateways page, select the *MCP* tab to configure tool discovery and execution. The MCP proxy aggregates multiple glossterm:MCP server[,MCP servers] behind a single endpoint, allowing agents to discover and call glossterm:MCP tool[,tools] through the gateway.
 
 Configure the MCP settings:
 
@@ -290,7 +300,7 @@ To add external tools (for example, Slack, GitHub), add their MCP server endpoin
 
 === Deferred tool loading
 
-When many tools are aggregated, listing all tools upfront can consume significant tokens. With *deferred tool loading*, the MCP gateway initially returns only:
+When many tools are aggregated, listing all tools upfront can consume significant tokens. With deferred tool loading, the MCP gateway initially returns only:
 
 * A tool search capability
 * The MCP orchestrator

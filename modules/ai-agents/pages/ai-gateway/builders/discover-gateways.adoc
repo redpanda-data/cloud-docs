@@ -46,7 +46,7 @@ You can also list gateways programmatically:
 
 [source,bash]
 ----
-curl https://api.redpanda.com/v1/ai-gateway/gateways \
+curl https://api.redpanda.com/v1/gateways \
   -H "Authorization: Bearer ${REDPANDA_CLOUD_TOKEN}"
 ----
 
@@ -59,6 +59,7 @@ Response:
     {
       "id": "gw_abc123",
       "name": "production-gateway",
+      "mode": "ai_hub",
       "endpoint": "https://gw.ai.panda.com",
       "status": "active",
       "workspace_id": "ws_xyz789",
@@ -67,6 +68,7 @@ Response:
     {
       "id": "gw_def456",
       "name": "staging-gateway",
+      "mode": "custom",
       "endpoint": "https://gw-staging.ai.panda.com",
       "status": "active",
       "workspace_id": "ws_xyz789",
@@ -157,7 +159,7 @@ These limits help control costs and ensure fair resource allocation across teams
 
 === MCP Tools
 
-If MCP aggregation is enabled for your gateway, you can access tools from multiple MCP servers through a single endpoint.
+If glossterm:MCP[,Model Context Protocol (MCP)] aggregation is enabled for your gateway, you can access glossterm:MCP tool[,tools] from multiple glossterm:MCP server[,MCP servers] through a single endpoint.
 
 To discover available MCP tools:
 
@@ -172,6 +174,34 @@ curl https://{GATEWAY_ENDPOINT}/mcp/tools \
 With deferred loading enabled, you'll receive search and orchestrator tools initially. You can then query for specific tools as needed.
 
 // See xref:ai-gateway/builders/use-mcp-tools.adoc[] for more details.
+
+== Identify gateway mode
+
+Gateways can operate in two modes: AI Hub mode or Custom mode. Understanding which mode your gateway uses helps you know what to expect.
+
+include::ai-agents:partial$ai-hub-mode-indicator.adoc[]
+
+=== What it means for builders
+
+*AI Hub Mode:*
+
+* Routing is pre-configured and intelligent
+* Models are automatically routed based on system-managed rules
+* You cannot see or modify routing rules (they're managed by Redpanda)
+* Limited customization via administrator-configured preference toggles
+* See xref:ai-gateway/builders/use-ai-hub-gateway.adoc[] for AI Hub-specific guidance
+
+*Custom Mode:*
+
+* Routing is configured by your administrator
+* You can view configured routing rules in the console
+* Administrator has full control over backend pools and policies
+* Standard discovery and usage patterns apply (rest of this page)
+
+[TIP]
+====
+If you need specific routing behavior or custom configuration that AI Hub doesn't support, ask your administrator about ejecting to Custom mode or creating a Custom mode gateway.
+====
 
 == Check gateway availability
 
@@ -226,9 +256,9 @@ If you have access to multiple gateways, consider which one to use based on your
 
 Organizations often create separate gateways for different environments:
 
-* *Production gateway*: Higher rate limits, access to all models, monitoring enabled
-* *Staging gateway*: Lower rate limits, restricted models, aggressive cost controls
-* *Development gateway*: Minimal limits, all models for experimentation
+* Production gateway: Higher rate limits, access to all models, monitoring enabled
+* Staging gateway: Lower rate limits, restricted models, aggressive cost controls
+* Development gateway: Minimal limits, all models for experimentation
 
 Choose the gateway that matches your deployment environment.
 
@@ -236,9 +266,9 @@ Choose the gateway that matches your deployment environment.
 
 Gateways may be organized by team or project for cost tracking and isolation:
 
-* *team-ml-gateway*: For machine learning team
-* *team-product-gateway*: For product team
-* *customer-facing-gateway*: For production customer workloads
+* team-ml-gateway: For machine learning team
+* team-product-gateway: For product team
+* customer-facing-gateway: For production customer workloads
 
 Use the gateway designated for your team to ensure proper cost attribution.
 
@@ -246,9 +276,9 @@ Use the gateway designated for your team to ensure proper cost attribution.
 
 Different gateways may have different features enabled:
 
-* *Gateway with MCP tools*: Use if your agent needs to call tools
-* *Gateway without MCP*: Use for simple LLM completions
-* *Gateway with specific models*: Use if you need access to particular models
+* Gateway with MCP tools: Use if your agent needs to call tools
+* Gateway without MCP: Use for simple LLM completions
+* Gateway with specific models: Use if you need access to particular models
 
 == Example: Complete discovery workflow
 
@@ -263,7 +293,7 @@ export REDPANDA_CLOUD_TOKEN="your-token-here"
 
 # Step 1: List all accessible gateways
 echo "=== Discovering gateways ==="
-curl -s https://api.redpanda.com/v1/ai-gateway/gateways \
+curl -s https://api.redpanda.com/v1/gateways \
   -H "Authorization: Bearer ${REDPANDA_CLOUD_TOKEN}" \
   | jq '.gateways[] | {name: .name, id: .id, endpoint: .endpoint}'
 
