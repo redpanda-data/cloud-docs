@@ -81,14 +81,7 @@ ai-agent (6.65 seconds)
 │   │   └── openai: chat gpt-5.2 (6.2 seconds)
 ----
 
-This shows:
-
-1. Total agent invocation: 6.65 seconds
-2. Agent reasoning: 6.41 seconds
-3. Sub-agent call: 6.39 seconds (most of the time)
-4. LLM API call: 6.2 seconds (the actual bottleneck)
-
-Examine span durations to identify where time is spent and optimize accordingly.
+This hierarchy shows that the LLM API call (6.2 seconds) accounts for most of the total agent invocation time (6.65 seconds), revealing the bottleneck in this execution flow.
 
 == MCP server transcript hierarchy
 
@@ -240,7 +233,7 @@ Redpanda Connect layer:
 
 - Component-specific attributes from your tool configuration
 
-Use `scope.name` to filter spans by layer when analyzing transcripts.
+The `scope.name` field identifies which instrumentation layer created each span.
 
 == Understand the transcript structure
 
@@ -263,13 +256,12 @@ Each span captures a unit of work. Here's what a typical MCP tool invocation loo
 }
 ----
 
-Key elements to understand:
-
-* `traceId`: Links all spans belonging to the same request. Use this to follow a tool invocation through its entire lifecycle.
-* `name`: The tool or operation name (`http_processor` in this example). This tells you which component was invoked.
-* `instrumentationScope.name`: When this is `rpcn-mcp`, the span represents an MCP tool. When it's `redpanda-connect`, it's internal processing.
-* `attributes`: Context about the operation, like input parameters or result metadata.
-* `status.code`: `0` means success, `2` means error.
+* **traceId** links all spans in the same request across services
+* **spanId** uniquely identifies this span
+* **name** identifies the operation or tool
+* **instrumentationScope.name** identifies which layer created the span (`rpcn-mcp` for MCP tools, `redpanda-connect` for internal processing)
+* **attributes** contain operation-specific metadata
+* **status.code** indicates success (0) or error (2)
 
 === Parent-child relationships
 
