@@ -24,8 +24,7 @@ Before migrating, ensure you have:
 * Your gateway ID (`rp-aigw-id` header value)
 * Your gateway endpoint URL
 
-////
-PLACEHOLDER: Add verification command, for example:
+Verify your gateway is reachable:
 
 [source,bash]
 ----
@@ -35,7 +34,6 @@ curl https://{GATEWAY_ENDPOINT}/v1/models \
 ----
 
 Expected output: List of enabled models
-////
 
 == Migration strategy
 
@@ -359,7 +357,7 @@ Common issues:
 After successful test:
 
 1. Open AI Gateway observability dashboard
-2. Navigate to // PLACEHOLDER: specific UI path, for example, "Gateways → {GATEWAY_NAME} → Logs"
+2. In the sidebar, navigate to *Agentic AI > Gateways > {GATEWAY_NAME}*, then select the *Logs* tab.
 3. Verify your test request appears
 4. Check fields:
    * Model: `openai/gpt-4o-mini`
@@ -737,7 +735,7 @@ Causes:
 
 Solution:
 
-1. Verify model is enabled: // PLACEHOLDER: UI path or CLI command
+1. Verify model is enabled: In the sidebar, navigate to *Agentic AI > Models* and confirm the model is enabled.
 2. Confirm format: `vendor/model_id` (for example, `openai/gpt-4o`, not `gpt-4o`)
 3. Check supported models: // PLACEHOLDER: link to model catalog
 
@@ -791,12 +789,7 @@ Solution: Verify gateway ID and check for UI delay (logs may take a few seconds 
 
 Symptom: Response structure differs between direct and gateway
 
-// PLACEHOLDER: Confirm if response format is identical to OpenAI API or if there are differences
-
-Solution:
-
-* AI Gateway should return OpenAI-compatible responses
-* If differences exist, file a support ticket with request ID from logs
+AI Gateway returns OpenAI-compatible responses for all providers. Anthropic responses are automatically transformed to match the OpenAI response format. If you encounter differences, file a support ticket with the request ID from logs.
 
 == Advanced migration scenarios
 
@@ -824,8 +817,6 @@ client = OpenAI(
 
 
 === Streaming responses
-
-// PLACEHOLDER: Verify streaming support
 
 Before
 

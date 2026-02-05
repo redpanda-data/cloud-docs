@@ -201,7 +201,7 @@ Verify:
 ----
 # Test enterprise
 response = client.chat.completions.create(
-    model="auto",  # PLACEHOLDER: How to trigger CEL routing?
+    model="openai/gpt-4o",  # CEL routing rules override model selection
     messages=[{"role": "user", "content": "Test"}],
     extra_headers={"x-user-tier": "enterprise"}
 )
@@ -209,7 +209,7 @@ response = client.chat.completions.create(
 
 # Test free
 response = client.chat.completions.create(
-    model="auto",
+    model="openai/gpt-4o",  # CEL routing rules override model selection
     messages=[{"role": "user", "content": "Test"}],
     extra_headers={"x-user-tier": "free"}
 )
@@ -250,7 +250,7 @@ Verify:
 ----
 # Set environment header
 response = client.chat.completions.create(
-    model="auto",
+    model="openai/gpt-4o",  # CEL routing rules override model selection
     messages=[{"role": "user", "content": "Test"}],
     extra_headers={"x-environment": "staging"}
 )
@@ -273,6 +273,7 @@ Use case: Protect against runaway staging costs
 
 When to use: Block or downgrade long prompts to prevent cost spikes
 
+////
 Expression (Block):
 
 [source,cel]
@@ -282,10 +283,10 @@ request.body.messages.size() > 10 || request.body.max_tokens > 4000
   : "openai/gpt-4o"
 ----
 
-
 What happens:
-* Requests with >10 messages or >4000 max_tokens → Rejected with 400 error
-* Normal requests → GPT-4o
+* Requests with >10 messages or >4000 max_tokens -> Rejected with 400 error
+* Normal requests -> GPT-4o
+////
 
 Expression (Downgrade):
 
@@ -308,7 +309,7 @@ Verify:
 ----
 # Test rejection
 response = client.chat.completions.create(
-    model="auto",
+    model="openai/gpt-4o",  # CEL routing rules override model selection
     messages=[{"role": "user", "content": f"Message {i}"} for i in range(15)],
     max_tokens=5000
 )
@@ -316,7 +317,7 @@ response = client.chat.completions.create(
 
 # Test normal
 response = client.chat.completions.create(
-    model="auto",
+    model="openai/gpt-4o",  # CEL routing rules override model selection
     messages=[{"role": "user", "content": "Short message"}],
     max_tokens=100
 )
@@ -358,14 +359,14 @@ Verify:
 ----
 # Test code question
 response = client.chat.completions.create(
-    model="auto",
+    model="openai/gpt-4o",  # CEL routing rules override model selection
     messages=[{"role": "user", "content": "Debug this Python code: ..."}]
 )
 # Check logs: Should route to gpt-4o
 
 # Test general question
 response = client.chat.completions.create(
-    model="auto",
+    model="openai/gpt-4o",  # CEL routing rules override model selection
     messages=[{"role": "user", "content": "Write a blog post about AI"}]
 )
 # Check logs: Should route to claude-sonnet-3.5
@@ -382,37 +383,39 @@ Use case: Multi-purpose chatbot with both coding and general queries
 
 === Geographic/regional routing
 
-When to use: Route by user region for compliance or latency optimization
+When to use: Route by user region to different providers or gateways for compliance or latency optimization
 
 Expression:
 
 [source,cel]
 ----
 request.headers["x-user-region"] == "eu"
-  ? "openai/gpt-4o-eu"  // PLACEHOLDER: If regional models exist
-  : "openai/gpt-4o"
+  ? "anthropic/claude-sonnet-3.5"  // EU traffic to Anthropic
+  : "openai/gpt-4o"                // Other traffic to OpenAI
 ----
 
 
 What happens:
 
-* EU users → EU-region model (GDPR compliance)
-* Other users → Default region
+* EU users -> Anthropic (for EU data processing requirements)
+* Other users -> OpenAI (default provider)
+
+NOTE: To achieve true data residency, configure separate gateways per region with provider pools that meet your compliance requirements.
 
 Verify:
 
 [source,python]
 ----
 response = client.chat.completions.create(
-    model="auto",
+    model="openai/gpt-4o",  # CEL routing rules override model selection
     messages=[{"role": "user", "content": "Test"}],
     extra_headers={"x-user-region": "eu"}
 )
-# Check logs: Should route to EU model
+# Check logs: Should route to anthropic/claude-sonnet-3.5
 ----
 
 
-Cost impact: Neutral (same model, different region)
+Cost impact: Varies by provider pricing
 
 Use case: GDPR compliance, data residency requirements
 
@@ -441,7 +444,7 @@ Verify:
 [source,python]
 ----
 response = client.chat.completions.create(
-    model="auto",
+    model="openai/gpt-4o",  # CEL routing rules override model selection
     messages=[{"role": "user", "content": "Test"}],
     extra_headers={"x-customer-id": "customer_vip_123"}
 )
@@ -457,17 +460,18 @@ Cost impact:
 Use case: Enterprise contracts with premium model access
 
 
+////
 === A/B testing (percentage-based routing)
 
 When to use: Test new models with a percentage of traffic
 
-// PLACEHOLDER: Confirm if CEL can access random functions or if A/B testing requires different mechanism
+PLACEHOLDER: Confirm if CEL can access random functions or if A/B testing requires different mechanism
 
 Expression (if random is available):
 
 [source,cel]
 ----
-// PLACEHOLDER: Verify CEL random function availability
+PLACEHOLDER: Verify CEL random function availability
 random() < 0.10
   ? "anthropic/claude-opus-4"  // 10% traffic to new model
   : "openai/gpt-4o"             // 90% traffic to existing model
@@ -487,8 +491,8 @@ hash(request.headers["x-customer-id"]) % 100 < 10
 
 What happens:
 
-* 10% of requests → New model (Opus 4)
-* 90% of requests → Existing model (GPT-4o)
+* 10% of requests -> New model (Opus 4)
+* 90% of requests -> Existing model (GPT-4o)
 
 Verify:
 
@@ -497,7 +501,7 @@ Verify:
 # Send 100 requests, count which model was used
 for i in range(100):
     response = client.chat.completions.create(
-        model="auto",
+        model="openai/gpt-4o",
         messages=[{"role": "user", "content": f"Test {i}"}],
         extra_headers={"x-customer-id": f"customer_{i}"}
     )
@@ -511,6 +515,7 @@ Cost impact:
 * Monitor quality/cost for new model before full adoption
 
 Use case: Evaluate new models in production with real traffic
+////
 
 === Complexity-based routing
 
@@ -538,14 +543,14 @@ Verify:
 ----
 # Test simple
 response = client.chat.completions.create(
-    model="auto",
+    model="openai/gpt-4o",  # CEL routing rules override model selection
     messages=[{"role": "user", "content": "Hi"}]  # 2 chars
 )
 # Check logs: Should route to gpt-4o-mini
 
 # Test complex
 response = client.chat.completions.create(
-    model="auto",
+    model="openai/gpt-4o",  # CEL routing rules override model selection
     messages=[
         {"role": "user", "content": "Long question here..." * 10},
         {"role": "assistant", "content": "Response"},
@@ -563,17 +568,18 @@ Cost impact:
 
 Use case: FAQ chatbot with mix of simple lookups and complex questions
 
+////
 === Time-based routing
 
 When to use: Use cheaper models during off-peak hours
 
-// PLACEHOLDER: Confirm if CEL has access to current timestamp
+PLACEHOLDER: Confirm if CEL has access to current timestamp
 
 Expression (if time functions available):
 
 [source,cel]
 ----
-// PLACEHOLDER: Verify CEL time function availability
+PLACEHOLDER: Verify CEL time function availability
 now().hour >= 22 || now().hour < 6  // 10pm - 6am
   ? "openai/gpt-4o-mini"  // Off-peak: cheaper model
   : "openai/gpt-4o"        // Peak hours: best model
@@ -582,8 +588,8 @@ now().hour >= 22 || now().hour < 6  // 10pm - 6am
 
 What happens:
 
-* Off-peak hours (10pm-6am) → Cheap model
-* Peak hours (6am-10pm) → Premium model
+* Off-peak hours (10pm-6am) -> Cheap model
+* Peak hours (6am-10pm) -> Premium model
 
 Cost impact:
 
@@ -591,6 +597,7 @@ Cost impact:
 * Save costs during low-traffic hours
 
 Use case: Consumer apps with time-zone-specific usage patterns
+////
 
 
 === Fallback chain (multi-level)
@@ -684,6 +691,7 @@ Expression:
 
 What happens: Only specific customers get premium model
 
+////
 === Reject invalid requests
 
 Expression:
@@ -695,8 +703,8 @@ Expression:
   : "openai/gpt-4o"
 ----
 
-
 What happens: Requests without messages are rejected (400 error)
+////
 
 == Test CEL expressions
 
@@ -715,7 +723,7 @@ What happens: Requests without messages are rejected (400 error)
 def test_cel_routing(headers, messages):
     """Test CEL routing with specific headers and messages"""
     response = client.chat.completions.create(
-        model="auto",  # PLACEHOLDER: Confirm trigger for CEL routing
+        model="openai/gpt-4o",  # CEL routing rules override model selection
         messages=messages,
         extra_headers=headers,
         max_tokens=10  # Keep it cheap
@@ -723,7 +731,7 @@ def test_cel_routing(headers, messages):
 
     # Check logs to see which model was used
     print(f"Headers: {headers}")
-    print(f"Routed to: {response.model}")  # PLACEHOLDER: Does response include actual model?
+    print(f"Routed to: {response.model}")
 
 # Test tier-based routing
 test_cel_routing(
