@@ -6,7 +6,9 @@
 :learning-objective-2: Apply tool orchestration patterns to handle multi-step workflows
 :learning-objective-3: Evaluate how system prompt design affects agent tool selection
 
-Build a customer support agent to learn how agents orchestrate multiple tools, make context-aware decisions, and handle incomplete data.
+This tutorial shows you how to build a customer support agent to learn how agents orchestrate multiple tools, make context-aware decisions, and handle incomplete data.
+
+include::ai-agents:partial$byoc-aws-requirement.adoc[]
 
 After completing this tutorial, you will be able to:
 
@@ -24,7 +26,7 @@ The patterns you practice here apply to any multi-tool scenario: data analysis a
 
 == The scenario
 
-Customer support teams handle repetitive questions: "Where is my order?", "What's my tracking number?", "Show me my order history." Human agents waste time on lookups that could be automated.
+Customer support teams handle repetitive questions: "Where is my order?", "What's my tracking number?", "Show me my order history." Human agents often waste time on lookups that could be automated.
 
 An effective support agent needs three capabilities:
 
@@ -36,7 +38,7 @@ The challenge: users phrase requests differently ("Where's my package?", "Track 
 
 == Prerequisites
 
-* A xref:get-started:cluster-types/byoc/index.adoc[BYOC cluster] with Remote MCP enabled.
+* A xref:get-started:cluster-types/byoc/index.adoc[BYOC cluster].
 * xref:ai-agents:ai-gateway/gateway-quickstart.adoc[AI Gateway configured] with at least one LLM provider enabled (this tutorial uses OpenAI).
 
 == Design the MCP tools
@@ -84,7 +86,7 @@ include::ai-agents:example$mcp-tools/processors/get_order_status.yaml[]
 
 get_shipping_info::
 +
-This tool demonstrates conditional data: it only returns tracking information when the order has shipped. When an order hasn't shipped yet, the tool returns an empty result. The agent must handle this case.
+This tool demonstrates conditional data: it only returns tracking information when the order has shipped. When an order hasn't shipped yet, the tool returns an empty result. The system prompt instructs the agent to explain that shipping info is unavailable for orders that haven't shipped.
 +
 [,yaml]
 ----
@@ -101,7 +103,7 @@ include::ai-agents:example$mcp-tools/processors/get_customer_history.yaml[]
 ----
 ====
 
-. Click *Create MCP Server*
+. Click *Create MCP Server*.
 
 Wait for the server status to show *Running*. You now have three focused tools the agent can orchestrate.
 
@@ -250,7 +252,7 @@ Check order ORD-99999
 
 The tool returns no data for this order ID. Watch how the agent responds. It explains the order wasn't found and asks the customer to verify the order ID. Critically, the agent does not fabricate tracking numbers or order details.
 
-This demonstrates error recovery without hallucination. The "Never make up tracking numbers" constraint in the system prompt prevents the agent from inventing plausible-sounding but fake information.
+This demonstrates error recovery without hallucination. The "Never make up tracking numbers" constraint in the system prompt prevents the agent from inventing plausible-sounding but incorrect information.
 
 == Troubleshoot
 

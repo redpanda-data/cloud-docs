@@ -20,6 +20,11 @@ Every agent request follows a reasoning loop. The agent doesn't execute all tool
 
 === The reasoning loop
 
+The following diagram shows how agents process requests through iterative reasoning:
+
+.Agent reasoning loop with tool integration
+image::ai-agents:agent-reasoning-loop.png[Diagram showing the agent reasoning loop: User Request flows to LLM Receives Context, then to LLM Decision which branches to Tool Executes, Request Clarification, or Return Response to User]
+
 When an agent receives a request:
 
 . The LLM receives the context, including system prompt, conversation history, user request, and previous tool results.
@@ -30,9 +35,14 @@ When an agent receives a request:
 
 The loop continues until one of these conditions is met:
 
+.Reasoning loop exit conditions
+image::ai-agents:agent-exit-conditions.png[Diagram showing exit conditions: Task Complete returns response, Max Iterations returns partial result, Unrecoverable Error returns error, otherwise continue loop]
+
 * Agent completes the task and responds to the user
 * Agent reaches max iterations limit
 * Agent encounters an unrecoverable error
+
+NOTE: If the agent encounters an unrecoverable error on the first iteration, it returns an error immediately. Unrecoverable errors include authentication failures, invalid tool configurations, or LLM API failures.
 
 === Why iterations matter
 
@@ -42,9 +52,9 @@ Each iteration includes three phases:
 . **Tool invocation**: If the agent decides to call a tool, execution happens and waits for results.
 . **Context expansion**: Tool results are added to the conversation history for the next iteration.
 
-With higher iteration limits, agents can complete complex tasks but costs more and takes longer.
+With higher iteration limits, agents can complete complex tasks but can cost more and take longer.
 
-With lower iteration limits, agents respond faster and cheaper but may fail on complex requests.
+With lower iteration limits, agents can respond faster and are cheaper but may fail on complex requests.
 
 ==== Cost calculation
 

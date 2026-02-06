@@ -8,6 +8,8 @@
 
 Create a new AI agent through the Redpanda Cloud Console. This guide walks you through configuring the agent's model, system prompt, tools, and execution settings.
 
+include::ai-agents:partial$byoc-aws-requirement.adoc[]
+
 After reading this page, you will be able to:
 
 * [ ] {learning-objective-1}
@@ -16,7 +18,7 @@ After reading this page, you will be able to:
 
 == Prerequisites
 
-* A xref:get-started:cluster-types/byoc/index.adoc[BYOC cluster] with Remote MCP enabled.
+* A xref:get-started:cluster-types/byoc/index.adoc[BYOC cluster].
 * xref:ai-agents:ai-gateway/gateway-quickstart.adoc[AI Gateway configured] with at least one LLM provider enabled.
 * At least one xref:ai-agents:mcp/remote/overview.adoc[Remote MCP server] deployed with tools.
 * System prompt prepared (see xref:ai-agents:agents/prompt-best-practices.adoc[System Prompt Best Practices]).
@@ -169,7 +171,7 @@ Choose based on task complexity:
 
 Start with 30 for most use cases.
 
-=== Configure A2A discovery metadata
+=== Configure A2A discovery metadata (optional)
 
 After creating your agent, configure discovery metadata for external integrations. For detailed agent card design guidance, see link:https://agent2agent.info/docs/guides/create-agent-card/[Create an Agent Card^].
 
@@ -192,8 +194,8 @@ Skills describe what your agent can do for capability-based discovery. External 
 .. Click *+ Add Skill* to define what this agent can do.
 .. For each skill, configure:
 +
-* *Skill ID* (required): Unique identifier using lowercase letters, numbers, and hyphens (e.g., `fraud-analysis`, `order-lookup`)
-* *Skill Name* (required): Human-readable name displayed in agent directories (e.g., "Fraud Analysis", "Order Lookup")
+* *Skill ID* (required): Unique identifier using lowercase letters, numbers, and hyphens (for example, `fraud-analysis`, `order-lookup`)
+* *Skill Name* (required): Human-readable name displayed in agent directories (for example, "Fraud Analysis", "Order Lookup")
 * *Description* (required): Explain what this skill does and when to use it. Be specific about inputs, outputs, and use cases.
 * *Tags* (optional): Add tags for categorization and search. Use common terms like `fraud`, `security`, `finance`, `orders`.
 * *Examples* (optional): Click *+ Add Example* to provide sample queries demonstrating how to invoke this skill. Examples help users understand how to interact with your agent.
@@ -202,7 +204,7 @@ Skills describe what your agent can do for capability-based discovery. External 
 
 . Click *Save Changes*.
 
-The updated metadata appears immediately at `\https://your-agent-url/.well-known/agent-card.json`. For more about what these fields mean and how they're used, see xref:ai-agents:agents/a2a-concepts.adoc#agent-card-metadata[Agent card metadata].
+The updated metadata appears immediately at `\https://your-agent-url/.well-known/agent-card.json`. For more about what these fields mean and how they're used, see xref:ai-agents:agents/a2a-concepts.adoc#agent-cards[Agent cards].
 
 === Review and create
 

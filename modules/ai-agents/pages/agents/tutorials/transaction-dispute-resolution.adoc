@@ -6,7 +6,9 @@
 :learning-objective-2: pass:q[Monitor multi-agent execution using *Transcripts*]
 :learning-objective-3: Integrate agents with streaming pipelines for event-driven processing
 
-Build a transaction dispute resolution system using multi-agent architecture, secure data handling, and execution monitoring.
+This tutorial shows you how to build a transaction dispute resolution system using multi-agent architecture, secure data handling, and execution monitoring.
+
+include::ai-agents:partial$byoc-aws-requirement.adoc[]
 
 After completing this tutorial, you will be able to:
 
@@ -16,7 +18,7 @@ After completing this tutorial, you will be able to:
 
 == What you'll learn
 
-This tutorial advances from xref:ai-agents:agents/tutorials/customer-support-agent.adoc[basic multi-tool orchestration] to multi-agent systems. You'll build a transaction dispute resolution system where a root agent delegates to specialized sub-agents (account, fraud, merchant, compliance), each with focused responsibilities and PII-protected data access. You'll also monitor execution using *Transcripts* and process disputes from transaction streams for automated detection.
+This tutorial advances from xref:ai-agents:agents/tutorials/customer-support-agent.adoc[basic multi-tool orchestration] to multi-agent systems. You'll build a transaction dispute resolution system where a root agent delegates to specialized sub-agents (account, fraud, merchant, compliance), each with focused responsibilities and PII-protected data access. You'll also monitor execution using glossterm:transcript[,transcripts] and process disputes from transaction streams for automated detection.
 
 These patterns apply beyond banking to any domain requiring specialized expertise and data security: healthcare systems, insurance claims processing, or regulatory compliance workflows.
 
@@ -32,9 +34,9 @@ When a customer calls saying "I see a $247.83 charge from 'ACME CORP' but I neve
 
 == Prerequisites
 
-* A xref:get-started:cluster-types/byoc/index.adoc[BYOC cluster] with Remote MCP enabled.
+* A xref:get-started:cluster-types/byoc/index.adoc[BYOC cluster].
 * xref:ai-agents:ai-gateway/gateway-quickstart.adoc[AI Gateway configured] with at least one LLM provider enabled (this tutorial uses OpenAI GPT-5.2 or Claude Sonnet 4.5 for reasoning).
-* The xref:get-started:rpk-install.adoc[Redpanda CLI (`rpk`)] installed (for testing the pipeline with sample data).
+* The xref:manage:rpk/rpk-install.adoc[Redpanda CLI (`rpk`)] installed (for testing the pipeline with sample data).
 * Completed xref:ai-agents:agents/tutorials/customer-support-agent.adoc[] (foundational multi-tool concepts).
 
 == Create MCP tools for each domain
