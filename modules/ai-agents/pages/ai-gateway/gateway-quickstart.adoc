@@ -15,17 +15,17 @@ Redpanda AI Gateway provides unified access to multiple large language model (LL
 Before starting, ensure you have:
 
 * Access to the AI Gateway UI (provided by your administrator)
-* Admin permissions to configure providers and gateways
+* Admin permissions to configure providers and models
 * API key for at least one LLM provider (OpenAI, Anthropic, or Google AI)
 * Python 3.8+, Node.js 18+, or cURL (for testing)
 
 == Configure a provider
 
-Providers represent upstream LLM services (OpenAI, Anthropic, Google Gemini) and their associated credentials. Providers are disabled by default and must be enabled explicitly.
+Providers represent upstream LLM services and their associated credentials. Providers are disabled by default and must be enabled explicitly.
 
-. In AI Gateways, navigate to *Providers*.
+. Navigate to *Providers*.
 . Select a provider (for example, OpenAI, Anthropic, Google AI).
-. On the Configuration tab, click *Add configuration* and enter your API Key.
+. On the Configuration tab, click *Add configuration* and enter your API key.
 . Verify the provider status shows "Active".
 
 == Enable models
@@ -33,8 +33,8 @@ Providers represent upstream LLM services (OpenAI, Anthropic, Google Gemini) and
 After enabling a provider, enable the specific models you want to make available through your gateways.
 
 . Navigate to *Models*.
-. Enable the models you want to use (for example, `gpt-5.2`, `gpt-5.2-mini`, `claude-sonnet-4.5`, `claude-opus-4.6`).
-. Verify the models appear as "Enabled" in the catalog.
+. Enable the models you want to use (for example, `gpt-5.2-mini`, `claude-sonnet-4.5`, `claude-opus-4.6`).
+. Verify the models appear as "Enabled" in the model catalog.
 
 TIP: Different providers have different reliability and cost characteristics. When choosing models, consider your use case requirements for quality, speed, and cost.
 
@@ -50,7 +50,11 @@ This format allows the gateway to route requests to the correct provider.
 
 == Create a gateway
 
-A gateway is a logical configuration boundary that defines routing policies, rate limits, spend limits, and observability scope. You can create separate gateways per team, environment (staging/production), or customer.
+A gateway is a logical configuration boundary that defines routing policies, rate limits, spend limits, and observability scope. Common gateway patterns include the following:
+
+* Environment separation: Create separate gateways for staging and production
+* Team isolation: One gateway per team for budget tracking
+* Customer multi-tenancy: One gateway per customer for isolated policies
 
 ifdef::ai-hub-available[]
 [IMPORTANT]
@@ -66,32 +70,24 @@ endif::[]
 
 . Navigate to *Gateways*.
 . Click *Create Gateway*.
-. Select the gateway mode:
 +
 ifdef::ai-hub-available[]
+. Select the gateway mode:
 * *AI Hub*: Choose this for pre-configured intelligent routing (see xref:ai-gateway/admin/configure-ai-hub.adoc[] for setup)
+* *Custom*: Choose this for full configuration control
 endif::[]
-* *Custom*: Choose this for full configuration control (continue with steps below)
-
-. Configure the gateway (for Custom mode):
+. Configure the gateway:
 +
-* Name: Choose a descriptive name (for example, `my-first-gateway`)
+* Display name: Choose a descriptive name (for example, `my-first-gateway`)
 * Workspace: Select a workspace (conceptually similar to a resource group)
-* Description: Optional metadata for documentation
+* Description: Add context about this gateway's purpose
+* Optional metadata for documentation
 
-. After creation, copy the *Gateway Endpoint* and *Gateway ID* from the gateway detail page. You'll need these for sending requests.
-
-Your gateway endpoint format:
+. After creation, copy the *Gateway Endpoint* and *Gateway ID* from the gateway overview page. You'll need these for sending requests. For example, you might see:
 ----
-Gateway Endpoint: https://gw.ai.panda.com
-Gateway ID: gw_abc123...
+Endpoint: https://example/gateways/d633lffcc16s73ct95mg/v1
+ID: d633lffcc16s73ct95mg
 ----
-
-Common gateway patterns include the following:
-
-* Environment separation: Create separate gateways for staging and production
-* Team isolation: One gateway per team for budget tracking
-* Customer multi-tenancy: One gateway per customer for isolated policies
 
 == Send your first request
 
@@ -108,8 +104,8 @@ from openai import OpenAI
 
 # Configure client to use AI Gateway
 client = OpenAI(
-    base_url="https://gw.ai.panda.com",  # Your gateway endpoint
-    api_key="<your-redpanda-api-key>",   # Your Redpanda API key
+    base_url="your-gateway-endpoint",
+    api_key="<your-redpanda-api-key>",
     default_headers={
         "rp-aigw-id": "gw_abc123..."     # Your gateway ID
     }
