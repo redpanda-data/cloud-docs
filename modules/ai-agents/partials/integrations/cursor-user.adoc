@@ -106,10 +106,10 @@ In the AI settings, configure which models to use:
 
 Model selection options:
 
-* `gpt-4o` - Routes to OpenAI GPT-4o through your gateway
-* `gpt-4o-mini` - Routes to OpenAI GPT-4o-mini (cost-effective)
-* `claude-sonnet-4-5` - Routes to Anthropic Claude Sonnet (if enabled in gateway)
-* `claude-opus-4-5` - Routes to Anthropic Claude Opus (if enabled in gateway)
+* `gpt-5.2` - Routes to OpenAI GPT-5.2 through your gateway
+* `gpt-5.2-mini` - Routes to OpenAI GPT-5.2-mini (cost-effective)
+* `claude-sonnet-4.5` - Routes to Anthropic Claude Sonnet (if enabled in gateway)
+* `claude-opus-4.6` - Routes to Anthropic Claude Opus (if enabled in gateway)
 
 Note: When routing through AI Gateway, Cursor uses the OpenAI SDK format. The gateway automatically translates requests to the appropriate provider based on the model name.
 
@@ -148,8 +148,8 @@ Create or edit `settings.json` with the following structure:
   "openai.additionalHeaders": {
     "rp-aigw-id": "GATEWAY_ID"
   },
-  "cursor.cpp.defaultModel": "gpt-4o",
-  "cursor.chat.defaultModel": "gpt-4o"
+  "cursor.cpp.defaultModel": "gpt-5.2",
+  "cursor.chat.defaultModel": "gpt-5.2"
 }
 ----
 
@@ -356,7 +356,7 @@ Then verify in the AI Gateway dashboard:
 . Filter by gateway ID
 . Verify:
 ** Request appears in logs
-** Model shows correct format (for example, `gpt-4o`)
+** Model shows correct format (for example, `gpt-5.2`)
 ** Token usage and cost are recorded
 ** Request succeeded (status 200)
 
@@ -419,8 +419,8 @@ Configure different settings for chat vs autocomplete:
 [,json]
 ----
 {
-  "cursor.chat.defaultModel": "claude-sonnet-4-5",
-  "cursor.cpp.defaultModel": "gpt-4o-mini",
+  "cursor.chat.defaultModel": "claude-sonnet-4.5",
+  "cursor.cpp.defaultModel": "gpt-5.2-mini",
   "cursor.chat.temperature": 0.7,
   "cursor.cpp.temperature": 0.2,
   "cursor.chat.maxTokens": 4096,
@@ -431,7 +431,7 @@ Configure different settings for chat vs autocomplete:
 Settings explained:
 
 * Chat uses Claude Sonnet for reasoning depth
-* Autocomplete uses GPT-4o-mini for speed and cost efficiency
+* Autocomplete uses GPT-5.2-mini for speed and cost efficiency
 * Chat temperature (0.7) allows creative responses
 * Autocomplete temperature (0.2) produces deterministic code
 * Chat allows longer responses (4096 tokens)
@@ -595,7 +595,7 @@ Verify `cursor.cpp.defaultModel` is set in `settings.json`:
 [,json]
 ----
 {
-  "cursor.cpp.defaultModel": "gpt-4o-mini"
+  "cursor.cpp.defaultModel": "gpt-5.2-mini"
 }
 ----
 
@@ -606,12 +606,12 @@ Use a faster, cost-effective model for autocomplete:
 [,json]
 ----
 {
-  "cursor.cpp.defaultModel": "gpt-4o-mini",
+  "cursor.cpp.defaultModel": "gpt-5.2-mini",
   "cursor.cpp.maxTokens": 256
 }
 ----
 +
-Smaller models like GPT-4o-mini or Claude Haiku provide faster responses ideal for autocomplete.
+Smaller models like GPT-5.2-mini or Claude Haiku provide faster responses ideal for autocomplete.
 
 . **Network latency**
 +
@@ -740,7 +740,7 @@ Verify you're using fast models for autocomplete:
 [,json]
 ----
 {
-  "cursor.cpp.defaultModel": "gpt-4o-mini"  // Fast model
+  "cursor.cpp.defaultModel": "gpt-5.2-mini"  // Fast model
 }
 ----
 
@@ -803,8 +803,8 @@ Chat interactions benefit from reasoning depth, while autocomplete needs speed:
 [,json]
 ----
 {
-  "cursor.chat.defaultModel": "claude-sonnet-4-5",
-  "cursor.cpp.defaultModel": "gpt-4o-mini"
+  "cursor.chat.defaultModel": "claude-sonnet-4.5",
+  "cursor.cpp.defaultModel": "gpt-5.2-mini"
 }
 ----
 

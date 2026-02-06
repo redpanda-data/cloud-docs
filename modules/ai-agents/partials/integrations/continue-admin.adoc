@@ -105,15 +105,15 @@ After enabling providers, enable specific models:
 +
 Common models for Continue.dev:
 +
-* `claude-opus-4-5` (Anthropic, high quality)
-* `claude-sonnet-4-5` (Anthropic, balanced)
-* `gpt-4o` (OpenAI, high quality)
-* `gpt-4o-mini` (OpenAI, fast autocomplete)
+* `claude-opus-4.6` (Anthropic, high quality)
+* `claude-sonnet-4.5` (Anthropic, balanced)
+* `gpt-5.2` (OpenAI, high quality)
+* `gpt-5.2-mini` (OpenAI, fast autocomplete)
 * `o1-mini` (OpenAI, reasoning)
 
 . Click *Save*
 
-Continue.dev uses provider-native model identifiers (for example, `claude-sonnet-4-5` not `anthropic/claude-sonnet-4-5`).
+Continue.dev uses provider-native model identifiers (for example, `claude-sonnet-4.5` not `anthropic/claude-sonnet-4.5`).
 
 == Create a gateway for Continue.dev clients
 
@@ -281,8 +281,8 @@ The gateway blocks requests exceeding these limits and returns HTTP 429 errors.
 
 Continue.dev's autocomplete feature generates frequent, short requests. Configure higher rate limits for autocomplete-specific backends:
 
-* Autocomplete models (for example, `gpt-4o-mini`): 100 requests per minute per user
-* Chat models (for example, `claude-sonnet-4-5`): 20 requests per minute per user
+* Autocomplete models (for example, `gpt-5.2-mini`): 100 requests per minute per user
+* Chat models (for example, `claude-sonnet-4.5`): 20 requests per minute per user
 
 === Set spending limits
 
@@ -364,7 +364,7 @@ The MCP orchestrator reduces multi-step workflows to single calls:
 |Setting |Value
 
 |Orchestrator model
-|Select a model with strong code generation capabilities (for example, `claude-sonnet-4-5`)
+|Select a model with strong code generation capabilities (for example, `claude-sonnet-4.5`)
 
 |Execution timeout
 |30 seconds
@@ -437,25 +437,25 @@ Users configure Continue.dev with separate provider entries for each backend:
 models:
   - title: Claude Sonnet (Redpanda)
     provider: anthropic
-    model: claude-sonnet-4-5
+    model: claude-sonnet-4.5
     apiBase: https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1/anthropic
     apiKey: YOUR_API_TOKEN
     requestOptions:
       headers:
         rp-aigw-id: GATEWAY_ID
 
-  - title: GPT-4o (Redpanda)
+  - title: GPT-5.2 (Redpanda)
     provider: openai
-    model: gpt-4o
+    model: gpt-5.2
     apiBase: https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1/openai
     apiKey: YOUR_API_TOKEN
     requestOptions:
       headers:
         rp-aigw-id: GATEWAY_ID
 
-  - title: GPT-4o-mini (Autocomplete)
+  - title: GPT-5.2-mini (Autocomplete)
     provider: openai
-    model: gpt-4o-mini
+    model: gpt-5.2-mini
     apiBase: https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1/openai
     apiKey: YOUR_API_TOKEN
     requestOptions:
@@ -463,9 +463,9 @@ models:
         rp-aigw-id: GATEWAY_ID
 
 tabAutocompleteModel:
-  title: GPT-4o-mini (Autocomplete)
+  title: GPT-5.2-mini (Autocomplete)
   provider: openai
-  model: gpt-4o-mini
+  model: gpt-5.2-mini
   apiBase: https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1/openai
   apiKey: YOUR_API_TOKEN
   requestOptions:
@@ -536,15 +536,15 @@ Configure different models for different Continue.dev modes:
 |Mode |Recommended Model |Reason
 
 |Chat
-|`claude-sonnet-4-5` or `gpt-4o`
+|`claude-sonnet-4.5` or `gpt-5.2`
 |High quality for complex questions
 
 |Autocomplete
-|`gpt-4o-mini`
+|`gpt-5.2-mini`
 |Fast, cost-effective for frequent requests
 
 |Inline edit
-|`claude-sonnet-4-5`
+|`claude-sonnet-4.5`
 |Balanced quality and speed for code modifications
 
 |Embeddings
@@ -687,7 +687,7 @@ Symptom: Continue.dev shows "model not found" or similar errors.
 Causes and solutions:
 
 * **Model not enabled in catalog**: Enable the model in the gateway's model catalog
-* **Model identifier mismatch**: Use provider-native names (for example, `claude-sonnet-4-5` not `anthropic/claude-sonnet-4-5`)
+* **Model identifier mismatch**: Use provider-native names (for example, `claude-sonnet-4.5` not `anthropic/claude-sonnet-4.5`)
 * **Wrong backend for model**: Verify the model is associated with the correct backend (Anthropic models with Anthropic backend)
 
 === Format errors or unexpected responses
@@ -706,7 +706,7 @@ Symptom: Autocomplete suggestions don't appear or are delayed.
 
 Causes and solutions:
 
-* **Wrong model for autocomplete**: Use a fast model like `gpt-4o-mini` in `tabAutocompleteModel`
+* **Wrong model for autocomplete**: Use a fast model like `gpt-5.2-mini` in `tabAutocompleteModel`
 * **Rate limits too restrictive**: Increase rate limits for autocomplete backend
 * **High backend latency**: Check backend metrics and consider provider failover
 * **Token exhaustion**: Verify spending limits haven't been reached
@@ -728,11 +728,11 @@ Symptom: Token usage and costs exceed expectations.
 
 Causes and solutions:
 
-* **Autocomplete using expensive model**: Configure `tabAutocompleteModel` to use `gpt-4o-mini` instead of larger models
+* **Autocomplete using expensive model**: Configure `tabAutocompleteModel` to use `gpt-5.2-mini` instead of larger models
 * **Deferred tool loading disabled**: Enable deferred tool loading to reduce tokens by 80-90%
 * **No rate limits**: Apply per-minute rate limits to prevent runaway usage
 * **Missing spending limits**: Set monthly budget limits with blocking enforcement
-* **Chat using wrong model**: Route chat requests to cost-effective models (for example, `claude-sonnet-4-5` instead of `claude-opus-4-5`)
+* **Chat using wrong model**: Route chat requests to cost-effective models (for example, `claude-sonnet-4.5` instead of `claude-opus-4.6`)
 
 === Requests failing with 429 errors
 

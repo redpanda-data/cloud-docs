@@ -100,11 +100,11 @@ Replace the following values:
 
 In the *Model* dropdown, enter the model using the `vendor/model_id` format:
 
-* For Anthropic Claude: `anthropic/claude-sonnet-4-5`
-* For OpenAI: `openai/gpt-4o`
+* For Anthropic Claude: `anthropic/claude-sonnet-4.5`
+* For OpenAI: `openai/gpt-5.2`
 * For other providers: `{provider}/{model-name}`
 
-The gateway routes the request based on this format. If you use a non-prefixed model name (for example, `claude-sonnet-4-5`), the gateway may not route correctly.
+The gateway routes the request based on this format. If you use a non-prefixed model name (for example, `claude-sonnet-4.5`), the gateway may not route correctly.
 
 === Verify configuration
 
@@ -270,7 +270,7 @@ Then verify in the AI Gateway dashboard:
 . Filter by gateway ID
 . Verify:
 ** Request appears in logs
-** Model shows correct format (for example, `anthropic/claude-sonnet-4-5`)
+** Model shows correct format (for example, `anthropic/claude-sonnet-4.5`)
 ** Token usage and cost are recorded
 
 If the request doesn't appear, see <<troubleshooting>>.
@@ -317,7 +317,7 @@ Use one premium model for all tasks.
 
 Configuration:
 
-* Model: `anthropic/claude-sonnet-4-5`
+* Model: `anthropic/claude-sonnet-4.5`
 * Best for: Complex codebases, high-quality output requirements
 * Cost: Higher, but consistent
 
@@ -333,7 +333,7 @@ Gateway configuration (set in AI Gateway UI):
 request.messages[0].content.contains("fix typo") ||
 request.messages[0].content.contains("rename") ?
   "anthropic/claude-haiku" :
-  "anthropic/claude-sonnet-4-5"
+  "anthropic/claude-sonnet-4.5"
 ----
 
 This approach requires no changes to Cline configuration. The gateway makes routing decisions transparently.
@@ -348,7 +348,7 @@ Create separate VS Code workspace settings for different projects:
 {
   "cline.apiProvider": "OpenAI Compatible",
   "cline.baseURL": "https://gw.ai.panda.com",
-  "cline.model": "anthropic/claude-opus-4-5"
+  "cline.model": "anthropic/claude-opus-4.6-5"
 }
 ----
 
@@ -570,7 +570,7 @@ Gateway logs can take 5-10 seconds to appear in the dashboard. Wait briefly and 
 
 . **Model name format error**
 +
-Ensure requests use the `vendor/model_id` format (for example, `anthropic/claude-sonnet-4-5`), not just the model name (for example, `claude-sonnet-4-5`). Check the model field in Cline settings.
+Ensure requests use the `vendor/model_id` format (for example, `anthropic/claude-sonnet-4.5`), not just the model name (for example, `claude-sonnet-4.5`). Check the model field in Cline settings.
 
 === High token costs
 
@@ -674,11 +674,11 @@ Match model selection to task complexity:
 |Low cost, fast
 
 |Code review, analysis
-|`anthropic/claude-sonnet-3.5`
+|`anthropic/claude-sonnet-4.5`
 |Balanced quality and cost
 
 |Complex refactors, architecture
-|`anthropic/claude-sonnet-4-5` or `anthropic/claude-opus-4-5`
+|`anthropic/claude-sonnet-4.5` or `anthropic/claude-opus-4.6-5`
 |High quality for critical work
 |===
 

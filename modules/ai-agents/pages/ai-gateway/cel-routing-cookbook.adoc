@@ -87,7 +87,7 @@ Examples:
 request.headers["tier"] == "premium"
 
 // Ternary (if-then-else)
-request.headers["tier"] == "premium" ? "openai/gpt-4o" : "openai/gpt-4o-mini"
+request.headers["tier"] == "premium" ? "openai/gpt-5.2" : "openai/gpt-5.2-mini"
 
 // Logical AND
 request.headers["tier"] == "premium" && request.headers["region"] == "us"
@@ -183,17 +183,17 @@ Expression:
 
 [source,cel]
 ----
-request.headers["x-user-tier"] == "enterprise" ? "openai/gpt-4o" :
-request.headers["x-user-tier"] == "pro" ? "anthropic/claude-sonnet-3.5" :
-"openai/gpt-4o-mini"
+request.headers["x-user-tier"] == "enterprise" ? "openai/gpt-5.2" :
+request.headers["x-user-tier"] == "pro" ? "anthropic/claude-sonnet-4.5" :
+"openai/gpt-5.2-mini"
 ----
 
 
 What happens:
 
-* Enterprise users → GPT-4o (best quality)
-* Pro users → Claude Sonnet 3.5 (balanced)
-* Free users → GPT-4o-mini (cost-effective)
+* Enterprise users → GPT-5.2 (best quality)
+* Pro users → Claude Sonnet 4.5 (balanced)
+* Free users → GPT-5.2-mini (cost-effective)
 
 Verify:
 
@@ -201,19 +201,19 @@ Verify:
 ----
 # Test enterprise
 response = client.chat.completions.create(
-    model="openai/gpt-4o",  # CEL routing rules override model selection
+    model="openai/gpt-5.2",  # CEL routing rules override model selection
     messages=[{"role": "user", "content": "Test"}],
     extra_headers={"x-user-tier": "enterprise"}
 )
-# Check logs: Should route to openai/gpt-4o
+# Check logs: Should route to openai/gpt-5.2
 
 # Test free
 response = client.chat.completions.create(
-    model="openai/gpt-4o",  # CEL routing rules override model selection
+    model="openai/gpt-5.2",  # CEL routing rules override model selection
     messages=[{"role": "user", "content": "Test"}],
     extra_headers={"x-user-tier": "free"}
 )
-# Check logs: Should route to openai/gpt-4o-mini
+# Check logs: Should route to openai/gpt-5.2-mini
 ----
 
 
@@ -234,15 +234,15 @@ Expression:
 [source,cel]
 ----
 request.headers["x-environment"] == "production"
-  ? "openai/gpt-4o"
-  : "openai/gpt-4o-mini"
+  ? "openai/gpt-5.2"
+  : "openai/gpt-5.2-mini"
 ----
 
 
 What happens:
 
-* Production → GPT-4o (best quality)
-* Staging/dev → GPT-4o-mini (10x cheaper)
+* Production → GPT-5.2 (best quality)
+* Staging/dev → GPT-5.2-mini (10x cheaper)
 
 Verify:
 
@@ -250,11 +250,11 @@ Verify:
 ----
 # Set environment header
 response = client.chat.completions.create(
-    model="openai/gpt-4o",  # CEL routing rules override model selection
+    model="openai/gpt-5.2",  # CEL routing rules override model selection
     messages=[{"role": "user", "content": "Test"}],
     extra_headers={"x-environment": "staging"}
 )
-# Check logs: Should route to gpt-4o-mini
+# Check logs: Should route to gpt-5.2-mini
 ----
 
 
@@ -262,8 +262,8 @@ Cost impact:
 
 * Prevents staging from inflating costs
 * Example: Staging with 100K test requests/day
-  * GPT-4o: $500/day ($15K/month)
-  * GPT-4o-mini: $50/day ($1.5K/month)
+  * GPT-5.2: $500/day ($15K/month)
+  * GPT-5.2-mini: $50/day ($1.5K/month)
   * *Savings: $13.5K/month*
 
 Use case: Protect against runaway staging costs
@@ -280,12 +280,12 @@ Expression (Block):
 ----
 request.body.messages.size() > 10 || request.body.max_tokens > 4000
   ? "reject"
-  : "openai/gpt-4o"
+  : "openai/gpt-5.2"
 ----
 
 What happens:
 * Requests with >10 messages or >4000 max_tokens -> Rejected with 400 error
-* Normal requests -> GPT-4o
+* Normal requests -> GPT-5.2
 ////
 
 Expression (Downgrade):
@@ -293,8 +293,8 @@ Expression (Downgrade):
 [source,cel]
 ----
 request.body.messages.size() > 10 || request.body.max_tokens > 4000
-  ? "openai/gpt-4o-mini"  // Cheaper model
-  : "openai/gpt-4o"        // Normal model
+  ? "openai/gpt-5.2-mini"  // Cheaper model
+  : "openai/gpt-5.2"        // Normal model
 ----
 
 
@@ -309,7 +309,7 @@ Verify:
 ----
 # Test rejection
 response = client.chat.completions.create(
-    model="openai/gpt-4o",  # CEL routing rules override model selection
+    model="openai/gpt-5.2",  # CEL routing rules override model selection
     messages=[{"role": "user", "content": f"Message {i}"} for i in range(15)],
     max_tokens=5000
 )
@@ -317,11 +317,11 @@ response = client.chat.completions.create(
 
 # Test normal
 response = client.chat.completions.create(
-    model="openai/gpt-4o",  # CEL routing rules override model selection
+    model="openai/gpt-5.2",  # CEL routing rules override model selection
     messages=[{"role": "user", "content": "Short message"}],
     max_tokens=100
 )
-# Should route to gpt-4o
+# Should route to gpt-5.2
 ----
 
 
@@ -343,14 +343,14 @@ Expression:
 request.body.messages[0].content.contains("code") ||
 request.body.messages[0].content.contains("debug") ||
 request.body.messages[0].content.contains("programming")
-  ? "openai/gpt-4o"  // Better at code
-  : "anthropic/claude-sonnet-3.5"  // Better at general writing
+  ? "openai/gpt-5.2"  // Better at code
+  : "anthropic/claude-sonnet-4.5"  // Better at general writing
 ----
 
 
 What happens:
 
-* Coding questions → GPT-4o (optimized for code)
+* Coding questions → GPT-5.2 (optimized for code)
 * General questions → Claude Sonnet (better prose)
 
 Verify:
@@ -359,17 +359,17 @@ Verify:
 ----
 # Test code question
 response = client.chat.completions.create(
-    model="openai/gpt-4o",  # CEL routing rules override model selection
+    model="openai/gpt-5.2",  # CEL routing rules override model selection
     messages=[{"role": "user", "content": "Debug this Python code: ..."}]
 )
-# Check logs: Should route to gpt-4o
+# Check logs: Should route to gpt-5.2
 
 # Test general question
 response = client.chat.completions.create(
-    model="openai/gpt-4o",  # CEL routing rules override model selection
+    model="openai/gpt-5.2",  # CEL routing rules override model selection
     messages=[{"role": "user", "content": "Write a blog post about AI"}]
 )
-# Check logs: Should route to claude-sonnet-3.5
+# Check logs: Should route to claude-sonnet-4.5
 ----
 
 
@@ -390,8 +390,8 @@ Expression:
 [source,cel]
 ----
 request.headers["x-user-region"] == "eu"
-  ? "anthropic/claude-sonnet-3.5"  // EU traffic to Anthropic
-  : "openai/gpt-4o"                // Other traffic to OpenAI
+  ? "anthropic/claude-sonnet-4.5"  // EU traffic to Anthropic
+  : "openai/gpt-5.2"                // Other traffic to OpenAI
 ----
 
 
@@ -407,11 +407,11 @@ Verify:
 [source,python]
 ----
 response = client.chat.completions.create(
-    model="openai/gpt-4o",  # CEL routing rules override model selection
+    model="openai/gpt-5.2",  # CEL routing rules override model selection
     messages=[{"role": "user", "content": "Test"}],
     extra_headers={"x-user-region": "eu"}
 )
-# Check logs: Should route to anthropic/claude-sonnet-3.5
+# Check logs: Should route to anthropic/claude-sonnet-4.5
 ----
 
 
@@ -429,8 +429,8 @@ Expression:
 [source,cel]
 ----
 request.headers["x-customer-id"] == "customer_vip_123"
-  ? "anthropic/claude-opus-4"  // Most expensive, best quality
-  : "anthropic/claude-sonnet-3.5"  // Standard
+  ? "anthropic/claude-opus-4.6"  // Most expensive, best quality
+  : "anthropic/claude-sonnet-4.5"  // Standard
 ----
 
 
@@ -444,7 +444,7 @@ Verify:
 [source,python]
 ----
 response = client.chat.completions.create(
-    model="openai/gpt-4o",  # CEL routing rules override model selection
+    model="openai/gpt-5.2",  # CEL routing rules override model selection
     messages=[{"role": "user", "content": "Test"}],
     extra_headers={"x-customer-id": "customer_vip_123"}
 )
@@ -473,8 +473,8 @@ Expression (if random is available):
 ----
 PLACEHOLDER: Verify CEL random function availability
 random() < 0.10
-  ? "anthropic/claude-opus-4"  // 10% traffic to new model
-  : "openai/gpt-4o"             // 90% traffic to existing model
+  ? "anthropic/claude-opus-4.6"  // 10% traffic to new model
+  : "openai/gpt-5.2"             // 90% traffic to existing model
 ----
 
 
@@ -484,15 +484,15 @@ Alternative (hash-based):
 ----
 // Use customer ID hash for stable routing
 hash(request.headers["x-customer-id"]) % 100 < 10
-  ? "anthropic/claude-opus-4"
-  : "openai/gpt-4o"
+  ? "anthropic/claude-opus-4.6"
+  : "openai/gpt-5.2"
 ----
 
 
 What happens:
 
 * 10% of requests -> New model (Opus 4)
-* 90% of requests -> Existing model (GPT-4o)
+* 90% of requests -> Existing model (GPT-5.2)
 
 Verify:
 
@@ -501,11 +501,11 @@ Verify:
 # Send 100 requests, count which model was used
 for i in range(100):
     response = client.chat.completions.create(
-        model="openai/gpt-4o",
+        model="openai/gpt-5.2",
         messages=[{"role": "user", "content": f"Test {i}"}],
         extra_headers={"x-customer-id": f"customer_{i}"}
     )
-# Check logs: ~10 should use opus-4, ~90 should use gpt-4o
+# Check logs: ~10 should use opus-4.6, ~90 should use gpt-5.2
 ----
 
 
@@ -527,8 +527,8 @@ Expression:
 ----
 request.body.messages.size() == 1 &&
 request.body.messages[0].content.size() < 100
-  ? "openai/gpt-4o-mini"  // Simple, short question
-  : "openai/gpt-4o"        // Complex or long conversation
+  ? "openai/gpt-5.2-mini"  // Simple, short question
+  : "openai/gpt-5.2"        // Complex or long conversation
 ----
 
 
@@ -543,21 +543,21 @@ Verify:
 ----
 # Test simple
 response = client.chat.completions.create(
-    model="openai/gpt-4o",  # CEL routing rules override model selection
+    model="openai/gpt-5.2",  # CEL routing rules override model selection
     messages=[{"role": "user", "content": "Hi"}]  # 2 chars
 )
-# Check logs: Should route to gpt-4o-mini
+# Check logs: Should route to gpt-5.2-mini
 
 # Test complex
 response = client.chat.completions.create(
-    model="openai/gpt-4o",  # CEL routing rules override model selection
+    model="openai/gpt-5.2",  # CEL routing rules override model selection
     messages=[
         {"role": "user", "content": "Long question here..." * 10},
         {"role": "assistant", "content": "Response"},
         {"role": "user", "content": "Follow-up"}
     ]
 )
-# Check logs: Should route to gpt-4o
+# Check logs: Should route to gpt-5.2
 ----
 
 
@@ -581,8 +581,8 @@ Expression (if time functions available):
 ----
 PLACEHOLDER: Verify CEL time function availability
 now().hour >= 22 || now().hour < 6  // 10pm - 6am
-  ? "openai/gpt-4o-mini"  // Off-peak: cheaper model
-  : "openai/gpt-4o"        // Peak hours: best model
+  ? "openai/gpt-5.2-mini"  // Off-peak: cheaper model
+  : "openai/gpt-5.2"        // Peak hours: best model
 ----
 
 
@@ -609,18 +609,18 @@ Expression:
 [source,cel]
 ----
 request.headers["x-priority"] == "critical"
-  ? "openai/gpt-4o"  // First choice for critical
+  ? "openai/gpt-5.2"  // First choice for critical
   : request.headers["x-user-tier"] == "premium"
-    ? "anthropic/claude-sonnet-3.5"  // Second choice for premium
-    : "openai/gpt-4o-mini"  // Default for everyone else
+    ? "anthropic/claude-sonnet-4.5"  // Second choice for premium
+    : "openai/gpt-5.2-mini"  // Default for everyone else
 ----
 
 
 What happens:
 
-* Critical requests → Always GPT-4o
+* Critical requests → Always GPT-5.2
 * Premium non-critical → Claude Sonnet
-* Everyone else → GPT-4o-mini
+* Everyone else → GPT-5.2-mini
 
 Verify: Test with different header combinations
 
@@ -640,8 +640,8 @@ Expression:
 [source,cel]
 ----
 has(request.body.max_tokens) && request.body.max_tokens > 2000
-  ? "openai/gpt-4o"  // Long response expected
-  : "openai/gpt-4o-mini"  // Short response
+  ? "openai/gpt-5.2"  // Long response expected
+  : "openai/gpt-5.2-mini"  // Short response
 ----
 
 
@@ -656,12 +656,12 @@ Expression:
 (request.headers["x-user-tier"] == "premium" ||
  request.headers["x-customer-id"] == "vip_123") &&
 request.headers["x-environment"] == "production"
-  ? "openai/gpt-4o"
-  : "openai/gpt-4o-mini"
+  ? "openai/gpt-5.2"
+  : "openai/gpt-5.2-mini"
 ----
 
 
-What happens: Premium users OR VIP customer, AND production → GPT-4o
+What happens: Premium users OR VIP customer, AND production → GPT-5.2
 
 === Regex matching
 
@@ -670,12 +670,12 @@ Expression:
 [source,cel]
 ----
 request.body.messages[0].content.matches("(?i)(urgent|asap|emergency)")
-  ? "openai/gpt-4o"  // Route urgent requests to best model
-  : "openai/gpt-4o-mini"
+  ? "openai/gpt-5.2"  // Route urgent requests to best model
+  : "openai/gpt-5.2-mini"
 ----
 
 
-What happens: Messages containing "urgent", "ASAP", or "emergency" (case-insensitive) → GPT-4o
+What happens: Messages containing "urgent", "ASAP", or "emergency" (case-insensitive) → GPT-5.2
 
 === String array contains
 
@@ -684,8 +684,8 @@ Expression:
 [source,cel]
 ----
 ["customer_1", "customer_2", "customer_3"].exists(c, c == request.headers["x-customer-id"])
-  ? "openai/gpt-4o"  // Whitelist of customers
-  : "openai/gpt-4o-mini"
+  ? "openai/gpt-5.2"  // Whitelist of customers
+  : "openai/gpt-5.2-mini"
 ----
 
 
@@ -700,7 +700,7 @@ Expression:
 ----
 !has(request.body.messages) || request.body.messages.size() == 0
   ? "reject"  // PLACEHOLDER: Confirm "reject" is supported
-  : "openai/gpt-4o"
+  : "openai/gpt-5.2"
 ----
 
 What happens: Requests without messages are rejected (400 error)
@@ -723,7 +723,7 @@ What happens: Requests without messages are rejected (400 error)
 def test_cel_routing(headers, messages):
     """Test CEL routing with specific headers and messages"""
     response = client.chat.completions.create(
-        model="openai/gpt-4o",  # CEL routing rules override model selection
+        model="openai/gpt-5.2",  # CEL routing rules override model selection
         messages=messages,
         extra_headers=headers,
         max_tokens=10  # Keep it cheap
@@ -752,11 +752,11 @@ test_cel_routing(
 # PLACEHOLDER: If CLI tool exists for testing CEL
 rpk cloud ai-gateway test-cel \
   --gateway-id gw_abc123 \
-  --expression 'request.headers["tier"] == "premium" ? "openai/gpt-4o" : "openai/gpt-4o-mini"' \
+  --expression 'request.headers["tier"] == "premium" ? "openai/gpt-5.2" : "openai/gpt-5.2-mini"' \
   --header 'tier: premium' \
   --body '{"messages": [{"role": "user", "content": "Test"}]}'
 
-# Expected output: openai/gpt-4o
+# Expected output: openai/gpt-5.2
 ----
 
 
@@ -865,7 +865,7 @@ Fast (<1ms evaluation):
 
 [source,cel]
 ----
-request.headers["tier"] == "premium" ? "openai/gpt-4o" : "openai/gpt-4o-mini"
+request.headers["tier"] == "premium" ? "openai/gpt-5.2" : "openai/gpt-5.2-mini"
 ----
 
 

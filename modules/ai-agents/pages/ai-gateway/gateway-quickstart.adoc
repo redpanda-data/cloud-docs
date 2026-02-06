@@ -21,7 +21,7 @@ Before starting, ensure you have:
 
 == Configure a provider
 
-Providers represent upstream LLM services (OpenAI, Anthropic) and their associated credentials. Providers are disabled by default and must be enabled explicitly.
+Providers represent upstream LLM services (OpenAI, Anthropic, Google Gemini) and their associated credentials. Providers are disabled by default and must be enabled explicitly.
 
 . In AI Gateways, navigate to *Providers*.
 . Select a provider (for example, OpenAI, Anthropic, Google AI).
@@ -33,7 +33,7 @@ Providers represent upstream LLM services (OpenAI, Anthropic) and their associat
 After enabling a provider, enable the specific models you want to make available through your gateways.
 
 . Navigate to *Models*.
-. Enable the models you want to use (for example, `gpt-4o`, `gpt-4o-mini`, `claude-3-5-sonnet-20241022`).
+. Enable the models you want to use (for example, `gpt-5.2`, `gpt-5.2-mini`, `claude-sonnet-4.5`, `claude-opus-4.6`).
 . Verify the models appear as "Enabled" in the catalog.
 
 TIP: Different providers have different reliability and cost characteristics. When choosing models, consider your use case requirements for quality, speed, and cost.
@@ -42,8 +42,9 @@ TIP: Different providers have different reliability and cost characteristics. Wh
 
 Requests through AI Gateway must use the `vendor/model_id` format. For example:
 
-* OpenAI models: `openai/gpt-4o`, `openai/gpt-4o-mini`
-* Anthropic models: `anthropic/claude-3-5-sonnet-20241022`, `anthropic/claude-opus-4-1-20250805`
+* OpenAI models: `openai/gpt-5.2`, `openai/gpt-5.2-mini`
+* Anthropic models: `anthropic/claude-sonnet-4.5`, `anthropic/claude-opus-4.6`
+* Google Gemini models: `google/gemini-2.0-flash`, `google/gemini-2.0-pro`
 
 This format allows the gateway to route requests to the correct provider.
 
@@ -112,7 +113,7 @@ client = OpenAI(
 
 # Send a request (note the vendor/model_id format)
 response = client.chat.completions.create(
-    model="openai/gpt-4o-mini",  # Format: {provider}/{model}
+    model="openai/gpt-5.2-mini",  # Format: {provider}/{model}
     messages=[
         {"role": "user", "content": "Say 'Hello from AI Gateway!'"}
     ],
@@ -140,7 +141,7 @@ const client = new OpenAI({
 });
 
 const response = await client.chat.completions.create({
-  model: 'openai/gpt-4o-mini',
+  model: 'openai/gpt-5.2-mini',
   messages: [
     { role: 'user', content: 'Say "Hello from AI Gateway!"' }
   ],
@@ -162,7 +163,7 @@ curl https://gw.ai.panda.com/v1/chat/completions \
   -H "Authorization: Bearer ${REDPANDA_API_KEY}" \
   -H "rp-aigw-id: gw_abc123..." \
   -d '{
-    "model": "openai/gpt-4o-mini",
+    "model": "openai/gpt-5.2-mini",
     "messages": [
       {"role": "user", "content": "Say \"Hello from AI Gateway!\""}
     ],
@@ -178,7 +179,7 @@ Expected response:
   "id": "chatcmpl-...",
   "object": "chat.completion",
   "created": 1704844800,
-  "model": "openai/gpt-4o-mini",
+  "model": "openai/gpt-5.2-mini",
   "choices": [
     {
       "index": 0,
@@ -216,12 +217,12 @@ Confirm your request appears in the AI Gateway observability dashboard.
 . Filter by:
 +
 * *Gateway*: `my-first-gateway`
-* *Model*: `openai/gpt-4o-mini`
+* *Model*: `openai/gpt-5.2-mini`
 * *Time range*: Last 5 minutes
 
 . Verify the request log shows:
 +
-* *Model*: `openai/gpt-4o-mini`
+* *Model*: `openai/gpt-5.2-mini`
 * *Provider*: OpenAI
 * *Status*: 200 (success)
 * *Prompt tokens*: ~8
@@ -329,8 +330,8 @@ In your gateway's routing configuration:
 ----
 # Route based on user tier header
 request.headers["x-user-tier"] == "premium"
-  ? "openai/gpt-4o"
-  : "openai/gpt-4o-mini"
+  ? "openai/gpt-5.2"
+  : "openai/gpt-5.2-mini"
 ----
 
 . Save the rule.
@@ -346,11 +347,11 @@ Send requests with different headers to verify routing:
 [source,python]
 ----
 response = client.chat.completions.create(
-    model="openai/gpt-4o",  # Will be routed based on CEL rule
+    model="openai/gpt-5.2",  # Will be routed based on CEL rule
     messages=[{"role": "user", "content": "Hello"}],
     extra_headers={"x-user-tier": "premium"}
 )
-# Should route to gpt-4o (premium model)
+# Should route to gpt-5.2 (premium model)
 ----
 
 *Free user request*:
@@ -358,11 +359,11 @@ response = client.chat.completions.create(
 [source,python]
 ----
 response = client.chat.completions.create(
-    model="openai/gpt-4o-mini",
+    model="openai/gpt-5.2-mini",
     messages=[{"role": "user", "content": "Hello"}],
     extra_headers={"x-user-tier": "free"}
 )
-# Should route to gpt-4o-mini (cost-effective model)
+# Should route to gpt-5.2-mini (cost-effective model)
 ----
 
 Check the observability dashboard to verify:
@@ -471,9 +472,9 @@ Edit your Continue config file (`~/.continue/config.json`):
 {
   "models": [
     {
-      "title": "Redpanda AI Gateway - GPT-4",
+      "title": "Redpanda AI Gateway - GPT-5.2",
       "provider": "openai",
-      "model": "openai/gpt-4",
+      "model": "openai/gpt-5.2",
       "apiBase": "https://gw.ai.panda.com",
       "apiKey": "<your-api-key>",
       "requestOptions": {
@@ -485,7 +486,19 @@ Edit your Continue config file (`~/.continue/config.json`):
     {
       "title": "Redpanda AI Gateway - Claude",
       "provider": "anthropic",
-      "model": "anthropic/claude-3-5-sonnet-20241022",
+      "model": "anthropic/claude-sonnet-4.5",
+      "apiBase": "https://gw.ai.panda.com",
+      "apiKey": "<your-api-key>",
+      "requestOptions": {
+        "headers": {
+          "rp-aigw-id": "<your-gateway-id>"
+        }
+      }
+    },
+    {
+      "title": "Redpanda AI Gateway - Gemini",
+      "provider": "google",
+      "model": "google/gemini-2.0-flash",
       "apiBase": "https://gw.ai.panda.com",
       "apiKey": "<your-api-key>",
       "requestOptions": {
@@ -522,7 +535,7 @@ endif::[]
 
 === Custom applications
 
-For custom applications using OpenAI or Anthropic SDKs:
+For custom applications using OpenAI, Anthropic, or Google Gemini SDKs:
 
 *Python with OpenAI SDK*:
 

@@ -84,11 +84,11 @@ Each log entry contains:
 
 | *Requested Model* 
 | Model specified in request 
-| `openai/gpt-4o`
+| `openai/gpt-5.2`
 
 | *Actual Model* 
 | Model that handled request (may differ due to routing) 
-| `anthropic/claude-sonnet-3.5`
+| `anthropic/claude-sonnet-4.5`
 
 | *Provider* 
 | Which provider handled the request 
@@ -169,7 +169,7 @@ Each log entry contains:
 
 | *CEL Result* 
 | Model selected by CEL 
-| `openai/gpt-4o`
+| `openai/gpt-5.2`
 
 | *Rate Limit Status* 
 | Whether rate limited 
@@ -225,7 +225,7 @@ Use case: Isolate production traffic from staging
 
 [source,text]
 ----
-Filter: Model = "openai/gpt-4o"
+Filter: Model = "openai/gpt-5.2"
 ----
 
 
@@ -384,7 +384,7 @@ Example:
 [source,json]
 ----
 {
-  "model": "openai/gpt-4o",
+  "model": "openai/gpt-5.2",
   "messages": [
     {
       "role": "system",
@@ -451,10 +451,10 @@ Example:
 ----
 CEL Expression: |
   request.headers["x-user-tier"] == "premium"
-    ? "openai/gpt-4o"
-    : "openai/gpt-4o-mini"
+    ? "openai/gpt-5.2"
+    : "openai/gpt-5.2-mini"
 
-CEL Result: "openai/gpt-4o"
+CEL Result: "openai/gpt-5.2"
 
 Provider Pool: primary
 Fallback Triggered: false

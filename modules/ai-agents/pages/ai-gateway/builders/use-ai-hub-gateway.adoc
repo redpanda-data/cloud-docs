@@ -8,7 +8,7 @@
 
 include::ai-agents:partial$ai-gateway-byoc-note.adoc[]
 
-AI Hub mode gateways provide instant access to OpenAI and Anthropic with pre-configured intelligent routing. As a builder, you benefit from zero-configuration access while your administrator manages provider credentials and routing policies.
+AI Hub mode gateways provide instant access to OpenAI, Anthropic, and Google Gemini with pre-configured intelligent routing. As a builder, you benefit from zero-configuration access while your administrator manages provider credentials and routing policies.
 
 This page shows you how to discover AI Hub gateways, connect your applications, and verify your integration.
 
@@ -42,15 +42,15 @@ AI Hub evaluates routing rules in priority order:
 
 When you specify a model with a provider prefix, routing is deterministic:
 
-* `openai/gpt-4o` → Always routes to OpenAI
-* `anthropic/claude-sonnet-3.5` → Always routes to Anthropic
+* `openai/gpt-5.2` → Always routes to OpenAI
+* `anthropic/claude-sonnet-4.5` → Always routes to Anthropic
 
 *Tier 2: Model Name Pattern*
 
 When you specify a model without a prefix, AI Hub uses pattern matching:
 
-* `gpt-4o` → Routes to OpenAI (matches `gpt-*` pattern)
-* `claude-sonnet-3.5` → Routes to Anthropic (matches `claude-*` pattern)
+* `gpt-5.2` → Routes to OpenAI (matches `gpt-*` pattern)
+* `claude-sonnet-4.5` → Routes to Anthropic (matches `claude-*` pattern)
 * `o1-preview` → Routes to OpenAI (matches `o1-*` pattern)
 
 *Tier 3: Special Purpose Routing*
@@ -84,7 +84,7 @@ Your administrator may have configured preference toggles that influence routing
 |Preference |Effect on Your Requests
 
 |*infer_provider_from_model_name*
-|When enabled (default), `gpt-4o` routes to OpenAI and `claude-sonnet-3.5` routes to Anthropic without requiring vendor prefixes. When disabled, you must use explicit prefixes like `openai/gpt-4o`.
+|When enabled (default), `gpt-5.2` routes to OpenAI, `claude-sonnet-4.5` routes to Anthropic without requiring vendor prefixes. When disabled, you must use explicit prefixes like `openai/gpt-5.2`.
 
 |*auto_route_vision*
 |Requests with images automatically route to vision-capable models when enabled
@@ -116,14 +116,14 @@ If you need custom routing logic, ask your administrator about ejecting to Custo
 
 == Available models
 
-AI Hub gateways expose models from OpenAI and Anthropic based on your administrator's provider configuration.
+AI Hub gateways expose models from OpenAI, Anthropic, and Google Gemini based on your administrator's provider configuration.
 
 === OpenAI models
 
 Common OpenAI models available through AI Hub:
 
-* `openai/gpt-4o` - Most capable OpenAI model, multimodal
-* `openai/gpt-4o-mini` - Cost-effective, fast
+* `openai/gpt-5.2` - Most capable OpenAI model, multimodal
+* `openai/gpt-5.2-mini` - Cost-effective, fast
 * `openai/o1-preview` - Advanced reasoning model
 * `openai/o1-mini` - Cost-effective reasoning model
 * `text-embedding-3-small` - Text embeddings (2048 dimensions)
@@ -133,8 +133,8 @@ Common OpenAI models available through AI Hub:
 
 Common Anthropic models available through AI Hub:
 
-* `anthropic/claude-opus-4` - Most capable Anthropic model
-* `anthropic/claude-sonnet-3.5` - Balanced capability and cost
+* `anthropic/claude-opus-4.6` - Most capable Anthropic model
+* `anthropic/claude-sonnet-4.5` - Balanced capability and cost
 * `anthropic/claude-haiku` - Cost-effective, fast
 
 === Unified API format
@@ -154,13 +154,13 @@ client = OpenAI(
 
 # OpenAI model
 response = client.chat.completions.create(
-    model="openai/gpt-4o-mini",
+    model="openai/gpt-5.2-mini",
     messages=[{"role": "user", "content": "Hello"}]
 )
 
 # Anthropic model (same API!)
 response = client.chat.completions.create(
-    model="anthropic/claude-sonnet-3.5",
+    model="anthropic/claude-sonnet-4.5",
     messages=[{"role": "user", "content": "Hello"}]
 )
 ----
@@ -198,7 +198,7 @@ client = OpenAI(
 
 # Send request
 response = client.chat.completions.create(
-    model="openai/gpt-4o-mini",           # Vendor/model format
+    model="openai/gpt-5.2-mini",           # Vendor/model format
     messages=[
         {"role": "system", "content": "You are a helpful assistant."},
         {"role": "user", "content": "What is AI Gateway?"}
@@ -224,7 +224,7 @@ const client = new OpenAI({
 });
 
 const response = await client.chat.completions.create({
-  model: 'anthropic/claude-sonnet-3.5',
+  model: 'anthropic/claude-sonnet-4.5',
   messages: [
     { role: 'system', content: 'You are a helpful assistant.' },
     { role: 'user', content: 'What is AI Gateway?' }
@@ -244,7 +244,7 @@ curl https://gw.ai.panda.com/v1/chat/completions \
   -H "Authorization: Bearer ${REDPANDA_API_KEY}" \
   -H "rp-aigw-id: gw_abc123" \
   -d '{
-    "model": "anthropic/claude-sonnet-3.5",
+    "model": "anthropic/claude-sonnet-4.5",
     "messages": [
       {"role": "system", "content": "You are a helpful assistant."},
       {"role": "user", "content": "What is AI Gateway?"}
@@ -265,12 +265,12 @@ Always use the `vendor/model_id` format for explicit routing:
 [,python]
 ----
 # ✅ Recommended: Explicit provider
-model = "openai/gpt-4o"
-model = "anthropic/claude-sonnet-3.5"
+model = "openai/gpt-5.2"
+model = "anthropic/claude-sonnet-4.5"
 
 # ⚠️ Works but relies on pattern matching
-model = "gpt-4o"  # Routes to OpenAI via pattern matching
-model = "claude-sonnet-3.5"  # Routes to Anthropic via pattern matching
+model = "gpt-5.2"  # Routes to OpenAI via pattern matching
+model = "claude-sonnet-4.5"  # Routes to Anthropic via pattern matching
 ----
 
 Explicit provider prefixes ensure deterministic routing and make your code more maintainable.
@@ -282,7 +282,7 @@ Enable streaming for faster time-to-first-token:
 [,python]
 ----
 response = client.chat.completions.create(
-    model="openai/gpt-4o-mini",
+    model="openai/gpt-5.2-mini",
     messages=[{"role": "user", "content": "Write a story"}],
     stream=True  # Enable streaming
 )
@@ -304,7 +304,7 @@ from openai import OpenAI, APIError, RateLimitError
 
 try:
     response = client.chat.completions.create(
-        model="openai/gpt-4o",
+        model="openai/gpt-5.2",
         messages=[{"role": "user", "content": "Hello"}]
     )
 except RateLimitError as e:
@@ -346,7 +346,7 @@ curl https://{GATEWAY_ENDPOINT}/v1/chat/completions \
   -H "rp-aigw-id: ${GATEWAY_ID}" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "openai/gpt-4o-mini",
+    "model": "openai/gpt-5.2-mini",
     "messages": [{"role": "user", "content": "Say hello"}],
     "max_tokens": 10
   }'
@@ -401,7 +401,7 @@ Understanding how AI Hub differs from Custom mode helps you set appropriate expe
 
 *Provider support:*
 
-* *AI Hub*: OpenAI and Anthropic only
+* *AI Hub*: OpenAI, Anthropic, and Google Gemini only
 * *Custom*: Any provider (Azure OpenAI, AWS Bedrock, custom endpoints)
 
 === Limitations
@@ -410,7 +410,7 @@ AI Hub mode has intentional limitations:
 
 * Cannot add custom routing rules
 * Cannot modify backend pool configuration
-* Cannot integrate with providers other than OpenAI and Anthropic
+* Cannot integrate with providers other than OpenAI, Anthropic, and Google Gemini
 * Cannot use provider-specific API features not exposed through unified API
 
 If you encounter these limitations, ask your administrator about Custom mode.

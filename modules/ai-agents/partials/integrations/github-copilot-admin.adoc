@@ -104,10 +104,10 @@ After enabling providers, enable specific models:
 +
 Common models for GitHub Copilot:
 +
-* `gpt-4o` (OpenAI)
-* `gpt-4o-mini` (OpenAI)
+* `gpt-5.2` (OpenAI)
+* `gpt-5.2-mini` (OpenAI)
 * `o1-mini` (OpenAI)
-* `claude-sonnet-4-5` (Anthropic, requires alias)
+* `claude-sonnet-4.5` (Anthropic, requires alias)
 
 . Click *Save*
 
@@ -144,7 +144,7 @@ The gateway ID is required for routing requests to this gateway.
 
 === Configure model aliasing
 
-GitHub Copilot expects model names like `gpt-4o` without vendor prefixes. Configure aliases to map these to provider-specific models:
+GitHub Copilot expects model names like `gpt-5.2` without vendor prefixes. Configure aliases to map these to provider-specific models:
 
 . Navigate to the gateway's *Models* tab
 . Click *Add Model Alias*
@@ -154,16 +154,16 @@ GitHub Copilot expects model names like `gpt-4o` without vendor prefixes. Config
 |===
 |Alias Name |Target Model |Provider
 
-|`gpt-4o`
-|`openai/gpt-4o`
+|`gpt-5.2`
+|`openai/gpt-5.2`
 |OpenAI
 
-|`gpt-4o-mini`
-|`openai/gpt-4o-mini`
+|`gpt-5.2-mini`
+|`openai/gpt-5.2-mini`
 |OpenAI
 
 |`claude-sonnet`
-|`anthropic/claude-sonnet-4-5`
+|`anthropic/claude-sonnet-4.5`
 |Anthropic
 
 |`o1-mini`
@@ -173,7 +173,7 @@ GitHub Copilot expects model names like `gpt-4o` without vendor prefixes. Config
 
 . Click *Save*
 
-When GitHub Copilot requests `gpt-4o`, the gateway routes to OpenAI's `gpt-4o` model. Users can optionally request `claude-sonnet` for Anthropic models if the IDE configuration supports model selection.
+When GitHub Copilot requests `gpt-5.2`, the gateway routes to OpenAI's `gpt-5.2` model. Users can optionally request `claude-sonnet` for Anthropic models if the IDE configuration supports model selection.
 
 === Configure unified LLM routing
 
@@ -356,8 +356,8 @@ For organizations using VS Code with GitHub Copilot, the OAI Compatible Provider
         "rp-aigw-id": "GATEWAY_ID"
       },
       "models": [
-        "gpt-4o",
-        "gpt-4o-mini",
+        "gpt-5.2",
+        "gpt-5.2-mini",
         "claude-sonnet"
       ]
     }
@@ -574,19 +574,19 @@ Configure model preferences based on use case:
 |Use Case |Recommended Model |Reason
 
 |Code completion
-|`gpt-4o-mini`
+|`gpt-5.2-mini`
 |Fast, cost-effective for frequent requests
 
 |Code explanation
-|`gpt-4o` or `claude-sonnet`
+|`gpt-5.2` or `claude-sonnet`
 |Higher quality for complex explanations
 
 |Code generation
-|`gpt-4o` or `claude-sonnet`
+|`gpt-5.2` or `claude-sonnet`
 |Better at generating complete functions
 
 |Documentation
-|`gpt-4o-mini`
+|`gpt-5.2-mini`
 |Sufficient quality for docstrings and comments
 |===
 
@@ -756,7 +756,7 @@ Symptom: GitHub Copilot shows "model not found" or similar errors.
 Causes and solutions:
 
 * **Model not enabled in catalog**: Enable the model in the gateway's model catalog
-* **Model alias missing**: Create an alias for the model name GitHub Copilot expects (for example, `gpt-4o`)
+* **Model alias missing**: Create an alias for the model name GitHub Copilot expects (for example, `gpt-5.2`)
 * **Incorrect model name**: Verify GitHub Copilot is requesting a model name that exists in your aliases
 * **Routing rule mismatch**: Check that routing rules correctly match the requested model name
 
@@ -778,7 +778,7 @@ Symptom: Token usage and costs exceed expectations.
 
 Causes and solutions:
 
-* **Code completion using expensive model**: Configure completion to use `gpt-4o-mini` instead of larger models
+* **Code completion using expensive model**: Configure completion to use `gpt-5.2-mini` instead of larger models
 * **No rate limits**: Apply per-minute rate limits to prevent runaway usage
 * **Missing spending limits**: Set monthly budget limits with blocking enforcement
 * **Chat using wrong model**: Ensure chat/explanation features use cost-effective models

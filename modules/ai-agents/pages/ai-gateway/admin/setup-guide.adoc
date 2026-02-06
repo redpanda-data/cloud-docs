@@ -50,10 +50,10 @@ The infrastructure that serves the model differs based on the provider you selec
 Common models to enable:
 +
 --
-* `openai/gpt-4o` - OpenAI's most capable model
-* `openai/gpt-4o-mini` - Cost-effective OpenAI model
-* `anthropic/claude-sonnet-3.5` - Balanced Anthropic model
-* `anthropic/claude-opus-4` - Anthropic's most capable model
+* `openai/gpt-5.2` - OpenAI's most capable model
+* `openai/gpt-5.2-mini` - Cost-effective OpenAI model
+* `anthropic/claude-sonnet-4.5` - Balanced Anthropic model
+* `anthropic/claude-opus-4.6` - Anthropic's most capable model
 --
 
 . Click *Save changes*.
@@ -66,9 +66,9 @@ Model requests must use the `vendor/model_id` format in the model property of th
 
 Examples:
 
-* `openai/gpt-4o`
-* `anthropic/claude-sonnet-3.5`
-* `openai/gpt-4o-mini`
+* `openai/gpt-5.2`
+* `anthropic/claude-sonnet-4.5`
+* `openai/gpt-5.2-mini`
 
 == Choose a gateway mode
 
@@ -188,7 +188,7 @@ Provider pools define which LLM providers handle requests, with support for prim
 --
 * *Name*: For example, `primary-anthropic`
 * *Providers*: Select one or more providers (for example, Anthropic)
-* *Models*: Choose which models to include (for example, `anthropic/claude-sonnet-3.5`)
+* *Models*: Choose which models to include (for example, `anthropic/claude-sonnet-4.5`)
 * *Load balancing*: If multiple providers are selected, choose distribution strategy (round-robin, weighted, etc.)
 --
 
@@ -197,7 +197,7 @@ Provider pools define which LLM providers handle requests, with support for prim
 --
 * *Name*: For example, `fallback-openai`
 * *Providers*: Select fallback provider (for example, OpenAI)
-* *Models*: Choose fallback models (for example, `openai/gpt-4o`)
+* *Models*: Choose fallback models (for example, `openai/gpt-5.2`)
 * *Trigger conditions*: When to activate fallback:
   ** Rate limit exceeded (429 from primary)
   ** Timeout (primary provider slow)
@@ -215,8 +215,8 @@ Example CEL expression for tier-based routing:
 [source,cel]
 ----
 request.headers["x-user-tier"] == "premium"
-  ? "anthropic/claude-opus-4"
-  : "anthropic/claude-sonnet-3.5"
+  ? "anthropic/claude-opus-4.6"
+  : "anthropic/claude-sonnet-4.5"
 ----
 
 . Click *Save routing configuration*.
@@ -309,7 +309,7 @@ curl https://{GATEWAY_ENDPOINT}/v1/chat/completions \
   -H "rp-aigw-id: ${GATEWAY_ID}" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "openai/gpt-4o-mini",
+    "model": "openai/gpt-5.2-mini",
     "messages": [{"role": "user", "content": "Hello, AI Gateway!"}],
     "max_tokens": 50
   }'

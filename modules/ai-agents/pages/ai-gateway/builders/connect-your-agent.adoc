@@ -70,7 +70,7 @@ client = OpenAI(
 
 # Make a request (same as before)
 response = client.chat.completions.create(
-    model="openai/gpt-4o-mini",  # Note: vendor/model_id format
+    model="openai/gpt-5.2-mini",  # Note: vendor/model_id format
     messages=[{"role": "user", "content": "Hello, AI Gateway!"}],
     max_tokens=100
 )
@@ -97,7 +97,7 @@ client = Anthropic(
 
 # Make a request
 message = client.messages.create(
-    model="anthropic/claude-sonnet-3.5",
+    model="anthropic/claude-sonnet-4.5",
     max_tokens=100,
     messages=[{"role": "user", "content": "Hello, AI Gateway!"}]
 )
@@ -121,7 +121,7 @@ const openai = new OpenAI({
 
 // Make a request
 const response = await openai.chat.completions.create({
-  model: 'openai/gpt-4o-mini',
+  model: 'openai/gpt-5.2-mini',
   messages: [{ role: 'user', content: 'Hello, AI Gateway!' }],
   max_tokens: 100
 });
@@ -140,7 +140,7 @@ curl ${REDPANDA_GATEWAY_URL}/v1/chat/completions \
   -H "rp-aigw-id: ${REDPANDA_GATEWAY_ID}" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "openai/gpt-4o-mini",
+    "model": "openai/gpt-5.2-mini",
     "messages": [{"role": "user", "content": "Hello, AI Gateway!"}],
     "max_tokens": 100
   }'
@@ -151,10 +151,10 @@ curl ${REDPANDA_GATEWAY_URL}/v1/chat/completions \
 
 When making requests through AI Gateway, use the `vendor/model_id` format for the model parameter:
 
-* `openai/gpt-4o`
-* `openai/gpt-4o-mini`
-* `anthropic/claude-sonnet-3.5`
-* `anthropic/claude-opus-4`
+* `openai/gpt-5.2`
+* `openai/gpt-5.2-mini`
+* `anthropic/claude-sonnet-4.5`
+* `anthropic/claude-opus-4.6`
 
 This format tells AI Gateway which provider to route the request to.
 
@@ -164,13 +164,13 @@ Example:
 ----
 # Route to OpenAI
 response = client.chat.completions.create(
-    model="openai/gpt-4o",
+    model="openai/gpt-5.2",
     messages=[...]
 )
 
 # Route to Anthropic (same client, different model)
 response = client.chat.completions.create(
-    model="anthropic/claude-sonnet-3.5",
+    model="anthropic/claude-sonnet-4.5",
     messages=[...]
 )
 ----
@@ -184,7 +184,7 @@ Responses from AI Gateway follow the OpenAI API format:
 [source,python]
 ----
 response = client.chat.completions.create(
-    model="openai/gpt-4o-mini",
+    model="openai/gpt-5.2-mini",
     messages=[{"role": "user", "content": "Explain AI Gateway"}],
     max_tokens=200
 )
@@ -218,7 +218,7 @@ client = OpenAI(
 
 try:
     response = client.chat.completions.create(
-        model="openai/gpt-4o-mini",
+        model="openai/gpt-5.2-mini",
         messages=[{"role": "user", "content": "Hello"}]
     )
     print(response.choices[0].message.content)
@@ -254,7 +254,7 @@ AI Gateway supports streaming for real-time token generation:
 [source,python]
 ----
 response = client.chat.completions.create(
-    model="openai/gpt-4o-mini",
+    model="openai/gpt-5.2-mini",
     messages=[{"role": "user", "content": "Write a short poem"}],
     stream=True  # Enable streaming
 )
@@ -275,13 +275,13 @@ One of AI Gateway's key benefits is easy provider switching without code changes
 ----
 # Try OpenAI
 response = client.chat.completions.create(
-    model="openai/gpt-4o",
+    model="openai/gpt-5.2",
     messages=[{"role": "user", "content": "Explain quantum computing"}]
 )
 
 # Try Anthropic (same code, different model)
 response = client.chat.completions.create(
-    model="anthropic/claude-sonnet-3.5",
+    model="anthropic/claude-sonnet-4.5",
     messages=[{"role": "user", "content": "Explain quantum computing"}]
 )
 ----
@@ -308,7 +308,7 @@ def test_gateway_connection():
     try:
         # Simple test request
         response = client.chat.completions.create(
-            model="openai/gpt-4o-mini",
+            model="openai/gpt-5.2-mini",
             messages=[{"role": "user", "content": "test"}],
             max_tokens=10
         )
@@ -329,8 +329,8 @@ if __name__ == "__main__":
 def test_models():
     """Test multiple models through the gateway"""
     models = [
-        "openai/gpt-4o-mini",
-        "anthropic/claude-sonnet-3.5"
+        "openai/gpt-5.2-mini",
+        "anthropic/claude-sonnet-4.5"
     ]
 
     for model in models:
@@ -403,7 +403,7 @@ Edit `~/.continue/config.json`:
     {
       "title": "AI Gateway - GPT-4",
       "provider": "openai",
-      "model": "openai/gpt-4o",
+      "model": "openai/gpt-5.2",
       "apiBase": "https://gw.ai.panda.com",
       "apiKey": "your-redpanda-api-key",
       "requestOptions": {
@@ -469,7 +469,7 @@ def make_request_with_retry(client, max_retries=3):
     for attempt in range(max_retries):
         try:
             return client.chat.completions.create(
-                model="openai/gpt-4o-mini",
+                model="openai/gpt-5.2-mini",
                 messages=[{"role": "user", "content": "Hello"}]
             )
         except OpenAIError as e:

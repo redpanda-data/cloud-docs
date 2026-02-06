@@ -20,7 +20,7 @@ After reading this page, you will be able to:
 
 * AI Gateway deployed on a BYOC cluster running Redpanda version 25.3 or later
 * Administrator access to the AI Gateway UI
-* At least one LLM provider API key (OpenAI or Anthropic)
+* At least one LLM provider API key (OpenAI, Anthropic, or Google Gemini)
 * Understanding of xref:ai-agents:ai-gateway/gateway-architecture.adoc[AI Gateway concepts]
 
 == Architecture overview
@@ -73,9 +73,9 @@ After enabling providers, enable specific models:
 +
 Common models for Claude Code:
 +
-* `anthropic/claude-opus-4-5`
-* `anthropic/claude-sonnet-4-5`
-* `openai/gpt-4o`
+* `anthropic/claude-opus-4.6-5`
+* `anthropic/claude-sonnet-4.5`
+* `openai/gpt-5.2`
 * `openai/o1-mini`
 
 . Click *Save*
@@ -155,7 +155,7 @@ request.headers["x-user-tier"][0] == "premium"
 
 Create separate routes:
 
-* Premium route: Claude Opus 4.5 (highest quality)
+* Premium route: Claude Opus 4.6.5 (highest quality)
 * Standard route: Claude Sonnet 4.5 (balanced cost and quality)
 
 === Apply rate limits
@@ -254,7 +254,7 @@ The MCP orchestrator reduces multi-step workflows to single calls:
 |Setting |Value
 
 |Orchestrator model
-|Select a model with strong code generation capabilities (for example, `anthropic/claude-sonnet-4-5`)
+|Select a model with strong code generation capabilities (for example, `anthropic/claude-sonnet-4.5`)
 
 |Execution timeout
 |30 seconds

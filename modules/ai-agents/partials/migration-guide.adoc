@@ -106,7 +106,7 @@ client = OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="gpt-4o",
+    model="gpt-5.2",
     messages=[{"role": "user", "content": "Hello"}]
 )
 ----
@@ -128,12 +128,12 @@ if use_gateway:
         api_key=os.getenv("REDPANDA_AI_GATEWAY_TOKEN"),
         default_headers={"rp-aigw-id": os.getenv("REDPANDA_AI_GATEWAY_ID")}
     )
-    model = "openai/gpt-4o"  # Add vendor prefix
+    model = "openai/gpt-5.2"  # Add vendor prefix
 else:
     client = OpenAI(
         api_key=os.getenv("OPENAI_API_KEY")
     )
-    model = "gpt-4o"  # Original model name
+    model = "gpt-5.2"  # Original model name
 
 response = client.chat.completions.create(
     model=model,
@@ -170,7 +170,7 @@ def get_model_name(base_model: str) -> str:
 # Usage
 client = get_llm_client()
 response = client.chat.completions.create(
-    model=get_model_name("gpt-4o"),
+    model=get_model_name("gpt-5.2"),
     messages=[{"role": "user", "content": "Hello"}]
 )
 ----
@@ -189,7 +189,7 @@ client = Anthropic(
 )
 
 response = client.messages.create(
-    model="claude-sonnet-3.5",
+    model="claude-sonnet-4.5",
     max_tokens=1024,
     messages=[{"role": "user", "content": "Hello"}]
 )
@@ -216,7 +216,7 @@ if use_gateway:
     )
 
     response = client.chat.completions.create(
-        model="anthropic/claude-sonnet-3.5",
+        model="anthropic/claude-sonnet-4.5",
         max_tokens=1024,
         messages=[{"role": "user", "content": "Hello"}]
     )
@@ -226,7 +226,7 @@ else:
     client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
     response = client.messages.create(
-        model="claude-sonnet-3.5",
+        model="claude-sonnet-4.5",
         max_tokens=1024,
         messages=[{"role": "user", "content": "Hello"}]
     )
@@ -289,12 +289,12 @@ client = OpenAI(
 # Same code, different models
 if use_openai:
     response = client.chat.completions.create(
-        model="openai/gpt-4o",
+        model="openai/gpt-5.2",
         messages=[...]
     )
 else:
     response = client.chat.completions.create(
-        model="anthropic/claude-sonnet-3.5",
+        model="anthropic/claude-sonnet-4.5",
         messages=[...]
     )
 ----
@@ -320,7 +320,7 @@ def test_gateway_connection():
 
     try:
         response = client.chat.completions.create(
-            model="openai/gpt-4o-mini",  # Use cheap model for testing
+            model="openai/gpt-5.2-mini",  # Use cheap model for testing
             messages=[{"role": "user", "content": "Test"}],
             max_tokens=10
         )
@@ -360,7 +360,7 @@ After successful test:
 2. In the sidebar, navigate to *Agentic AI > Gateways > {GATEWAY_NAME}*, then select the *Logs* tab.
 3. Verify your test request appears
 4. Check fields:
-   * Model: `openai/gpt-4o-mini`
+   * Model: `openai/gpt-5.2-mini`
    * Provider: OpenAI
    * Status: 200
    * Token count: ~10 prompt + ~10 completion
@@ -575,7 +575,7 @@ Before
 from langchain_openai import ChatOpenAI
 
 llm = ChatOpenAI(
-    model="gpt-4o",
+    model="gpt-5.2",
     api_key=os.getenv("OPENAI_API_KEY")
 )
 ----
@@ -590,14 +590,14 @@ use_gateway = os.getenv("USE_AI_GATEWAY", "false").lower() == "true"
 
 if use_gateway:
     llm = ChatOpenAI(
-        model="openai/gpt-4o",
+        model="openai/gpt-5.2",
         base_url=os.getenv("REDPANDA_AI_GATEWAY_URL"),
         api_key=os.getenv("REDPANDA_AI_GATEWAY_TOKEN"),
         default_headers={"rp-aigw-id": os.getenv("REDPANDA_AI_GATEWAY_ID")}
     )
 else:
     llm = ChatOpenAI(
-        model="gpt-4o",
+        model="gpt-5.2",
         api_key=os.getenv("OPENAI_API_KEY")
     )
 ----
@@ -612,7 +612,7 @@ Before
 ----
 from llama_index.llms.openai import OpenAI
 
-llm = OpenAI(model="gpt-4o")
+llm = OpenAI(model="gpt-5.2")
 ----
 
 After
@@ -625,13 +625,13 @@ use_gateway = os.getenv("USE_AI_GATEWAY", "false").lower() == "true"
 
 if use_gateway:
     llm = OpenAI(
-        model="openai/gpt-4o",
+        model="openai/gpt-5.2",
         api_base=os.getenv("REDPANDA_AI_GATEWAY_URL"),
         api_key=os.getenv("REDPANDA_AI_GATEWAY_TOKEN"),
         default_headers={"rp-aigw-id": os.getenv("REDPANDA_AI_GATEWAY_ID")}
     )
 else:
-    llm = OpenAI(model="gpt-4o")
+    llm = OpenAI(model="gpt-5.2")
 ----
 --
 
@@ -644,7 +644,7 @@ Before
 ----
 import { openai } from '@ai-sdk/openai';
 
-const model = openai('gpt-4o');
+const model = openai('gpt-5.2');
 ----
 
 After
@@ -663,8 +663,8 @@ const model = useGateway
       headers: {
         'rp-aigw-id': process.env.REDPANDA_AI_GATEWAY_ID,
       },
-    })('openai/gpt-4o')
-  : openai('gpt-4o');
+    })('openai/gpt-5.2')
+  : openai('gpt-5.2');
 ----
 --
 ======
@@ -723,7 +723,7 @@ Use this checklist to track your migration:
 Symptom:
 [source,text]
 ----
-Error: Model 'openai/gpt-4o' not found
+Error: Model 'openai/gpt-5.2' not found
 ----
 
 
@@ -736,7 +736,7 @@ Causes:
 Solution:
 
 1. Verify model is enabled: In the sidebar, navigate to *Agentic AI > Models* and confirm the model is enabled.
-2. Confirm format: `vendor/model_id` (for example, `openai/gpt-4o`, not `gpt-4o`)
+2. Confirm format: `vendor/model_id` (for example, `openai/gpt-5.2`, not `gpt-5.2` without prefix)
 3. Check supported models: // PLACEHOLDER: link to model catalog
 
 === Missing `rp-aigw-id` header
@@ -823,7 +823,7 @@ Before
 [source,python]
 ----
 stream = client.chat.completions.create(
-    model="gpt-4o",
+    model="gpt-5.2",
     messages=[...],
     stream=True
 )
@@ -838,7 +838,7 @@ After
 [source,python]
 ----
 stream = client.chat.completions.create(
-    model="openai/gpt-4o",  # Add vendor prefix
+    model="openai/gpt-5.2",  # Add vendor prefix
     messages=[...],
     stream=True
 )
@@ -855,7 +855,7 @@ Before
 [source,python]
 ----
 response = client.chat.completions.create(
-    model="gpt-4o",
+    model="gpt-5.2",
     messages=[...],
     extra_headers={"X-User-ID": user.id}
 )
@@ -867,7 +867,7 @@ After
 [source,python]
 ----
 response = client.chat.completions.create(
-    model="openai/gpt-4o",
+    model="openai/gpt-5.2",
     messages=[...],
     extra_headers={
         "X-User-ID": user.id,  # Custom headers still supported
@@ -888,7 +888,7 @@ Simplified provider management
 [source,python]
 ----
 # Switch providers with one config change (no code changes)
-model = "anthropic/claude-sonnet-3.5"  # Was openai/gpt-4o
+model = "anthropic/claude-sonnet-4.5"  # Was openai/gpt-5.2
 ----
 
 Unified observability

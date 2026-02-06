@@ -889,7 +889,7 @@ Scenario: Different agents use different models + different tools
 
 Configuration:
 
-* Gateway A: GPT-4o + database + CRM MCP servers
+* Gateway A: GPT-5.2 + database + CRM MCP servers
 * Gateway B: Claude Sonnet + web search + analytics MCP servers
 
 Use case: Optimize model-tool pairing (some models better at certain tools)
@@ -928,7 +928,7 @@ tools = tools_response.json()["tools"]
 
 # Agent uses tools
 response = client.chat.completions.create(
-    model="anthropic/claude-sonnet-3.5",
+    model="anthropic/claude-sonnet-4.5",
     messages=[
         {"role": "user", "content": "Query the database for premium users"}
     ],
@@ -951,7 +951,7 @@ if response.choices[0].message.tool_calls:
 
         # Continue conversation with tool result
         response = client.chat.completions.create(
-            model="anthropic/claude-sonnet-3.5",
+            model="anthropic/claude-sonnet-4.5",
             messages=[
                 {"role": "user", "content": "Query the database for premium users"},
                 response.choices[0].message,

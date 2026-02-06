@@ -4,11 +4,11 @@
 :personas: platform_admin
 :learning-objective-1: Create an AI Hub gateway with one-click configuration
 :learning-objective-2: Configure user preference toggles to customize routing behavior
-:learning-objective-3: Manage provider credentials for OpenAI and Anthropic
+:learning-objective-3: Manage provider credentials for OpenAI, Anthropic, and Google Gemini
 
 include::ai-agents:partial$ai-gateway-byoc-note.adoc[]
 
-AI Hub mode provides instant, pre-configured access to OpenAI and Anthropic with zero setup complexity. Platform admins add provider credentials, and all teams immediately benefit from intelligent routing.
+AI Hub mode provides instant, pre-configured access to OpenAI, Anthropic, and Google Gemini with zero setup complexity. Platform admins add provider credentials, and all teams immediately benefit from intelligent routing.
 
 This guide walks administrators through creating and configuring AI Hub gateways, from initial setup to managing preferences and credentials.
 
@@ -16,7 +16,7 @@ After reading this page, you will be able to:
 
 * [ ] Create an AI Hub gateway with one-click configuration
 * [ ] Configure user preference toggles to customize routing behavior
-* [ ] Manage provider credentials for OpenAI and Anthropic
+* [ ] Manage provider credentials for OpenAI, Anthropic, and Google Gemini
 
 == Prerequisites
 
@@ -45,7 +45,7 @@ Creating an AI Hub gateway is significantly simpler than creating a Custom mode 
 
 After creation, the gateway is immediately available with all pre-configured components:
 
-* 6 backend pools (OpenAI and Anthropic)
+* 6 backend pools (OpenAI, Anthropic, and Google Gemini)
 * 17 routing rules
 * Intelligent automatic routing
 * Default preference toggles
@@ -378,7 +378,7 @@ curl https://${GATEWAY_ENDPOINT}/v1/chat/completions \
   -H "rp-aigw-id: ${GATEWAY_ID}" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "openai/gpt-4o-mini",
+    "model": "openai/gpt-5.2-mini",
     "messages": [{"role": "user", "content": "test"}],
     "max_tokens": 5
   }'
@@ -390,7 +390,7 @@ curl https://${GATEWAY_ENDPOINT}/v1/chat/completions \
 
 *Common causes*:
 
-* Model prefix missing: Use `anthropic/claude-sonnet-3.5` not `claude-sonnet-3.5`
+* Model prefix missing: Use `anthropic/claude-sonnet-4.5` not `claude-sonnet-4.5`
 * Provider preference override: Check preference toggles
 * Special routing rule: Embeddings always route to OpenAI
 
