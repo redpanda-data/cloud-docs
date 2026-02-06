@@ -1,5 +1,5 @@
 = Connect Your Agent
-:description: Integrate your AI agent or application with Redpanda AI Gateway for unified LLM access.
+:description: Integrate your AI agent or application with Redpanda Agentic Data Plan for unified LLM access.
 :page-topic-type: how-to
 :personas: app_developer
 :learning-objective-1: Configure your application to use AI Gateway with OpenAI-compatible SDKs
@@ -8,7 +8,7 @@
 
 include::ai-agents:partial$ai-gateway-byoc-note.adoc[]
 
-This guide shows you how to connect your glossterm:AI agent[] or application to a Redpanda AI Gateway. This is also called "Bring Your Own Agent" (BYOA). You'll configure your client SDK, make your first request, and validate the integration.
+This guide shows you how to connect your glossterm:AI agent[] or application to Redpanda Agentic Data Plan. This is also called "Bring Your Own Agent" (BYOA). You'll configure your client SDK, make your first request, and validate the integration.
 
 After completing this guide, you will be able to:
 
@@ -18,12 +18,12 @@ After completing this guide, you will be able to:
 
 == Prerequisites
 
-* You have discovered an available gateway and noted its Gateway ID and Endpoint
+* You have discovered an available gateway and noted its Gateway ID and endpoint.
 +
 If not, see xref:ai-gateway/builders/discover-gateways.adoc[].
 
-* You have a Redpanda Cloud API token with access to the gateway
-* You have a development environment with your chosen programming language
+* You have a Redpanda Cloud API token with access to the gateway.
+* You have a development environment with your chosen programming language.
 
 == Integration overview
 
@@ -50,8 +50,10 @@ export REDPANDA_API_KEY="your-redpanda-cloud-token"
 
 Replace with your actual gateway endpoint, ID, and API token.
 
-=== Python (OpenAI SDK)
-
+[tabs]
+====
+Python (OpenAI SDK)::
++
 [source,python]
 ----
 import os
@@ -76,10 +78,10 @@ response = client.chat.completions.create(
 print(response.choices[0].message.content)
 ----
 
-=== Python (Anthropic SDK)
-
+Python (Anthropic SDK)::
++
 The Anthropic SDK can also route through AI Gateway using the OpenAI-compatible endpoint:
-
++
 [source,python]
 ----
 import os
@@ -103,8 +105,8 @@ message = client.messages.create(
 print(message.content[0].text)
 ----
 
-=== Node.js (OpenAI SDK)
-
+Node.js (OpenAI SDK)::
++
 [source,javascript]
 ----
 import OpenAI from 'openai';
@@ -127,10 +129,10 @@ const response = await openai.chat.completions.create({
 console.log(response.choices[0].message.content);
 ----
 
-=== cURL
-
+cURL::
++
 For testing or shell scripts:
-
++
 [source,bash]
 ----
 curl ${REDPANDA_GATEWAY_URL}/v1/chat/completions \
@@ -143,6 +145,7 @@ curl ${REDPANDA_GATEWAY_URL}/v1/chat/completions \
     "max_tokens": 100
   }'
 ----
+====
 
 == Model naming convention
 
@@ -354,19 +357,21 @@ After making requests, verify they appear in observability:
 
 == Integrate with AI development tools
 
-=== Claude Code
-
+[tabs]
+====
+Claude Code::
++
 Configure Claude Code to use AI Gateway:
-
++
 [source,bash]
 ----
 claude mcp add --transport http redpanda-aigateway https://gw.ai.panda.com/mcp \
   --header "Authorization: Bearer ${REDPANDA_API_KEY}" \
   --header "rp-aigw-id: ${REDPANDA_GATEWAY_ID}"
 ----
-
++
 Or edit `~/.claude/config.json`:
-
++
 [source,json]
 ----
 {
@@ -382,15 +387,15 @@ Or edit `~/.claude/config.json`:
   }
 }
 ----
-
++
 ifdef::integrations-available[]
 See xref:ai-gateway/integrations/claude-code-user.adoc[] for complete setup.
 endif::[]
 
-=== VS Code Continue Extension
-
+VS Code Continue Extension::
++
 Edit `~/.continue/config.json`:
-
++
 [source,json]
 ----
 {
@@ -410,17 +415,17 @@ Edit `~/.continue/config.json`:
   ]
 }
 ----
-
++
 ifdef::integrations-available[]
 See xref:ai-gateway/integrations/continue-user.adoc[] for complete setup.
 endif::[]
 
-=== Cursor IDE
-
+Cursor IDE::
++
 . Open Cursor Settings (*Cursor* → *Settings* or `Cmd+,`)
 . Navigate to *AI* settings
 . Add custom OpenAI-compatible provider:
-
++
 [source,json]
 ----
 {
@@ -430,10 +435,11 @@ endif::[]
   }
 }
 ----
-
++
 ifdef::integrations-available[]
 See xref:ai-gateway/integrations/cursor-user.adoc[] for complete setup.
 endif::[]
+====
 
 == Best practices
 
@@ -556,9 +562,9 @@ Solutions:
 * Check if the gateway is operational (contact administrator)
 * Increase client timeout if processing complex requests
 
-== Next steps
+//== Next steps
 
-Now that your agent is connected:
+//Now that your agent is connected:
 
 // * xref:ai-gateway/builders/available-models.adoc[Available Models] - Learn about model selection and routing
 // * xref:ai-gateway/builders/use-mcp-tools.adoc[Use MCP Tools] - Access tools from MCP servers (if enabled)
