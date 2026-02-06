@@ -26,7 +26,7 @@ After completing this guide, you will be able to:
 
 Providers represent upstream services (Anthropic, OpenAI, Google AI) and associated credentials. Providers are disabled by default and must be enabled explicitly by an administrator.
 
-. In the Redpanda Cloud Console, navigate to *AI Gateway* → *Providers*.
+. In the Redpanda Cloud Console, navigate to *Agentic AI* → *Providers*.
 . Select a provider (for example, Anthropic).
 . On the Configuration tab for the provider, click *Add configuration*.
 . Enter your API Key for the provider.
@@ -43,17 +43,15 @@ The model catalog is the set of models made available through the gateway. Model
 
 The infrastructure that serves the model differs based on the provider you select. For example, OpenAI has different reliability and availability metrics than Anthropic. When you consider all metrics, you can design your gateway to use different providers for different use cases.
 
-. Navigate to *AI Gateway* → *Models*.
+. Navigate to *Agentic AI* → *Models*.
 . Review the list of available models from enabled providers.
-. For each model you want to expose through gateways, toggle it to *Enabled*.
-+
-Common models to enable:
+. For each model you want to expose through gateways, toggle it to *Enabled*. For example:
 +
 --
-* `openai/gpt-5.2` - OpenAI's most capable model
-* `openai/gpt-5.2-mini` - Cost-effective OpenAI model
-* `anthropic/claude-sonnet-4.5` - Balanced Anthropic model
-* `anthropic/claude-opus-4.6` - Anthropic's most capable model
+* `openai/gpt-5.2`
+* `openai/gpt-5.2-mini`
+* `anthropic/claude-sonnet-4.5`
+* `anthropic/claude-opus-4.6`
 --
 
 . Click *Save changes*.
@@ -62,9 +60,7 @@ Only enabled models will be accessible through gateways. You can enable or disab
 
 === Model naming convention
 
-Model requests must use the `vendor/model_id` format in the model property of the request body. This format allows AI Gateway to route requests to the appropriate provider.
-
-Examples:
+Model requests must use the `vendor/model_id` format in the model property of the request body. This format allows AI Gateway to route requests to the appropriate provider. For example:
 
 * `openai/gpt-5.2`
 * `anthropic/claude-sonnet-4.5`
@@ -109,7 +105,7 @@ endif::[]
 
 A gateway is a logical configuration boundary (policies + routing + observability) on top of a single deployment. It's a "virtual gateway" that you can create per team, environment (staging/production), product, or customer.
 
-. Navigate to *AI Gateway* → *Gateways*.
+. Navigate to *Agentic AI* → *Gateways*.
 . Click *Create Gateway*.
 . Configure the gateway:
 +
@@ -128,10 +124,12 @@ TIP: A workspace is conceptually similar to a resource group in Redpanda streami
 . After creation, note the following information:
 +
 --
-* *Gateway Endpoint*: URL for API requests (for example, `https://example/gateways/gw_abc123/v1`) - the gateway ID is embedded in the URL
+* *Gateway endpoint*: URL for API requests (for example, `https://example/gateways/d633lffcc16s73ct95mg/v1`) 
++
+The gateway ID is embedded in the URL.
 --
 
-You'll share the Gateway Endpoint with users who need to access this gateway.
+You'll share the gateway endpoint with users who need to access this gateway.
 
 == Configure LLM routing
 
@@ -228,10 +226,10 @@ TIP: Provider pool (UI) = Backend pool (API)
 
 If a provider pool contains multiple providers, you can distribute traffic to balance load or optimize for cost/performance:
 
-* *Round-robin*: Distribute evenly across all providers
-* *Weighted*: Assign weights (for example, 80% to Anthropic, 20% to OpenAI)
-* *Least latency*: Route to fastest provider based on recent performance
-* *Cost-optimized*: Route to cheapest provider for each model
+* Round-robin: Distribute evenly across all providers
+* Weighted: Assign weights (for example, 80% to Anthropic, 20% to OpenAI)
+* Least latency: Route to fastest provider based on recent performance
+* Cost-optimized: Route to cheapest provider for each model
 
 == Configure MCP tools (optional)
 
@@ -239,38 +237,67 @@ If your users will build glossterm:AI agent[,AI agents] that need access to glos
 
 On the gateway details page, select the *MCP* tab to configure tool discovery and execution. The MCP proxy aggregates multiple glossterm:MCP server[,MCP servers], allowing agents to find and call tools through a single endpoint.
 
+=== Configure MCP rate limits
+
+Rate limits for MCP work the same way as LLM rate limits.
+
+. In the *MCP* tab, locate the *Rate Limit* section.
+. Click *Add rate limit*.
+. Configure the maximum requests per second and optional burst allowance.
+. Click *Save*.
+
 === Add MCP servers
 
-. In the *MCP* tab, click *Add MCP server*.
+. In the *MCP* tab, click *Create MCP Server*.
 . Configure the server:
 +
 --
-* *Server name*: Human-readable identifier (for example, `database-server`, `slack-server`)
-* *Server URL*: Endpoint for the MCP server (for example, `https://mcp-database.example.com`)
-* *Authentication*: Configure authentication if required (bearer token, API key, mTLS)
-* *Enabled tools*: Select which tools from this server to expose (or *All tools*)
+* *Server ID*: Unique identifier for this server
+* *Display Name*: Human-readable name (for example, `database-server`, `slack-server`)
+* *Server Address*: Endpoint URL for the MCP server (for example, `https://mcp-database.example.com`)
 --
 
-. Click *Test connection* to verify connectivity.
+. Configure server settings:
++
+--
+* *Timeout (seconds)*: Maximum time to wait for a response from this server
+* *Enabled*: Whether this server is active and accepting requests
+* *Defer Loading Override*: Controls whether tools from this server are loaded upfront or on demand
++
+[cols="1,2"]
+|===
+|Option |Description
+
+|Inherit from gateway
+|Use the gateway-level deferred loading setting (default)
+
+|Enabled
+|Always defer loading from this server. Agents receive only a search tool initially and query for specific tools when needed. This can reduce token usage by 80-90%.
+
+|Disabled
+|Always load all tools from this server upfront.
+|===
+
+* *Forward OIDC Token Override*: Controls whether the client's OIDC token is forwarded to this MCP server
++
+[cols="1,2"]
+|===
+|Option |Description
+
+|Inherit from gateway
+|Use the gateway-level OIDC forwarding setting (default)
+
+|Enabled
+|Always forward the OIDC token to this server
+
+|Disabled
+|Never forward the OIDC token to this server
+|===
+--
+
 . Click *Save* to add the server to this gateway.
 
 Repeat for each MCP server you want to aggregate.
-
-=== Configure deferred tool loading
-
-Deferred tool loading dramatically reduces token costs by initially exposing only a search tool and orchestrator, rather than listing all available tools.
-
-. In the *MCP* tab, locate *Deferred Loading*.
-. Toggle *Enable deferred tool loading* to *On*.
-. Configure behavior:
-+
---
-* *Initially expose*: Search tool + orchestrator only
-* *Load on demand*: Tools are retrieved when agents query for them
-* *Token savings*: Expect 80-90% reduction in token usage for tool definitions
---
-
-. Click *Save*.
 
 See xref:ai-gateway/mcp-aggregation-guide.adoc[] for detailed information about MCP aggregation.
 
@@ -280,11 +307,24 @@ The MCP orchestrator is a built-in MCP server that enables programmatic tool cal
 
 Example: A workflow requiring 47 file reads can be reduced from 49 round trips to just 1 round trip using the orchestrator.
 
-The orchestrator is enabled by default when you enable MCP tools. You can configure:
+The orchestrator is pre-configured when you initialize the MCP gateway. Its server configuration (Server ID, Display Name, Transport, Command, and Timeout) is system-managed and cannot be modified.
 
-* *Execution timeout*: Maximum time for orchestrator workflows (for example, 30 seconds)
-* *Memory limit*: Maximum memory for JavaScript execution (for example, 128MB)
-* *Allowed operations*: Restrict which MCP tools can be called from orchestrator workflows
+You can configure blocked tool patterns to prevent specific tools from being called through the orchestrator:
+
+. In the *MCP* tab, select the orchestrator server to edit it.
+. Under *Blocked Tools*, click *Add Pattern* to add glob patterns for tools that should be blocked from execution.
++
+Example patterns:
++
+--
+* `server_id:*` - Block all tools from a specific server
+* `*:dangerous_tool` - Block a specific tool across all servers
+* `specific:tool` - Block a single tool on a specific server
+--
++
+NOTE: The orchestrator's own tools are blocked by default to prevent recursive execution.
+
+. Click *Save*.
 
 == Verify your setup
 
@@ -318,7 +358,7 @@ Expected result: Successful completion response.
 
 === Check the gateway overview
 
-. Navigate to *AI Gateway* → *Gateways* → Select your gateway → *Overview*.
+. Navigate to *Gateways* → Select your gateway → *Overview*.
 . Check the aggregate metrics to verify your test request was processed:
 +
 --

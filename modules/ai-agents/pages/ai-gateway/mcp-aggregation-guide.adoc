@@ -282,27 +282,27 @@ Don't use deferred loading when:
 
 === Configure deferred loading
 
-// PLACEHOLDER: Add UI path or configuration method
+Deferred loading is configured per MCP server through the *Defer Loading Override* setting in the Create MCP Server dialog.
 
-Option 1: Enable at gateway level (recommended)
+. Navigate to your gateway's *MCP* tab.
+. Create or edit an MCP server.
+. Under *Server Settings*, set *Defer Loading Override*:
++
+[cols="1,2"]
+|===
+|Option |Description
 
-[source,yaml]
-----
-# PLACEHOLDER: Actual configuration format
-mcp:
-  deferred_loading: true  # Default for all agents using this gateway
-----
+|Inherit from gateway
+|Use the gateway-level deferred loading setting (default)
 
+|Enabled
+|Always defer loading from this server. Agents receive only a search tool initially and query for specific tools when needed.
 
-Option 2: Enable per-request (agent-controlled)
+|Disabled
+|Always load all tools from this server upfront.
+|===
 
-[source,python]
-----
-# Agent includes header
-headers = {
-    "rp-aigw-mcp-deferred": "true"  # Enable for this request
-}
-----
+. Click *Save*.
 
 
 === Measure token savings
@@ -460,14 +460,12 @@ Available in workflow:
 Security:
 
 * Sandboxed execution (no file system, network, or system access)
-* Timeout: // PLACEHOLDER: e.g., 30 seconds
-* Memory limit: // PLACEHOLDER: e.g., 128MB
+* Timeout and memory limits are system-managed and cannot be modified
 
 Limitations:
 
 * Cannot call external APIs directly (must use MCP tools)
 * Cannot import npm packages (built-in JS only)
-* // PLACEHOLDER: Other limitations?
 
 === Orchestrator example: data aggregation
 
@@ -797,6 +795,7 @@ Solution:
 
 == Security considerations
 
+////
 === Tool execution sandboxing
 
 // PLACEHOLDER: Confirm sandboxing implementation
@@ -814,6 +813,7 @@ MCP tool execution:
 * Tools execute in MCP server's environment (not gateway)
 * Gateway does not execute tool code (only proxies requests)
 * Security is MCP server's responsibility
+////
 
 === Authentication
 
@@ -1004,7 +1004,3 @@ response = agent.run("Find all premium users in the database")
 ----
 --
 ====
-
-
-== Next steps
-
