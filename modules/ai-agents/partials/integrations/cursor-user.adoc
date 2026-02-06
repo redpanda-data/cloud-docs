@@ -25,8 +25,7 @@ Before configuring Cursor IDE, ensure you have:
 ** At least one LLM provider enabled (see xref:ai-agents:ai-gateway/gateway-quickstart.adoc#step-1-enable-a-provider[Enable a provider])
 ** A gateway created and configured (see xref:ai-agents:ai-gateway/gateway-quickstart.adoc#step-3-create-a-gateway[Create a gateway])
 * Your AI Gateway credentials:
-** Gateway endpoint URL (for example, `https://gw.ai.panda.com`)
-** Gateway ID (for example, `gateway-abc123`)
+** Gateway endpoint URL (for example, `\https://gw.ai.panda.com/v1/gateways/gateway-abc123`)
 ** API key with access to the gateway
 
 == About Cursor IDE
@@ -75,26 +74,14 @@ The Settings UI provides a visual interface for configuring Cursor's AI provider
 
 [source,text]
 ----
-Override OpenAI Base URL: https://gw.ai.panda.com/v1
+Override OpenAI Base URL: <your-gateway-endpoint>
 Override OpenAI API Key: YOUR_REDPANDA_API_KEY
-----
-
-[start=4]
-. Scroll to *Advanced Settings* and add custom headers:
-
-[source,json]
-----
-{
-  "openai.additionalHeaders": {
-    "rp-aigw-id": "GATEWAY_ID"
-  }
-}
 ----
 
 Replace placeholder values:
 
+* `<your-gateway-endpoint>` - Your gateway endpoint URL from the AI Gateway UI (includes gateway ID in the path)
 * `YOUR_REDPANDA_API_KEY` - Your Redpanda API key
-* `GATEWAY_ID` - Your gateway ID from the AI Gateway UI
 
 === Select models
 
@@ -143,11 +130,8 @@ Create or edit `settings.json` with the following structure:
 [,json]
 ----
 {
-  "cursor.overrideOpenAIBaseUrl": "https://gw.ai.panda.com/v1",
+  "cursor.overrideOpenAIBaseUrl": "<your-gateway-endpoint>",
   "cursor.overrideOpenAIApiKey": "YOUR_REDPANDA_API_KEY",
-  "openai.additionalHeaders": {
-    "rp-aigw-id": "GATEWAY_ID"
-  },
   "cursor.cpp.defaultModel": "gpt-5.2",
   "cursor.chat.defaultModel": "gpt-5.2"
 }
@@ -155,14 +139,13 @@ Create or edit `settings.json` with the following structure:
 
 Replace placeholder values:
 
+* `<your-gateway-endpoint>` - Your gateway endpoint URL from the AI Gateway UI
 * `YOUR_REDPANDA_API_KEY` - Your Redpanda API key
-* `GATEWAY_ID` - Your gateway ID
 
 Configuration fields:
 
-* `cursor.overrideOpenAIBaseUrl` - Gateway endpoint (always ends with `/v1` for OpenAI compatibility)
+* `cursor.overrideOpenAIBaseUrl` - Gateway endpoint URL (includes gateway ID in the path)
 * `cursor.overrideOpenAIApiKey` - Your Redpanda API key (used for authentication)
-* `openai.additionalHeaders` - Custom headers sent with every request
 * `cursor.cpp.defaultModel` - Model for autocomplete (c++ refers to copilot++)
 * `cursor.chat.defaultModel` - Model for chat interactions
 
@@ -175,9 +158,8 @@ Create `.vscode/settings.json` in your project root:
 [,json]
 ----
 {
-  "cursor.overrideOpenAIBaseUrl": "https://gw.staging.ai.panda.com/v1",
+  "cursor.overrideOpenAIBaseUrl": "<your-staging-gateway-endpoint>",
   "openai.additionalHeaders": {
-    "rp-aigw-id": "staging-gateway-123",
     "x-environment": "staging"
   }
 }
@@ -206,18 +188,14 @@ Create a setup script that reads environment variables and writes the actual val
 # setup-cursor-config.sh
 
 # Set your credentials
-export REDPANDA_GATEWAY_URL="https://gw.ai.panda.com"
-export REDPANDA_GATEWAY_ID="gateway-abc123"
+export REDPANDA_GATEWAY_ENDPOINT="https://gw.ai.panda.com/v1/gateways/gateway-abc123"
 export REDPANDA_API_KEY="your-api-key"
 
 # Generate settings.json
 cat > ~/.cursor/settings.json <<EOF
 {
-  "cursor.overrideOpenAIBaseUrl": "${REDPANDA_GATEWAY_URL}/v1",
-  "cursor.overrideOpenAIApiKey": "${REDPANDA_API_KEY}",
-  "openai.additionalHeaders": {
-    "rp-aigw-id": "${REDPANDA_GATEWAY_ID}"
-  }
+  "cursor.overrideOpenAIBaseUrl": "${REDPANDA_GATEWAY_ENDPOINT}",
+  "cursor.overrideOpenAIApiKey": "${REDPANDA_API_KEY}"
 }
 EOF
 
@@ -238,16 +216,12 @@ On Windows (PowerShell):
 [,powershell]
 ----
 # setup-cursor-config.ps1
-$REDPANDA_GATEWAY_URL = "https://gw.ai.panda.com"
-$REDPANDA_GATEWAY_ID = "gateway-abc123"
+$REDPANDA_GATEWAY_ENDPOINT = "https://gw.ai.panda.com/v1/gateways/gateway-abc123"
 $REDPANDA_API_KEY = "your-api-key"
 
 $settings = @{
-  "cursor.overrideOpenAIBaseUrl" = "$REDPANDA_GATEWAY_URL/v1"
+  "cursor.overrideOpenAIBaseUrl" = $REDPANDA_GATEWAY_ENDPOINT
   "cursor.overrideOpenAIApiKey" = $REDPANDA_API_KEY
-  "openai.additionalHeaders" = @{
-    "rp-aigw-id" = $REDPANDA_GATEWAY_ID
-  }
 } | ConvertTo-Json
 
 $settingsPath = "$env:USERPROFILE\.cursor\settings.json"
@@ -263,11 +237,8 @@ Alternatively, replace the placeholders with your actual values directly in `set
 [,json]
 ----
 {
-  "cursor.overrideOpenAIBaseUrl": "https://gw.ai.panda.com/v1",
-  "cursor.overrideOpenAIApiKey": "your-actual-api-key-here",
-  "openai.additionalHeaders": {
-    "rp-aigw-id": "gateway-abc123"
-  }
+  "cursor.overrideOpenAIBaseUrl": "https://gw.ai.panda.com/v1/gateways/gateway-abc123",
+  "cursor.overrideOpenAIApiKey": "your-actual-api-key-here"
 }
 ----
 
@@ -297,18 +268,15 @@ Edit `settings.json` to add the MCP configuration:
 [,json]
 ----
 {
-  "cursor.overrideOpenAIBaseUrl": "https://gw.ai.panda.com/v1",
+  "cursor.overrideOpenAIBaseUrl": "<your-gateway-endpoint>",
   "cursor.overrideOpenAIApiKey": "YOUR_REDPANDA_API_KEY",
-  "openai.additionalHeaders": {
-    "rp-aigw-id": "GATEWAY_ID"
-  },
   "cursor.mcp": {
     "servers": {
       "redpanda-ai-gateway": {
         "command": "node",
         "args": [
           "-e",
-          "require('https').request({hostname:'gw.ai.panda.com',path:'/mcp',method:'GET',headers:{'Authorization':'Bearer YOUR_REDPANDA_API_KEY','rp-aigw-id':'GATEWAY_ID'}}).end()"
+          "require('https').request({hostname:'<your-gateway-host>',path:'/<your-gateway-path>/mcp',method:'GET',headers:{'Authorization':'Bearer YOUR_REDPANDA_API_KEY'}}).end()"
         ]
       }
     }
@@ -320,8 +288,10 @@ This configuration uses Node.js to make HTTPS requests to the gateway's MCP endp
 
 Replace placeholder values:
 
+* `<your-gateway-endpoint>` - Your gateway endpoint URL from the AI Gateway UI
+* `<your-gateway-host>` - The hostname portion of your gateway endpoint (for example, `gw.ai.panda.com`)
+* `<your-gateway-path>` - The path portion of your gateway endpoint (for example, `v1/gateways/gateway-abc123`)
 * `YOUR_REDPANDA_API_KEY` - Your Redpanda API key
-* `GATEWAY_ID` - Your gateway ID
 
 === Enable deferred tool loading
 
@@ -397,7 +367,6 @@ Add custom headers for request tracking, user attribution, or routing policies:
 ----
 {
   "openai.additionalHeaders": {
-    "rp-aigw-id": "GATEWAY_ID",
     "x-user-id": "developer-123",
     "x-team": "backend",
     "x-project": "api-service"
@@ -444,10 +413,9 @@ For organizations with multiple teams sharing Cursor but requiring separate cost
 [,json]
 ----
 {
-  "cursor.overrideOpenAIBaseUrl": "https://gw.ai.panda.com/v1",
+  "cursor.overrideOpenAIBaseUrl": "${TEAM_GATEWAY_ENDPOINT}",
   "cursor.overrideOpenAIApiKey": "${TEAM_API_KEY}",
   "openai.additionalHeaders": {
-    "rp-aigw-id": "${TEAM_GATEWAY_ID}",
     "x-team": "${TEAM_NAME}"
   }
 }
@@ -455,8 +423,8 @@ For organizations with multiple teams sharing Cursor but requiring separate cost
 
 Each team configures their own:
 
+* `TEAM_GATEWAY_ENDPOINT` - Gateway endpoint URL with team-specific gateway ID in the path
 * `TEAM_API_KEY` - Team-specific API key
-* `TEAM_GATEWAY_ID` - Gateway with team budget and rate limits
 * `TEAM_NAME` - Identifier for usage reports
 
 This approach enables:
@@ -526,14 +494,14 @@ View debug logs:
 
 . **Incorrect base URL format**
 +
-Verify the URL includes `/v1` at the end:
+Verify the URL matches your gateway endpoint from the AI Gateway UI:
 +
 [,text]
 ----
-# Correct
-"cursor.overrideOpenAIBaseUrl": "https://gw.ai.panda.com/v1"
+# Correct - includes gateway ID in the path
+"cursor.overrideOpenAIBaseUrl": "<your-gateway-endpoint>"
 
-# Incorrect
+# Incorrect - missing gateway path
 "cursor.overrideOpenAIBaseUrl": "https://gw.ai.panda.com"
 ----
 
@@ -544,28 +512,14 @@ Verify your API key is valid:
 [,bash]
 ----
 curl -H "Authorization: Bearer YOUR_API_KEY" \
-     -H "rp-aigw-id: GATEWAY_ID" \
-     https://gw.ai.panda.com/v1/models
+     <your-gateway-endpoint>/models
 ----
 +
 You should receive a list of available models. If you get `401 Unauthorized`, regenerate your API key in the Redpanda Cloud Console.
 
-. **Gateway ID mismatch**
+. **Gateway endpoint URL mismatch**
 +
-Check that the `rp-aigw-id` header matches your gateway ID exactly (case-sensitive). Copy it directly from the AI Gateway UI.
-
-. **Missing headers**
-+
-Ensure `openai.additionalHeaders` is configured in settings:
-+
-[,json]
-----
-{
-  "openai.additionalHeaders": {
-    "rp-aigw-id": "GATEWAY_ID"
-  }
-}
-----
+Verify that `cursor.overrideOpenAIBaseUrl` matches the gateway endpoint URL from the AI Gateway UI exactly. The URL includes the gateway ID in the path.
 
 . **Invalid JSON syntax**
 +
@@ -670,8 +624,7 @@ Test connectivity to the MCP endpoint:
 [,bash]
 ----
 curl -H "Authorization: Bearer YOUR_API_KEY" \
-     -H "rp-aigw-id: GATEWAY_ID" \
-     https://gw.ai.panda.com/mcp
+     <your-gateway-endpoint>/mcp
 ----
 +
 You should receive a valid MCP protocol response.
@@ -690,22 +643,9 @@ MCP configuration changes require restarting Cursor:
 
 **Causes and solutions**:
 
-. **Wrong gateway ID**
+. **Wrong gateway endpoint**
 +
-Verify that the `rp-aigw-id` header in your configuration matches the gateway you're viewing in the dashboard.
-
-. **Missing header**
-+
-Ensure the `rp-aigw-id` header is in the `openai.additionalHeaders` section:
-+
-[,json]
-----
-{
-  "openai.additionalHeaders": {
-    "rp-aigw-id": "GATEWAY_ID"
-  }
-}
-----
+Verify that `cursor.overrideOpenAIBaseUrl` points to the correct gateway endpoint URL. The gateway ID is embedded in the URL path, so using the wrong endpoint routes requests to a different gateway.
 
 . **Using direct provider connection**
 +
@@ -847,7 +787,6 @@ Use custom headers to track costs per developer or team:
 ----
 {
   "openai.additionalHeaders": {
-    "rp-aigw-id": "GATEWAY_ID",
     "x-user-id": "${USER_EMAIL}",
     "x-team": "backend"
   }

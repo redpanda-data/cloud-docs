@@ -128,11 +128,10 @@ TIP: A workspace is conceptually similar to a resource group in Redpanda streami
 . After creation, note the following information:
 +
 --
-* *Gateway ID*: Unique identifier (for example, `gw_abc123`) - users include this in the `rp-aigw-id` header
-* *Gateway Endpoint*: Base URL for API requests (for example, `https://gw.ai.panda.com`)
+* *Gateway Endpoint*: URL for API requests (for example, `https://example/gateways/gw_abc123/v1`) - the gateway ID is embedded in the URL
 --
 
-You'll share the Gateway ID and Endpoint with users who need to access this gateway.
+You'll share the Gateway Endpoint with users who need to access this gateway.
 
 == Configure LLM routing
 
@@ -295,9 +294,8 @@ After completing the setup, verify that the gateway is working correctly:
 
 [source,bash]
 ----
-curl https://{GATEWAY_ENDPOINT}/v1/models \
-  -H "Authorization: Bearer ${REDPANDA_CLOUD_TOKEN}" \
-  -H "rp-aigw-id: ${GATEWAY_ID}"
+curl ${GATEWAY_ENDPOINT}/models \
+  -H "Authorization: Bearer ${REDPANDA_CLOUD_TOKEN}"
 ----
 
 Expected result: List of enabled models.
@@ -306,9 +304,8 @@ Expected result: List of enabled models.
 
 [source,bash]
 ----
-curl https://{GATEWAY_ENDPOINT}/v1/chat/completions \
+curl ${GATEWAY_ENDPOINT}/chat/completions \
   -H "Authorization: Bearer ${REDPANDA_CLOUD_TOKEN}" \
-  -H "rp-aigw-id: ${GATEWAY_ID}" \
   -H "Content-Type: application/json" \
   -d '{
     "model": "openai/gpt-5.2-mini",
@@ -319,24 +316,22 @@ curl https://{GATEWAY_ENDPOINT}/v1/chat/completions \
 
 Expected result: Successful completion response.
 
-=== Check observability
+=== Check the gateway overview
 
-. Navigate to *AI Gateway* → *Gateways* → Select your gateway → *Analytics*.
-. Verify that your test request appears in the request logs.
-. Check metrics:
+. Navigate to *AI Gateway* → *Gateways* → Select your gateway → *Overview*.
+. Check the aggregate metrics to verify your test request was processed:
 +
 --
-* Request count: Should show your test request
-* Token usage: Should show tokens consumed
-* Estimated cost: Should show calculated cost
+* Total Requests: Should have incremented
+* Total Tokens: Should show tokens consumed
+* Total Cost: Should show estimated cost
 --
 
 == Share access with users
 
 Now that your gateway is configured, share access with users (builders):
 
-. Provide the *Gateway ID* (for example, `gw_abc123`)
-. Provide the *Gateway Endpoint* (for example, `https://gw.ai.panda.com`)
+. Provide the *Gateway Endpoint* (for example, `https://example/gateways/gw_abc123/v1`)
 . Share API credentials (Redpanda Cloud tokens with appropriate permissions)
 . (Optional) Document available models and any routing policies
 . (Optional) Share rate limits and budget information

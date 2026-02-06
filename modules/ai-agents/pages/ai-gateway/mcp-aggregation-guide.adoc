@@ -105,7 +105,6 @@ Agent request:
 GET /mcp/tools
 Headers:
   Authorization: Bearer {TOKEN}
-  rp-aigw-id: {GATEWAY_ID}
   rp-aigw-mcp-deferred: true  # Enable deferred loading
 ----
 
@@ -160,7 +159,6 @@ Agent request:
 POST /mcp/tools/search_tools
 Headers:
   Authorization: Bearer {TOKEN}
-  rp-aigw-id: {GATEWAY_ID}
 Body:
 {
   "query": "database query"
@@ -214,7 +212,6 @@ Agent request:
 POST /mcp/tools/execute_sql
 Headers:
   Authorization: Bearer {TOKEN}
-  rp-aigw-id: {GATEWAY_ID}
 Body:
 {
   "query": "SELECT * FROM users WHERE tier = 'premium' LIMIT 10",
@@ -303,7 +300,6 @@ Option 2: Enable per-request (agent-controlled)
 ----
 # Agent includes header
 headers = {
-    "rp-aigw-id": "gw_abc123",
     "rp-aigw-mcp-deferred": "true"  # Enable for this request
 }
 ----
@@ -830,7 +826,7 @@ Gateway → MCP server:
 Agent → Gateway:
 
 * Standard gateway authentication (Redpanda Cloud token)
-* `rp-aigw-id` header identifies gateway (and its approved MCP servers)
+* Gateway endpoint URL identifies the gateway (and its approved MCP servers)
 
 === Audit trail
 
@@ -907,20 +903,18 @@ from openai import OpenAI
 
 # Initialize client with MCP endpoint
 client = OpenAI(
-    base_url="https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1",
+    base_url=os.getenv("GATEWAY_ENDPOINT"),
     api_key=os.getenv("REDPANDA_CLOUD_TOKEN"),
     default_headers={
-        "rp-aigw-id": os.getenv("GATEWAY_ID"),
         "rp-aigw-mcp-deferred": "true"  # Enable deferred loading
     }
 )
 
 # Discover tools
 tools_response = requests.get(
-    "https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/mcp/tools",
+    f"{os.getenv('GATEWAY_ENDPOINT')}/mcp/tools",
     headers={
         "Authorization": f"Bearer {os.getenv('REDPANDA_CLOUD_TOKEN')}",
-        "rp-aigw-id": os.getenv("GATEWAY_ID"),
         "rp-aigw-mcp-deferred": "true"
     }
 )
@@ -941,10 +935,9 @@ if response.choices[0].message.tool_calls:
     for tool_call in response.choices[0].message.tool_calls:
         # Execute tool via gateway
         tool_result = requests.post(
-            f"https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/mcp/tools/{tool_call.function.name}",
+            f"{os.getenv('GATEWAY_ENDPOINT')}/mcp/tools/{tool_call.function.name}",
             headers={
                 "Authorization": f"Bearer {os.getenv('REDPANDA_CLOUD_TOKEN')}",
-                "rp-aigw-id": os.getenv("GATEWAY_ID")
             },
             json=json.loads(tool_call.function.arguments)
         )
@@ -991,11 +984,8 @@ from langchain.agents import initialize_agent, Tool
 
 # Initialize LLM with gateway
 llm = ChatOpenAI(
-    base_url="https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1",
+    base_url=os.getenv("GATEWAY_ENDPOINT"),
     api_key=os.getenv("REDPANDA_CLOUD_TOKEN"),
-    default_headers={
-        "rp-aigw-id": os.getenv("GATEWAY_ID")
-    }
 )
 
 # Fetch MCP tools from gateway

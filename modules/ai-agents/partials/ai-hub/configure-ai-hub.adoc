@@ -52,10 +52,9 @@ After creation, the gateway is immediately available with all pre-configured com
 
 Note the following information from the gateway detail page:
 
-* *Gateway ID*: Unique identifier (for example, `gw_abc123`) - users include this in the `rp-aigw-id` header
-* *Gateway Endpoint*: Base URL for API requests (for example, `https://gw.ai.panda.com`)
+* *Gateway Endpoint*: URL for API requests, with the gateway ID embedded in the path (for example, `https://example/gateways/gw_abc123/v1`)
 
-Share the Gateway ID and Endpoint with teams who need to access this gateway.
+Share the gateway endpoint with teams who need to access this gateway.
 
 == Understanding pre-configured architecture
 
@@ -274,9 +273,8 @@ Test that credentials are working:
 
 [,bash]
 ----
-curl https://${GATEWAY_ENDPOINT}/v1/models \
-  -H "Authorization: Bearer ${REDPANDA_CLOUD_TOKEN}" \
-  -H "rp-aigw-id: ${GATEWAY_ID}"
+curl ${GATEWAY_ENDPOINT}/models \
+  -H "Authorization: Bearer ${REDPANDA_CLOUD_TOKEN}"
 ----
 
 Expected response: List of available models from configured providers.
@@ -373,9 +371,8 @@ Set spend limits to control costs:
 
 [,bash]
 ----
-curl https://${GATEWAY_ENDPOINT}/v1/chat/completions \
+curl ${GATEWAY_ENDPOINT}/chat/completions \
   -H "Authorization: Bearer ${REDPANDA_CLOUD_TOKEN}" \
-  -H "rp-aigw-id: ${GATEWAY_ID}" \
   -H "Content-Type: application/json" \
   -d '{
     "model": "openai/gpt-5.2-mini",

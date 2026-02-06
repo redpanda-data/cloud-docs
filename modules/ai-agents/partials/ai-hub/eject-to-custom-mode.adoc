@@ -38,7 +38,7 @@ When you eject an AI Hub gateway:
 
 Ejection preserves:
 
-* *Gateway ID*: Unchanged - applications continue using the same `rp-aigw-id`
+* *Gateway ID*: Unchanged - applications continue using the same gateway endpoint
 * *Gateway endpoint*: Unchanged - no URL changes required
 * *Provider credentials*: Retained and continue working
 * *Rate limits and spend limits*: Preserved as configured
@@ -245,9 +245,8 @@ Test with a sample request:
 
 [,bash]
 ----
-curl https://${GATEWAY_ENDPOINT}/v1/chat/completions \
+curl ${GATEWAY_ENDPOINT}/chat/completions \
   -H "Authorization: Bearer ${REDPANDA_CLOUD_TOKEN}" \
-  -H "rp-aigw-id: ${GATEWAY_ID}" \
   -H "Content-Type: application/json" \
   -d '{
     "model": "openai/gpt-5.2-mini",
@@ -388,7 +387,7 @@ To get back to AI Hub mode:
 
 . Create a new AI Hub gateway
 . Share new gateway ID and endpoint with teams
-. Migrate applications to use new gateway (update `rp-aigw-id` header)
+. Migrate applications to use the new gateway endpoint
 . Monitor traffic shift in observability dashboard
 . Delete old Custom mode gateway when traffic reaches zero
 

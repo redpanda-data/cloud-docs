@@ -27,11 +27,10 @@ If not, see xref:ai-gateway/builders/discover-gateways.adoc[].
 
 == Integration overview
 
-Connecting to AI Gateway requires three configuration changes:
+Connecting to AI Gateway requires two configuration changes:
 
-. *Change the base URL*: Point to the gateway endpoint instead of the provider's API
+. *Change the base URL*: Point to the gateway endpoint instead of the provider's API. The gateway ID is embedded in the endpoint URL.
 . *Add authentication*: Use your Redpanda Cloud token instead of provider API keys
-. *Add the gateway ID header*: Include `rp-aigw-id` to identify which gateway to use
 
 That's it. Your existing application code doesn't need to change.
 
@@ -43,12 +42,11 @@ Set these environment variables for consistent configuration:
 
 [source,bash]
 ----
-export REDPANDA_GATEWAY_URL="https://gw.ai.panda.com"
-export REDPANDA_GATEWAY_ID="gw_abc123"
+export REDPANDA_GATEWAY_URL="<your-gateway-endpoint>"
 export REDPANDA_API_KEY="your-redpanda-cloud-token"
 ----
 
-Replace with your actual gateway endpoint, ID, and API token.
+Replace with your actual gateway endpoint and API token.
 
 [tabs]
 ====
@@ -63,9 +61,6 @@ from openai import OpenAI
 client = OpenAI(
     base_url=os.getenv("REDPANDA_GATEWAY_URL"),
     api_key=os.getenv("REDPANDA_API_KEY"),
-    default_headers={
-        "rp-aigw-id": os.getenv("REDPANDA_GATEWAY_ID")
-    }
 )
 
 # Make a request (same as before)
@@ -90,9 +85,6 @@ from anthropic import Anthropic
 client = Anthropic(
     base_url=os.getenv("REDPANDA_GATEWAY_URL"),
     api_key=os.getenv("REDPANDA_API_KEY"),
-    default_headers={
-        "rp-aigw-id": os.getenv("REDPANDA_GATEWAY_ID")
-    }
 )
 
 # Make a request
@@ -114,9 +106,6 @@ import OpenAI from 'openai';
 const openai = new OpenAI({
   baseURL: process.env.REDPANDA_GATEWAY_URL,
   apiKey: process.env.REDPANDA_API_KEY,
-  defaultHeaders: {
-    'rp-aigw-id': process.env.REDPANDA_GATEWAY_ID
-  }
 });
 
 // Make a request
@@ -135,9 +124,8 @@ For testing or shell scripts:
 +
 [source,bash]
 ----
-curl ${REDPANDA_GATEWAY_URL}/v1/chat/completions \
+curl ${REDPANDA_GATEWAY_URL}/chat/completions \
   -H "Authorization: Bearer ${REDPANDA_API_KEY}" \
-  -H "rp-aigw-id: ${REDPANDA_GATEWAY_ID}" \
   -H "Content-Type: application/json" \
   -d '{
     "model": "openai/gpt-5.2-mini",
@@ -213,7 +201,6 @@ from openai import OpenAI, OpenAIError
 client = OpenAI(
     base_url=os.getenv("REDPANDA_GATEWAY_URL"),
     api_key=os.getenv("REDPANDA_API_KEY"),
-    default_headers={"rp-aigw-id": os.getenv("REDPANDA_GATEWAY_ID")}
 )
 
 try:
@@ -302,7 +289,6 @@ def test_gateway_connection():
     client = OpenAI(
         base_url=os.getenv("REDPANDA_GATEWAY_URL"),
         api_key=os.getenv("REDPANDA_API_KEY"),
-        default_headers={"rp-aigw-id": os.getenv("REDPANDA_GATEWAY_ID")}
     )
 
     try:
@@ -345,13 +331,13 @@ def test_models():
             print(f"✗ {model}: {e}")
 ----
 
-=== Check request logs
-
-After making requests, verify they appear in observability:
-
-. Navigate to *AI Gateway* → *Gateways* → Select your gateway → *Logs*
-. Filter by your request timestamp
-. Verify your requests are logged with correct model, tokens, and cost
+// === Check request logs
+//
+// After making requests, verify they appear in observability:
+//
+// . Navigate to *AI Gateway* → *Gateways* → Select your gateway → *Logs*
+// . Filter by your request timestamp
+// . Verify your requests are logged with correct model, tokens, and cost
 
 // See xref:ai-gateway/builders/monitor-your-usage.adoc[] for details.
 
@@ -365,9 +351,8 @@ Configure Claude Code to use AI Gateway:
 +
 [source,bash]
 ----
-claude mcp add --transport http redpanda-aigateway https://gw.ai.panda.com/mcp \
-  --header "Authorization: Bearer ${REDPANDA_API_KEY}" \
-  --header "rp-aigw-id: ${REDPANDA_GATEWAY_ID}"
+claude mcp add --transport http redpanda-aigateway ${REDPANDA_GATEWAY_URL}/mcp \
+  --header "Authorization: Bearer ${REDPANDA_API_KEY}"
 ----
 +
 Or edit `~/.claude/config.json`:
@@ -378,10 +363,9 @@ Or edit `~/.claude/config.json`:
   "mcpServers": {
     "redpanda-ai-gateway": {
       "transport": "http",
-      "url": "https://gw.ai.panda.com/mcp",
+      "url": "<your-gateway-endpoint>/mcp",
       "headers": {
-        "Authorization": "Bearer your-api-key",
-        "rp-aigw-id": "gw_abc123"
+        "Authorization": "Bearer your-api-key"
       }
     }
   }
@@ -401,16 +385,11 @@ Edit `~/.continue/config.json`:
 {
   "models": [
     {
-      "title": "AI Gateway - GPT-4",
+      "title": "AI Gateway - GPT-5.2",
       "provider": "openai",
       "model": "openai/gpt-5.2",
-      "apiBase": "https://gw.ai.panda.com",
-      "apiKey": "your-redpanda-api-key",
-      "requestOptions": {
-        "headers": {
-          "rp-aigw-id": "gw_abc123"
-        }
-      }
+      "apiBase": "<your-gateway-endpoint>",
+      "apiKey": "your-redpanda-api-key"
     }
   ]
 }
@@ -429,10 +408,7 @@ Cursor IDE::
 [source,json]
 ----
 {
-  "cursor.ai.providers.openai.apiBase": "https://gw.ai.panda.com",
-  "cursor.ai.providers.openai.defaultHeaders": {
-    "rp-aigw-id": "gw_abc123"
-  }
+  "cursor.ai.providers.openai.apiBase": "<your-gateway-endpoint>"
 }
 ----
 +

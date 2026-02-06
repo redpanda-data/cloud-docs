@@ -4,7 +4,7 @@
 :personas: app_developer, platform_admin
 :learning-objective-1: Enable an LLM provider and create your first gateway
 :learning-objective-2: Route your first request through AI Gateway and verify it works
-:learning-objective-3: View request logs and token usage in the observability dashboard
+:learning-objective-3: Verify request routing and token usage in the gateway overview
 
 include::ai-agents:partial$ai-gateway-byoc-note.adoc[]
 
@@ -83,10 +83,12 @@ endif::[]
 * Description: Add context about this gateway's purpose
 * Optional metadata for documentation
 
-. After creation, copy the *Gateway Endpoint* and *Gateway ID* from the gateway overview page. You'll need these for sending requests. For example, you might see:
+After creation, copy the gateway endpoint from the overview page. You'll need this for sending requests. The gateway ID is embedded in the endpoint URL. For example:
+
+[source,bash]
 ----
 Endpoint: https://example/gateways/d633lffcc16s73ct95mg/v1
-ID: d633lffcc16s73ct95mg
+Gateway ID: d633lffcc16s73ct95mg
 ----
 
 == Send your first request
@@ -102,54 +104,56 @@ Python::
 ----
 from openai import OpenAI
 
-# Configure client to use AI Gateway
 client = OpenAI(
-    base_url="your-gateway-endpoint",
-    api_key="<your-redpanda-api-key>",
-    default_headers={
-        "rp-aigw-id": "gw_abc123..."     # Your gateway ID
-    }
+    base_url="<your-gateway-endpoint>",
+    api_key="<your-redpanda-api-key>",  # Or use gateway's auth
 )
 
-# Send a request (note the vendor/model_id format)
 response = client.chat.completions.create(
-    model="openai/gpt-5.2-mini",  # Format: {provider}/{model}
+    model="openai/gpt-5.2",  # Use vendor/model format
     messages=[
-        {"role": "user", "content": "Say 'Hello from AI Gateway!'"}
+        {"role": "user", "content": "Hello!"}
     ],
-    max_tokens=20
 )
 
 print(response.choices[0].message.content)
-# Expected output: Hello from AI Gateway!
+----
+
+Expected output:
+
+[source,text]
+----
+Hello! How can I help you today?
 ----
 --
 
-TypeScript/JavaScript::
+Node.js::
 +
 --
-[source,typescript]
+[source,javascript]
 ----
 import OpenAI from 'openai';
 
 const client = new OpenAI({
-  baseURL: 'https://gw.ai.panda.com',
-  apiKey: process.env.REDPANDA_API_KEY,
-  defaultHeaders: {
-    'rp-aigw-id': 'gw_abc123...'
-  }
+  baseURL: '<your-gateway-endpoint>',
+  apiKey: '<your-redpanda-api-key>',  // Or use gateway's auth
 });
 
 const response = await client.chat.completions.create({
-  model: 'openai/gpt-5.2-mini',
+  model: 'anthropic/claude-sonnet-4-5-20250929',  // Use vendor/model format
   messages: [
-    { role: 'user', content: 'Say "Hello from AI Gateway!"' }
+    { role: 'user', content: 'Hello!' }
   ],
-  max_tokens: 20
 });
 
 console.log(response.choices[0].message.content);
-// Expected output: Hello from AI Gateway!
+----
+
+Expected output:
+
+[source,text]
+----
+Hello! How can I help you today?
 ----
 --
 
@@ -158,42 +162,39 @@ cURL::
 --
 [source,bash]
 ----
-curl https://gw.ai.panda.com/v1/chat/completions \
+curl <your-gateway-endpoint>/chat/completions \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer ${REDPANDA_API_KEY}" \
-  -H "rp-aigw-id: gw_abc123..." \
+  -H "Authorization: Bearer <your-redpanda-api-key>" \
   -d '{
-    "model": "openai/gpt-5.2-mini",
+    "model": "openai/gpt-5.2",
     "messages": [
-      {"role": "user", "content": "Say \"Hello from AI Gateway!\""}
-    ],
-    "max_tokens": 20
+      {"role": "user", "content": "Hello!"}
+    ]
   }'
 ----
 
-Expected response:
+Expected output:
 
 [source,json]
 ----
 {
-  "id": "chatcmpl-...",
+  "id": "chatcmpl-abc123",
   "object": "chat.completion",
-  "created": 1704844800,
-  "model": "openai/gpt-5.2-mini",
+  "model": "openai/gpt-5.2",
   "choices": [
     {
       "index": 0,
       "message": {
         "role": "assistant",
-        "content": "Hello from AI Gateway!"
+        "content": "Hello! How can I help you today?"
       },
       "finish_reason": "stop"
     }
   ],
   "usage": {
-    "prompt_tokens": 8,
-    "completion_tokens": 5,
-    "total_tokens": 13
+    "prompt_tokens": 9,
+    "completion_tokens": 9,
+    "total_tokens": 18
   }
 }
 ----
@@ -206,40 +207,28 @@ If your request fails, check these common issues:
 
 * 401 Unauthorized: Verify your API key is valid
 * 404 Not Found: Confirm the base URL matches your gateway endpoint
-* Model not found: Ensure the model is enabled in Step 2
-* Missing rp-aigw-id: Add the gateway ID header to your request
+* Model not found: Ensure the model is enabled in the model catalog and that you're using the correct `vendor/model` format.
 
-== Verify in observability dashboard
+== Verify in the gateway overview
 
-Confirm your request appears in the AI Gateway observability dashboard.
+Confirm your request was routed through AI Gateway.
 
 . In the sidebar, navigate to *Agentic AI > Gateways*, then select your gateway.
-. Filter by:
+. On the *Overview* tab, check the aggregate metrics:
 +
-* *Gateway*: `my-first-gateway`
-* *Model*: `openai/gpt-5.2-mini`
-* *Time range*: Last 5 minutes
+* *Total Requests*: Should have incremented
+* *Total Tokens*: Shows combined input and output tokens
+* *Total Cost*: Estimated spend across all requests
+* *Avg Latency*: Average response time in milliseconds
 
-. Verify the request log shows:
+. Scroll to the *Models* table to see per-model statistics:
 +
-* *Model*: `openai/gpt-5.2-mini`
-* *Provider*: OpenAI
-* *Status*: 200 (success)
-* *Prompt tokens*: ~8
-* *Completion tokens*: ~5
-* *Estimated cost*: Based on provider pricing
-* *Latency*: Response time in milliseconds
-
-. Click the request to expand and view:
-+
-* Full prompt and response content
-* Request headers
-* Routing decision details
+The model you used in your request should appear with its request count, token usage (input/output), estimated cost, latency, and error rate.
 
 If your request doesn't appear:
 
-* Wait a few seconds for logs to populate (there may be a brief delay)
-* Verify the gateway ID in your request matches the gateway you're viewing
+* Wait a few seconds for metrics to update
+* Verify the gateway endpoint in your request matches the gateway you're viewing
 * Check that your client received a successful response
 
 == Configure LLM routing (optional)
@@ -270,7 +259,7 @@ The gateway automatically routes to the fallback when it detects:
 * Request timeout
 * 5xx server errors from primary provider
 
-Monitor the fallback rate in observability to detect primary provider issues early.
+// Monitor the fallback rate in observability to detect primary provider issues early.
 
 == Configure MCP tools (optional)
 
@@ -366,10 +355,10 @@ response = client.chat.completions.create(
 # Should route to gpt-5.2-mini (cost-effective model)
 ----
 
-Check the observability dashboard to verify:
-
-* The correct model was selected based on the header value
-* The routing decision explanation shows which CEL rule matched
+// Check the observability dashboard to verify:
+//
+// * The correct model was selected based on the header value
+// * The routing decision explanation shows which CEL rule matched
 
 === Common CEL patterns
 
@@ -404,10 +393,9 @@ The AI Gateway provides standardized endpoints that work with various AI develop
 
 If you've configured MCP tools in your gateway, AI agents can connect to the aggregated MCP endpoint:
 
-* *MCP endpoint URL*: `https://gw.ai.panda.com/mcp`
+* *MCP endpoint URL*: `<your-gateway-endpoint>/mcp`
 * *Required headers*:
 ** `Authorization: Bearer <your-api-key>`
-** `rp-aigw-id: <your-gateway-id>`
 
 This endpoint aggregates all MCP servers configured in your gateway.
 
@@ -417,8 +405,7 @@ For consistent configuration, set these environment variables:
 
 [source,bash]
 ----
-export REDPANDA_GATEWAY_URL="https://gw.ai.panda.com"
-export REDPANDA_GATEWAY_ID="<your-gateway-id>"
+export REDPANDA_GATEWAY_URL="<your-gateway-endpoint>"
 export REDPANDA_API_KEY="<your-api-key>"
 ----
 
@@ -428,9 +415,8 @@ Configure Claude Code using HTTP transport for the MCP connection:
 
 [source,bash]
 ----
-claude mcp add --transport http redpanda-aigateway https://gw.ai.panda.com/mcp \
-  --header "Authorization: Bearer <your-api-key>" \
-  --header "rp-aigw-id: <your-gateway-id>"
+claude mcp add --transport http redpanda-aigateway <your-gateway-endpoint>/mcp \
+  --header "Authorization: Bearer <your-api-key>"
 ----
 
 Alternatively, edit `~/.claude/config.json`:
@@ -441,19 +427,15 @@ Alternatively, edit `~/.claude/config.json`:
   "mcpServers": {
     "redpanda-ai-gateway": {
       "transport": "http",
-      "url": "https://gw.ai.panda.com/mcp",
+      "url": "<your-gateway-endpoint>/mcp",
       "headers": {
-        "Authorization": "Bearer <your-api-key>",
-        "rp-aigw-id": "<your-gateway-id>"
+        "Authorization": "Bearer <your-api-key>"
       }
     }
   },
   "apiProviders": {
     "redpanda": {
-      "baseURL": "https://gw.ai.panda.com",
-      "headers": {
-        "rp-aigw-id": "<your-gateway-id>"
-      }
+      "baseURL": "<your-gateway-endpoint>"
     }
   }
 }
@@ -475,37 +457,22 @@ Edit your Continue config file (`~/.continue/config.json`):
       "title": "Redpanda AI Gateway - GPT-5.2",
       "provider": "openai",
       "model": "openai/gpt-5.2",
-      "apiBase": "https://gw.ai.panda.com",
-      "apiKey": "<your-api-key>",
-      "requestOptions": {
-        "headers": {
-          "rp-aigw-id": "<your-gateway-id>"
-        }
-      }
+      "apiBase": "<your-gateway-endpoint>",
+      "apiKey": "<your-api-key>"
     },
     {
       "title": "Redpanda AI Gateway - Claude",
       "provider": "anthropic",
       "model": "anthropic/claude-sonnet-4.5",
-      "apiBase": "https://gw.ai.panda.com",
-      "apiKey": "<your-api-key>",
-      "requestOptions": {
-        "headers": {
-          "rp-aigw-id": "<your-gateway-id>"
-        }
-      }
+      "apiBase": "<your-gateway-endpoint>",
+      "apiKey": "<your-api-key>"
     },
     {
       "title": "Redpanda AI Gateway - Gemini",
       "provider": "google",
       "model": "google/gemini-2.0-flash",
-      "apiBase": "https://gw.ai.panda.com",
-      "apiKey": "<your-api-key>",
-      "requestOptions": {
-        "headers": {
-          "rp-aigw-id": "<your-gateway-id>"
-        }
-      }
+      "apiBase": "<your-gateway-endpoint>",
+      "apiKey": "<your-api-key>"
     }
   ]
 }
@@ -522,10 +489,7 @@ Configure Cursor in Settings (*Cursor* → *Settings* or `Cmd+,`):
 [source,json]
 ----
 {
-  "cursor.ai.providers.openai.apiBase": "https://gw.ai.panda.com",
-  "cursor.ai.providers.openai.defaultHeaders": {
-    "rp-aigw-id": "<your-gateway-id>"
-  }
+  "cursor.ai.providers.openai.apiBase": "<your-gateway-endpoint>"
 }
 ----
 
@@ -544,11 +508,8 @@ For custom applications using OpenAI, Anthropic, or Google Gemini SDKs:
 from openai import OpenAI
 
 client = OpenAI(
-    base_url="https://gw.ai.panda.com",
+    base_url="<your-gateway-endpoint>",
     api_key="<your-api-key>",
-    default_headers={
-        "rp-aigw-id": "<your-gateway-id>"
-    }
 )
 ----
 
@@ -559,11 +520,8 @@ client = OpenAI(
 from anthropic import Anthropic
 
 client = Anthropic(
-    base_url="https://gw.ai.panda.com",
+    base_url="<your-gateway-endpoint>",
     api_key="<your-api-key>",
-    default_headers={
-        "rp-aigw-id": "<your-gateway-id>"
-    }
 )
 ----
 
@@ -574,11 +532,8 @@ client = Anthropic(
 import OpenAI from 'openai';
 
 const openai = new OpenAI({
-  baseURL: 'https://gw.ai.panda.com',
+  baseURL: '<your-gateway-endpoint>',
   apiKey: process.env.REDPANDA_API_KEY,
-  defaultHeaders: {
-    'rp-aigw-id': '<your-gateway-id>'
-  }
 });
 ----
 

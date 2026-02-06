@@ -47,7 +47,6 @@ Continue.dev connects to AI Gateway differently than unified-format clients:
 The gateway handles:
 
 . Authentication via bearer tokens in the `Authorization` header
-. Gateway selection via the `rp-aigw-id` header
 . Provider-specific request formats without transformation
 . Model routing using provider-native model identifiers
 . MCP server aggregation for multi-tool workflows
@@ -140,9 +139,7 @@ Create a dedicated gateway to isolate Continue.dev traffic and apply specific po
 |===
 
 . Click *Create*
-. Copy the gateway ID from the gateway details page
-
-The gateway ID is required in the `rp-aigw-id` header for all requests.
+. Copy the gateway endpoint URL from the gateway details page
 
 === Configure provider-specific backends
 
@@ -440,27 +437,18 @@ models:
     model: claude-sonnet-4.5
     apiBase: https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1/anthropic
     apiKey: YOUR_API_TOKEN
-    requestOptions:
-      headers:
-        rp-aigw-id: GATEWAY_ID
 
   - title: GPT-5.2 (Redpanda)
     provider: openai
     model: gpt-5.2
     apiBase: https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1/openai
     apiKey: YOUR_API_TOKEN
-    requestOptions:
-      headers:
-        rp-aigw-id: GATEWAY_ID
 
   - title: GPT-5.2-mini (Autocomplete)
     provider: openai
     model: gpt-5.2-mini
     apiBase: https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1/openai
     apiKey: YOUR_API_TOKEN
-    requestOptions:
-      headers:
-        rp-aigw-id: GATEWAY_ID
 
 tabAutocompleteModel:
   title: GPT-5.2-mini (Autocomplete)
@@ -468,16 +456,12 @@ tabAutocompleteModel:
   model: gpt-5.2-mini
   apiBase: https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1/openai
   apiKey: YOUR_API_TOKEN
-  requestOptions:
-    headers:
-      rp-aigw-id: GATEWAY_ID
 ----
 
 Replace:
 
 * `{CLUSTER_ID}`: Your Redpanda cluster ID
 * `YOUR_API_TOKEN`: The API token generated earlier
-* `GATEWAY_ID`: The gateway ID from gateway creation
 
 === MCP server configuration
 
@@ -497,7 +481,6 @@ transport:
   url: https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/mcp
   headers:
     Authorization: Bearer YOUR_API_TOKEN
-    rp-aigw-id: GATEWAY_ID
 ----
 +
 IMPORTANT: For production deployments, use environment variable interpolation with `${{ secrets.VARIABLE }}` syntax instead of hardcoding tokens. See xref:ai-agents:ai-gateway/integrations/continue-user.adoc#configure-env-vars[Configure with environment variables] in the user guide for details.
@@ -516,16 +499,14 @@ mcpServers:
       url: https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/mcp
       headers:
         Authorization: Bearer YOUR_API_TOKEN
-        rp-aigw-id: GATEWAY_ID
 ----
 
 Replace:
 
 * `{CLUSTER_ID}`: Your Redpanda cluster ID
 * `YOUR_API_TOKEN`: The API token generated earlier
-* `GATEWAY_ID`: The gateway ID from gateway creation
 
-This configuration connects Continue.dev to the aggregated MCP endpoint with authentication and gateway identification headers.
+This configuration connects Continue.dev to the aggregated MCP endpoint with authentication headers.
 
 === Model selection strategy
 
@@ -674,7 +655,7 @@ Symptom: Connection errors when Continue.dev tries to discover tools or send LLM
 
 Causes and solutions:
 
-* **Invalid gateway ID**: Verify the `rp-aigw-id` header matches the gateway ID from the console
+* **Invalid gateway ID**: Verify the gateway endpoint URL matches the URL from the console
 * **Expired token**: Generate a new API token and update the Continue.dev configuration
 * **Wrong backend path**: Verify `apiBase` matches the backend path (for example, `/v1/anthropic` not `/v1`)
 * **Network connectivity**: Verify the cluster endpoint is accessible from the client network
@@ -698,7 +679,7 @@ Causes and solutions:
 
 * **Transform enabled on backend**: Ensure backend format is set to native (no OpenAI-compatible transform for Anthropic)
 * **Wrong provider for apiBase**: Verify Continue.dev's `provider` field matches the backend's provider
-* **Headers not passed**: Confirm `requestOptions.headers` includes `rp-aigw-id`
+* **Headers not passed**: Confirm `requestOptions.headers` is correctly configured
 
 === Autocomplete not working or slow
 

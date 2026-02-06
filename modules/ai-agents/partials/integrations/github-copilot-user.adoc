@@ -3,7 +3,7 @@
 :page-topic-type: how-to
 :personas: ai_agent_developer, app_developer
 :learning-objective-1: Configure GitHub Copilot in VS Code and JetBrains IDEs to route requests through AI Gateway
-:learning-objective-2: Set up multi-tenancy with gateway ID headers for cost tracking
+:learning-objective-2: Set up multi-tenancy with gateway routing for cost tracking
 :learning-objective-3: Configure enterprise BYOK deployments for team-wide Copilot access
 
 include::ai-agents:partial$ai-gateway-byoc-note.adoc[]
@@ -13,7 +13,7 @@ After xref:ai-agents:ai-gateway/gateway-quickstart.adoc[configuring your AI Gate
 After reading this page, you will be able to:
 
 * [ ] Configure GitHub Copilot in VS Code and JetBrains IDEs to route requests through AI Gateway.
-* [ ] Set up multi-tenancy with gateway ID headers for cost tracking.
+* [ ] Set up multi-tenancy with gateway routing for cost tracking.
 * [ ] Configure enterprise BYOK deployments for team-wide Copilot access.
 
 == Prerequisites
@@ -124,9 +124,6 @@ IMPORTANT: This experimental feature requires configuring API keys and custom he
 . Enter the connection details:
 ** *Base URL*: `https://gw.ai.panda.com/v1` (should match your settings.json endpoint)
 ** *API Key*: Your Redpanda API key
-** *Custom Headers*: Click *Add Header*
-*** Header name: `rp-aigw-id`
-*** Header value: `gateway-abc123` (your gateway ID)
 . Click *Save*
 
 ==== Select model
@@ -179,9 +176,6 @@ IMPORTANT: Do not configure API keys or custom headers in `settings.json`. Use t
 . Click *Configure* or *Edit*
 . Enter the connection details:
 ** *API Key*: Your Redpanda API key
-** *Custom Headers*: Add the `rp-aigw-id` header
-*** Header name: `rp-aigw-id`
-*** Header value: `gateway-abc123` (your gateway ID)
 . Click *Save*
 
 ==== Select model
@@ -217,21 +211,10 @@ Base URL: https://gw.ai.panda.com/v1
 API Key: your-redpanda-api-key
 ----
 
-[start=6]
-. Click *Advanced Headers*
-. Add custom header:
-
-[,text]
-----
-Header Name: rp-aigw-id
-Header Value: gateway-abc123
-----
-
 Replace placeholder values:
 
 * `https://gw.ai.panda.com/v1` - Your gateway endpoint
 * `your-redpanda-api-key` - Your Redpanda API key
-* `gateway-abc123` - Your gateway ID
 
 === Configure model selection
 
@@ -257,7 +240,7 @@ Check the AI Gateway dashboard to confirm requests are logged.
 
 == Multi-tenancy configuration
 
-For organizations with multiple teams or projects sharing AI Gateway, use gateway ID headers to track usage per team.
+For organizations with multiple teams or projects sharing AI Gateway, use separate gateways to track usage per team.
 
 === Approach 1: One gateway per team
 
@@ -266,16 +249,7 @@ Create separate gateways for each team:
 * Team A Gateway: ID `team-a-gateway-123`
 * Team B Gateway: ID `team-b-gateway-456`
 
-Each team configures their IDE with their team's gateway ID:
-
-[,json]
-----
-{
-  "oai.provider.headers": {
-    "rp-aigw-id": "team-a-gateway-123"
-  }
-}
-----
+Each team configures their IDE with their team's gateway endpoint URL, which includes the gateway ID in the path.
 
 Benefits:
 
@@ -291,7 +265,6 @@ Use a single gateway with custom headers for attribution:
 ----
 {
   "oai.provider.headers": {
-    "rp-aigw-id": "shared-gateway-789",
     "x-team": "backend-team",
     "x-project": "api-service"
   }
@@ -321,7 +294,6 @@ Separate development, staging, and production environments:
 ----
 {
   "oai.provider.headers": {
-    "rp-aigw-id": "${env:GATEWAY_ID}",
     "x-environment": "${env:ENVIRONMENT}"
   }
 }
@@ -332,11 +304,9 @@ Set environment variables per workspace:
 [,bash]
 ----
 # Development workspace
-export GATEWAY_ID="dev-gateway-123"
 export ENVIRONMENT="development"
 
 # Production workspace
-export GATEWAY_ID="prod-gateway-456"
 export ENVIRONMENT="production"
 ----
 
@@ -367,7 +337,6 @@ Example centralized configuration:
   "oai.provider.endpoint": "https://gw.company.com/v1",
   "oai.provider.apiKey": "${env:COPILOT_GATEWAY_KEY}",
   "oai.provider.headers": {
-    "rp-aigw-id": "${env:COPILOT_GATEWAY_ID}",
     "x-user-email": "${env:USER_EMAIL}",
     "x-department": "${env:DEPARTMENT}"
   }
@@ -537,7 +506,6 @@ In VS Code, create `.vscode/settings.json` in your project root:
 ----
 {
   "oai.provider.headers": {
-    "rp-aigw-id": "project-gateway-123",
     "x-project": "customer-portal"
   }
 }
@@ -630,7 +598,6 @@ Verify your API key is valid:
 [,bash]
 ----
 curl -H "Authorization: Bearer YOUR_API_KEY" \
-     -H "rp-aigw-id: GATEWAY_ID" \
      https://gw.ai.panda.com/v1/models
 ----
 +
@@ -662,22 +629,7 @@ If this times out, check your network configuration, firewall rules, or VPN conn
 
 . **Wrong gateway ID**
 +
-Verify the `rp-aigw-id` header matches the gateway you're viewing in the dashboard (case-sensitive).
-
-. **Missing header configuration**
-+
-Ensure `rp-aigw-id` header is configured:
-+
-[,json]
-----
-{
-  "oai.provider.headers": {
-    "rp-aigw-id": "GATEWAY_ID"
-  }
-}
-----
-+
-For VS Code custom models without extension support, you may need to use Option 2 (OAI Compatible Provider extension).
+Verify the gateway ID in your endpoint URL matches the gateway you're viewing in the dashboard (case-sensitive).
 
 . **Using direct GitHub connection**
 +
@@ -767,7 +719,6 @@ Ensure headers are in the correct configuration section:
 ----
 {
   "oai.provider.headers": {
-    "rp-aigw-id": "GATEWAY_ID",
     "x-custom": "value"
   }
 }

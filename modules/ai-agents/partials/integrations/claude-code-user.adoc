@@ -25,8 +25,7 @@ Before configuring Claude Code, ensure you have:
 ** At least one LLM provider enabled (see xref:ai-agents:ai-gateway/gateway-quickstart.adoc#step-1-enable-a-provider[Enable a provider])
 ** A gateway created and configured (see xref:ai-agents:ai-gateway/gateway-quickstart.adoc#step-3-create-a-gateway[Create a gateway])
 * Your AI Gateway credentials:
-** Gateway endpoint URL (for example, `https://gw.ai.panda.com`)
-** Gateway ID (for example, `gateway-abc123`)
+** Gateway endpoint URL (for example, `\https://gw-abc123.ai.panda.com`)
 ** API key with access to the gateway
 
 == Configuration methods
@@ -59,16 +58,14 @@ The `claude mcp add` command configures Claude Code to connect to your AI Gatewa
 claude mcp add \
   --transport http \
   redpanda-aigateway \
-  https://gw.ai.panda.com/mcp \
-  --header "Authorization: Bearer YOUR_API_KEY" \
-  --header "rp-aigw-id: GATEWAY_ID"
+  <your-gateway-endpoint>/mcp \
+  --header "Authorization: Bearer YOUR_API_KEY"
 ----
 
 Replace the following values:
 
-* `https://gw.ai.panda.com/mcp` - Your gateway's MCP endpoint
+* `<your-gateway-endpoint>/mcp` - Your gateway's MCP endpoint
 * `YOUR_API_KEY` - Your Redpanda API key
-* `GATEWAY_ID` - Your gateway ID from the AI Gateway UI
 
 This command configures the HTTP transport for MCP, which allows Claude Code to discover and invoke tools from all MCP servers configured in your gateway.
 
@@ -80,8 +77,7 @@ To route Claude Code's LLM requests through the gateway instead of directly to A
 ----
 claude config set \
   --api-provider redpanda \
-  --base-url https://gw.ai.panda.com \
-  --header "rp-aigw-id: GATEWAY_ID"
+  --base-url <your-gateway-endpoint>
 ----
 
 This routes all Claude model requests through your gateway, giving you centralized observability and policy enforcement.
@@ -107,10 +103,9 @@ Create or edit `~/.claude.json` with the following structure:
   "mcpServers": {
     "redpanda-ai-gateway": {
       "type": "http",
-      "url": "https://gw.ai.panda.com/mcp",
+      "url": "<your-gateway-endpoint>/mcp",
       "headers": {
-        "Authorization": "Bearer YOUR_API_KEY",
-        "rp-aigw-id": "GATEWAY_ID"
+        "Authorization": "Bearer YOUR_API_KEY"
       }
     }
   }
@@ -119,8 +114,8 @@ Create or edit `~/.claude.json` with the following structure:
 
 Replace placeholder values:
 
+* `<your-gateway-endpoint>` - Your gateway endpoint URL
 * `YOUR_API_KEY` - Your Redpanda API key
-* `GATEWAY_ID` - Your gateway ID
 
 === Multiple gateway configuration
 
@@ -132,18 +127,16 @@ To configure different gateways for development and production:
   "mcpServers": {
     "redpanda-staging": {
       "type": "http",
-      "url": "https://gw.staging.ai.panda.com/mcp",
+      "url": "<your-staging-gateway-endpoint>/mcp",
       "headers": {
-        "Authorization": "Bearer STAGING_API_KEY",
-        "rp-aigw-id": "staging-gateway-123"
+        "Authorization": "Bearer STAGING_API_KEY"
       }
     },
     "redpanda-production": {
       "type": "http",
-      "url": "https://gw.ai.panda.com/mcp",
+      "url": "<your-production-gateway-endpoint>/mcp",
       "headers": {
-        "Authorization": "Bearer PROD_API_KEY",
-        "rp-aigw-id": "prod-gateway-456"
+        "Authorization": "Bearer PROD_API_KEY"
       }
     }
   }
@@ -164,22 +157,20 @@ For sensitive credentials, use environment variables instead of hardcoding value
       "type": "http",
       "url": "${REDPANDA_GATEWAY_URL}/mcp",
       "headers": {
-        "Authorization": "Bearer ${REDPANDA_API_KEY}",
-        "rp-aigw-id": "${REDPANDA_GATEWAY_ID}"
+        "Authorization": "Bearer ${REDPANDA_API_KEY}"
       }
     }
   }
 }
 ----
 
-NOTE: Claude Code supports `${VAR}` interpolation syntax in the `mcpServers` section. The variables `REDPANDA_GATEWAY_URL`, `REDPANDA_GATEWAY_ID`, and `REDPANDA_API_KEY` will be resolved from environment variables at runtime.
+NOTE: Claude Code supports `${VAR}` interpolation syntax in the `mcpServers` section. The variables `REDPANDA_GATEWAY_URL` and `REDPANDA_API_KEY` will be resolved from environment variables at runtime.
 
 Set environment variables before launching Claude Code:
 
 [,bash]
 ----
-export REDPANDA_GATEWAY_URL="https://gw.ai.panda.com"
-export REDPANDA_GATEWAY_ID="gateway-abc123"
+export REDPANDA_GATEWAY_URL="<your-gateway-endpoint>"
 export REDPANDA_API_KEY="your-api-key"
 ----
 
@@ -187,8 +178,7 @@ On Windows (PowerShell):
 
 [,powershell]
 ----
-$env:REDPANDA_GATEWAY_URL = "https://gw.ai.panda.com"
-$env:REDPANDA_GATEWAY_ID = "gateway-abc123"
+$env:REDPANDA_GATEWAY_URL = "<your-gateway-endpoint>"
 $env:REDPANDA_API_KEY = "your-api-key"
 ----
 
@@ -246,10 +236,9 @@ Configure timeout for MCP requests in the configuration file:
   "mcpServers": {
     "redpanda-ai-gateway": {
       "type": "http",
-      "url": "https://gw.ai.panda.com/mcp",
+      "url": "<your-gateway-endpoint>/mcp",
       "headers": {
-        "Authorization": "Bearer YOUR_API_KEY",
-        "rp-aigw-id": "GATEWAY_ID"
+        "Authorization": "Bearer YOUR_API_KEY"
       },
       "timeout": 30000
     }
@@ -292,10 +281,10 @@ Verify your MCP endpoint is correct. It should be `{gateway-url}/mcp`, not just 
 [,bash]
 ----
 # Correct
-https://gw.ai.panda.com/mcp
+<your-gateway-endpoint>/mcp
 
 # Incorrect
-https://gw.ai.panda.com
+<your-gateway-endpoint>
 ----
 
 . **Authentication failure**
@@ -305,15 +294,14 @@ Check that your API key is valid and has access to the gateway:
 [,bash]
 ----
 curl -H "Authorization: Bearer YOUR_API_KEY" \
-     -H "rp-aigw-id: GATEWAY_ID" \
-     https://gw.ai.panda.com/mcp
+     <your-gateway-endpoint>/mcp
 ----
 +
 You should receive a valid MCP protocol response. If you get `401 Unauthorized`, regenerate your API key in the Redpanda Cloud Console.
 
-. **Gateway ID mismatch**
+. **Gateway endpoint URL mismatch**
 +
-Verify your gateway ID matches exactly (case-sensitive). Copy it directly from the AI Gateway UI rather than typing it manually.
+Verify your gateway endpoint URL matches exactly. Copy it directly from the AI Gateway UI rather than typing it manually.
 
 . **Network connectivity issues**
 +
@@ -321,7 +309,7 @@ Test basic connectivity to the gateway endpoint:
 +
 [,bash]
 ----
-curl -I https://gw.ai.panda.com/mcp
+curl -I <your-gateway-endpoint>/mcp
 ----
 +
 If this times out, check your network configuration, firewall rules, or VPN connection.
@@ -334,7 +322,7 @@ If this times out, check your network configuration, firewall rules, or VPN conn
 
 . **Wrong gateway configured**
 +
-Verify that the `rp-aigw-id` header in your configuration matches the gateway you're viewing in the dashboard.
+Verify that the gateway endpoint URL in your configuration matches the gateway you're viewing in the dashboard.
 
 . **Log ingestion delay**
 +

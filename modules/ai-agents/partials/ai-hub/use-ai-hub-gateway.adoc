@@ -147,9 +147,8 @@ All models use the OpenAI-compatible `/v1/chat/completions` endpoint. AI Hub aut
 from openai import OpenAI
 
 client = OpenAI(
-    base_url="https://{GATEWAY_ENDPOINT}",
-    api_key="{REDPANDA_API_KEY}",
-    default_headers={"rp-aigw-id": "{GATEWAY_ID}"}
+    base_url="<your-gateway-endpoint>",
+    api_key="<your-redpanda-api-key>",
 )
 
 # OpenAI model
@@ -173,8 +172,7 @@ Connecting to an AI Hub gateway is identical to connecting to a Custom mode gate
 
 To connect your application, you need:
 
-* *Gateway Endpoint*: Base URL (for example, `https://gw.ai.panda.com`)
-* *Gateway ID*: Unique identifier (for example, `gw_abc123`)
+* *Gateway Endpoint*: URL for API requests, with the gateway ID embedded in the path (for example, `https://example/gateways/gw_abc123/v1`)
 * *Redpanda API Key*: Your authentication token
 
 Your administrator provides these values when they grant you access to the gateway.
@@ -189,11 +187,8 @@ from openai import OpenAI
 
 # Configure client
 client = OpenAI(
-    base_url="https://gw.ai.panda.com",  # Gateway endpoint
-    api_key="your-redpanda-api-key",      # Redpanda API key
-    default_headers={
-        "rp-aigw-id": "gw_abc123"         # Gateway ID
-    }
+    base_url="<your-gateway-endpoint>",   # Gateway endpoint
+    api_key="<your-redpanda-api-key>",    # Redpanda API key
 )
 
 # Send request
@@ -216,11 +211,8 @@ TypeScript::
 import OpenAI from 'openai';
 
 const client = new OpenAI({
-  baseURL: 'https://gw.ai.panda.com',
+  baseURL: '<your-gateway-endpoint>',
   apiKey: process.env.REDPANDA_API_KEY,
-  defaultHeaders: {
-    'rp-aigw-id': 'gw_abc123'
-  }
 });
 
 const response = await client.chat.completions.create({
@@ -239,10 +231,9 @@ cURL::
 +
 [,bash]
 ----
-curl https://gw.ai.panda.com/v1/chat/completions \
+curl <your-gateway-endpoint>/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer ${REDPANDA_API_KEY}" \
-  -H "rp-aigw-id: gw_abc123" \
   -d '{
     "model": "anthropic/claude-sonnet-4.5",
     "messages": [
@@ -328,9 +319,8 @@ Verify you can reach the gateway:
 
 [,bash]
 ----
-curl https://{GATEWAY_ENDPOINT}/v1/models \
-  -H "Authorization: Bearer ${REDPANDA_API_KEY}" \
-  -H "rp-aigw-id: ${GATEWAY_ID}"
+curl ${GATEWAY_ENDPOINT}/models \
+  -H "Authorization: Bearer ${REDPANDA_API_KEY}"
 ----
 
 Expected: List of available models from configured providers.
@@ -341,9 +331,8 @@ Send a minimal request:
 
 [,bash]
 ----
-curl https://{GATEWAY_ENDPOINT}/v1/chat/completions \
+curl ${GATEWAY_ENDPOINT}/chat/completions \
   -H "Authorization: Bearer ${REDPANDA_API_KEY}" \
-  -H "rp-aigw-id: ${GATEWAY_ID}" \
   -H "Content-Type: application/json" \
   -d '{
     "model": "openai/gpt-5.2-mini",
@@ -373,7 +362,7 @@ Understanding how AI Hub differs from Custom mode helps you set appropriate expe
 
 * Same `/v1/chat/completions` endpoint
 * Same request/response format
-* Same authentication (Redpanda API key + gateway ID)
+* Same authentication (Redpanda API key)
 * Same observability dashboard
 
 *Discovery process:*

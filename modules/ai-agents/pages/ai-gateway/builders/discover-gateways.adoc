@@ -35,8 +35,7 @@ For each gateway, you'll see:
 +
 --
 * *Gateway Name*: Human-readable name (for example, `production-gateway`, `team-ml-gateway`)
-* *Gateway ID*: Unique identifier used in the `rp-aigw-id` header (for example, `gw_abc123`)
-* *Gateway Endpoint*: Base URL for API requests (for example, `https://gw.ai.panda.com`)
+* *Gateway Endpoint*: URL for API requests, with the gateway ID embedded in the path (for example, `https://example/gateways/gw_abc123/v1`)
 * *Status*: Whether the gateway is active and accepting requests
 * *Available Models*: Which LLM models you can access
 * *MCP Tools*: Whether MCP tool aggregation is enabled
@@ -85,24 +84,14 @@ Response:
 
 Each gateway provides specific information you'll need for integration:
 
-=== Gateway ID
-
-The Gateway ID is a unique identifier that you include in the `rp-aigw-id` header with every request. This tells AI Gateway which gateway configuration to use for routing, policies, and observability.
-
-Example:
-[source,bash]
-----
-rp-aigw-id: gw_abc123
-----
-
 === Gateway endpoint
 
-The endpoint is the base URL where you send all API requests. This replaces direct provider URLs (like `api.openai.com` or `api.anthropic.com`).
+The gateway endpoint is the URL where you send all API requests. It replaces direct provider URLs (like `api.openai.com` or `api.anthropic.com`). The gateway ID is embedded directly in the endpoint URL.
 
 Example:
 [source,bash]
 ----
-https://gw.ai.panda.com
+https://example/gateways/gw_abc123/v1
 ----
 
 Your application configures this as the `base_url` in your SDK client.
@@ -119,9 +108,8 @@ To see which models are available through a specific gateway:
 
 [source,bash]
 ----
-curl https://{GATEWAY_ENDPOINT}/v1/models \
-  -H "Authorization: Bearer ${REDPANDA_CLOUD_TOKEN}" \
-  -H "rp-aigw-id: ${GATEWAY_ID}"
+curl ${GATEWAY_ENDPOINT}/models \
+  -H "Authorization: Bearer ${REDPANDA_CLOUD_TOKEN}"
 ----
 
 Response:
@@ -168,9 +156,8 @@ To discover available MCP tools:
 
 [source,bash]
 ----
-curl https://{GATEWAY_ENDPOINT}/mcp/tools \
+curl ${GATEWAY_ENDPOINT}/mcp/tools \
   -H "Authorization: Bearer ${REDPANDA_CLOUD_TOKEN}" \
-  -H "rp-aigw-id: ${GATEWAY_ID}" \
   -H "rp-aigw-mcp-deferred: true"
 ----
 
@@ -216,9 +203,8 @@ Before integrating your application, verify that you can successfully connect to
 
 [source,bash]
 ----
-curl https://{GATEWAY_ENDPOINT}/v1/models \
+curl ${GATEWAY_ENDPOINT}/models \
   -H "Authorization: Bearer ${REDPANDA_CLOUD_TOKEN}" \
-  -H "rp-aigw-id: ${GATEWAY_ID}" \
   -v
 ----
 
@@ -230,9 +216,8 @@ Send a minimal chat completion request to verify end-to-end functionality:
 
 [source,bash]
 ----
-curl https://{GATEWAY_ENDPOINT}/v1/chat/completions \
+curl ${GATEWAY_ENDPOINT}/chat/completions \
   -H "Authorization: Bearer ${REDPANDA_CLOUD_TOKEN}" \
-  -H "rp-aigw-id: ${GATEWAY_ID}" \
   -H "Content-Type: application/json" \
   -d '{
     "model": "openai/gpt-5.2-mini",
@@ -248,7 +233,7 @@ Expected result: HTTP 200 response with a completion.
 If you cannot connect to a gateway:
 
 . *Verify authentication*: Ensure your API token is valid and has not expired
-. *Check gateway ID*: Confirm you're using the correct `rp-aigw-id` value
+. *Check gateway endpoint*: Confirm the endpoint URL includes the correct gateway ID
 . *Verify endpoint URL*: Check for typos in the gateway endpoint
 . *Check permissions*: Confirm with your administrator that you have access to this gateway
 . *Review network connectivity*: Ensure your network allows outbound HTTPS connections
@@ -303,21 +288,18 @@ curl -s https://api.redpanda.com/v1/gateways \
   | jq '.gateways[] | {name: .name, id: .id, endpoint: .endpoint}'
 
 # Step 2: Select a gateway (example)
-export GATEWAY_ID="gw_abc123"
-export GATEWAY_ENDPOINT="https://gw.ai.panda.com"
+export GATEWAY_ENDPOINT="https://example/gateways/gw_abc123/v1"
 
 # Step 3: List available models
 echo -e "\n=== Available models ==="
-curl -s ${GATEWAY_ENDPOINT}/v1/models \
+curl -s ${GATEWAY_ENDPOINT}/models \
   -H "Authorization: Bearer ${REDPANDA_CLOUD_TOKEN}" \
-  -H "rp-aigw-id: ${GATEWAY_ID}" \
   | jq '.data[] | .id'
 
 # Step 4: Test with a simple request
 echo -e "\n=== Testing request ==="
-curl -s ${GATEWAY_ENDPOINT}/v1/chat/completions \
+curl -s ${GATEWAY_ENDPOINT}/chat/completions \
   -H "Authorization: Bearer ${REDPANDA_CLOUD_TOKEN}" \
-  -H "rp-aigw-id: ${GATEWAY_ID}" \
   -H "Content-Type: application/json" \
   -d '{
     "model": "openai/gpt-5.2-mini",

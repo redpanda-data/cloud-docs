@@ -27,8 +27,7 @@ Before configuring Continue.dev, ensure you have:
 ** At least one LLM provider enabled (see xref:ai-agents:ai-gateway/gateway-quickstart.adoc#step-1-enable-a-provider[Enable a provider])
 ** A gateway created and configured (see xref:ai-agents:ai-gateway/gateway-quickstart.adoc#step-3-create-a-gateway[Create a gateway])
 * Your AI Gateway credentials:
-** Gateway endpoint URL (for example, `https://gw.ai.panda.com`)
-** Gateway ID (for example, `gateway-abc123`)
+** Gateway endpoint URL (for example, `\https://gw.ai.panda.com`)
 ** API key with access to the gateway
 
 == About Continue.dev
@@ -92,12 +91,7 @@ Create or edit `~/.continue/config.json` with the following structure to connect
       "provider": "anthropic",
       "model": "claude-sonnet-4.5",
       "apiKey": "YOUR_REDPANDA_API_KEY",
-      "apiBase": "https://gw.ai.panda.com",
-      "requestOptions": {
-        "headers": {
-          "rp-aigw-id": "GATEWAY_ID"
-        }
-      }
+      "apiBase": "<your-gateway-endpoint>"
     }
   ]
 }
@@ -106,7 +100,6 @@ Create or edit `~/.continue/config.json` with the following structure to connect
 Replace placeholder values:
 
 * `YOUR_REDPANDA_API_KEY` - Your Redpanda API key
-* `GATEWAY_ID` - Your gateway ID from the AI Gateway UI
 
 The `provider` field tells Continue.dev which SDK to use (Anthropic format), while `apiBase` routes the request through your gateway. The gateway then forwards the request to the appropriate provider based on the model name.
 
@@ -123,36 +116,21 @@ Continue.dev can switch between different models for different tasks. Configure 
       "provider": "anthropic",
       "model": "claude-sonnet-4.5",
       "apiKey": "YOUR_REDPANDA_API_KEY",
-      "apiBase": "https://gw.ai.panda.com",
-      "requestOptions": {
-        "headers": {
-          "rp-aigw-id": "GATEWAY_ID"
-        }
-      }
+      "apiBase": "<your-gateway-endpoint>"
     },
     {
       "title": "Gateway - Claude Opus (complex tasks)",
       "provider": "anthropic",
       "model": "claude-opus-4.6",
       "apiKey": "YOUR_REDPANDA_API_KEY",
-      "apiBase": "https://gw.ai.panda.com",
-      "requestOptions": {
-        "headers": {
-          "rp-aigw-id": "GATEWAY_ID"
-        }
-      }
+      "apiBase": "<your-gateway-endpoint>"
     },
     {
       "title": "Gateway - GPT-5.2",
       "provider": "openai",
       "model": "gpt-5.2",
       "apiKey": "YOUR_REDPANDA_API_KEY",
-      "apiBase": "https://gw.ai.panda.com",
-      "requestOptions": {
-        "headers": {
-          "rp-aigw-id": "GATEWAY_ID"
-        }
-      }
+      "apiBase": "<your-gateway-endpoint>"
     }
   ]
 }
@@ -173,12 +151,7 @@ Continue.dev supports a separate model for tab autocomplete, which generates cod
       "provider": "anthropic",
       "model": "claude-sonnet-4.5",
       "apiKey": "YOUR_REDPANDA_API_KEY",
-      "apiBase": "https://gw.ai.panda.com",
-      "requestOptions": {
-        "headers": {
-          "rp-aigw-id": "GATEWAY_ID"
-        }
-      }
+      "apiBase": "<your-gateway-endpoint>"
     }
   ],
   "tabAutocompleteModel": {
@@ -186,12 +159,7 @@ Continue.dev supports a separate model for tab autocomplete, which generates cod
     "provider": "anthropic",
     "model": "claude-haiku",
     "apiKey": "YOUR_REDPANDA_API_KEY",
-    "apiBase": "https://gw.ai.panda.com",
-    "requestOptions": {
-      "headers": {
-        "rp-aigw-id": "GATEWAY_ID"
-      }
-    }
+    "apiBase": "<your-gateway-endpoint>"
   }
 }
 ----
@@ -211,24 +179,14 @@ AI Gateway supports both native provider formats and OpenAI-compatible format. I
       "provider": "openai",
       "model": "anthropic/claude-sonnet-4.5",
       "apiKey": "YOUR_REDPANDA_API_KEY",
-      "apiBase": "https://gw.ai.panda.com/v1",
-      "requestOptions": {
-        "headers": {
-          "rp-aigw-id": "GATEWAY_ID"
-        }
-      }
+      "apiBase": "<your-gateway-endpoint>/v1"
     },
     {
       "title": "Gateway - GPT-5.2 (OpenAI format)",
       "provider": "openai",
       "model": "openai/gpt-5.2",
       "apiKey": "YOUR_REDPANDA_API_KEY",
-      "apiBase": "https://gw.ai.panda.com/v1",
-      "requestOptions": {
-        "headers": {
-          "rp-aigw-id": "GATEWAY_ID"
-        }
-      }
+      "apiBase": "<your-gateway-endpoint>/v1"
     }
   ]
 }
@@ -253,18 +211,14 @@ models:
     provider: anthropic
     model: claude-sonnet-4.5
     apiKey: YOUR_REDPANDA_API_KEY
-    apiBase: https://gw.ai.panda.com
-    requestOptions:
-      headers:
-        rp-aigw-id: GATEWAY_ID
+    apiBase: <your-gateway-endpoint>
 
 mcpServers:
   - transport:
       type: streamable-http
-      url: https://gw.ai.panda.com/mcp
+      url: <your-gateway-endpoint>/mcp
       headers:
         Authorization: Bearer YOUR_REDPANDA_API_KEY
-        rp-aigw-id: GATEWAY_ID
 ----
 
 After adding this configuration:
@@ -290,9 +244,6 @@ models:
     model: claude-sonnet-4.5
     apiKey: ${{ secrets.REDPANDA_API_KEY }}
     apiBase: ${{ secrets.REDPANDA_GATEWAY_URL }}
-    requestOptions:
-      headers:
-        rp-aigw-id: ${{ secrets.REDPANDA_GATEWAY_ID }}
 
 mcpServers:
   - transport:
@@ -300,7 +251,6 @@ mcpServers:
       url: ${{ secrets.REDPANDA_GATEWAY_URL }}/mcp
       headers:
         Authorization: Bearer ${{ secrets.REDPANDA_API_KEY }}
-        rp-aigw-id: ${{ secrets.REDPANDA_GATEWAY_ID }}
 ----
 
 IMPORTANT: Continue.dev uses the `${{ secrets.* }}` syntax for interpolation in `config.yaml`. Do not use the `${VAR}` shell syntax - Continue.dev treats it as a literal string rather than performing substitution.
@@ -311,8 +261,7 @@ Set secrets in Continue.dev settings:
 . Navigate to the "Secrets" section
 . Add the following secrets:
 +
-* `REDPANDA_GATEWAY_URL`: `https://gw.ai.panda.com`
-* `REDPANDA_GATEWAY_ID`: `gateway-abc123`
+* `REDPANDA_GATEWAY_URL`: Your gateway endpoint URL
 * `REDPANDA_API_KEY`: `your-api-key`
 
 == Project-level configuration
@@ -328,12 +277,7 @@ Override global settings for specific projects by creating `.continuerc.json` in
       "provider": "anthropic",
       "model": "claude-haiku",
       "apiKey": "your_project_api_key_here",
-      "apiBase": "https://gw.project.ai.panda.com",
-      "requestOptions": {
-        "headers": {
-          "rp-aigw-id": "your_project_gateway_id_here"
-        }
-      }
+      "apiBase": "<your-project-gateway-endpoint>"
     }
   ]
 }
@@ -410,10 +354,9 @@ Add custom headers for request tracking or routing:
       "provider": "anthropic",
       "model": "claude-sonnet-4.5",
       "apiKey": "YOUR_REDPANDA_API_KEY",
-      "apiBase": "https://gw.ai.panda.com",
+      "apiBase": "<your-gateway-endpoint>",
       "requestOptions": {
         "headers": {
-          "rp-aigw-id": "GATEWAY_ID",
           "x-user-id": "developer-123",
           "x-project": "main-app"
         }
@@ -442,12 +385,7 @@ Configure model parameters for different behaviors:
       "provider": "anthropic",
       "model": "claude-sonnet-4.5",
       "apiKey": "YOUR_REDPANDA_API_KEY",
-      "apiBase": "https://gw.ai.panda.com",
-      "requestOptions": {
-        "headers": {
-          "rp-aigw-id": "GATEWAY_ID"
-        }
-      },
+      "apiBase": "<your-gateway-endpoint>",
       "completionOptions": {
         "temperature": 0.2,
         "maxTokens": 2048
@@ -458,12 +396,7 @@ Configure model parameters for different behaviors:
       "provider": "anthropic",
       "model": "claude-sonnet-4.5",
       "apiKey": "YOUR_REDPANDA_API_KEY",
-      "apiBase": "https://gw.ai.panda.com",
-      "requestOptions": {
-        "headers": {
-          "rp-aigw-id": "GATEWAY_ID"
-        }
-      },
+      "apiBase": "<your-gateway-endpoint>",
       "completionOptions": {
         "temperature": 0.8,
         "maxTokens": 4096
@@ -490,12 +423,7 @@ Configure which code context Continue.dev includes in requests:
       "provider": "anthropic",
       "model": "claude-sonnet-4.5",
       "apiKey": "YOUR_REDPANDA_API_KEY",
-      "apiBase": "https://gw.ai.panda.com",
-      "requestOptions": {
-        "headers": {
-          "rp-aigw-id": "GATEWAY_ID"
-        }
-      }
+      "apiBase": "<your-gateway-endpoint>"
     }
   ],
   "contextProviders": [
@@ -538,12 +466,7 @@ Configure custom slash commands for common workflows:
       "provider": "anthropic",
       "model": "claude-sonnet-4.5",
       "apiKey": "YOUR_REDPANDA_API_KEY",
-      "apiBase": "https://gw.ai.panda.com",
-      "requestOptions": {
-        "headers": {
-          "rp-aigw-id": "GATEWAY_ID"
-        }
-      }
+      "apiBase": "<your-gateway-endpoint>"
     }
   ],
   "slashCommands": [
@@ -584,10 +507,10 @@ Verify the URL format matches your provider choice:
 [,text]
 ----
 # Anthropic/native format (no /v1)
-"apiBase": "https://gw.ai.panda.com"
+"apiBase": "<your-gateway-endpoint>"
 
 # OpenAI format (with /v1)
-"apiBase": "https://gw.ai.panda.com/v1"
+"apiBase": "<your-gateway-endpoint>/v1"
 ----
 
 . **Provider mismatch**
@@ -605,15 +528,10 @@ Verify your API key is valid:
 [,bash]
 ----
 curl -H "Authorization: Bearer YOUR_API_KEY" \
-     -H "rp-aigw-id: GATEWAY_ID" \
-     https://gw.ai.panda.com/v1/models
+     <your-gateway-endpoint>/v1/models
 ----
 +
 You should receive a list of available models. If you get `401 Unauthorized`, regenerate your API key in the Redpanda Cloud Console.
-
-. **Gateway ID mismatch**
-+
-Check that the `rp-aigw-id` header matches your gateway ID exactly (case-sensitive). Copy it directly from the AI Gateway UI.
 
 . **Invalid JSON syntax**
 +
@@ -648,12 +566,7 @@ Use a faster model for autocomplete:
     "provider": "anthropic",
     "model": "claude-haiku",
     "apiKey": "YOUR_API_KEY",
-    "apiBase": "https://gw.ai.panda.com",
-    "requestOptions": {
-      "headers": {
-        "rp-aigw-id": "GATEWAY_ID"
-      }
-    }
+    "apiBase": "<your-gateway-endpoint>"
   }
 }
 ----
@@ -689,10 +602,10 @@ The MCP URL should be `{gateway-url}/mcp`:
 [,text]
 ----
 # Correct
-"url": "https://gw.ai.panda.com/mcp"
+"url": "<your-gateway-endpoint>/mcp"
 
 # Incorrect
-"url": "https://gw.ai.panda.com"
+"url": "<your-gateway-endpoint>"
 ----
 
 . **No MCP servers in gateway**
@@ -716,13 +629,9 @@ MCP configuration changes require reloading the editor window:
 
 **Causes and solutions**:
 
-. **Wrong gateway ID**
+. **Wrong gateway endpoint**
 +
-Verify that the `rp-aigw-id` header matches the gateway you're viewing in the dashboard.
-
-. **Missing header**
-+
-Ensure the `rp-aigw-id` header is in the `requestOptions.headers` section, not at the top level.
+Verify that the `apiBase` URL matches the gateway endpoint you're viewing in the dashboard.
 
 . **Using direct provider connection**
 +

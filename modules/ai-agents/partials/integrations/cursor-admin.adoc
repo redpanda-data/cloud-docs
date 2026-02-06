@@ -46,7 +46,7 @@ Cursor IDE connects to AI Gateway through standardized endpoints:
 The gateway handles:
 
 . Authentication via bearer tokens in the `Authorization` header
-. Gateway selection via the `rp-aigw-id` header (requires workarounds for multi-tenant scenarios)
+. Gateway selection via the endpoint URL
 . Model routing using vendor prefixes (for example, `anthropic/claude-sonnet-4.5`)
 . Format transforms from OpenAI format to provider-native formats (for Anthropic, Google, etc.)
 . MCP server aggregation for multi-tool workflows
@@ -140,7 +140,7 @@ Create a dedicated gateway to isolate Cursor traffic and apply specific policies
 . Click *Create*
 . Copy the gateway ID from the gateway details page
 
-The gateway ID is required in the `rp-aigw-id` header for all requests.
+The gateway ID is embedded in the gateway endpoint URL.
 
 === Configure unified LLM routing
 
@@ -378,7 +378,7 @@ Implement token rotation for security:
 
 == Multi-tenant deployment strategies
 
-Cursor has limited support for custom headers, making traditional `rp-aigw-id` header-based multi-tenancy challenging. Use one of these alternative strategies.
+For organizations with multiple teams, use one of these multi-tenant strategies.
 
 === Strategy 1: Tenant-specific subdomains
 
@@ -736,7 +736,7 @@ Causes and solutions:
 * **Expired token**: Generate a new API token and update the Cursor configuration
 * **Network connectivity**: Verify the cluster endpoint is accessible from the client network
 * **Provider not enabled**: Ensure at least one provider is enabled and has models in the catalog
-* **Missing gateway ID**: If using header-based routing, verify the `rp-aigw-id` header is configured (or use alternative multi-tenant strategy)
+* **Wrong gateway endpoint**: Verify the gateway endpoint URL is correct
 
 === Model not found errors
 

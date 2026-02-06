@@ -25,8 +25,7 @@ Before configuring Cline, ensure you have:
 ** At least one LLM provider enabled (see xref:ai-agents:ai-gateway/gateway-quickstart.adoc#step-1-enable-a-provider[Enable a provider])
 ** A gateway created and configured (see xref:ai-agents:ai-gateway/gateway-quickstart.adoc#step-3-create-a-gateway[Create a gateway])
 * Your AI Gateway credentials:
-** Gateway endpoint URL (for example, `https://gw.ai.panda.com`)
-** Gateway ID (for example, `gateway-abc123`)
+** Gateway endpoint URL, which includes the gateway ID (for example, `\https://ai.prd.cloud.redpanda.com/gateway/v1/chat/completions`)
 ** API key with access to the gateway
 
 == About Cline
@@ -79,22 +78,8 @@ In the Cline settings interface:
 
 . Navigate to *API Configuration* section
 . Select *API Provider*: `OpenAI Compatible`
-. Set *Base URL*: `https://gw.ai.panda.com`
+. Set *Base URL*: Your gateway endpoint URL (for example, `\https://ai.prd.cloud.redpanda.com/gateway/v1/chat/completions`). The gateway ID is embedded in the URL path.
 . Set *API Key*: Your Redpanda API key
-. Expand *Advanced Settings*
-. Add custom headers:
-+
-[,json]
-----
-{
-  "rp-aigw-id": "gateway-abc123"
-}
-----
-
-Replace the following values:
-
-* `https://gw.ai.panda.com` - Your gateway's base URL (without `/v1` suffix)
-* `gateway-abc123` - Your gateway ID from the AI Gateway UI
 
 === Select model
 
@@ -131,18 +116,17 @@ In the Cline settings interface:
 {
   "name": "redpanda-ai-gateway",
   "transport": "http",
-  "url": "https://gw.ai.panda.com/mcp",
+  "url": "<your-gateway-endpoint>/mcp",
   "headers": {
-    "Authorization": "Bearer YOUR_API_KEY",
-    "rp-aigw-id": "GATEWAY_ID"
+    "Authorization": "Bearer YOUR_API_KEY"
   }
 }
 ----
 
 Replace placeholder values:
 
+* `<your-gateway-endpoint>` - Your gateway endpoint URL (the gateway ID is embedded in the URL path)
 * `YOUR_API_KEY` - Your Redpanda API key
-* `GATEWAY_ID` - Your gateway ID
 
 === Enable tool discovery
 
@@ -170,10 +154,9 @@ For more control, edit the VS Code settings directly:
     {
       "name": "redpanda-ai-gateway",
       "transport": "http",
-      "url": "https://gw.ai.panda.com/mcp",
+      "url": "<your-gateway-endpoint>/mcp",
       "headers": {
-        "Authorization": "Bearer YOUR_API_KEY",
-        "rp-aigw-id": "GATEWAY_ID"
+        "Authorization": "Bearer YOUR_API_KEY"
       }
     }
   ]
@@ -347,7 +330,7 @@ Create separate VS Code workspace settings for different projects:
 ----
 {
   "cline.apiProvider": "OpenAI Compatible",
-  "cline.baseURL": "https://gw.ai.panda.com",
+  "cline.baseURL": "<your-gateway-endpoint>",
   "cline.model": "anthropic/claude-opus-4.6-5"
 }
 ----
@@ -357,7 +340,7 @@ Create separate VS Code workspace settings for different projects:
 ----
 {
   "cline.apiProvider": "OpenAI Compatible",
-  "cline.baseURL": "https://gw.ai.panda.com",
+  "cline.baseURL": "<your-gateway-endpoint>",
   "cline.model": "anthropic/claude-haiku"
 }
 ----
@@ -420,10 +403,7 @@ Create workspace-specific configurations:
 ----
 {
   "cline.apiProvider": "OpenAI Compatible",
-  "cline.baseURL": "${GATEWAY_DEV_URL}",
-  "cline.customHeaders": {
-    "rp-aigw-id": "${GATEWAY_DEV_ID}"
-  }
+  "cline.baseURL": "${GATEWAY_DEV_URL}"
 }
 ----
 
@@ -432,10 +412,7 @@ Create workspace-specific configurations:
 ----
 {
   "cline.apiProvider": "OpenAI Compatible",
-  "cline.baseURL": "${GATEWAY_PROD_URL}",
-  "cline.customHeaders": {
-    "rp-aigw-id": "${GATEWAY_PROD_ID}"
-  }
+  "cline.baseURL": "${GATEWAY_PROD_URL}"
 }
 ----
 
@@ -443,18 +420,16 @@ Set environment variables before launching VS Code:
 
 [,bash]
 ----
-export GATEWAY_DEV_URL="https://gw.staging.ai.panda.com"
-export GATEWAY_DEV_ID="staging-gateway-123"
-export GATEWAY_PROD_URL="https://gw.ai.panda.com"
-export GATEWAY_PROD_ID="prod-gateway-456"
+export GATEWAY_DEV_URL="<your-dev-gateway-endpoint>"
+export GATEWAY_PROD_URL="<your-prod-gateway-endpoint>"
 ----
 
 On Windows (PowerShell):
 
 [,powershell]
 ----
-$env:GATEWAY_DEV_URL = "https://gw.staging.ai.panda.com"
-$env:GATEWAY_DEV_ID = "staging-gateway-123"
+$env:GATEWAY_DEV_URL = "<your-dev-gateway-endpoint>"
+$env:GATEWAY_PROD_URL = "<your-prod-gateway-endpoint>"
 ----
 
 [[troubleshooting]]
@@ -473,11 +448,11 @@ Verify your base URL does NOT include `/v1` or `/chat/completions`:
 [,text]
 ----
 # Correct
-https://gw.ai.panda.com
+<your-gateway-endpoint>
 
 # Incorrect
-https://gw.ai.panda.com/v1
-https://gw.ai.panda.com/chat/completions
+<your-gateway-endpoint>/v1
+<your-gateway-endpoint>/chat/completions
 ----
 +
 Cline appends the correct path automatically.
@@ -489,15 +464,14 @@ Verify your API key is valid:
 [,bash]
 ----
 curl -H "Authorization: Bearer YOUR_API_KEY" \
-     -H "rp-aigw-id: GATEWAY_ID" \
-     https://gw.ai.panda.com/v1/models
+     <your-gateway-endpoint>/v1/models
 ----
 +
 You should receive a list of available models. If you get `401 Unauthorized`, regenerate your API key in the Redpanda Cloud Console.
 
-. **Gateway ID mismatch**
+. **Gateway endpoint URL mismatch**
 +
-Check that the `rp-aigw-id` header matches your gateway ID exactly (case-sensitive). Copy it directly from the AI Gateway UI.
+Check that the gateway endpoint URL in your Cline configuration matches your gateway exactly. Copy it directly from the AI Gateway UI.
 
 . **Network connectivity issues**
 +
@@ -505,7 +479,7 @@ Test basic connectivity:
 +
 [,bash]
 ----
-curl -I https://gw.ai.panda.com
+curl -I <your-gateway-endpoint>
 ----
 +
 If this times out, check your network configuration, firewall rules, or VPN connection.
@@ -523,10 +497,10 @@ Verify the MCP endpoint is correct. It should be `{gateway-url}/mcp`, not just `
 [,text]
 ----
 # Correct
-https://gw.ai.panda.com/mcp
+<your-gateway-endpoint>/mcp
 
 # Incorrect
-https://gw.ai.panda.com
+<your-gateway-endpoint>
 ----
 
 . **No MCP servers configured in gateway**
@@ -544,8 +518,7 @@ Test the MCP endpoint directly:
 [,bash]
 ----
 curl -H "Authorization: Bearer YOUR_API_KEY" \
-     -H "rp-aigw-id: GATEWAY_ID" \
-     https://gw.ai.panda.com/mcp
+     <your-gateway-endpoint>/mcp
 ----
 +
 You should receive a valid MCP protocol response listing available tools.
@@ -558,7 +531,7 @@ You should receive a valid MCP protocol response listing available tools.
 
 . **Wrong gateway configured**
 +
-Verify that the `rp-aigw-id` header in your Cline configuration matches the gateway you're viewing in the dashboard.
+Verify that the gateway endpoint URL in your Cline configuration matches the gateway you're viewing in the dashboard.
 
 . **Using direct provider connection**
 +

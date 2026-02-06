@@ -33,7 +33,7 @@ Claude Code connects to AI Gateway through two primary endpoints:
 The gateway handles:
 
 . Authentication via bearer tokens in the `Authorization` header
-. Gateway selection via the `rp-aigw-id` header
+. Gateway selection via the endpoint URL
 . Model routing using the `vendor/model_id` format
 . MCP server aggregation for multi-tool workflows
 . Request logging and cost tracking per gateway
@@ -109,7 +109,7 @@ Create a dedicated gateway to isolate Claude Code traffic and apply specific pol
 . Click *Create*
 . Copy the gateway ID from the gateway details page
 
-The gateway ID is required in the `rp-aigw-id` header for all requests.
+The gateway ID is embedded in the gateway endpoint URL.
 
 === Configure LLM routing
 
@@ -316,15 +316,13 @@ claude mcp add \
   --transport http \
   redpanda-aigateway \
   https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/mcp \
-  --header "Authorization: Bearer YOUR_API_TOKEN" \
-  --header "rp-aigw-id: GATEWAY_ID"
+  --header "Authorization: Bearer YOUR_API_TOKEN"
 ----
 
 Replace:
 
 * `{CLUSTER_ID}`: Your Redpanda cluster ID
 * `YOUR_API_TOKEN`: The API token generated earlier
-* `GATEWAY_ID`: The gateway ID from gateway creation
 
 === Configuration file
 
@@ -338,8 +336,7 @@ Alternatively, users can edit `~/.claude.json` (user-level) or `.mcp.json` (proj
       "type": "http",
       "url": "https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/mcp",
       "headers": {
-        "Authorization": "Bearer YOUR_API_TOKEN",
-        "rp-aigw-id": "GATEWAY_ID"
+        "Authorization": "Bearer YOUR_API_TOKEN"
       }
     }
   }
@@ -349,7 +346,7 @@ Alternatively, users can edit `~/.claude.json` (user-level) or `.mcp.json` (proj
 This configuration:
 
 * Connects Claude Code to the aggregated MCP endpoint
-* Includes authentication and gateway identification headers
+* Includes authentication headers
 
 == Monitor Claude Code usage
 
@@ -459,7 +456,7 @@ Symptom: Connection errors when Claude Code tries to discover tools or send LLM 
 
 Causes and solutions:
 
-* **Invalid gateway ID**: Verify the `rp-aigw-id` header matches the gateway ID from the console
+* **Invalid gateway endpoint**: Verify the gateway endpoint URL matches the endpoint from the console
 * **Expired token**: Generate a new API token and update the Claude Code configuration
 * **Network connectivity**: Verify the cluster endpoint is accessible from the client network
 * **Provider not enabled**: Ensure at least one LLM provider is enabled and has models in the catalog

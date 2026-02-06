@@ -47,7 +47,7 @@ GitHub Copilot connects to AI Gateway through standardized endpoints:
 The gateway handles:
 
 . Authentication via bearer tokens in the `Authorization` header
-. Gateway selection via query parameters or custom headers (requires workarounds)
+. Gateway selection via URL path routing or query parameters
 . Model routing and aliasing for friendly names
 . Format transforms from OpenAI format to provider-native formats
 . Request logging and cost tracking per gateway
@@ -326,11 +326,11 @@ Implement token rotation for security:
 
 == Multi-tenant deployment strategies
 
-GitHub Copilot has limited support for custom headers, making traditional `rp-aigw-id` header-based multi-tenancy challenging. Use one of these alternative strategies for BYOK deployments.
+GitHub Copilot has limited support for custom headers. The gateway ID is now embedded in the URL path, simplifying multi-tenancy. Use one of these strategies for BYOK deployments.
 
 === Strategy 1: OAI Compatible Provider extension (recommended)
 
-For organizations using VS Code with GitHub Copilot, the OAI Compatible Provider extension enables custom headers including `rp-aigw-id`.
+For organizations using VS Code with GitHub Copilot, the OAI Compatible Provider extension enables custom headers for additional metadata.
 
 ==== Install the extension
 
@@ -352,8 +352,7 @@ For organizations using VS Code with GitHub Copilot, the OAI Compatible Provider
       "name": "Redpanda AI Gateway",
       "baseUrl": "https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1",
       "headers": {
-        "Authorization": "Bearer YOUR_API_TOKEN",
-        "rp-aigw-id": "GATEWAY_ID"
+        "Authorization": "Bearer YOUR_API_TOKEN"
       },
       "models": [
         "gpt-5.2",
@@ -369,13 +368,11 @@ For organizations using VS Code with GitHub Copilot, the OAI Compatible Provider
 +
 * `{CLUSTER_ID}`: Your Redpanda cluster ID
 * `YOUR_API_TOKEN`: Team-specific API token
-* `GATEWAY_ID`: Team-specific gateway ID
 
 This approach allows true multi-tenancy with proper gateway isolation per team.
 
 **Benefits:**
 
-* Full support for `rp-aigw-id` header
 * Clean separation between tenants
 * Standard authentication flow
 * Works with any IDE supported by the extension
@@ -481,7 +478,7 @@ For simpler deployments, configure a single gateway with shared access:
 |Strategy |Pros |Cons |Best For
 
 |OAI Compatible Provider
-|Full `rp-aigw-id` support, clean separation
+|Clean tenant separation, custom headers
 |Requires extension, VS Code only
 |Organizations standardized on VS Code
 
