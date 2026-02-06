@@ -23,8 +23,10 @@ After reading this page, you will be able to:
 
 == List your accessible gateways
 
-=== Using the Console
-
+[tabs]
+====
+Using the Console::
++
 . Navigate to *AI Gateway* in the Redpanda Cloud Console.
 . View the *My Gateways* tab (or *Gateways* if you're an administrator).
 . Review the list of gateways you can access:
@@ -40,18 +42,18 @@ For each gateway, you'll see:
 * *MCP Tools*: Whether MCP tool aggregation is enabled
 --
 
-=== Using the API
-
+Using the API::
++
 You can also list gateways programmatically:
-
++
 [source,bash]
 ----
 curl https://api.redpanda.com/v1/gateways \
   -H "Authorization: Bearer ${REDPANDA_CLOUD_TOKEN}"
 ----
-
++
 Response:
-
++
 [source,json]
 ----
 {
@@ -77,6 +79,7 @@ Response:
   ]
 }
 ----
+====
 
 == Understand gateway information
 
@@ -175,6 +178,7 @@ With deferred loading enabled, you'll receive search and orchestrator tools init
 
 // See xref:ai-gateway/builders/use-mcp-tools.adoc[] for more details.
 
+ifdef::ai-hub-available[]
 == Identify gateway mode
 
 Gateways can operate in two modes: AI Hub mode or Custom mode. Understanding which mode your gateway uses helps you know what to expect.
@@ -189,9 +193,7 @@ include::ai-agents:partial$ai-hub-mode-indicator.adoc[]
 * Models are automatically routed based on system-managed rules
 * You cannot see or modify routing rules (they're managed by Redpanda)
 * Limited customization via administrator-configured preference toggles
-ifdef::ai-hub-available[]
 * See xref:ai-gateway/builders/use-ai-hub-gateway.adoc[] for AI Hub-specific guidance
-endif::[]
 
 *Custom Mode:*
 
@@ -204,6 +206,7 @@ endif::[]
 ====
 If you need specific routing behavior or custom configuration that AI Hub doesn't support, ask your administrator about ejecting to Custom mode or creating a Custom mode gateway.
 ====
+endif::[]  
 
 == Check gateway availability
 
@@ -327,8 +330,6 @@ echo -e "\n=== Gateway validated successfully ==="
 ----
 
 == Next steps
-
-Now that you've discovered your available gateways:
 
 * xref:ai-gateway/builders/connect-your-agent.adoc[Connect Your Agent] - Integrate your application
 // * xref:ai-gateway/builders/available-models.adoc[Available Models] - Learn about model selection and routing
