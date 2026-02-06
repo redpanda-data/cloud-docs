@@ -28,11 +28,9 @@ Use logs for: Debugging specific requests, viewing full prompts/responses. See x
 
 == Where to find metrics
 
-// PLACEHOLDER: Add exact UI navigation path
-
 1. Navigate to analytics dashboard:
-   * Console → AI Gateway → // PLACEHOLDER: exact path
-   * Or: Gateway detail page → Analytics tab
+   * In the sidebar, navigate to *Agentic AI > Gateways > {gateway-name}*, then select the *Analytics* tab.
+   * Or: Gateway detail page -> Analytics tab
 
 2. Select gateway (optional):
    * View all gateways (org-wide metrics)
@@ -143,7 +141,7 @@ Important notes:
 Example insights:
 
 * "Customer A accounts for 60% of spend" → Consider rate limits or tiered pricing
-* "GPT-4o is 3x more expensive than Claude Sonnet for similar quality" → Optimize routing
+* "GPT-5.2 is 3x more expensive than Claude Sonnet for similar quality" → Optimize routing
 
 === Latency
 
@@ -174,8 +172,8 @@ Use cases:
 
 Example insights:
 
-* "GPT-4o p99 latency spiked to 10 seconds yesterday" → Investigate provider issue
-* "Claude Sonnet is 30% faster than GPT-4o for same prompts" → Optimize for latency
+* "GPT-5.2 p99 latency spiked to 10 seconds yesterday" → Investigate provider issue
+* "Claude Sonnet is 30% faster than GPT-5.2 for same prompts" → Optimize for latency
 
 Latency components (if available):
 
@@ -318,26 +316,26 @@ Example:
 |===
 | Model | Requests | Avg Latency | Cost per 1K | Error Rate
 
-| openai/gpt-4o 
+| openai/gpt-5.2 
 | 10,000 
 | 1.2s 
 | $5.00 
 | 0.5%
 
-| anthropic/claude-sonnet-3.5 
+| anthropic/claude-sonnet-4.5 
 | 5,000 
 | 0.9s 
 | $3.50 
 | 0.3%
 
-| openai/gpt-4o-mini 
+| openai/gpt-5.2-mini 
 | 20,000 
 | 0.7s 
 | $0.50 
 | 1.0%
 |===
 
-Insight: Claude Sonnet is 25% faster and 30% cheaper than GPT-4o with better reliability
+Insight: Claude Sonnet is 25% faster and 30% cheaper than GPT-5.2 with better reliability
 
 === Provider comparison dashboard
 
@@ -388,7 +386,7 @@ Use case: Isolate prod from staging metrics
 
 [source,text]
 ----
-Filter: Model = "openai/gpt-4o"
+Filter: Model = "openai/gpt-5.2"
 ----
 
 
@@ -546,15 +544,10 @@ Response:
 
 === Integration with observability platforms
 
-// PLACEHOLDER: OpenTelemetry support? Other integrations?
+Supported integrations:
 
-Supported integrations (if any):
-
-* Prometheus: Metrics endpoint for scraping
-* OpenTelemetry: Export metrics to OTel collector
-* Datadog: Direct integration
-* Grafana: Pre-built dashboards
-* // PLACEHOLDER: Others?
+* *Prometheus*: Native metrics endpoint on port 9090 at `/metrics`
+* *OpenTelemetry*: Traces exported to Redpanda topics via the OpenTelemetry exporter
 
 == Common analysis tasks
 
@@ -610,13 +603,13 @@ Action: Chargeback costs to teams, or investigate high-usage teams
 
 1. *Open Model Comparison Dashboard*
 2. Select models to compare:
-   * Expensive model: `openai/gpt-4o`
-   * Cheap model: `openai/gpt-4o-mini`
+   * Expensive model: `openai/gpt-5.2`
+   * Cheap model: `openai/gpt-5.2-mini`
 3. Compare metrics:
 
 [cols="2,1,1,2"]
 |===
-| Metric | GPT-4o | GPT-4o-mini | Difference
+| Metric | GPT-5.2 | GPT-5.2-mini | Difference
 
 | Cost per 1K requests 
 | $5.00 
@@ -772,12 +765,12 @@ Response:
   "data": [
     {
       "timestamp": "2025-01-01T00:00:00Z",
-      "model": "openai/gpt-4o",
+      "model": "openai/gpt-5.2",
       "value": 10000
     },
     {
       "timestamp": "2025-01-01T00:00:00Z",
-      "model": "anthropic/claude-sonnet-3.5",
+      "model": "anthropic/claude-sonnet-4.5",
       "value": 5000
     },
     ...

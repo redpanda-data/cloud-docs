@@ -45,7 +45,6 @@ Cline connects to AI Gateway through two primary endpoints:
 The gateway handles:
 
 . Authentication via bearer tokens in the `Authorization` header
-. Gateway selection via the `rp-aigw-id` header
 . Model routing using the `vendor/model_id` format
 . MCP server aggregation for multi-tool workflows
 . Request logging and cost tracking per gateway
@@ -85,9 +84,9 @@ After enabling providers, enable specific models:
 +
 Common models for Cline:
 +
-* `anthropic/claude-opus-4-5`
-* `anthropic/claude-sonnet-4-5`
-* `openai/gpt-4o`
+* `anthropic/claude-opus-4.6-5`
+* `anthropic/claude-sonnet-4.5`
+* `openai/gpt-5.2`
 * `openai/o1-mini`
 
 . Click *Save*
@@ -119,9 +118,7 @@ Create a dedicated gateway to isolate Cline traffic and apply specific policies.
 |===
 
 . Click *Create*
-. Copy the gateway ID from the gateway details page
-
-The gateway ID is required in the `rp-aigw-id` header for all requests.
+. Copy the gateway endpoint URL from the gateway details page
 
 === Configure LLM routing
 
@@ -167,9 +164,9 @@ request.headers["x-workspace-type"][0] == "production"
 
 Create separate routes:
 
-* Production route: Claude Opus 4.5 (highest quality, critical code)
+* Production route: Claude Opus 4.6.5 (highest quality, critical code)
 * Development route: Claude Sonnet 4.5 (balanced cost and quality)
-* Experimental route: OpenAI GPT-4o (cost-effective testing)
+* Experimental route: OpenAI GPT-5.2 (cost-effective testing)
 
 === Apply rate limits
 
@@ -273,7 +270,7 @@ The MCP orchestrator reduces multi-step autonomous workflows to single calls:
 |Setting |Value
 
 |Orchestrator model
-|Select a model with strong code generation capabilities (for example, `anthropic/claude-sonnet-4-5`)
+|Select a model with strong code generation capabilities (for example, `anthropic/claude-sonnet-4.5`)
 
 |Execution timeout
 |45 seconds
@@ -340,15 +337,12 @@ IMPORTANT: API provider configuration (API keys, base URLs, custom headers) is m
 . Configure the API connection:
 +
 * *API Provider*: Select "Custom" or "Anthropic"
-* *API Base URL*: `https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1`
+* *API Base URL*: The gateway endpoint URL from the gateway details page
 * *API Key*: The API token generated earlier
-* *Custom Headers*: Add `rp-aigw-id` with value `GATEWAY_ID`
 
 Replace:
 
-* `{CLUSTER_ID}`: Your Redpanda cluster ID
 * `YOUR_API_TOKEN`: The API token generated earlier
-* `GATEWAY_ID`: The gateway ID from gateway creation
 
 === MCP server configuration
 
@@ -376,10 +370,9 @@ Alternatively, edit `cline_mcp_settings.json` (located in the Cline extension st
   "mcpServers": {
     "redpanda-ai-gateway": {
       "type": "streamableHttp",
-      "url": "https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/mcp",
+      "url": "GATEWAY_MCP_ENDPOINT_URL",
       "headers": {
-        "Authorization": "Bearer YOUR_API_TOKEN",
-        "rp-aigw-id": "GATEWAY_ID"
+        "Authorization": "Bearer YOUR_API_TOKEN"
       }
     }
   }
@@ -388,11 +381,10 @@ Alternatively, edit `cline_mcp_settings.json` (located in the Cline extension st
 
 Replace:
 
-* `{CLUSTER_ID}`: Your Redpanda cluster ID
+* `GATEWAY_MCP_ENDPOINT_URL`: The gateway MCP endpoint URL from the gateway details page
 * `YOUR_API_TOKEN`: The API token generated earlier
-* `GATEWAY_ID`: The gateway ID from gateway creation
 
-This configuration connects Cline to the aggregated MCP endpoint with authentication and gateway identification headers.
+This configuration connects Cline to the aggregated MCP endpoint with authentication.
 
 === Configuration scope
 
@@ -530,7 +522,7 @@ Symptom: Connection errors when Cline tries to discover tools or send LLM reques
 
 Causes and solutions:
 
-* **Invalid gateway ID**: Verify the `rp-aigw-id` header matches the gateway ID from the console
+* **Invalid gateway ID**: Verify the gateway endpoint URL matches the URL from the gateway details page in the console
 * **Expired token**: Generate a new API token and update the Cline settings
 * **Network connectivity**: Verify the cluster endpoint is accessible from the client network
 * **Provider not enabled**: Ensure at least one LLM provider is enabled and has models in the catalog

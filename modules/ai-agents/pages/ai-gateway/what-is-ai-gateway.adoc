@@ -24,7 +24,7 @@ Finally, observability is fragmented across provider dashboards. You cannot reco
 
 == What AI Gateway solves
 
-Redpanda AI Gateway addresses these challenges through four core capabilities:
+Redpanda AI Gateway addresses these challenges through the following core capabilities:
 
 === Unified LLM access (single endpoint for all providers)
 
@@ -38,7 +38,7 @@ Without AI Gateway, you need different SDKs and patterns for each provider:
 from openai import OpenAI
 client = OpenAI(api_key="sk-...")
 response = client.chat.completions.create(
-    model="gpt-4o",
+    model="gpt-5.2",
     messages=[{"role": "user", "content": "Hello"}]
 )
 
@@ -46,7 +46,7 @@ response = client.chat.completions.create(
 from anthropic import Anthropic
 client = Anthropic(api_key="sk-ant-...")
 response = client.messages.create(
-    model="claude-sonnet-3.5",
+    model="claude-sonnet-4.5",
     max_tokens=1024,
     messages=[{"role": "user", "content": "Hello"}]
 )
@@ -60,25 +60,30 @@ from openai import OpenAI
 
 # Single configuration, multiple providers
 client = OpenAI(
-    base_url="https://{GATEWAY_ENDPOINT}",
+    base_url="<your-gateway-endpoint>",
     api_key="your-redpanda-token",
-    default_headers={"rp-aigw-id": "{GATEWAY_ID}"}
 )
 
 # Route to OpenAI
 response = client.chat.completions.create(
-    model="openai/gpt-4o",
+    model="openai/gpt-5.2",
     messages=[{"role": "user", "content": "Hello"}]
 )
 
 # Route to Anthropic (same code, different model string)
 response = client.chat.completions.create(
-    model="anthropic/claude-sonnet-3.5",
+    model="anthropic/claude-sonnet-4.5",
+    messages=[{"role": "user", "content": "Hello"}]
+)
+
+# Route to Google Gemini (same code, different model string)
+response = client.chat.completions.create(
+    model="google/gemini-2.0-flash",
     messages=[{"role": "user", "content": "Hello"}]
 )
 ----
 
-To switch providers, you change only the `model` parameter from `openai/gpt-4o` to `anthropic/claude-sonnet-3.5`. No code changes or redeployment needed.
+To switch providers, you change only the `model` parameter from `openai/gpt-5.2` to `anthropic/claude-sonnet-4.5`. No code changes or redeployment needed.
 
 === Policy-based routing and cost control
 
@@ -90,8 +95,8 @@ You can route requests to different models based on user attributes. For example
 ----
 // Route premium users to best model, free users to cost-effective model
 request.headers["x-user-tier"] == "premium"
-  ? "anthropic/claude-opus-4"
-  : "anthropic/claude-sonnet-3.5"
+  ? "anthropic/claude-opus-4.6"
+  : "anthropic/claude-sonnet-4.5"
 ----
 
 You can also set different rate limits and spend limits per environment to prevent staging or development traffic from consuming production budgets.
@@ -116,17 +121,18 @@ The dashboard tracks request volume per gateway, model, and provider, along with
 
 This unified view helps you answer critical questions such as which model is the most cost-effective for your use case, why a specific user request failed, how much your staging environment costs per week, and what the latency difference is between providers for your workload.
 
+ifdef::ai-hub-available[]
 == Gateway modes
 
 AI Gateway supports two modes to accommodate different organizational needs:
 
-*AI Hub Mode* provides zero-configuration access with pre-configured backend pools and intelligent routing. Platform admins simply add provider credentials (OpenAI, Anthropic), and all teams immediately benefit from 17 routing rules and 6 backend pools. Users can toggle preferences like vision routing or long-context routing, but the underlying architecture is managed by Redpanda. This mode eliminates the complexity of LLM gateway configuration—IT adds API keys once, all teams benefit immediately.
+*AI Hub Mode* provides zero-configuration access with pre-configured backend pools and intelligent routing. Platform admins simply add provider credentials (OpenAI, Anthropic, Google Gemini), and all teams immediately benefit from 17 routing rules and 6 backend pools. Users can toggle preferences like vision routing or long-context routing, but the underlying architecture is managed by Redpanda. This mode eliminates the complexity of LLM gateway configuration—IT adds API keys once, all teams benefit immediately.
 
-*Custom Mode* provides full control over routing rules, backend pools, rate limits, and policies. Admins configure every aspect of the gateway to meet specific requirements. This mode is ideal when you need custom routing logic based on business rules, specific failover behavior, or integration with custom infrastructure like Azure OpenAI or AWS Bedrock.
+*Custom Mode* provides full control over routing rules, backend pools, rate limits, and policies. Admins configure every aspect of the gateway to meet specific requirements. This mode is ideal when you need custom routing logic based business rules, specific failover behavior, or integration with custom infrastructure like Azure OpenAI or AWS Bedrock.
 
 To understand which mode fits your use case, see xref:ai-gateway/gateway-modes.adoc[].
+endif::[]
 
-ifdef::show-gateway-patterns[]
 == Common gateway patterns
 
 === Team isolation
@@ -143,7 +149,7 @@ To ensure uptime during provider outages, configure provider pools with automati
 
 === A/B testing models
 
-To compare model quality and cost without dual integration, route a percentage of traffic to different models. For example, you can send 80% of traffic to `claude-sonnet-3.5` and 20% to `claude-opus-4`, then compare quality metrics and costs in the observability dashboard before adjusting the split.
+To compare model quality and cost without dual integration, route a percentage of traffic to different models. For example, you can send 80% of traffic to `claude-sonnet-4.5` and 20% to `claude-opus-4.6`, then compare quality metrics and costs in the observability dashboard before adjusting the split.
 
 === Customer-based routing
 
@@ -151,12 +157,10 @@ For SaaS products with tiered pricing (free, pro, enterprise), use CEL routing b
 
 [source,cel]
 ----
-request.headers["x-customer-tier"] == "enterprise" ? "anthropic/claude-opus-4" :
-request.headers["x-customer-tier"] == "pro" ? "anthropic/claude-sonnet-3.5" :
+request.headers["x-customer-tier"] == "enterprise" ? "anthropic/claude-opus-4.6" :
+request.headers["x-customer-tier"] == "pro" ? "anthropic/claude-sonnet-4.5" :
 "anthropic/claude-haiku"
 ----
-
-endif::[]
 
 == When to use AI Gateway
 
@@ -180,6 +184,8 @@ AI Gateway may not be necessary if:
 == Next steps
 
 Now that you understand what AI Gateway is and how it can benefit your organization:
+
+* xref:ai-gateway/gateway-quickstart.adoc[Gateway Quickstart] - Get started quickly with a basic gateway setup
 
 *For Administrators:*
 

@@ -21,21 +21,17 @@ Before migrating, ensure you have:
 * AI Gateway configured in your Redpanda Cloud account
 * Enabled providers and models in AI Gateway
 * Created gateway with appropriate policies
-* Your gateway ID (`rp-aigw-id` header value)
-* Your gateway endpoint URL
+* Your gateway endpoint URL (with the gateway ID embedded in the path)
 
-////
-PLACEHOLDER: Add verification command, for example:
+Verify your gateway is reachable:
 
 [source,bash]
 ----
-curl https://{GATEWAY_ENDPOINT}/v1/models \
-  -H "Authorization: Bearer {YOUR_TOKEN}" \
-  -H "rp-aigw-id: {GATEWAY_ID}"
+curl <your-gateway-endpoint>/models \
+  -H "Authorization: Bearer {YOUR_TOKEN}"
 ----
 
 Expected output: List of enabled models
-////
 
 == Migration strategy
 
@@ -84,8 +80,7 @@ OPENAI_API_KEY=sk-...
 ANTHROPIC_API_KEY=sk-ant-...
 
 # New gateway configuration
-REDPANDA_AI_GATEWAY_URL=https://{GATEWAY_ENDPOINT}
-REDPANDA_AI_GATEWAY_ID={GATEWAY_ID}
+REDPANDA_AI_GATEWAY_URL=<your-gateway-endpoint>
 REDPANDA_AI_GATEWAY_TOKEN={YOUR_TOKEN}
 
 # Feature flag (start with gateway disabled)
@@ -108,7 +103,7 @@ client = OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="gpt-4o",
+    model="gpt-5.2",
     messages=[{"role": "user", "content": "Hello"}]
 )
 ----
@@ -128,14 +123,13 @@ if use_gateway:
     client = OpenAI(
         base_url=os.getenv("REDPANDA_AI_GATEWAY_URL"),
         api_key=os.getenv("REDPANDA_AI_GATEWAY_TOKEN"),
-        default_headers={"rp-aigw-id": os.getenv("REDPANDA_AI_GATEWAY_ID")}
     )
-    model = "openai/gpt-4o"  # Add vendor prefix
+    model = "openai/gpt-5.2"  # Add vendor prefix
 else:
     client = OpenAI(
         api_key=os.getenv("OPENAI_API_KEY")
     )
-    model = "gpt-4o"  # Original model name
+    model = "gpt-5.2"  # Original model name
 
 response = client.chat.completions.create(
     model=model,
@@ -159,8 +153,7 @@ def get_llm_client():
         return OpenAI(
             base_url=os.getenv("REDPANDA_AI_GATEWAY_URL"),
             api_key=os.getenv("REDPANDA_AI_GATEWAY_TOKEN"),
-            default_headers={"rp-aigw-id": os.getenv("REDPANDA_AI_GATEWAY_ID")}
-        )
+            )
     else:
         return OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
@@ -172,7 +165,7 @@ def get_model_name(base_model: str) -> str:
 # Usage
 client = get_llm_client()
 response = client.chat.completions.create(
-    model=get_model_name("gpt-4o"),
+    model=get_model_name("gpt-5.2"),
     messages=[{"role": "user", "content": "Hello"}]
 )
 ----
@@ -191,7 +184,7 @@ client = Anthropic(
 )
 
 response = client.messages.create(
-    model="claude-sonnet-3.5",
+    model="claude-sonnet-4.5",
     max_tokens=1024,
     messages=[{"role": "user", "content": "Hello"}]
 )
@@ -214,11 +207,10 @@ if use_gateway:
     client = OpenAI(
         base_url=os.getenv("REDPANDA_AI_GATEWAY_URL"),
         api_key=os.getenv("REDPANDA_AI_GATEWAY_TOKEN"),
-        default_headers={"rp-aigw-id": os.getenv("REDPANDA_AI_GATEWAY_ID")}
     )
 
     response = client.chat.completions.create(
-        model="anthropic/claude-sonnet-3.5",
+        model="anthropic/claude-sonnet-4.5",
         max_tokens=1024,
         messages=[{"role": "user", "content": "Hello"}]
     )
@@ -228,7 +220,7 @@ else:
     client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
     response = client.messages.create(
-        model="claude-sonnet-3.5",
+        model="claude-sonnet-4.5",
         max_tokens=1024,
         messages=[{"role": "user", "content": "Hello"}]
     )
@@ -247,7 +239,6 @@ if use_gateway:
     client = OpenAI(
         base_url=os.getenv("REDPANDA_AI_GATEWAY_URL"),
         api_key=os.getenv("REDPANDA_AI_GATEWAY_TOKEN"),
-        default_headers={"rp-aigw-id": os.getenv("REDPANDA_AI_GATEWAY_ID")}
     )
 else:
     from anthropic import Anthropic
@@ -285,18 +276,17 @@ from openai import OpenAI
 client = OpenAI(
     base_url=os.getenv("REDPANDA_AI_GATEWAY_URL"),
     api_key=os.getenv("REDPANDA_AI_GATEWAY_TOKEN"),
-    default_headers={"rp-aigw-id": os.getenv("REDPANDA_AI_GATEWAY_ID")}
 )
 
 # Same code, different models
 if use_openai:
     response = client.chat.completions.create(
-        model="openai/gpt-4o",
+        model="openai/gpt-5.2",
         messages=[...]
     )
 else:
     response = client.chat.completions.create(
-        model="anthropic/claude-sonnet-3.5",
+        model="anthropic/claude-sonnet-4.5",
         messages=[...]
     )
 ----
@@ -317,12 +307,11 @@ def test_gateway_connection():
     client = OpenAI(
         base_url=os.getenv("REDPANDA_AI_GATEWAY_URL"),
         api_key=os.getenv("REDPANDA_AI_GATEWAY_TOKEN"),
-        default_headers={"rp-aigw-id": os.getenv("REDPANDA_AI_GATEWAY_ID")}
     )
 
     try:
         response = client.chat.completions.create(
-            model="openai/gpt-4o-mini",  # Use cheap model for testing
+            model="openai/gpt-5.2-mini",  # Use cheap model for testing
             messages=[{"role": "user", "content": "Test"}],
             max_tokens=10
         )
@@ -352,17 +341,17 @@ Common issues:
 * `401 Unauthorized` → Check `REDPANDA_AI_GATEWAY_TOKEN`
 * `404 Not Found` → Check `REDPANDA_AI_GATEWAY_URL` (should end with `/v1/chat/completions` or base path)
 * `Model not found` → Ensure model is enabled in gateway configuration
-* No `rp-aigw-id` header → Verify header is set in `default_headers`
+* `Model not found` → Ensure model is enabled in gateway configuration
 
 === Verify in observability dashboard
 
 After successful test:
 
 1. Open AI Gateway observability dashboard
-2. Navigate to // PLACEHOLDER: specific UI path, for example, "Gateways → {GATEWAY_NAME} → Logs"
+2. In the sidebar, navigate to *Agentic AI > Gateways > {GATEWAY_NAME}*, then select the *Logs* tab.
 3. Verify your test request appears
 4. Check fields:
-   * Model: `openai/gpt-4o-mini`
+   * Model: `openai/gpt-5.2-mini`
    * Provider: OpenAI
    * Status: 200
    * Token count: ~10 prompt + ~10 completion
@@ -518,8 +507,7 @@ USE_AI_GATEWAY=true
 # OPENAI_API_KEY=sk-...  # Remove after confirming gateway stability
 # ANTHROPIC_API_KEY=sk-ant-...  # Remove after confirming gateway stability
 
-REDPANDA_AI_GATEWAY_URL=https://{GATEWAY_ENDPOINT}
-REDPANDA_AI_GATEWAY_ID={GATEWAY_ID}
+REDPANDA_AI_GATEWAY_URL=<your-gateway-endpoint>
 REDPANDA_AI_GATEWAY_TOKEN={YOUR_TOKEN}
 ----
 
@@ -531,7 +519,6 @@ REDPANDA_AI_GATEWAY_TOKEN={YOUR_TOKEN}
 client = OpenAI(
     base_url=os.getenv("REDPANDA_AI_GATEWAY_URL"),
     api_key=os.getenv("REDPANDA_AI_GATEWAY_TOKEN"),
-    default_headers={"rp-aigw-id": os.getenv("REDPANDA_AI_GATEWAY_ID")}
 )
 ----
 
@@ -577,7 +564,7 @@ Before
 from langchain_openai import ChatOpenAI
 
 llm = ChatOpenAI(
-    model="gpt-4o",
+    model="gpt-5.2",
     api_key=os.getenv("OPENAI_API_KEY")
 )
 ----
@@ -592,14 +579,13 @@ use_gateway = os.getenv("USE_AI_GATEWAY", "false").lower() == "true"
 
 if use_gateway:
     llm = ChatOpenAI(
-        model="openai/gpt-4o",
+        model="openai/gpt-5.2",
         base_url=os.getenv("REDPANDA_AI_GATEWAY_URL"),
         api_key=os.getenv("REDPANDA_AI_GATEWAY_TOKEN"),
-        default_headers={"rp-aigw-id": os.getenv("REDPANDA_AI_GATEWAY_ID")}
     )
 else:
     llm = ChatOpenAI(
-        model="gpt-4o",
+        model="gpt-5.2",
         api_key=os.getenv("OPENAI_API_KEY")
     )
 ----
@@ -614,7 +600,7 @@ Before
 ----
 from llama_index.llms.openai import OpenAI
 
-llm = OpenAI(model="gpt-4o")
+llm = OpenAI(model="gpt-5.2")
 ----
 
 After
@@ -627,13 +613,12 @@ use_gateway = os.getenv("USE_AI_GATEWAY", "false").lower() == "true"
 
 if use_gateway:
     llm = OpenAI(
-        model="openai/gpt-4o",
+        model="openai/gpt-5.2",
         api_base=os.getenv("REDPANDA_AI_GATEWAY_URL"),
         api_key=os.getenv("REDPANDA_AI_GATEWAY_TOKEN"),
-        default_headers={"rp-aigw-id": os.getenv("REDPANDA_AI_GATEWAY_ID")}
     )
 else:
-    llm = OpenAI(model="gpt-4o")
+    llm = OpenAI(model="gpt-5.2")
 ----
 --
 
@@ -646,7 +631,7 @@ Before
 ----
 import { openai } from '@ai-sdk/openai';
 
-const model = openai('gpt-4o');
+const model = openai('gpt-5.2');
 ----
 
 After
@@ -662,11 +647,8 @@ const model = useGateway
   ? createOpenAI({
       baseURL: process.env.REDPANDA_AI_GATEWAY_URL,
       apiKey: process.env.REDPANDA_AI_GATEWAY_TOKEN,
-      headers: {
-        'rp-aigw-id': process.env.REDPANDA_AI_GATEWAY_ID,
-      },
-    })('openai/gpt-4o')
-  : openai('gpt-4o');
+    })('openai/gpt-5.2')
+  : openai('gpt-5.2');
 ----
 --
 ======
@@ -688,7 +670,7 @@ Use this checklist to track your migration:
   * [ ] Feature flag implemented
   * [ ] Client initialization updated
   * [ ] Model name prefix added (vendor/model_id)
-  * [ ] Headers added (rp-aigw-id)
+  * [ ] Authentication configured (API token)
 
 *Testing*
 
@@ -725,7 +707,7 @@ Use this checklist to track your migration:
 Symptom:
 [source,text]
 ----
-Error: Model 'openai/gpt-4o' not found
+Error: Model 'openai/gpt-5.2' not found
 ----
 
 
@@ -737,32 +719,9 @@ Causes:
 
 Solution:
 
-1. Verify model is enabled: // PLACEHOLDER: UI path or CLI command
-2. Confirm format: `vendor/model_id` (for example, `openai/gpt-4o`, not `gpt-4o`)
+1. Verify model is enabled: In the sidebar, navigate to *Agentic AI > Models* and confirm the model is enabled.
+2. Confirm format: `vendor/model_id` (for example, `openai/gpt-5.2`, not `gpt-5.2` without prefix)
 3. Check supported models: // PLACEHOLDER: link to model catalog
-
-=== Missing `rp-aigw-id` header
-
-Symptom:
-
-[source,text]
-----
-Error: Missing required header 'rp-aigw-id'
-----
-
-
-Solution:
-
-[source,python]
-----
-# Ensure header is set in default_headers
-client = OpenAI(
-    base_url=os.getenv("REDPANDA_AI_GATEWAY_URL"),
-    api_key=os.getenv("REDPANDA_AI_GATEWAY_TOKEN"),
-    default_headers={"rp-aigw-id": os.getenv("REDPANDA_AI_GATEWAY_ID")}  # ← Required
-)
-----
-
 
 === Higher latency than expected
 
@@ -791,12 +750,7 @@ Solution: Verify gateway ID and check for UI delay (logs may take a few seconds 
 
 Symptom: Response structure differs between direct and gateway
 
-// PLACEHOLDER: Confirm if response format is identical to OpenAI API or if there are differences
-
-Solution:
-
-* AI Gateway should return OpenAI-compatible responses
-* If differences exist, file a support ticket with request ID from logs
+AI Gateway returns OpenAI-compatible responses for all providers. Anthropic responses are automatically transformed to match the OpenAI response format. If you encounter differences, file a support ticket with the request ID from logs.
 
 == Advanced migration scenarios
 
@@ -817,7 +771,6 @@ After
 client = OpenAI(
     base_url=os.getenv("REDPANDA_AI_GATEWAY_URL"),
     api_key=os.getenv("REDPANDA_AI_GATEWAY_TOKEN"),
-    default_headers={"rp-aigw-id": os.getenv("REDPANDA_AI_GATEWAY_ID")},
     timeout=30.0  # Still supported
 )
 ----
@@ -825,14 +778,12 @@ client = OpenAI(
 
 === Streaming responses
 
-// PLACEHOLDER: Verify streaming support
-
 Before
 
 [source,python]
 ----
 stream = client.chat.completions.create(
-    model="gpt-4o",
+    model="gpt-5.2",
     messages=[...],
     stream=True
 )
@@ -847,7 +798,7 @@ After
 [source,python]
 ----
 stream = client.chat.completions.create(
-    model="openai/gpt-4o",  # Add vendor prefix
+    model="openai/gpt-5.2",  # Add vendor prefix
     messages=[...],
     stream=True
 )
@@ -864,7 +815,7 @@ Before
 [source,python]
 ----
 response = client.chat.completions.create(
-    model="gpt-4o",
+    model="gpt-5.2",
     messages=[...],
     extra_headers={"X-User-ID": user.id}
 )
@@ -876,11 +827,10 @@ After
 [source,python]
 ----
 response = client.chat.completions.create(
-    model="openai/gpt-4o",
+    model="openai/gpt-5.2",
     messages=[...],
     extra_headers={
         "X-User-ID": user.id,  # Custom headers still supported
-        "rp-aigw-id": os.getenv("REDPANDA_AI_GATEWAY_ID")  # Required gateway header
     }
 )
 ----
@@ -897,7 +847,7 @@ Simplified provider management
 [source,python]
 ----
 # Switch providers with one config change (no code changes)
-model = "anthropic/claude-sonnet-3.5"  # Was openai/gpt-4o
+model = "anthropic/claude-sonnet-4.5"  # Was openai/gpt-5.2
 ----
 
 Unified observability

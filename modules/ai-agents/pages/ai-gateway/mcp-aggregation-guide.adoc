@@ -105,7 +105,6 @@ Agent request:
 GET /mcp/tools
 Headers:
   Authorization: Bearer {TOKEN}
-  rp-aigw-id: {GATEWAY_ID}
   rp-aigw-mcp-deferred: true  # Enable deferred loading
 ----
 
@@ -160,7 +159,6 @@ Agent request:
 POST /mcp/tools/search_tools
 Headers:
   Authorization: Bearer {TOKEN}
-  rp-aigw-id: {GATEWAY_ID}
 Body:
 {
   "query": "database query"
@@ -214,7 +212,6 @@ Agent request:
 POST /mcp/tools/execute_sql
 Headers:
   Authorization: Bearer {TOKEN}
-  rp-aigw-id: {GATEWAY_ID}
 Body:
 {
   "query": "SELECT * FROM users WHERE tier = 'premium' LIMIT 10",
@@ -285,28 +282,27 @@ Don't use deferred loading when:
 
 === Configure deferred loading
 
-// PLACEHOLDER: Add UI path or configuration method
+Deferred loading is configured per MCP server through the *Defer Loading Override* setting in the Create MCP Server dialog.
 
-Option 1: Enable at gateway level (recommended)
+. Navigate to your gateway's *MCP* tab.
+. Create or edit an MCP server.
+. Under *Server Settings*, set *Defer Loading Override*:
++
+[cols="1,2"]
+|===
+|Option |Description
 
-[source,yaml]
-----
-# PLACEHOLDER: Actual configuration format
-mcp:
-  deferred_loading: true  # Default for all agents using this gateway
-----
+|Inherit from gateway
+|Use the gateway-level deferred loading setting (default)
 
+|Enabled
+|Always defer loading from this server. Agents receive only a search tool initially and query for specific tools when needed.
 
-Option 2: Enable per-request (agent-controlled)
+|Disabled
+|Always load all tools from this server upfront.
+|===
 
-[source,python]
-----
-# Agent includes header
-headers = {
-    "rp-aigw-id": "gw_abc123",
-    "rp-aigw-mcp-deferred": "true"  # Enable for this request
-}
-----
+. Click *Save*.
 
 
 === Measure token savings
@@ -316,14 +312,14 @@ Compare token usage before/after deferred loading:
 1. Check logs without deferred loading:
 
    * Filter: Gateway = your-gateway, Model = your-model, Date = before enabling
-   * Average tokens per request: // PLACEHOLDER: measure
+   * Note the average tokens per request
 
 2. Enable deferred loading
 
 3. Check logs after deferred loading:
 
    * Filter: Same gateway/model, Date = after enabling
-   * Average tokens per request: // PLACEHOLDER: measure
+   * Note the average tokens per request
 
 4. Calculate savings:
 +
@@ -464,14 +460,12 @@ Available in workflow:
 Security:
 
 * Sandboxed execution (no file system, network, or system access)
-* Timeout: // PLACEHOLDER: e.g., 30 seconds
-* Memory limit: // PLACEHOLDER: e.g., 128MB
+* Timeout and memory limits are system-managed and cannot be modified
 
 Limitations:
 
 * Cannot call external APIs directly (must use MCP tools)
 * Cannot import npm packages (built-in JS only)
-* // PLACEHOLDER: Other limitations?
 
 === Orchestrator example: data aggregation
 
@@ -557,8 +551,6 @@ DON'T:
 
 === Add MCP servers
 
-// PLACEHOLDER: Add UI path for MCP server management
-
 Prerequisites:
 
 * MCP server URL
@@ -569,7 +561,7 @@ Steps:
 
 1. Navigate to MCP servers:
 
-   * Console → AI Gateway → MCP Servers → Add Server
+   * In the sidebar, navigate to *Agentic AI > Gateways*, select your gateway, then select the *MCP* tab.
 
 2. Configure server:
 +
@@ -616,14 +608,14 @@ Why approval is required:
 * Cost: Some tools are expensive (API calls, compute)
 * Compliance: Audit trail of approved tools
 
-Approval process:
-
-// PLACEHOLDER: Confirm if there's an approval workflow or if admins directly enable servers
+Typical approval process:
 
 1. Request: User/team requests MCP server
 2. Review: Admin reviews security, cost, necessity
 3. Approval/Rejection: Admin decision
 4. Configuration: If approved, admin adds server to gateway
+
+NOTE: The exact approval workflow may vary by organization. In some cases, admins may directly enable servers without a formal workflow.
 
 Rejected server behavior:
 
@@ -661,11 +653,9 @@ Use cases:
 
 === MCP server versioning
 
-// PLACEHOLDER: How is MCP server versioning handled?
+Challenge: MCP server updates may change tool schemas.
 
-Challenge: MCP server updates may change tool schemas
-
-Recommendations:
+Best practices for version management:
 
 1. Pin versions (if supported):
 +
@@ -741,9 +731,7 @@ Common log fields:
 
 === Metrics
 
-// PLACEHOLDER: Confirm if MCP-specific metrics exist
-
-MCP-specific metrics (if available):
+The following MCP-specific metrics may be available depending on your gateway configuration:
 
 * MCP requests per second
 * Tool invocation count (by tool, by MCP server)
@@ -771,7 +759,7 @@ Possible causes:
 
 Solution:
 
-1. Verify MCP server is active: // PLACEHOLDER: UI path
+1. Verify MCP server is active in the Cloud console
 2. Verify tool is in enabled_tools list
 3. If deferred loading: Agent must call `search_tools` first
 
@@ -787,7 +775,7 @@ Solution:
 
 1. Check MCP server health
 2. Optimize tool (e.g., add database index)
-3. Increase timeout: // PLACEHOLDER: How to configure?
+3. Contact support if you need to adjust timeout limits
 
 Issue: "Orchestrator workflow failed"
 
@@ -807,6 +795,7 @@ Solution:
 
 == Security considerations
 
+////
 === Tool execution sandboxing
 
 // PLACEHOLDER: Confirm sandboxing implementation
@@ -824,6 +813,7 @@ MCP tool execution:
 * Tools execute in MCP server's environment (not gateway)
 * Gateway does not execute tool code (only proxies requests)
 * Security is MCP server's responsibility
+////
 
 === Authentication
 
@@ -836,7 +826,7 @@ Gateway → MCP server:
 Agent → Gateway:
 
 * Standard gateway authentication (Redpanda Cloud token)
-* `rp-aigw-id` header identifies gateway (and its approved MCP servers)
+* Gateway endpoint URL identifies the gateway (and its approved MCP servers)
 
 === Audit trail
 
@@ -895,7 +885,7 @@ Scenario: Different agents use different models + different tools
 
 Configuration:
 
-* Gateway A: GPT-4o + database + CRM MCP servers
+* Gateway A: GPT-5.2 + database + CRM MCP servers
 * Gateway B: Claude Sonnet + web search + analytics MCP servers
 
 Use case: Optimize model-tool pairing (some models better at certain tools)
@@ -913,20 +903,18 @@ from openai import OpenAI
 
 # Initialize client with MCP endpoint
 client = OpenAI(
-    base_url="https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1",
+    base_url=os.getenv("GATEWAY_ENDPOINT"),
     api_key=os.getenv("REDPANDA_CLOUD_TOKEN"),
     default_headers={
-        "rp-aigw-id": os.getenv("GATEWAY_ID"),
         "rp-aigw-mcp-deferred": "true"  # Enable deferred loading
     }
 )
 
 # Discover tools
 tools_response = requests.get(
-    "https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/mcp/tools",
+    f"{os.getenv('GATEWAY_ENDPOINT')}/mcp/tools",
     headers={
         "Authorization": f"Bearer {os.getenv('REDPANDA_CLOUD_TOKEN')}",
-        "rp-aigw-id": os.getenv("GATEWAY_ID"),
         "rp-aigw-mcp-deferred": "true"
     }
 )
@@ -934,7 +922,7 @@ tools = tools_response.json()["tools"]
 
 # Agent uses tools
 response = client.chat.completions.create(
-    model="anthropic/claude-sonnet-3.5",
+    model="anthropic/claude-sonnet-4.5",
     messages=[
         {"role": "user", "content": "Query the database for premium users"}
     ],
@@ -947,17 +935,16 @@ if response.choices[0].message.tool_calls:
     for tool_call in response.choices[0].message.tool_calls:
         # Execute tool via gateway
         tool_result = requests.post(
-            f"https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/mcp/tools/{tool_call.function.name}",
+            f"{os.getenv('GATEWAY_ENDPOINT')}/mcp/tools/{tool_call.function.name}",
             headers={
                 "Authorization": f"Bearer {os.getenv('REDPANDA_CLOUD_TOKEN')}",
-                "rp-aigw-id": os.getenv("GATEWAY_ID")
             },
             json=json.loads(tool_call.function.arguments)
         )
 
         # Continue conversation with tool result
         response = client.chat.completions.create(
-            model="anthropic/claude-sonnet-3.5",
+            model="anthropic/claude-sonnet-4.5",
             messages=[
                 {"role": "user", "content": "Query the database for premium users"},
                 response.choices[0].message,
@@ -997,11 +984,8 @@ from langchain.agents import initialize_agent, Tool
 
 # Initialize LLM with gateway
 llm = ChatOpenAI(
-    base_url="https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1",
+    base_url=os.getenv("GATEWAY_ENDPOINT"),
     api_key=os.getenv("REDPANDA_CLOUD_TOKEN"),
-    default_headers={
-        "rp-aigw-id": os.getenv("GATEWAY_ID")
-    }
 )
 
 # Fetch MCP tools from gateway
@@ -1020,7 +1004,3 @@ response = agent.run("Find all premium users in the database")
 ----
 --
 ====
-
-
-== Next steps
-

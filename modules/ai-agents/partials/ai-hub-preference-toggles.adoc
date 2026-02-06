@@ -7,7 +7,7 @@ AI Hub mode provides 6 user-configurable preference toggles that influence routi
 |*infer_provider_from_model_name*
 |`true`
 |Infer provider from model name patterns when no prefix specified
-|Enabled by default. When true, `gpt-4o` routes to OpenAI and `claude-sonnet-3.5` routes to Anthropic without requiring `openai/` or `anthropic/` prefixes. Disable to require explicit vendor prefixes for all requests.
+|Enabled by default. When true, `gpt-5.2` routes to OpenAI, `claude-sonnet-4.5` routes to Anthropic without requiring `openai/` or `anthropic/` prefixes. Disable to require explicit vendor prefixes for all requests.
 
 |*auto_route_vision*
 |`false`
@@ -43,7 +43,7 @@ Preferences work in combination with AI Hub's immutable routing rules:
 . *Preferences influence decisions* when multiple valid options exist
 . *Protected routing rules cannot be overridden* by preferences (for example, embeddings always go to OpenAI)
 
-For example, if you specify `model: "openai/gpt-4o"`, the model prefix rule routes to OpenAI regardless of preference toggles. But if you specify `model: "gpt-4o"` without a prefix and `infer_provider_from_model_name` is enabled, AI Hub routes to OpenAI based on the `gpt-*` pattern.
+For example, if you specify `model: "openai/gpt-5.2"`, the model prefix rule routes to OpenAI regardless of preference toggles. But if you specify `model: "gpt-5.2"` without a prefix and `infer_provider_from_model_name` is enabled, AI Hub routes to OpenAI based on the `gpt-*` pattern.
 
 === Best practices
 
@@ -56,6 +56,11 @@ For example, if you specify `model: "openai/gpt-4o"`, the model prefix rule rout
 
 === Configuring preferences
 
+ifdef::ai-hub-available[]
 Platform administrators configure preferences when creating or updating an AI Hub gateway. For detailed configuration instructions, see xref:ai-gateway/admin/configure-ai-hub.adoc[].
+endif::[]
+ifndef::ai-hub-available[]
+Platform administrators configure preferences when creating or updating an AI Hub gateway.
+endif::[]
 
 Builders cannot modify preferences directly. If you need different routing behavior, contact your administrator to adjust preference toggles or request ejection to Custom mode for full control.

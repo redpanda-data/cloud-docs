@@ -47,7 +47,7 @@ GitHub Copilot connects to AI Gateway through standardized endpoints:
 The gateway handles:
 
 . Authentication via bearer tokens in the `Authorization` header
-. Gateway selection via query parameters or custom headers (requires workarounds)
+. Gateway selection via URL path routing or query parameters
 . Model routing and aliasing for friendly names
 . Format transforms from OpenAI format to provider-native formats
 . Request logging and cost tracking per gateway
@@ -104,10 +104,10 @@ After enabling providers, enable specific models:
 +
 Common models for GitHub Copilot:
 +
-* `gpt-4o` (OpenAI)
-* `gpt-4o-mini` (OpenAI)
+* `gpt-5.2` (OpenAI)
+* `gpt-5.2-mini` (OpenAI)
 * `o1-mini` (OpenAI)
-* `claude-sonnet-4-5` (Anthropic, requires alias)
+* `claude-sonnet-4.5` (Anthropic, requires alias)
 
 . Click *Save*
 
@@ -144,7 +144,7 @@ The gateway ID is required for routing requests to this gateway.
 
 === Configure model aliasing
 
-GitHub Copilot expects model names like `gpt-4o` without vendor prefixes. Configure aliases to map these to provider-specific models:
+GitHub Copilot expects model names like `gpt-5.2` without vendor prefixes. Configure aliases to map these to provider-specific models:
 
 . Navigate to the gateway's *Models* tab
 . Click *Add Model Alias*
@@ -154,16 +154,16 @@ GitHub Copilot expects model names like `gpt-4o` without vendor prefixes. Config
 |===
 |Alias Name |Target Model |Provider
 
-|`gpt-4o`
-|`openai/gpt-4o`
+|`gpt-5.2`
+|`openai/gpt-5.2`
 |OpenAI
 
-|`gpt-4o-mini`
-|`openai/gpt-4o-mini`
+|`gpt-5.2-mini`
+|`openai/gpt-5.2-mini`
 |OpenAI
 
 |`claude-sonnet`
-|`anthropic/claude-sonnet-4-5`
+|`anthropic/claude-sonnet-4.5`
 |Anthropic
 
 |`o1-mini`
@@ -173,7 +173,7 @@ GitHub Copilot expects model names like `gpt-4o` without vendor prefixes. Config
 
 . Click *Save*
 
-When GitHub Copilot requests `gpt-4o`, the gateway routes to OpenAI's `gpt-4o` model. Users can optionally request `claude-sonnet` for Anthropic models if the IDE configuration supports model selection.
+When GitHub Copilot requests `gpt-5.2`, the gateway routes to OpenAI's `gpt-5.2` model. Users can optionally request `claude-sonnet` for Anthropic models if the IDE configuration supports model selection.
 
 === Configure unified LLM routing
 
@@ -326,11 +326,11 @@ Implement token rotation for security:
 
 == Multi-tenant deployment strategies
 
-GitHub Copilot has limited support for custom headers, making traditional `rp-aigw-id` header-based multi-tenancy challenging. Use one of these alternative strategies for BYOK deployments.
+GitHub Copilot has limited support for custom headers. The gateway ID is now embedded in the URL path, simplifying multi-tenancy. Use one of these strategies for BYOK deployments.
 
 === Strategy 1: OAI Compatible Provider extension (recommended)
 
-For organizations using VS Code with GitHub Copilot, the OAI Compatible Provider extension enables custom headers including `rp-aigw-id`.
+For organizations using VS Code with GitHub Copilot, the OAI Compatible Provider extension enables custom headers for additional metadata.
 
 ==== Install the extension
 
@@ -352,12 +352,11 @@ For organizations using VS Code with GitHub Copilot, the OAI Compatible Provider
       "name": "Redpanda AI Gateway",
       "baseUrl": "https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1",
       "headers": {
-        "Authorization": "Bearer YOUR_API_TOKEN",
-        "rp-aigw-id": "GATEWAY_ID"
+        "Authorization": "Bearer YOUR_API_TOKEN"
       },
       "models": [
-        "gpt-4o",
-        "gpt-4o-mini",
+        "gpt-5.2",
+        "gpt-5.2-mini",
         "claude-sonnet"
       ]
     }
@@ -369,13 +368,11 @@ For organizations using VS Code with GitHub Copilot, the OAI Compatible Provider
 +
 * `{CLUSTER_ID}`: Your Redpanda cluster ID
 * `YOUR_API_TOKEN`: Team-specific API token
-* `GATEWAY_ID`: Team-specific gateway ID
 
 This approach allows true multi-tenancy with proper gateway isolation per team.
 
 **Benefits:**
 
-* Full support for `rp-aigw-id` header
 * Clean separation between tenants
 * Standard authentication flow
 * Works with any IDE supported by the extension
@@ -481,7 +478,7 @@ For simpler deployments, configure a single gateway with shared access:
 |Strategy |Pros |Cons |Best For
 
 |OAI Compatible Provider
-|Full `rp-aigw-id` support, clean separation
+|Clean tenant separation, custom headers
 |Requires extension, VS Code only
 |Organizations standardized on VS Code
 
@@ -574,19 +571,19 @@ Configure model preferences based on use case:
 |Use Case |Recommended Model |Reason
 
 |Code completion
-|`gpt-4o-mini`
+|`gpt-5.2-mini`
 |Fast, cost-effective for frequent requests
 
 |Code explanation
-|`gpt-4o` or `claude-sonnet`
+|`gpt-5.2` or `claude-sonnet`
 |Higher quality for complex explanations
 
 |Code generation
-|`gpt-4o` or `claude-sonnet`
+|`gpt-5.2` or `claude-sonnet`
 |Better at generating complete functions
 
 |Documentation
-|`gpt-4o-mini`
+|`gpt-5.2-mini`
 |Sufficient quality for docstrings and comments
 |===
 
@@ -756,7 +753,7 @@ Symptom: GitHub Copilot shows "model not found" or similar errors.
 Causes and solutions:
 
 * **Model not enabled in catalog**: Enable the model in the gateway's model catalog
-* **Model alias missing**: Create an alias for the model name GitHub Copilot expects (for example, `gpt-4o`)
+* **Model alias missing**: Create an alias for the model name GitHub Copilot expects (for example, `gpt-5.2`)
 * **Incorrect model name**: Verify GitHub Copilot is requesting a model name that exists in your aliases
 * **Routing rule mismatch**: Check that routing rules correctly match the requested model name
 
@@ -778,7 +775,7 @@ Symptom: Token usage and costs exceed expectations.
 
 Causes and solutions:
 
-* **Code completion using expensive model**: Configure completion to use `gpt-4o-mini` instead of larger models
+* **Code completion using expensive model**: Configure completion to use `gpt-5.2-mini` instead of larger models
 * **No rate limits**: Apply per-minute rate limits to prevent runaway usage
 * **Missing spending limits**: Set monthly budget limits with blocking enforcement
 * **Chat using wrong model**: Ensure chat/explanation features use cost-effective models
