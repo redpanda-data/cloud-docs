@@ -6,7 +6,9 @@
 :learning-objective-2: Choose appropriate LLM models based on task requirements
 :learning-objective-3: Apply agent boundary design principles for maintainability
 
-Design agent systems that are maintainable, discoverable, and reliable by choosing the right architecture pattern and applying clear boundary principles.
+This topic helps you design agent systems that are maintainable, discoverable, and reliable by choosing the right architecture pattern and applying clear boundary principles.
+
+include::ai-agents:partial$byoc-aws-requirement.adoc[]
 
 After reading this page, you will be able to:
 
@@ -20,25 +22,33 @@ Agent architecture determines how you manage complexity as your system grows. Th
 
 Starting with a simple architecture is tempting, but can lead to unmaintainable systems as complexity increases. Planning for growth with clear boundaries prevents technical debt and costly refactoring later.
 
-Warning signs include system prompts exceeding 2000 words, too many tools for the LLM to select correctly, multiple teams modifying the same agent, and changes in one domain breaking others. These symptoms indicate you need architectural boundaries, not just better prompts.
+Warning signs that you need architectural boundaries, not just better prompts:
+
+* System prompts exceeding 2000 words
+* Too many tools for the LLM to select correctly
+* Multiple teams modifying the same agent
+* Changes in one domain breaking others
 
 Match agent architecture to domain structure:
 
-[cols="2,3,3"]
+[cols="2,2,3,3"]
 |===
-| Domain Characteristics | Architecture Fit | Reasoning
+| Domain Characteristics | Architecture | Pros | Cons
 
 | Single business area, stable requirements
 | Single agent
-| Simplicity outweighs flexibility needs
+| Simple to build and maintain, one deployment, lower latency
+| Limited flexibility, difficult to scale to multi-domain problems
 
 | Multiple business areas, shared infrastructure
 | Root agent with internal subagents
-| Domain separation without deployment complexity
+| Separation of concerns, easier debugging, shared resources reduce cost
+| Single point of failure, all subagents constrained to same model and budget
 
 | Cross-organization workflows, independent evolution
 | External agent-to-agent
-| Organizational boundaries require system boundaries
+| Independent deployment and scaling, security isolation, flexible infrastructure
+| Network latency, authentication complexity, harder to debug across boundaries
 |===
 
 
@@ -70,6 +80,8 @@ Single agents are simpler to build and maintain. You have one system prompt, one
 
 However, all capabilities must coexist in one agent. Adding features increases complexity rapidly, making single agents difficult to scale to multi-domain problems.
 
+TIP: You can migrate from a single agent to a root agent with subagents without starting over. Add subagents to an existing agent using the Redpanda Cloud Console, then gradually move tools and responsibilities to the new subagents.
+
 == Root agent with subagents pattern
 
 A multi-agent architecture uses a root agent that delegates to specialized internal subagents.
@@ -98,11 +110,11 @@ Internal subagents provide domain isolation, allowing you to update the order su
 
 External A2A integration connects agents across organizational boundaries, platforms, or independent systems.
 
-NOTE: Cross-agent calling between separate Redpanda Cloud agents is not supported. This pattern applies to connecting Redpanda Cloud agents with external agents you host elsewhere.
+NOTE: Cross-agent calling between separate Redpanda Cloud agents is not supported. This pattern only applies to connecting Redpanda Cloud agents with external agents you host elsewhere.
 
 === When to use external A2A
 
-Use external A2A for multi-organization workflows that coordinate agents across company boundaries, for platform integration connecting Redpanda Cloud agents with agents hosted elsewhere, and when agents require different deployment environments such as GPU clusters, air-gapped networks, or regional constraints.
+Use external glossterm:Agent2Agent (A2A) protocol[] for multi-organization workflows that coordinate agents across company boundaries, for platform integration connecting Redpanda Cloud agents with agents hosted elsewhere, and when agents require different deployment environments such as GPU clusters, air-gapped networks, or regional constraints.
 
 === How it works
 
@@ -130,29 +142,42 @@ For implementation details on external A2A integration, see xref:ai-agents:agent
 
 == Common anti-patterns
 
-Avoid these architecture mistakes that lead to unmaintainable agent systems.
+Avoid these architecture mistakes that lead to unmaintainable agent systems. For examples of well-structured agents, see the xref:ai-agents:agents/tutorials/customer-support-agent.adoc[multi-tool orchestration tutorial] and xref:ai-agents:agents/tutorials/transaction-dispute-resolution.adoc[multi-agent architecture tutorial].
 
 === The monolithic prompt
 
 A monolithic prompt is a single 3000+ word system prompt covering multiple domains.
 
-This pattern fails because LLM confusion increases with prompt length, multiple teams modify the same prompt creating conflicts and unclear ownership, and changes to one domain risk breaking others.
+This pattern fails because:
+
+* LLM confusion increases with prompt length
+* Multiple teams modify the same prompt creating conflicts and unclear ownership
+* Changes to one domain risk breaking others
 
 Split into domain-specific subagents instead. Each subagent gets a focused prompt under 500 words.
 
 === The tool explosion
 
-A tool explosion occurs when a single agent has 30+ tools from every MCP server in the cluster.
+A tool explosion occurs when a single agent has too many tools from every MCP server in the cluster.
 
-This pattern fails because the LLM struggles to choose correctly from large tool sets, tool descriptions compete for limited prompt space, and the agent invokes wrong tools with similar names, wasting iteration budget on selection mistakes.
+This pattern fails because:
 
-Limit tools per agent. Use subagents to partition tools by domain. For tool design patterns, see xref:ai-agents:mcp/remote/tool-patterns.adoc[].
+* The LLM struggles to choose correctly from large tool sets
+* Tool descriptions compete for limited prompt space
+* The agent invokes wrong tools with similar names, wasting iteration budget on selection mistakes
+
+Limit tools per agent to 10-15 for optimal performance. Agents with more than 20-25 tools often show degraded tool selection accuracy. Use subagents to partition tools by domain. For tool design patterns, see xref:ai-agents:mcp/remote/tool-patterns.adoc[].
 
 === Premature A2A splitting
 
 Premature splitting creates three separate A2A agents when all logic could fit in one agent with internal subagents.
 
-This pattern fails because network latency affects every cross-agent call, authentication complexity multiplies with three sets of credentials, debugging requires correlating logs across systems, and you manage three deployments instead of one.
+This pattern fails because:
+
+* Network latency affects every cross-agent call
+* Authentication complexity multiplies with three sets of credentials
+* Debugging requires correlating logs across systems
+* You manage three deployments instead of one
 
 Start with internal subagents for domain separation. Split to external A2A only when you need organizational boundaries or different infrastructure.
 
@@ -160,9 +185,18 @@ Start with internal subagents for domain separation. Split to external A2A only 
 
 Unbounded chaining sets max iterations to 100, returns hundreds of items from tools, and places no constraints on tool call frequency.
 
-This pattern fails because the context window fills with tool results, requests time out before completion, costs spiral with many iterations multiplied by large context, and the agent loses track of the original goal.
+This pattern fails because:
 
-Design workflows to complete in 20-30 iterations. Return paginated results from tools. Add prompt constraints like "Never call the same tool more than 3 times per request."
+* The context window fills with tool results
+* Requests time out before completion
+* Costs spiral with many iterations multiplied by large context
+* The agent loses track of the original goal
+
+For best results:
+
+* Design workflows to complete in 20-30 iterations
+* Return paginated results from tools
+* Add prompt constraints like "Never call the same tool more than 3 times per request"
 
 == Model selection guide
 
@@ -180,7 +214,7 @@ For complex reasoning, choose premium models such as Claude Opus 4.5 or GPT-5.2.
 
 For real-time responses, choose smaller models. Use models optimized for speed, such as Mini or base tiers.
 
-For batch processing, optimize for accuracy over speed. Use larger models when users don't wait for results.
+For batch processing, optimize for accuracy over speed. Use larger models when users aren't waiting for results.
 
 === Optimize for cost and volume
 
