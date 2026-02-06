@@ -1,7 +1,7 @@
 = Ingest OpenTelemetry Traces from Custom Agents
 :description: Configure a Redpanda Connect pipeline to ingest OTEL traces from custom agents into Redpanda for unified observability.
 :page-topic-type: how-to
-:learning-objective-1: Configure a Redpanda Connect pipeline to receive OpenTelemetry traces from custom agents via HTTP and publish them to redpanda.otel_traces
+:learning-objective-1: Configure a Redpanda Connect pipeline to receive OpenTelemetry traces from custom agents via HTTP and publish them to `redpanda.otel_traces`
 :learning-objective-2: Validate trace data format and compatibility with existing MCP server traces
 :learning-objective-3: Secure the ingestion endpoint using authentication mechanisms
 
@@ -30,7 +30,7 @@ If you're using LangChain with OpenTelemetry tracing, you can send traces to Red
 . Deploy a Redpanda Connect pipeline using the `otlp_http` input to receive OTLP traces over HTTP. Create the pipeline in the **Connect** page of your cluster, or see the <<configure-the-ingestion-pipeline,Configure the ingestion pipeline>> section below for a sample configuration.
 
 . Configure your OTEL exporter to send traces to your Redpanda Connect pipeline using environment variables:
-
++
 [,bash]
 ----
 # Configure LangChain OTEL integration
@@ -97,17 +97,22 @@ For complete trace structure details, see xref:ai-agents:observability/concepts.
 
 == Configure the ingestion pipeline
 
-Create a Redpanda Connect pipeline that receives HTTP requests containing OTLP traces and publishes them to the `redpanda.otel_traces` topic. The pipeline uses the `otlp_http` input component, which is specifically designed to receive OpenTelemetry Protocol data.
+Create a Redpanda Connect pipeline that receives OTLP traces and publishes them to the `redpanda.otel_traces` topic. Choose HTTP or gRPC transport based on your agent's requirements.
 
 === Create the pipeline configuration
 
-Create a pipeline configuration file that defines the OTLP HTTP ingestion endpoint.
+Create a pipeline configuration file that defines the OTLP ingestion endpoint.
 
+[tabs]
+====
+HTTP::
++
+--
 The `otlp_http` input component:
 
 * Exposes an OpenTelemetry Collector HTTP receiver
 * Accepts traces at the standard `/v1/traces` endpoint
-* Converts incoming OTLP data into individual Redpanda OTEL v1 Protobuf messages and publishes them to the `redpanda.otel_traces` topic
+* Converts incoming OTLP data into individual Redpanda OTEL v1 Protobuf messages
 
 The following example shows a minimal pipeline configuration. Redpanda Cloud automatically injects authentication handling, so you don't need to configure `auth_token` in the input.
 
@@ -126,13 +131,18 @@ output:
       - mechanism: "REDPANDA_CLOUD_SERVICE_ACCOUNT"
     topic: "redpanda.otel_traces"
 ----
+--
 
-The `otlp_http` input automatically handles format conversion, so no processors are needed for basic trace ingestion. Each span becomes a separate message in the `redpanda.otel_traces` topic.
+gRPC::
++
+--
+The `otlp_grpc` input component:
 
-[[use-grpc]]
-==== Alternative: Use gRPC instead of HTTP
+* Exposes an OpenTelemetry Collector gRPC receiver
+* Accepts traces via the OTLP gRPC protocol
+* Converts incoming OTLP data into individual Redpanda OTEL v1 Protobuf messages
 
-If your custom agent requires gRPC transport, use the `otlp_grpc` input instead:
+The following example shows a minimal pipeline configuration. Redpanda Cloud automatically injects authentication handling.
 
 [,yaml]
 ----
@@ -150,7 +160,11 @@ output:
     topic: "redpanda.otel_traces"
 ----
 
-Clients must include the authentication token in gRPC metadata as `authorization: Bearer <token>`.
+NOTE: Clients must include the authentication token in gRPC metadata as `authorization: Bearer <token>`.
+--
+====
+
+The OTLP input automatically handles format conversion, so no processors are needed for basic trace ingestion. Each span becomes a separate message in the `redpanda.otel_traces` topic.
 
 === Deploy the pipeline in Redpanda Cloud
 
