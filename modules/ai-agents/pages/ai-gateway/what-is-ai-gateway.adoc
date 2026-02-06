@@ -24,7 +24,7 @@ Finally, observability is fragmented across provider dashboards. You cannot reco
 
 == What AI Gateway solves
 
-Redpanda AI Gateway addresses these challenges through four core capabilities:
+Redpanda AI Gateway addresses these challenges through the following core capabilities:
 
 === Unified LLM access (single endpoint for all providers)
 
@@ -122,19 +122,18 @@ The dashboard tracks request volume per gateway, model, and provider, along with
 
 This unified view helps you answer critical questions such as which model is the most cost-effective for your use case, why a specific user request failed, how much your staging environment costs per week, and what the latency difference is between providers for your workload.
 
+ifdef::ai-hub-available[]
 == Gateway modes
 
 AI Gateway supports two modes to accommodate different organizational needs:
 
 *AI Hub Mode* provides zero-configuration access with pre-configured backend pools and intelligent routing. Platform admins simply add provider credentials (OpenAI, Anthropic, Google Gemini), and all teams immediately benefit from 17 routing rules and 6 backend pools. Users can toggle preferences like vision routing or long-context routing, but the underlying architecture is managed by Redpanda. This mode eliminates the complexity of LLM gateway configuration—IT adds API keys once, all teams benefit immediately.
 
-*Custom Mode* provides full control over routing rules, backend pools, rate limits, and policies. Admins configure every aspect of the gateway to meet specific requirements. This mode is ideal when you need custom routing logic based on business rules, specific failover behavior, or integration with custom infrastructure like Azure OpenAI or AWS Bedrock.
+*Custom Mode* provides full control over routing rules, backend pools, rate limits, and policies. Admins configure every aspect of the gateway to meet specific requirements. This mode is ideal when you need custom routing logic based business rules, specific failover behavior, or integration with custom infrastructure like Azure OpenAI or AWS Bedrock.
 
-ifdef::ai-hub-available[]
 To understand which mode fits your use case, see xref:ai-gateway/gateway-modes.adoc[].
 endif::[]
 
-ifdef::show-gateway-patterns[]
 == Common gateway patterns
 
 === Team isolation
@@ -163,8 +162,6 @@ request.headers["x-customer-tier"] == "enterprise" ? "anthropic/claude-opus-4.6"
 request.headers["x-customer-tier"] == "pro" ? "anthropic/claude-sonnet-4.5" :
 "anthropic/claude-haiku"
 ----
-
-endif::[]
 
 == When to use AI Gateway
 
