@@ -1,7 +1,7 @@
 = Create an MCP Tool
 :description: Create an MCP tool with the correct YAML structure, metadata, and parameter mapping.
 :page-topic-type: how-to
-:personas: ai_agent_developer, streaming_developer, data_engineer
+:personas: agent_developer, streaming_developer, data_engineer
 // Reader journey: "I want to create a tool for my AI agent"
 // Learning objectives - what readers can do after reading this page:
 :learning-objective-1: Create a tool with the correct structure and MCP metadata
@@ -33,7 +33,7 @@ Cloud Console::
 --
 . Log in to the link:https://cloud.redpanda.com/[Redpanda Cloud Console^].
 
-. Navigate to *Remote MCP* and either create a new MCP server or edit an existing one.
+. Navigate to *Agentic AI* > *Remote MCP* and either create a new MCP server or edit an existing one.
 
 . In the *Tools* section, click *Add Tool*.
 
@@ -64,25 +64,7 @@ Here's an example using the xref:develop:connect/components/processors/sql_selec
 
 [source,yaml]
 ----
-label: lookup-customer # <1>
-
-sql_select: # <2>
-  driver: postgres
-  dsn: "${secrets.DATABASE_URL}"
-  table: customers
-  columns: ["id", "name", "email", "plan"]
-  where: id = ?
-  args_mapping: '[this.customer_id]'
-
-meta: # <3>
-  mcp:
-    enabled: true
-    description: "Look up a customer by ID and return their profile."
-    properties:
-      - name: customer_id
-        type: string
-        description: "The customer's unique identifier"
-        required: true
+include::ai-agents:example$mcp-tools/processors/lookup_customer.yaml[tag=complete,indent=0]
 ----
 
 <1> **Label**: Becomes the tool name.
@@ -104,17 +86,7 @@ xref:develop:connect/components/processors/about.adoc[Processors] transform, fil
 .Processor tool
 [source,yaml]
 ----
-label: enrich-order
-
-processors:
-  - http:
-      url: "https://api.example.com/lookup"
-      verb: GET
-
-meta:
-  mcp:
-    enabled: true
-    description: "Enrich order with customer data"
+include::ai-agents:example$mcp-tools/processors/enrich_order.yaml[tag=complete,indent=0]
 ----
 
 xref:develop:connect/components/inputs/about.adoc[Inputs] read data from sources, xref:develop:connect/components/outputs/about.adoc[outputs] write data to destinations, and xref:develop:connect/components/caches/about.adoc[caches] store and retrieve data. Define these components directly at the top level:
@@ -122,59 +94,20 @@ xref:develop:connect/components/inputs/about.adoc[Inputs] read data from sources
 .Input tool
 [source,yaml]
 ----
-label: read-events
-
-redpanda:  # <1>
-  seed_brokers: ["${REDPANDA_BROKERS}"]
-  topics: ["events"]
-  consumer_group: "mcp-reader"
-  tls:
-    enabled: true
-  sasl:
-    - mechanism: SCRAM-SHA-256
-      username: "${secrets.MCP_USERNAME}"
-      password: "${secrets.MCP_PASSWORD}"
-
-meta:
-  mcp:
-    enabled: true
-    description: "Read events from Redpanda"
+include::ai-agents:example$mcp-tools/inputs/read_events.yaml[tag=complete,indent=0]
 ----
 <1> The component name (`redpanda`) is at the top level, not wrapped in `input:`.
 
 .Output tool
 [source,yaml]
 ----
-label: publish-event
-
-redpanda:
-  seed_brokers: ["${REDPANDA_BROKERS}"]
-  topic: "processed-events"
-  tls:
-    enabled: true
-  sasl:
-    - mechanism: SCRAM-SHA-256
-      username: "${secrets.MCP_USERNAME}"
-      password: "${secrets.MCP_PASSWORD}"
-
-meta:
-  mcp:
-    enabled: true
-    description: "Publish event to Redpanda"
+include::ai-agents:example$mcp-tools/outputs/publish_event.yaml[tag=complete,indent=0]
 ----
 
 .Cache tool
 [source,yaml]
 ----
-label: session-cache
-
-memory:
-  default_ttl: 300s
-
-meta:
-  mcp:
-    enabled: true
-    description: "In-memory cache for session data"
+include::ai-agents:example$mcp-tools/caches/session_cache.yaml[tag=complete,indent=0]
 ----
 
 Outputs can include a `processors:` section to transform data before publishing:
@@ -182,27 +115,7 @@ Outputs can include a `processors:` section to transform data before publishing:
 .Output tool with processors
 [source,yaml]
 ----
-label: publish-with-timestamp
-
-processors:
-  - mutation: |
-      root = this
-      root.published_at = now()
-
-redpanda:
-  seed_brokers: ["${REDPANDA_BROKERS}"]
-  topic: "processed-events"
-  tls:
-    enabled: true
-  sasl:
-    - mechanism: SCRAM-SHA-256
-      username: "${secrets.MCP_USERNAME}"
-      password: "${secrets.MCP_PASSWORD}"
-
-meta:
-  mcp:
-    enabled: true
-    description: "Add timestamp and publish to Redpanda"
+include::ai-agents:example$mcp-tools/outputs/publish_with_timestamp.yaml[tag=complete,indent=0]
 ----
 
 See xref:ai-agents:mcp/remote/tool-patterns.adoc#outputs-with-processors[outputs with processors] for more examples.
@@ -216,6 +129,7 @@ The `meta.mcp` block defines how AI clients discover and interact with your tool
 
 include::redpanda-connect:ai-agents:partial$mcp/create-tool/mcp-metadata-fields-table.adoc[]
 
+[#mcp-property-fields]
 ==== Property fields
 
 include::redpanda-connect:ai-agents:partial$mcp/create-tool/property-fields-table.adoc[]
@@ -239,17 +153,12 @@ Use `this` to access message fields directly in processors like `mutation`, `map
 
 [source,yaml]
 ----
-mutation: |
-  root.search_query = this.query.lowercase()
-  root.max_results = this.limit.or(10)
+include::ai-agents:example$mcp-tools/snippets/bloblang_this_context.yaml[tag=mutation,indent=0]
 ----
 
 [source,yaml]
 ----
-sql_select:
-  table: orders
-  where: customer_id = ? AND status = ?
-  args_mapping: '[this.customer_id, this.status.or("active")]'
+include::ai-agents:example$mcp-tools/snippets/bloblang_this_context.yaml[tag=args_mapping,indent=0]
 ----
 
 === In string fields (interpolation)
@@ -258,15 +167,12 @@ Use `${! ... }` interpolation to embed Bloblang expressions inside string values
 
 [source,yaml]
 ----
-http:
-  url: 'https://api.weather.com/v1/current?city=${! json("city") }&units=${! json("units").or("metric") }'
+include::ai-agents:example$mcp-tools/snippets/interpolation.yaml[tag=http_url,indent=0]
 ----
 
 [source,yaml]
 ----
-redpanda:
-  seed_brokers: ["${REDPANDA_BROKERS}"]  # <1>
-  topic: '${! json("topic_name") }'  # <2>
+include::ai-agents:example$mcp-tools/snippets/interpolation.yaml[tag=redpanda_topic,indent=0]
 ----
 <1> `$\{VAR}` without `!` is environment variable substitution, not Bloblang.
 <2> `${! ... }` with `!` is Bloblang interpolation that accesses message data.
@@ -279,25 +185,14 @@ Use `.or(default)` to handle missing optional parameters:
 
 [source,yaml]
 ----
-mutation: |
-  root.city = this.city  # Required - will error if missing
-  root.units = this.units.or("metric")  # Optional with default
-  root.limit = this.limit.or(10).number()  # Optional, converted to number
+include::ai-agents:example$mcp-tools/snippets/defaults.yaml[tag=mutation,indent=0]
 ----
 
 Declare which parameters are required in your `meta.mcp.properties`:
 
 [source,yaml]
 ----
-properties:
-  - name: city
-    type: string
-    description: "City name to look up"
-    required: true
-  - name: units
-    type: string
-    description: "Temperature units: 'metric' or 'imperial' (default: metric)"
-    required: false
+include::ai-agents:example$mcp-tools/snippets/defaults.yaml[tag=properties,indent=0]
 ----
 
 [[secrets]]
@@ -309,15 +204,7 @@ Reference secrets using `${secrets.SECRET_NAME}` syntax:
 
 [source,yaml]
 ----
-http:
-  url: "https://api.example.com/data"
-  headers:
-    Authorization: "Bearer ${secrets.API_TOKEN}"
-
-sql_select:
-  driver: postgres
-  dsn: "${secrets.DATABASE_URL}"
-  table: customers
+include::ai-agents:example$mcp-tools/snippets/secrets.yaml[tag=example,indent=0]
 ----
 
 When you add secret references to your tool configuration, the Cloud Console automatically detects them and provides an interface to create the required secrets.
@@ -361,63 +248,13 @@ Here's a complete tool that wraps the `http` processor to fetch weather data:
 
 [source,yaml]
 ----
-label: get-weather
-
-processors:
-  # Validate and sanitize input
-  - label: validate_city
-    mutation: |
-      root.city = if this.city.or("").trim() == "" {
-        throw("city is required")
-      } else {
-        this.city.trim().lowercase().re_replace_all("[^a-z\\s\\-]", "")
-      }
-      root.units = this.units.or("metric")
-
-  # Fetch weather data
-  - label: fetch_weather
-    try:
-      - http:
-          url: 'https://wttr.in/${! json("city") }?format=j1'
-          verb: GET
-          timeout: 10s
-
-      - mutation: |
-          root.weather = {
-            "location": this.nearest_area.0.areaName.0.value,
-            "country": this.nearest_area.0.country.0.value,
-            "temperature_c": this.current_condition.0.temp_C,
-            "temperature_f": this.current_condition.0.temp_F,
-            "condition": this.current_condition.0.weatherDesc.0.value,
-            "humidity": this.current_condition.0.humidity,
-            "wind_kph": this.current_condition.0.windspeedKmph
-          }
-
-  # Handle errors gracefully
-  - label: handle_errors
-    catch:
-      - mutation: |
-          root.error = true
-          root.message = "Failed to fetch weather: " + error()
-
-meta:
-  mcp:
-    enabled: true
-    description: "Get current weather for a city. Returns temperature, conditions, humidity, and wind speed."
-    properties:
-      - name: city
-        type: string
-        description: "City name (e.g., 'London', 'New York', 'Tokyo')"
-        required: true
-      - name: units
-        type: string
-        description: "Temperature units: 'metric' or 'imperial' (default: metric)"
-        required: false
+include::ai-agents:example$mcp-tools/processors/get_weather_complete.yaml[tag=complete,indent=0]
 ----
 
 == Next steps
 
-* xref:ai-agents:mcp/remote/best-practices.adoc[]: Apply naming and design guidelines.
-* xref:ai-agents:mcp/remote/tool-patterns.adoc[]: Find patterns for databases, APIs, and Redpanda.
-* xref:ai-agents:mcp/remote/troubleshooting.adoc[]: Diagnose common issues.
-* xref:develop:connect/components/about.adoc[]: Browse all available components.
+* xref:ai-agents:agents/quickstart.adoc[]
+* xref:ai-agents:mcp/remote/best-practices.adoc[]
+* xref:ai-agents:mcp/remote/tool-patterns.adoc[]
+* xref:ai-agents:mcp/remote/troubleshooting.adoc[]
+* xref:develop:connect/components/about.adoc[]

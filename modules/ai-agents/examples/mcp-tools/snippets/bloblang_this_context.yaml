@@ -1,0 +1,15 @@
+# Bloblang 'this' context examples
+# Use 'this' to access message fields in mutation, mapping, or args_mapping
+
+# tag::mutation[]
+mutation: |
+  root.search_query = this.query.lowercase()
+  root.max_results = this.limit.or(10)
+# end::mutation[]
+
+# tag::args_mapping[]
+sql_select:
+  table: orders
+  where: customer_id = ? AND status = ?
+  args_mapping: '[this.customer_id, this.status.or("active")]'
+# end::args_mapping[]

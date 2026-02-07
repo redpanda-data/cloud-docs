@@ -1,0 +1,436 @@
+= Configure AI Hub Gateway
+:description: Create and configure zero-config AI Hub gateways with pre-configured routing and backend pools.
+:page-topic-type: how-to
+:personas: platform_admin
+:learning-objective-1: Create an AI Hub gateway with one-click configuration
+:learning-objective-2: Configure user preference toggles to customize routing behavior
+:learning-objective-3: Manage provider credentials for OpenAI, Anthropic, and Google Gemini
+
+include::ai-agents:partial$ai-gateway-byoc-note.adoc[]
+
+AI Hub mode provides instant, pre-configured access to OpenAI, Anthropic, and Google Gemini with zero setup complexity. Platform admins add provider credentials, and all teams immediately benefit from intelligent routing.
+
+This guide walks administrators through creating and configuring AI Hub gateways, from initial setup to managing preferences and credentials.
+
+After reading this page, you will be able to:
+
+* [ ] Create an AI Hub gateway with one-click configuration
+* [ ] Configure user preference toggles to customize routing behavior
+* [ ] Manage provider credentials for OpenAI, Anthropic, and Google Gemini
+
+== Prerequisites
+
+* Access to the Redpanda Cloud Console with administrator privileges
+* API keys for at least one LLM provider:
+** OpenAI: API key from https://platform.openai.com/api-keys
+** Anthropic: API key from https://console.anthropic.com/settings/keys
+* A Redpanda Cloud workspace
+
+== Create an AI Hub gateway
+
+Creating an AI Hub gateway is significantly simpler than creating a Custom mode gateway because all routing rules and backend pools are pre-configured.
+
+. In the Redpanda Cloud Console, navigate to *AI Gateway* → *Gateways*.
+. Click *Create Gateway*.
+. Select *AI Hub* as the gateway mode.
+. Configure basic settings:
++
+--
+* *Name*: Choose a descriptive name (for example, `ai-hub-production`, `team-ml-hub`)
+* *Workspace*: Select the workspace this gateway belongs to
+* *Description* (optional): Add context about this gateway's purpose
+--
++
+. Click *Create*.
+
+After creation, the gateway is immediately available with all pre-configured components:
+
+* 6 backend pools (OpenAI, Anthropic, and Google Gemini)
+* 17 routing rules
+* Intelligent automatic routing
+* Default preference toggles
+
+Note the following information from the gateway detail page:
+
+* *Gateway Endpoint*: URL for API requests, with the gateway ID embedded in the path (for example, `https://example/gateways/gw_abc123/v1`)
+
+Share the gateway endpoint with teams who need to access this gateway.
+
+== Understanding pre-configured architecture
+
+When you create an AI Hub gateway, you get a complete, production-ready configuration without manual setup.
+
+=== Backend pools
+
+AI Hub mode automatically provisions 6 backend pools to handle different request patterns:
+
+*OpenAI Pools:*
+
+. *OpenAI Standard*: Handles standard (non-streaming) requests to OpenAI models
++
+--
+* Target: `https://api.openai.com`
+* Authentication: Bearer token
+* Timeout: Standard (60 seconds)
+* Models: All `openai/*` models, embeddings, images, audio
+--
+
+. *OpenAI Streaming*: Handles streaming requests to OpenAI models
++
+--
+* Target: `https://api.openai.com`
+* Authentication: Bearer token
+* Timeout: Extended (300 seconds)
+* Models: All `openai/*` models with streaming enabled
+--
+
+*Anthropic Pools:*
+
+. *Anthropic with Transform (Standard)*: Converts OpenAI format to Anthropic's native format for standard requests
++
+--
+* Target: `https://api.anthropic.com`
+* Authentication: x-api-key header
+* Transform: OpenAI → Anthropic Messages API
+* Timeout: Standard (60 seconds)
+* Models: All `anthropic/*` models via OpenAI-compatible endpoint
+--
+
+. *Anthropic with Transform (Streaming)*: Converts OpenAI format to Anthropic's native format for streaming requests
++
+--
+* Target: `https://api.anthropic.com`
+* Authentication: x-api-key header
+* Transform: OpenAI → Anthropic Messages API
+* Timeout: Extended (300 seconds)
+* Models: All `anthropic/*` models with streaming
+--
+
+. *Anthropic Native (Standard)*: Direct passthrough for native Anthropic SDK requests
++
+--
+* Target: `https://api.anthropic.com`
+* Authentication: x-api-key header
+* Transform: None (passthrough)
+* Timeout: Standard (60 seconds)
+* Endpoint: `/v1/messages` (Anthropic's native API)
+--
+
+. *Anthropic Native (Streaming)*: Direct passthrough for native Anthropic SDK streaming requests
++
+--
+* Target: `https://api.anthropic.com`
+* Authentication: x-api-key header
+* Transform: None (passthrough)
+* Timeout: Extended (300 seconds)
+* Endpoint: `/v1/messages` with streaming
+--
+
+These backend pools are immutable and cannot be modified or deleted in AI Hub mode.
+
+=== Routing rules
+
+AI Hub mode provides 17 routing rules organized across 5 priority tiers. These rules automatically direct requests to the appropriate backend pool based on request characteristics:
+
+*Tier 1: Model Prefix Routing* (Highest Priority)
+
+* `openai/*` → OpenAI backend pools
+* `anthropic/*` → Anthropic backend pools (with transform)
+
+*Tier 2: Model Name Pattern Routing*
+
+* `gpt-*` → OpenAI backend pools
+* `claude-*` → Anthropic backend pools
+* `o1-*` → OpenAI backend pools
+
+*Tier 3: Special Purpose Routing*
+
+* Embeddings requests → OpenAI only (Anthropic doesn't support embeddings)
+* Image generation → OpenAI only (DALL-E)
+* Audio/speech requests → OpenAI only (Whisper, TTS)
+* Content moderation → OpenAI only
+* Legacy completions API → OpenAI only
+
+*Tier 4: Native SDK Detection*
+
+* Requests to `/v1/messages` → Anthropic Native backend pools (no transform)
+* Requests to `/v1/chat/completions` → Transform backend pools
+
+*Tier 5: Streaming Detection*
+
+* Requests with `stream: true` → Streaming backend pools (extended timeout)
+* Requests without streaming → Standard backend pools
+
+These routing rules are immutable and managed by Redpanda. They ensure consistent, tested behavior across all AI Hub gateways.
+
+=== Intelligent automatic routing
+
+The routing engine evaluates rules in priority order:
+
+. Check model prefix (`openai/*`, `anthropic/*`)
+. If no prefix, check model name pattern (`gpt-*`, `claude-*`)
+. Check for special request types (embeddings, images)
+. Detect native SDK usage (`/v1/messages`)
+. Detect streaming requirements
+. Apply user preference toggles
+
+This multi-tier evaluation ensures requests always reach the correct provider and backend pool.
+
+== Configure user preferences
+
+While routing rules are immutable, you can customize routing behavior through user preference toggles.
+
+include::ai-agents:partial$ai-hub-preference-toggles.adoc[]
+
+=== Set preferences via Console
+
+. Navigate to your AI Hub gateway.
+. Click *Settings* → *Preferences*.
+. Toggle preferences as needed:
++
+--
+* Enable `auto_route_vision` if your teams use image analysis
+* Enable `auto_route_long_context` if you process large documents
+* Enable `rate_limit_resilience` for higher availability
+--
++
+. Click *Save Changes*.
+
+Changes take effect immediately for new requests.
+
+=== Set preferences via API
+
+[,bash]
+----
+curl https://api.redpanda.com/v1/gateways/${GATEWAY_ID}/ai-hub/preferences \
+  -H "Authorization: Bearer ${REDPANDA_CLOUD_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -X PATCH \
+  -d '{
+    "preferences": {
+      "infer_provider_from_model_name": true,
+      "auto_route_vision": false,
+      "auto_route_long_context": false,
+      "long_context_threshold_tokens": 100000,
+      "rate_limit_resilience": false,
+      "rate_limit_cooldown_seconds": 60,
+      "cost_optimization": "none",
+      "fallback_provider": "openai"
+    }
+  }'
+----
+
+== Manage provider credentials
+
+AI Hub gateways require provider credentials to route requests. Credentials are stored encrypted and shared across all gateways in your workspace.
+
+=== Add OpenAI credentials
+
+. Navigate to *Settings* → *Providers*.
+. Select *OpenAI*.
+. Click *Configure* (or *Edit* if already configured).
+. Enter your OpenAI API Key:
++
+--
+* Obtain from: https://platform.openai.com/api-keys
+* Format: `sk-...` (starts with `sk-`)
+--
++
+. Click *Save*.
+
+All AI Hub gateways in the workspace can now route to OpenAI.
+
+=== Add Anthropic credentials
+
+. Navigate to *Settings* → *Providers*.
+. Select *Anthropic*.
+. Click *Configure* (or *Edit* if already configured).
+. Enter your Anthropic API Key:
++
+--
+* Obtain from: https://console.anthropic.com/settings/keys
+* Format: `sk-ant-...` (starts with `sk-ant-`)
+--
++
+. Click *Save*.
+
+All AI Hub gateways in the workspace can now route to Anthropic.
+
+=== Credential rotation
+
+To rotate credentials without downtime:
+
+. Add a new API key to the provider configuration (don't delete the old one yet).
+. Wait for the new key to propagate (approximately 5 minutes).
+. Test with a sample request to verify the new key works.
+. Delete the old API key.
+
+AI Gateway automatically load-balances across multiple API keys if you configure more than one per provider.
+
+=== Verify credentials
+
+Test that credentials are working:
+
+[,bash]
+----
+curl ${GATEWAY_ENDPOINT}/models \
+  -H "Authorization: Bearer ${REDPANDA_CLOUD_TOKEN}"
+----
+
+Expected response: List of available models from configured providers.
+
+If you see authentication errors, verify that:
+
+* Provider credentials are correctly entered
+* API keys have not expired
+* Provider accounts have sufficient credits
+
+== Protected resources
+
+In AI Hub mode, certain resources are protected to ensure reliability and consistency.
+
+*Cannot be modified or deleted:*
+
+* Backend pool definitions (6 pools)
+* Core routing rules (17 rules)
+* Failover logic
+* Provider selection algorithms
+
+*Can be configured:*
+
+* Provider credentials
+* User preference toggles (6 available)
+* Rate limits (per-gateway, per-user)
+* Spend limits (monthly budgets)
+
+If you attempt to modify protected resources through the API, you will receive an error indicating the resource is managed by AI Hub and cannot be modified directly.
+
+=== Why resources are protected
+
+Protected resources ensure that:
+
+* Routing behavior is consistent across all AI Hub gateways
+* Security updates and improvements are automatically applied
+* Provider integrations remain compatible with new model releases
+* Support teams can diagnose issues without custom configurations
+
+=== How to gain control
+
+If you need to modify backend pools or routing rules, eject the gateway to Custom mode. See xref:ai-agents:ai-gateway/admin/eject-to-custom-mode.adoc[] for details.
+
+== Monitor usage
+
+AI Hub gateways provide the same observability features as Custom mode gateways.
+
+=== Observability dashboard
+
+. Navigate to *AI Gateway* → *Gateways* → Your Gateway.
+. Click *Observability*.
+
+View metrics including:
+
+* Request volume per model and provider
+* Token usage (prompt and completion tokens)
+* Estimated spend per model
+* Latency metrics (p50, p95, p99)
+* Error rates and types
+* Success rate per provider
+
+=== Cost tracking
+
+AI Hub gateways automatically track costs across both providers:
+
+* OpenAI costs: Based on official OpenAI pricing
+* Anthropic costs: Based on official Anthropic pricing
+
+View cost estimates in:
+
+* Real-time dashboard (current day)
+* Historical reports (daily, weekly, monthly)
+* Cost breakdown by model, provider, team
+
+Set spend limits to control costs:
+
+. Navigate to *Settings* → *Spend Limits*.
+. Configure monthly budget (for example, $5,000/month).
+. Set alerting thresholds (for example, alert at 80% of budget).
+
+== Troubleshooting
+
+=== Provider authentication errors
+
+*Symptom*: Requests fail with 401 Unauthorized errors
+
+*Causes and solutions*:
+
+* Invalid API key: Verify key is correct in provider configuration
+* Expired API key: Generate a new key from provider console
+* Insufficient credits: Check provider account balance
+
+*Test authentication*:
+
+[,bash]
+----
+curl ${GATEWAY_ENDPOINT}/chat/completions \
+  -H "Authorization: Bearer ${REDPANDA_CLOUD_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "openai/gpt-5.2-mini",
+    "messages": [{"role": "user", "content": "test"}],
+    "max_tokens": 5
+  }'
+----
+
+=== Requests routing to unexpected provider
+
+*Symptom*: Requests go to OpenAI when you expected Anthropic (or vice versa)
+
+*Common causes*:
+
+* Model prefix missing: Use `anthropic/claude-sonnet-4.5` not `claude-sonnet-4.5`
+* Provider preference override: Check preference toggles
+* Special routing rule: Embeddings always route to OpenAI
+
+*Debug routing*:
+
+. Check observability dashboard for actual routing
+. Review model string in request
+. Verify preference toggles are set as expected
+
+=== High latency
+
+*Symptom*: Requests take longer than expected
+
+*Common causes*:
+
+* Large responses: Requests generating many tokens take longer
+* Provider latency: Check provider status pages
+* Network issues: Test connectivity to gateway endpoint
+
+*Optimization strategies*:
+
+* Enable streaming for faster time-to-first-token
+* Use smaller models for simple requests (enable `cost_optimization` when available)
+* Set appropriate `max_tokens` limits
+
+== When to eject to Custom mode
+
+Consider ejecting to Custom mode when:
+
+* You need custom routing rules not covered by AI Hub's 17 rules
+* You want to modify backend pool configuration (timeouts, retries)
+* You need to integrate with providers not supported by AI Hub (Azure OpenAI, AWS Bedrock)
+* You want provider-specific features not available through the unified API
+* Your requirements have grown beyond AI Hub's pre-configured capabilities
+
+Most organizations start with AI Hub and eject only when they outgrow its capabilities.
+
+For ejection instructions, see xref:ai-agents:ai-gateway/admin/eject-to-custom-mode.adoc[].
+
+== Next steps
+
+Now that you've configured your AI Hub gateway:
+
+* xref:ai-agents:ai-gateway/builders/use-ai-hub-gateway.adoc[Share this guide with builders] - Help your teams connect to the gateway
+* xref:ai-agents:ai-gateway/admin/eject-to-custom-mode.adoc[Learn about ejecting to Custom mode] - Understand the transition path if you need more control
+* xref:ai-agents:ai-gateway/gateway-architecture.adoc[Deep dive into architecture] - Understand how AI Hub routing works

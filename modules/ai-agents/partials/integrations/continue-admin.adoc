@@ -1,0 +1,741 @@
+= Configure AI Gateway for Continue.dev
+:description: Configure Redpanda AI Gateway to support Continue.dev clients.
+:page-topic-type: how-to
+:personas: platform_admin
+:learning-objective-1: Configure AI Gateway endpoints for Continue.dev connectivity
+:learning-objective-2: Set up multi-provider backends with native format routing
+:learning-objective-3: Deploy MCP tool aggregation for Continue.dev tool discovery
+
+include::ai-agents:partial$ai-gateway-byoc-note.adoc[]
+
+Configure Redpanda AI Gateway to support Continue.dev clients accessing multiple LLM providers and MCP tools through flexible, native-format endpoints.
+
+After reading this page, you will be able to:
+
+* [ ] Configure AI Gateway endpoints for Continue.dev connectivity.
+* [ ] Set up multi-provider backends with native format routing.
+* [ ] Deploy MCP tool aggregation for Continue.dev tool discovery.
+
+== Prerequisites
+
+* AI Gateway deployed on a BYOC cluster running Redpanda version 25.3 or later
+* Administrator access to the AI Gateway UI
+* API keys for at least one LLM provider (Anthropic, OpenAI, or others)
+* Understanding of xref:ai-agents:ai-gateway/gateway-architecture.adoc[AI Gateway concepts]
+
+== About Continue.dev
+
+Continue.dev is a highly configurable open-source AI coding assistant that integrates with VS Code and JetBrains IDEs. Unlike other AI assistants, Continue.dev uses native provider API formats rather than requiring transforms to a unified format. This architectural choice provides maximum flexibility but requires specific gateway configuration.
+
+Key characteristics:
+
+* Uses native provider formats (Anthropic format for Anthropic, OpenAI format for OpenAI)
+* Supports multiple LLM providers simultaneously with per-provider configuration
+* Custom API endpoints via `apiBase` configuration
+* Custom headers via `requestOptions.headers`
+* Built-in MCP support for tool discovery and execution
+* Autocomplete, chat, and inline edit modes
+
+== Architecture overview
+
+Continue.dev connects to AI Gateway differently than unified-format clients:
+
+* Each provider requires a separate backend configured without format transforms
+* LLM endpoint: `https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1/{provider}` (provider-specific paths)
+* MCP endpoint: `https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/mcp` for tool discovery and execution
+
+The gateway handles:
+
+. Authentication via bearer tokens in the `Authorization` header
+. Provider-specific request formats without transformation
+. Model routing using provider-native model identifiers
+. MCP server aggregation for multi-tool workflows
+. Request logging and cost tracking per gateway
+
+== Enable LLM providers
+
+Continue.dev works with multiple providers. Enable the providers your users will access.
+
+=== Configure Anthropic
+
+To enable Anthropic with native format support:
+
+. Navigate to *AI Gateway* > *Providers* in the Redpanda Cloud console
+. Select *Anthropic* from the provider list
+. Click *Add configuration*
+. Enter your Anthropic API key
+. Under *Format*, select *Native Anthropic* (not OpenAI-compatible)
+. Click *Save*
+
+The gateway now accepts Anthropic's native `/v1/messages` format.
+
+=== Configure OpenAI
+
+To enable OpenAI:
+
+. Navigate to *AI Gateway* > *Providers*
+. Select *OpenAI* from the provider list
+. Click *Add configuration*
+. Enter your OpenAI API key
+. Under *Format*, select *Native OpenAI*
+. Click *Save*
+
+=== Configure additional providers
+
+Continue.dev supports many providers. For each provider:
+
+. Add the provider configuration in the gateway
+. Ensure the format is set to the provider's native format
+. Do not enable format transforms (Continue.dev handles format differences in its client code)
+
+Common additional providers:
+
+* Google Gemini (native Google format)
+* Mistral AI (OpenAI-compatible format)
+* Together AI (OpenAI-compatible format)
+* Ollama (OpenAI-compatible format for local models)
+
+=== Enable models in the catalog
+
+After enabling providers, enable specific models:
+
+. Navigate to *AI Gateway* > *Models*
+. Enable the models you want Continue.dev clients to access
++
+Common models for Continue.dev:
++
+* `claude-opus-4.6` (Anthropic, high quality)
+* `claude-sonnet-4.5` (Anthropic, balanced)
+* `gpt-5.2` (OpenAI, high quality)
+* `gpt-5.2-mini` (OpenAI, fast autocomplete)
+* `o1-mini` (OpenAI, reasoning)
+
+. Click *Save*
+
+Continue.dev uses provider-native model identifiers (for example, `claude-sonnet-4.5` not `anthropic/claude-sonnet-4.5`).
+
+== Create a gateway for Continue.dev clients
+
+Create a dedicated gateway to isolate Continue.dev traffic and apply specific policies.
+
+=== Gateway configuration
+
+. Navigate to *AI Gateway* > *Gateways*
+. Click *Create Gateway*
+. Enter gateway details:
++
+[cols="1,2"]
+|===
+|Field |Value
+
+|Name
+|`continue-gateway` (or your preferred name)
+
+|Workspace
+|Select the workspace for access control grouping
+
+|Description
+|Gateway for Continue.dev IDE clients
+|===
+
+. Click *Create*
+. Copy the gateway endpoint URL from the gateway details page
+
+=== Configure provider-specific backends
+
+Continue.dev requires separate backend configurations for each provider because it uses native formats.
+
+==== Anthropic backend
+
+. Navigate to the gateway's *Backends* tab
+. Click *Add Backend*
+. Configure:
++
+[cols="1,2"]
+|===
+|Field |Value
+
+|Backend name
+|`anthropic-native`
+
+|Provider
+|Anthropic
+
+|Format
+|Native Anthropic (no transform)
+
+|Path
+|`/v1/anthropic`
+
+|Enabled models
+|All Anthropic models you enabled in the catalog
+|===
+
+. Click *Save*
+
+Continue.dev will send requests to `https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1/anthropic` using Anthropic's native format.
+
+==== OpenAI backend
+
+. Click *Add Backend*
+. Configure:
++
+[cols="1,2"]
+|===
+|Field |Value
+
+|Backend name
+|`openai-native`
+
+|Provider
+|OpenAI
+
+|Format
+|Native OpenAI (no transform)
+
+|Path
+|`/v1/openai`
+
+|Enabled models
+|All OpenAI models you enabled in the catalog
+|===
+
+. Click *Save*
+
+Continue.dev will send requests to `https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1/openai` using OpenAI's native format.
+
+==== Additional provider backends
+
+Repeat the backend configuration process for each provider:
+
+* Google Gemini: `/v1/google`, native Google format
+* Mistral: `/v1/mistral`, OpenAI-compatible format
+* Ollama (if proxying local models): `/v1/ollama`, OpenAI-compatible format
+
+=== Configure LLM routing
+
+Set up routing policies for Continue.dev requests.
+
+==== Per-provider routing
+
+Configure routing rules that apply to each backend:
+
+. Navigate to the gateway's *Routing* tab
+. For each backend, click *Add Route*
+. Configure basic routing:
++
+[source,cel]
+----
+true  # Matches all requests to this backend
+----
+
+. Add a primary provider configuration with your Anthropic API key
+. (Optional) Add a fallback configuration for redundancy if you have multiple API keys
+. Click *Save*
+
+==== Provider failover
+
+For providers with multiple API keys, configure failover:
+
+. In the backend's routing configuration, add multiple provider configurations
+. Set failover conditions:
++
+* Rate limits (HTTP 429)
+* Timeouts (no response within 30 seconds)
+* 5xx errors (provider unavailable)
+
+. Configure load balancing: Round robin across available keys
+. Click *Save*
+
+Continue.dev requests automatically fail over to healthy API keys when the primary key experiences issues.
+
+=== Apply rate limits
+
+Prevent runaway usage from Continue.dev clients:
+
+. Navigate to the gateway's *Rate Limits* tab
+. Configure global limits:
++
+[cols="1,2"]
+|===
+|Setting |Recommended Value
+
+|Global rate limit
+|200 requests per minute (Continue.dev autocomplete can generate many requests)
+
+|Per-user rate limit
+|20 requests per minute (if using user identification headers)
+
+|Per-backend limits
+|Vary by provider (autocomplete backends need higher limits)
+|===
+
+. Click *Save*
+
+The gateway blocks requests exceeding these limits and returns HTTP 429 errors.
+
+==== Rate limit considerations for autocomplete
+
+Continue.dev's autocomplete feature generates frequent, short requests. Configure higher rate limits for autocomplete-specific backends:
+
+* Autocomplete models (for example, `gpt-5.2-mini`): 100 requests per minute per user
+* Chat models (for example, `claude-sonnet-4.5`): 20 requests per minute per user
+
+=== Set spending limits
+
+Control LLM costs across all providers:
+
+. Navigate to the gateway's *Spend Limits* tab
+. Configure:
++
+[cols="1,2"]
+|===
+|Setting |Value
+
+|Monthly budget
+|$10,000 (adjust based on expected usage)
+
+|Enforcement
+|Block requests after budget exceeded
+
+|Alert threshold
+|80% of budget (sends notification)
+|===
+
+. Click *Save*
+
+The gateway tracks estimated costs per request across all providers and blocks traffic when the monthly budget is exhausted.
+
+== Configure MCP tool aggregation
+
+Enable Continue.dev to discover and use tools from multiple MCP servers through a single endpoint.
+
+=== Add MCP servers
+
+. Navigate to the gateway's *MCP* tab
+. Click *Add MCP Server*
+. Enter server details:
++
+[cols="1,2"]
+|===
+|Field |Value
+
+|Display name
+|Descriptive name (for example, `redpanda-data-catalog`, `code-search-tools`)
+
+|Endpoint URL
+|MCP server endpoint (for example, xref:ai-agents:mcp/remote/overview.adoc[Remote MCP server] URL)
+
+|Authentication
+|Bearer token or other authentication mechanism
+|===
+
+. Click *Save*
+
+Repeat for each MCP server you want to aggregate.
+
+=== Enable deferred tool loading
+
+Reduce token costs for Continue.dev sessions with many available tools:
+
+. Under *MCP Settings*, enable *Deferred tool loading*
+. Click *Save*
+
+When enabled:
+
+* Continue.dev initially receives only a search tool and orchestrator tool
+* Continue.dev queries for specific tools by name when needed
+* Token usage decreases by 80-90% for configurations with many tools
+
+This is particularly important for Continue.dev because autocomplete and chat modes both use tool discovery.
+
+=== Add the MCP orchestrator
+
+The MCP orchestrator reduces multi-step workflows to single calls:
+
+. Under *MCP Settings*, enable *MCP Orchestrator*
+. Configure:
++
+[cols="1,2"]
+|===
+|Setting |Value
+
+|Orchestrator model
+|Select a model with strong code generation capabilities (for example, `claude-sonnet-4.5`)
+
+|Execution timeout
+|30 seconds
+
+|Backend
+|Select the Anthropic backend (orchestrator works best with Claude models)
+|===
+
+. Click *Save*
+
+Continue.dev can now invoke the orchestrator tool to execute complex, multi-step operations in a single request.
+
+== Configure authentication
+
+Continue.dev clients authenticate using bearer tokens.
+
+=== Generate API tokens
+
+. Navigate to *Security* > *API Tokens* in the Redpanda Cloud console
+. Click *Create Token*
+. Enter token details:
++
+[cols="1,2"]
+|===
+|Field |Value
+
+|Name
+|`continue-access`
+
+|Scopes
+|`ai-gateway:read`, `ai-gateway:write`
+
+|Expiration
+|Set appropriate expiration based on security policies
+|===
+
+. Click *Create*
+. Copy the token (it appears only once)
+
+Distribute this token to Continue.dev users through secure channels.
+
+=== Token rotation
+
+Implement token rotation for security:
+
+. Create a new token before the existing token expires
+. Distribute the new token to users
+. Monitor usage of the old token in (observability dashboard)
+. Revoke the old token after all users have migrated
+
+== Configure Continue.dev clients
+
+Provide these instructions to users configuring Continue.dev in their IDE.
+
+=== Configuration file location
+
+Continue.dev supports both JSON and YAML configuration formats. This guide uses YAML (`config.yaml`) because it supports MCP server configuration and environment variable interpolation:
+
+* VS Code: `~/.continue/config.yaml`
+* JetBrains: `~/.continue/config.yaml`
+
+NOTE: While `config.json` is still supported for basic LLM configuration, `config.yaml` is required for MCP server integration.
+
+=== Multi-provider configuration
+
+Users configure Continue.dev with separate provider entries for each backend:
+
+[source,yaml]
+----
+models:
+  - title: Claude Sonnet (Redpanda)
+    provider: anthropic
+    model: claude-sonnet-4.5
+    apiBase: https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1/anthropic
+    apiKey: YOUR_API_TOKEN
+
+  - title: GPT-5.2 (Redpanda)
+    provider: openai
+    model: gpt-5.2
+    apiBase: https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1/openai
+    apiKey: YOUR_API_TOKEN
+
+  - title: GPT-5.2-mini (Autocomplete)
+    provider: openai
+    model: gpt-5.2-mini
+    apiBase: https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1/openai
+    apiKey: YOUR_API_TOKEN
+
+tabAutocompleteModel:
+  title: GPT-5.2-mini (Autocomplete)
+  provider: openai
+  model: gpt-5.2-mini
+  apiBase: https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1/openai
+  apiKey: YOUR_API_TOKEN
+----
+
+Replace:
+
+* `{CLUSTER_ID}`: Your Redpanda cluster ID
+* `YOUR_API_TOKEN`: The API token generated earlier
+
+=== MCP server configuration
+
+Configure Continue.dev to connect to the aggregated MCP endpoint.
+
+==== Recommended: Directory-based configuration
+
+The preferred method is to create MCP server configuration files in the `~/.continue/mcpServers/` directory:
+
+. Create the directory: `mkdir -p ~/.continue/mcpServers`
+. Create `~/.continue/mcpServers/redpanda-ai-gateway.yaml`:
++
+[source,yaml]
+----
+transport:
+  type: streamable-http
+  url: https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/mcp
+  headers:
+    Authorization: Bearer YOUR_API_TOKEN
+----
++
+IMPORTANT: For production deployments, use environment variable interpolation with `${{ secrets.VARIABLE }}` syntax instead of hardcoding tokens. See xref:ai-agents:ai-gateway/integrations/continue-user.adoc#configure-env-vars[Configure with environment variables] in the user guide for details.
+
+Continue.dev automatically discovers MCP server configurations in this directory.
+
+==== Alternative: Inline configuration
+
+Alternatively, embed MCP server configuration in `~/.continue/config.yaml`:
+
+[source,yaml]
+----
+mcpServers:
+  - transport:
+      type: streamable-http
+      url: https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/mcp
+      headers:
+        Authorization: Bearer YOUR_API_TOKEN
+----
+
+Replace:
+
+* `{CLUSTER_ID}`: Your Redpanda cluster ID
+* `YOUR_API_TOKEN`: The API token generated earlier
+
+This configuration connects Continue.dev to the aggregated MCP endpoint with authentication headers.
+
+=== Model selection strategy
+
+Configure different models for different Continue.dev modes:
+
+[cols="1,2,1"]
+|===
+|Mode |Recommended Model |Reason
+
+|Chat
+|`claude-sonnet-4.5` or `gpt-5.2`
+|High quality for complex questions
+
+|Autocomplete
+|`gpt-5.2-mini`
+|Fast, cost-effective for frequent requests
+
+|Inline edit
+|`claude-sonnet-4.5`
+|Balanced quality and speed for code modifications
+
+|Embeddings
+|`text-embedding-3-small`
+|Cost-effective for code search
+|===
+
+== Monitor Continue.dev usage
+
+Track Continue.dev activity through gateway observability features.
+
+=== View request logs
+
+. Navigate to *AI Gateway* > *Observability* > *Logs*
+. Filter by gateway ID: `continue-gateway`
+. Review:
++
+* Request timestamps and duration
+* Backend and model used per request
+* Token usage (prompt and completion tokens)
+* Estimated cost per request
+* HTTP status codes and errors
+
+Continue.dev generates different request patterns:
+
+* Autocomplete: Many short requests with low token counts
+* Chat: Longer requests with context and multi-turn conversations
+* Inline edit: Medium-length requests with code context
+
+=== Analyze metrics
+
+. Navigate to *AI Gateway* > *Observability* > *Metrics*
+. Select the Continue.dev gateway
+. Review:
++
+[cols="1,2"]
+|===
+|Metric |Purpose
+
+|Request volume by backend
+|Identify which providers are most used
+
+|Token usage by model
+|Track consumption patterns (autocomplete vs chat)
+
+|Estimated spend by backend
+|Monitor costs across providers
+
+|Latency (p50, p95, p99) by backend
+|Detect provider-specific performance issues
+
+|Error rate by backend
+|Identify failing providers or misconfigured backends
+|===
+
+
+=== Query logs via API
+
+Programmatically access logs for integration with monitoring systems:
+
+[source,bash]
+----
+curl https://{CLUSTER_ID}.cloud.redpanda.com/api/ai-gateway/logs \
+  -H "Authorization: Bearer YOUR_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "gateway_id": "GATEWAY_ID",
+    "start_time": "2026-01-01T00:00:00Z",
+    "end_time": "2026-01-14T23:59:59Z",
+    "limit": 100
+  }'
+----
+
+== Security considerations
+
+Apply these security best practices for Continue.dev deployments.
+
+=== Limit token scope
+
+Create tokens with minimal required scopes:
+
+* `ai-gateway:read`: Required for MCP tool discovery
+* `ai-gateway:write`: Required for LLM requests and tool execution
+
+Avoid granting broader scopes like `admin` or `cluster:write`.
+
+=== Implement network restrictions
+
+If Continue.dev clients connect from known networks, configure network policies:
+
+. Use cloud provider security groups to restrict access to AI Gateway endpoints
+. Allowlist only the IP ranges where Continue.dev clients operate
+. Monitor for unauthorized access attempts in request logs
+
+=== Enforce token expiration
+
+Set short token lifetimes for high-security environments:
+
+* Development environments: 90 days
+* Production environments: 30 days
+
+Automate token rotation to reduce manual overhead.
+
+=== Audit tool access
+
+Review which MCP tools Continue.dev clients can access:
+
+. Periodically audit the MCP servers configured in the gateway
+. Remove unused or deprecated MCP servers
+. Monitor tool execution logs for unexpected behavior
+
+=== Protect API keys in configuration
+
+Continue.dev stores the API token in plain text in `config.yaml`. Remind users to:
+
+* Never commit `config.yaml` to version control
+* Use file system permissions to restrict access (for example, `chmod 600 ~/.continue/config.yaml`)
+* Rotate tokens if they suspect compromise
+
+== Troubleshooting
+
+Common issues and solutions when configuring AI Gateway for Continue.dev.
+
+=== Continue.dev cannot connect to gateway
+
+Symptom: Connection errors when Continue.dev tries to discover tools or send LLM requests.
+
+Causes and solutions:
+
+* **Invalid gateway ID**: Verify the gateway endpoint URL matches the URL from the console
+* **Expired token**: Generate a new API token and update the Continue.dev configuration
+* **Wrong backend path**: Verify `apiBase` matches the backend path (for example, `/v1/anthropic` not `/v1`)
+* **Network connectivity**: Verify the cluster endpoint is accessible from the client network
+* **Provider not enabled**: Ensure at least one backend is configured with models enabled
+
+=== Model not found errors
+
+Symptom: Continue.dev shows "model not found" or similar errors.
+
+Causes and solutions:
+
+* **Model not enabled in catalog**: Enable the model in the gateway's model catalog
+* **Model identifier mismatch**: Use provider-native names (for example, `claude-sonnet-4.5` not `anthropic/claude-sonnet-4.5`)
+* **Wrong backend for model**: Verify the model is associated with the correct backend (Anthropic models with Anthropic backend)
+
+=== Format errors or unexpected responses
+
+Symptom: Responses are malformed or Continue.dev reports format errors.
+
+Causes and solutions:
+
+* **Transform enabled on backend**: Ensure backend format is set to native (no OpenAI-compatible transform for Anthropic)
+* **Wrong provider for apiBase**: Verify Continue.dev's `provider` field matches the backend's provider
+* **Headers not passed**: Confirm `requestOptions.headers` is correctly configured
+
+=== Autocomplete not working or slow
+
+Symptom: Autocomplete suggestions don't appear or are delayed.
+
+Causes and solutions:
+
+* **Wrong model for autocomplete**: Use a fast model like `gpt-5.2-mini` in `tabAutocompleteModel`
+* **Rate limits too restrictive**: Increase rate limits for autocomplete backend
+* **High backend latency**: Check backend metrics and consider provider failover
+* **Token exhaustion**: Verify spending limits haven't been reached
+
+=== Tools not appearing in Continue.dev
+
+Symptom: Continue.dev does not discover MCP tools.
+
+Causes and solutions:
+
+* **MCP configuration missing**: Ensure `mcpServers` is configured
+* **MCP servers not configured in gateway**: Add MCP server endpoints in the gateway's MCP tab
+* **Deferred loading enabled but search failing**: Check that the search tool is correctly configured
+* **MCP server authentication failing**: Verify MCP server authentication credentials in the gateway configuration
+
+=== High costs or token usage
+
+Symptom: Token usage and costs exceed expectations.
+
+Causes and solutions:
+
+* **Autocomplete using expensive model**: Configure `tabAutocompleteModel` to use `gpt-5.2-mini` instead of larger models
+* **Deferred tool loading disabled**: Enable deferred tool loading to reduce tokens by 80-90%
+* **No rate limits**: Apply per-minute rate limits to prevent runaway usage
+* **Missing spending limits**: Set monthly budget limits with blocking enforcement
+* **Chat using wrong model**: Route chat requests to cost-effective models (for example, `claude-sonnet-4.5` instead of `claude-opus-4.6`)
+
+=== Requests failing with 429 errors
+
+Symptom: Continue.dev receives HTTP 429 Too Many Requests errors.
+
+Causes and solutions:
+
+* **Rate limit exceeded**: Review and increase rate limits if usage is legitimate (autocomplete needs higher limits)
+* **Upstream provider rate limits**: Check if the upstream LLM provider is rate-limiting; configure failover to alternate API keys
+* **Budget exhausted**: Verify monthly spending limit has not been reached
+
+=== Different results from different providers
+
+Symptom: Same prompt produces different results when switching providers.
+
+This is expected behavior, not a configuration issue:
+
+* Different models have different capabilities and response styles
+* Continue.dev uses native formats, which may include provider-specific parameters
+* Users should select the appropriate model for their task (quality vs speed vs cost)
+
+== Next steps
+
+* xref:ai-agents:ai-gateway/cel-routing-cookbook.adoc[]: Implement advanced routing rules
+* xref:ai-agents:mcp/remote/overview.adoc[]: Deploy Remote MCP servers for custom tools

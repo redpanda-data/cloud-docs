@@ -1,22 +1,18 @@
-name: Test MCP Examples
+name: Test Pipeline Examples
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'modules/ai-agents/examples/**/*.yaml'
-      - 'modules/ai-agents/examples/test-mcp-examples.sh'
   pull_request:
     branches:
       - main
     paths:
       - 'modules/ai-agents/examples/**/*.yaml'
-      - 'modules/ai-agents/examples/test-mcp-examples.sh'
+      - 'modules/ai-agents/examples/**/*.sh'
+      - 'modules/develop/examples/**/*.yaml'
+      - 'modules/develop/examples/**/*.sh'
 
 jobs:
   test-all-examples:
-    name: Test All MCP Examples
+    name: Test All Pipeline Examples
     runs-on: ubuntu-latest
 
     steps:
@@ -39,15 +35,33 @@ jobs:
           sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
           sudo chmod +x /usr/local/bin/yq
 
-      - name: Make test script executable
-        run: chmod +x modules/ai-agents/examples/test-mcp-examples.sh
-
-      - name: Run MCP examples tests
+      - name: Make test scripts executable
         run: |
-          cd modules/ai-agents/examples
-          ./test-mcp-examples.sh
+          find modules/ai-agents/examples -name "*.sh" -exec chmod +x {} \;
+          find modules/develop/examples -name "*.sh" -exec chmod +x {} \; 2>/dev/null || true
+
+      - name: Run MCP tools tests
+        run: |
+          cd modules/ai-agents/examples/mcp-tools
+          ./test-mcp-tools.sh
+
+      - name: Run ai-agents pipeline tests
+        run: |
+          cd modules/ai-agents/examples/pipelines
+          ./test-pipelines.sh
+
+      - name: Run cookbook tests
+        run: |
+          for dir in modules/develop/examples/cookbooks/*/; do
+            if [[ -f "${dir}test-"*".sh" ]]; then
+              echo "Testing ${dir}..."
+              cd "${dir}"
+              ./test-*.sh
+              cd - > /dev/null
+            fi
+          done
 
       - name: Test Summary
         if: always()
         run: |
-          echo "::notice title=MCP Examples Testing::All Cloud MCP examples have been validated"
+          echo "::notice title=Pipeline Examples Testing::All pipeline examples have been validated"

@@ -1,0 +1,22 @@
+# Consume events from Redpanda topics
+# Use for event-driven AI agents, audit logs, or data change streams
+label: consume-events
+
+# tag::component[]
+redpanda:
+  seed_brokers: [ "${REDPANDA_BROKERS}" ]
+  topics: [ "user-events" ]
+  consumer_group: "mcp-event-processor"
+  start_from_oldest: true
+  tls:
+    enabled: true
+  sasl:
+    - mechanism: "${REDPANDA_SASL_MECHANISM}"
+      username: "${REDPANDA_SASL_USERNAME}"
+      password: "${REDPANDA_SASL_PASSWORD}"
+# end::component[]
+
+meta:
+  mcp:
+    enabled: true
+    description: "Consume events from user-events topic"
