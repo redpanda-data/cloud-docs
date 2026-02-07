@@ -1,12 +1,12 @@
 = Transcripts and AI Observability
-:description: Understand how Redpanda captures execution transcripts using OpenTelemetry.
+:description: Understand how Redpanda captures end-to-end execution transcripts on an immutable distributed log for agent governance and observability.
 :page-topic-type: concepts
 :personas: agent_developer, platform_admin, data_engineer
 :learning-objective-1: Explain how transcripts and spans capture execution flow
 :learning-objective-2: Interpret transcript structure for debugging and monitoring
 :learning-objective-3: Distinguish between transcripts and audit logs
 
-Redpanda automatically captures glossterm:transcript[,transcripts] (also referred to as execution logs or traces) for both AI agents and MCP servers, providing complete glossterm:observability (o11y)[,observability] into how your agentic systems operate.
+Redpanda automatically captures glossterm:transcript[,transcripts] for AI agents, MCP servers, and AI Gateway operations. A transcript is the end-to-end execution record of an agentic behavior. It may span multiple agents, tools, and models and last from minutes to days. Redpanda's immutable distributed log stores every transcript, providing a correct record with no gaps. Transcripts form the keystone of Redpanda's governance for agents.
 
 After reading this page, you will be able to:
 
@@ -16,7 +16,7 @@ After reading this page, you will be able to:
 
 == What are transcripts
 
-The AI Gateway and every glossterm:AI agent[,agent] and glossterm:MCP server[] in your Agentic Data Plane (ADP) automatically emit OpenTelemetry traces to a glossterm:topic[] called `redpanda.otel_traces`. These traces provide detailed observability into operations, creating complete transcripts.
+A transcript records the complete execution of an agentic behavior from start to finish. It captures every step — across multiple agents, tools, models, and services — in a single, traceable record. The AI Gateway and every glossterm:AI agent[,agent] and glossterm:MCP server[] in your Agentic Data Plane (ADP) automatically emit OpenTelemetry traces to a glossterm:topic[] called `redpanda.otel_traces`. Redpanda's immutable distributed log stores these traces.
 
 Transcripts capture:
 
@@ -27,7 +27,7 @@ Transcripts capture:
 * Error conditions
 * Performance metrics
 
-With 100% sampling, every operation is captured, enabling comprehensive debugging, monitoring, and performance analysis.
+With 100% sampling, every operation is captured with no gaps. The underlying storage uses a distributed log built on Raft consensus (with TLA+ proven correctness), giving transcripts a trustworthy, immutable record for governance, debugging, and performance analysis.
 
 == Traces and spans
 
@@ -322,23 +322,16 @@ Transcripts may contain sensitive information from your tool inputs and outputs.
 
 == Transcripts compared to audit logs
 
-// TODO: Ask SME to review and confirm whether we want to rephrase or change
-// "not designed for audit logging or compliance"
-Transcripts are designed for observability and debugging, not audit logging or compliance.
+Transcripts and audit logs serve different but complementary purposes.
 
 Transcripts provide:
 
+* A complete, immutable record of every execution step, stored on Redpanda's distributed log with no gaps
 * Hierarchical view of request flow through your system (parent-child span relationships)
 * Detailed timing information for performance analysis
 * Ability to reconstruct execution paths and identify bottlenecks
-* Insights into how operations flow through distributed systems
 
-Transcripts are not:
-
-* Immutable audit records for compliance purposes
-* Designed for "who did what" accountability tracking
-
-For compliance and audit requirements, use the session and task topics for agents, which provide records of agent conversations and execution.
+Transcripts are optimized for execution-level observability and governance. For user-level accountability tracking ("who initiated what"), use the session and task topics for agents, which provide records of agent conversations and task execution.
 
 == Next steps
 
