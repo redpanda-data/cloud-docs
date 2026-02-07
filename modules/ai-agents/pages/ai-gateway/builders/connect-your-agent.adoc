@@ -1,0 +1,546 @@
+= Connect Your Agent
+:description: Integrate your AI agent or application with Redpanda Agentic Data Plan for unified LLM access.
+:page-topic-type: how-to
+:personas: app_developer
+:learning-objective-1: Configure your application to use AI Gateway with OpenAI-compatible SDKs
+:learning-objective-2: Make LLM requests through the gateway and handle responses appropriately
+:learning-objective-3: Validate your integration end-to-end
+
+include::ai-agents:partial$ai-gateway-byoc-note.adoc[]
+
+This guide shows you how to connect your glossterm:AI agent[] or application to Redpanda Agentic Data Plan. This is also called "Bring Your Own Agent" (BYOA). You'll configure your client SDK, make your first request, and validate the integration.
+
+After completing this guide, you will be able to:
+
+* [ ] Configure your application to use AI Gateway with OpenAI-compatible SDKs
+* [ ] Make LLM requests through the gateway and handle responses appropriately
+* [ ] Validate your integration end-to-end
+
+== Prerequisites
+
+* You have discovered an available gateway and noted its Gateway ID and endpoint.
++
+If not, see xref:ai-gateway/builders/discover-gateways.adoc[].
+
+* You have a Redpanda Cloud API token with access to the gateway.
+* You have a development environment with your chosen programming language.
+
+== Integration overview
+
+Connecting to AI Gateway requires two configuration changes:
+
+. *Change the base URL*: Point to the gateway endpoint instead of the provider's API. The gateway ID is embedded in the endpoint URL.
+. *Add authentication*: Use your Redpanda Cloud token instead of provider API keys
+
+== Quickstart
+
+=== Environment variables
+
+Set these environment variables for consistent configuration:
+
+[source,bash]
+----
+export REDPANDA_GATEWAY_URL="<your-gateway-endpoint>"
+export REDPANDA_API_KEY="your-redpanda-cloud-token"
+----
+
+Replace with your actual gateway endpoint and API token.
+
+[tabs]
+====
+Python (OpenAI SDK)::
++
+[source,python]
+----
+import os
+from openai import OpenAI
+
+# Configure client to use AI Gateway
+client = OpenAI(
+    base_url=os.getenv("REDPANDA_GATEWAY_URL"),
+    api_key=os.getenv("REDPANDA_API_KEY"),
+)
+
+# Make a request (same as before)
+response = client.chat.completions.create(
+    model="openai/gpt-5.2-mini",  # Note: vendor/model_id format
+    messages=[{"role": "user", "content": "Hello, AI Gateway!"}],
+    max_tokens=100
+)
+
+print(response.choices[0].message.content)
+----
+
+Python (Anthropic SDK)::
++
+The Anthropic SDK can also route through AI Gateway using the OpenAI-compatible endpoint:
++
+[source,python]
+----
+import os
+from anthropic import Anthropic
+
+client = Anthropic(
+    base_url=os.getenv("REDPANDA_GATEWAY_URL"),
+    api_key=os.getenv("REDPANDA_API_KEY"),
+)
+
+# Make a request
+message = client.messages.create(
+    model="anthropic/claude-sonnet-4.5",
+    max_tokens=100,
+    messages=[{"role": "user", "content": "Hello, AI Gateway!"}]
+)
+
+print(message.content[0].text)
+----
+
+Node.js (OpenAI SDK)::
++
+[source,javascript]
+----
+import OpenAI from 'openai';
+
+const openai = new OpenAI({
+  baseURL: process.env.REDPANDA_GATEWAY_URL,
+  apiKey: process.env.REDPANDA_API_KEY,
+});
+
+// Make a request
+const response = await openai.chat.completions.create({
+  model: 'openai/gpt-5.2-mini',
+  messages: [{ role: 'user', content: 'Hello, AI Gateway!' }],
+  max_tokens: 100
+});
+
+console.log(response.choices[0].message.content);
+----
+
+cURL::
++
+For testing or shell scripts:
++
+[source,bash]
+----
+curl ${REDPANDA_GATEWAY_URL}/chat/completions \
+  -H "Authorization: Bearer ${REDPANDA_API_KEY}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "openai/gpt-5.2-mini",
+    "messages": [{"role": "user", "content": "Hello, AI Gateway!"}],
+    "max_tokens": 100
+  }'
+----
+====
+
+== Model naming convention
+
+When making requests through AI Gateway, use the `vendor/model_id` format for the model parameter:
+
+* `openai/gpt-5.2`
+* `openai/gpt-5.2-mini`
+* `anthropic/claude-sonnet-4.5`
+* `anthropic/claude-opus-4.6`
+
+This format tells AI Gateway which provider to route the request to. For example:
+
+[source,python]
+----
+# Route to OpenAI
+response = client.chat.completions.create(
+    model="openai/gpt-5.2",
+    messages=[...]
+)
+
+# Route to Anthropic (same client, different model)
+response = client.chat.completions.create(
+    model="anthropic/claude-sonnet-4.5",
+    messages=[...]
+)
+----
+
+// To see which models are available in your gateway, see xref:ai-gateway/builders/available-models.adoc[].
+
+== Handle responses
+
+Responses from AI Gateway follow the OpenAI API format:
+
+[source,python]
+----
+response = client.chat.completions.create(
+    model="openai/gpt-5.2-mini",
+    messages=[{"role": "user", "content": "Explain AI Gateway"}],
+    max_tokens=200
+)
+
+# Access the response
+message_content = response.choices[0].message.content
+finish_reason = response.choices[0].finish_reason  # 'stop', 'length', etc.
+
+# Token usage
+prompt_tokens = response.usage.prompt_tokens
+completion_tokens = response.usage.completion_tokens
+total_tokens = response.usage.total_tokens
+
+print(f"Response: {message_content}")
+print(f"Tokens: {prompt_tokens} prompt + {completion_tokens} completion = {total_tokens} total")
+----
+
+== Handle errors
+
+AI Gateway returns standard HTTP status codes:
+
+[source,python]
+----
+from openai import OpenAI, OpenAIError
+
+client = OpenAI(
+    base_url=os.getenv("REDPANDA_GATEWAY_URL"),
+    api_key=os.getenv("REDPANDA_API_KEY"),
+)
+
+try:
+    response = client.chat.completions.create(
+        model="openai/gpt-5.2-mini",
+        messages=[{"role": "user", "content": "Hello"}]
+    )
+    print(response.choices[0].message.content)
+
+except OpenAIError as e:
+    if e.status_code == 400:
+        print("Bad request - check model name and parameters")
+    elif e.status_code == 401:
+        print("Authentication failed - check API token")
+    elif e.status_code == 404:
+        print("Model not found - check available models")
+    elif e.status_code == 429:
+        print("Rate limit exceeded - slow down requests")
+    elif e.status_code >= 500:
+        print("Gateway or provider error - retry with exponential backoff")
+    else:
+        print(f"Error: {e}")
+----
+
+Common error codes:
+
+* *400*: Bad request (invalid parameters, malformed JSON)
+* *401*: Authentication failed (invalid or missing API token)
+* *403*: Forbidden (no access to this gateway)
+* *404*: Model not found (model not enabled in gateway)
+* *429*: Rate limit exceeded (too many requests)
+* *500/502/503*: Server error (gateway or provider issue)
+
+== Streaming responses
+
+AI Gateway supports streaming for real-time token generation:
+
+[source,python]
+----
+response = client.chat.completions.create(
+    model="openai/gpt-5.2-mini",
+    messages=[{"role": "user", "content": "Write a short poem"}],
+    stream=True  # Enable streaming
+)
+
+# Process chunks as they arrive
+for chunk in response:
+    if chunk.choices[0].delta.content:
+        print(chunk.choices[0].delta.content, end='', flush=True)
+
+print()  # New line after streaming completes
+----
+
+== Switch between providers
+
+One of AI Gateway's key benefits is easy provider switching without code changes:
+
+[source,python]
+----
+# Try OpenAI
+response = client.chat.completions.create(
+    model="openai/gpt-5.2",
+    messages=[{"role": "user", "content": "Explain quantum computing"}]
+)
+
+# Try Anthropic (same code, different model)
+response = client.chat.completions.create(
+    model="anthropic/claude-sonnet-4.5",
+    messages=[{"role": "user", "content": "Explain quantum computing"}]
+)
+----
+
+Compare responses, latency, and cost to determine the best model for your use case.
+
+== Validate your integration
+
+=== Test connectivity
+
+[source,python]
+----
+import os
+from openai import OpenAI
+
+def test_gateway_connection():
+    """Test basic connectivity to AI Gateway"""
+    client = OpenAI(
+        base_url=os.getenv("REDPANDA_GATEWAY_URL"),
+        api_key=os.getenv("REDPANDA_API_KEY"),
+    )
+
+    try:
+        # Simple test request
+        response = client.chat.completions.create(
+            model="openai/gpt-5.2-mini",
+            messages=[{"role": "user", "content": "test"}],
+            max_tokens=10
+        )
+        print("✓ Gateway connection successful")
+        return True
+    except Exception as e:
+        print(f"✗ Gateway connection failed: {e}")
+        return False
+
+if __name__ == "__main__":
+    test_gateway_connection()
+----
+
+=== Test multiple models
+
+[source,python]
+----
+def test_models():
+    """Test multiple models through the gateway"""
+    models = [
+        "openai/gpt-5.2-mini",
+        "anthropic/claude-sonnet-4.5"
+    ]
+
+    for model in models:
+        try:
+            response = client.chat.completions.create(
+                model=model,
+                messages=[{"role": "user", "content": "Say hello"}],
+                max_tokens=10
+            )
+            print(f"✓ {model}: {response.choices[0].message.content}")
+        except Exception as e:
+            print(f"✗ {model}: {e}")
+----
+
+// === Check request logs
+//
+// After making requests, verify they appear in observability:
+//
+// . Navigate to *AI Gateway* → *Gateways* → Select your gateway → *Logs*
+// . Filter by your request timestamp
+// . Verify your requests are logged with correct model, tokens, and cost
+
+// See xref:ai-gateway/builders/monitor-your-usage.adoc[] for details.
+
+== Integrate with AI development tools
+
+[tabs]
+====
+Claude Code::
++
+Configure Claude Code to use AI Gateway:
++
+[source,bash]
+----
+claude mcp add --transport http redpanda-aigateway ${REDPANDA_GATEWAY_URL}/mcp \
+  --header "Authorization: Bearer ${REDPANDA_API_KEY}"
+----
++
+Or edit `~/.claude/config.json`:
++
+[source,json]
+----
+{
+  "mcpServers": {
+    "redpanda-ai-gateway": {
+      "transport": "http",
+      "url": "<your-gateway-endpoint>/mcp",
+      "headers": {
+        "Authorization": "Bearer your-api-key"
+      }
+    }
+  }
+}
+----
++
+ifdef::integrations-available[]
+See xref:ai-gateway/integrations/claude-code-user.adoc[] for complete setup.
+endif::[]
+
+VS Code Continue Extension::
++
+Edit `~/.continue/config.json`:
++
+[source,json]
+----
+{
+  "models": [
+    {
+      "title": "AI Gateway - GPT-5.2",
+      "provider": "openai",
+      "model": "openai/gpt-5.2",
+      "apiBase": "<your-gateway-endpoint>",
+      "apiKey": "your-redpanda-api-key"
+    }
+  ]
+}
+----
++
+ifdef::integrations-available[]
+See xref:ai-gateway/integrations/continue-user.adoc[] for complete setup.
+endif::[]
+
+Cursor IDE::
++
+. Open Cursor Settings (*Cursor* → *Settings* or `Cmd+,`)
+. Navigate to *AI* settings
+. Add custom OpenAI-compatible provider:
++
+[source,json]
+----
+{
+  "cursor.ai.providers.openai.apiBase": "<your-gateway-endpoint>"
+}
+----
++
+ifdef::integrations-available[]
+See xref:ai-gateway/integrations/cursor-user.adoc[] for complete setup.
+endif::[]
+====
+
+== Best practices
+
+=== Use environment variables
+
+Store configuration in environment variables, not hardcoded in code:
+
+[source,python]
+----
+# Good
+base_url = os.getenv("REDPANDA_GATEWAY_URL")
+
+# Bad
+base_url = "https://gw.ai.panda.com"  # Don't hardcode
+----
+
+=== Implement retry logic
+
+Implement exponential backoff for transient errors:
+
+[source,python]
+----
+import time
+from openai import OpenAI, OpenAIError
+
+def make_request_with_retry(client, max_retries=3):
+    for attempt in range(max_retries):
+        try:
+            return client.chat.completions.create(
+                model="openai/gpt-5.2-mini",
+                messages=[{"role": "user", "content": "Hello"}]
+            )
+        except OpenAIError as e:
+            if e.status_code >= 500 and attempt < max_retries - 1:
+                wait_time = 2 ** attempt  # Exponential backoff
+                print(f"Retrying in {wait_time}s...")
+                time.sleep(wait_time)
+            else:
+                raise
+----
+
+=== Monitor your usage
+
+Regularly check your usage to avoid unexpected costs:
+
+[source,python]
+----
+# Track tokens in your application
+total_tokens = 0
+request_count = 0
+
+for request in requests:
+    response = client.chat.completions.create(...)
+    total_tokens += response.usage.total_tokens
+    request_count += 1
+
+print(f"Total tokens: {total_tokens} across {request_count} requests")
+----
+
+// See xref:ai-gateway/builders/monitor-your-usage.adoc[] for detailed monitoring.
+
+=== Handle rate limits gracefully
+
+Respect rate limits and implement backoff:
+
+[source,python]
+----
+try:
+    response = client.chat.completions.create(...)
+except OpenAIError as e:
+    if e.status_code == 429:
+        # Rate limited - wait and retry
+        retry_after = int(e.response.headers.get('Retry-After', 60))
+        print(f"Rate limited. Waiting {retry_after}s...")
+        time.sleep(retry_after)
+        # Retry request
+----
+
+== Troubleshooting
+
+=== "Authentication failed"
+
+Problem: 401 Unauthorized
+
+Solutions:
+
+* Verify your API token is correct and not expired
+* Check that the token has access to the specified gateway
+* Ensure the `Authorization` header is formatted correctly: `Bearer <token>`
+
+=== "Model not found"
+
+Problem: 404 Model not found
+
+Solutions:
+
+* Verify the model name uses `vendor/model_id` format
+// * Check available models: See xref:ai-gateway/builders/available-models.adoc[]
+* Confirm the model is enabled in your gateway (contact administrator)
+
+=== "Rate limit exceeded"
+
+Problem: 429 Too Many Requests
+
+Solutions:
+
+* Reduce request rate
+* Implement exponential backoff
+* Contact administrator to review rate limits
+* Consider using a different gateway if available
+
+=== "Connection timeout"
+
+Problem: Request times out
+
+Solutions:
+
+* Check network connectivity to the gateway endpoint
+* Verify the gateway endpoint URL is correct
+* Check if the gateway is operational (contact administrator)
+* Increase client timeout if processing complex requests
+
+//== Next steps
+
+//Now that your agent is connected:
+
+// * xref:ai-gateway/builders/available-models.adoc[Available Models] - Learn about model selection and routing
+// * xref:ai-gateway/builders/use-mcp-tools.adoc[Use MCP Tools] - Access tools from MCP servers (if enabled)
+// * xref:ai-gateway/builders/monitor-your-usage.adoc[Monitor Your Usage] - Track requests and costs
+ifdef::integrations-available[]
+* xref:ai-gateway/integrations/index.adoc[Integrations] - Configure specific tools and IDEs
+endif::[]
