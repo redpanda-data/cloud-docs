@@ -1,0 +1,18 @@
+# tag::config[]
+input:
+  generate:
+    count: 1
+    mapping: |
+      root.jql = "project = MYPROJECT AND status = Open"
+      root.maxResults = 100
+
+pipeline:
+  processors:
+    - jira:
+        base_url: "${secrets.JIRA_BASE_URL}"
+        username: "${secrets.JIRA_USERNAME}"
+        api_token: "${secrets.JIRA_API_TOKEN}"
+
+output:
+  stdout: {}
+# end::config[]
