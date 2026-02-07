@@ -1,30 +1,54 @@
 = What is an AI Gateway?
-:description: Understand what an AI Gateway is, the problems it solves, and how it benefits your AI infrastructure.
+:description: Understand how AI Gateway keeps AI-powered apps highly available across providers and prevents runaway AI spend with centralized cost governance.
 :page-topic-type: concept
 :personas: app_developer, platform_admin
-:learning-objective-1: Describe how AI Gateway centralizes LLM provider management and reduces operational complexity
-:learning-objective-2: Identify key features that address common LLM integration challenges
-:learning-objective-3: Determine whether AI Gateway fits your use case based on traffic volume and provider diversity
+:learning-objective-1: Explain how AI Gateway keeps AI-powered apps highly available through governed provider failover
+:learning-objective-2: Describe how AI Gateway prevents runaway AI spend with centralized budget controls and tenancy-based governance
+:learning-objective-3: Identify when AI Gateway fits your use case based on availability requirements, cost governance needs, and multi-provider or MCP tool usage
 
 include::ai-agents:partial$ai-gateway-byoc-note.adoc[]
 
-Redpanda AI Gateway is a unified access layer for LLM providers and AI tools that sits between your applications and the AI services they use. It provides centralized routing, policy enforcement, cost management, and observability for all your AI traffic.
+Redpanda AI Gateway keeps your AI-powered applications highly available and your AI spend under control. It sits between your applications and the LLM providers and AI tools they depend on, providing automatic provider failover so your apps stay up even when a provider goes down, and centralized budget controls so costs never run away. For platform teams, it adds governance at the model-fallback level, tenancy modeling for teams, individuals, apps, and service accounts, and a single proxy layer for both LLM models and MCP tool servers.
 
 == The problem
 
-Modern AI applications face four critical challenges that increase costs, reduce reliability, and slow down development.
+Modern AI applications face two business-critical challenges: staying up and staying on budget.
 
-First, applications typically hardcode provider-specific SDKs. An application using OpenAI's SDK cannot easily switch to Anthropic or Google without code changes and redeployment. This tight coupling makes testing across providers time-consuming and error-prone, and means provider outages directly impact your application availability.
+First, applications typically hardcode provider-specific SDKs. An application using OpenAI's SDK cannot easily switch to Anthropic or Google without code changes and redeployment. When a provider hits rate limits, suffers an outage, or degrades in performance, your application goes down with it. Your end users don't care which provider you use; they care that the app works.
 
-Second, costs can spiral without visibility into usage patterns. Without a centralized view of token consumption across teams and applications, it's difficult to attribute costs to specific customers, features, or environments. Testing and debugging can generate unexpected bills, and there's no way to enforce budgets or rate limits per team or customer.
+Second, costs can spiral without centralized controls. Without a single view of token consumption across teams and applications, it's difficult to attribute costs to specific customers, features, or environments. Testing and debugging can generate unexpected bills, and there's no way to enforce budgets or rate limits per team, application, or service account. The result: runaway spend that finance discovers only after the fact.
 
-Third, glossterm:AI agent[,AI agents] that use glossterm:MCP[,Model Context Protocol (MCP)] servers face tool coordination challenges. Managing tool discovery and execution is repetitive across projects, and agents typically load all available tools upfront, which creates high token costs. There's also no centralized governance over which tools agents can access.
-
-Finally, observability is fragmented across provider dashboards. You cannot reconstruct user sessions that span multiple models, compare latency and costs across providers in a unified view, or efficiently debug issues. Troubleshooting "the AI gave the wrong answer" requires manual log diving across different systems.
+These two challenges are compounded by fragmented observability across provider dashboards, which makes it harder to detect availability issues or cost anomalies in time to act. And as organizations adopt glossterm:AI agent[,AI agents] that call glossterm:MCP tool[,MCP tools], the lack of centralized tool governance adds another dimension of uncontrolled cost and risk.
 
 == What AI Gateway solves
 
-Redpanda AI Gateway addresses these challenges through the following core capabilities:
+Redpanda AI Gateway delivers two core business outcomes, high availability and cost governance, backed by platform-level controls that set it apart from simple proxy layers:
+
+=== High availability through governed failover
+
+Your end users don't care whether you use OpenAI, Anthropic, or Google; they care that your app stays up. AI Gateway lets you configure provider pools with automatic failover so that when your primary provider hits rate limits, times out, or returns errors, the gateway routes requests to a fallback provider with no code changes and no downtime for your users.
+
+Unlike simple retry logic, AI Gateway provides governance at the failover level: you define which providers fail over to which, under what conditions, and with what priority. This controlled failover can significantly improve uptime even during extended provider outages.
+
+=== Cost governance and budget controls
+
+AI Gateway gives you centralized fiscal control over AI spend. Set monthly budget caps per gateway, enforce them automatically, and set rate limits per team, environment, or application. No more runaway costs discovered after the fact.
+
+You can route requests to different models based on user attributes. For example, to direct premium users to a more capable model while routing free tier users to a cost-effective option, use a CEL expression:
+
+[source,cel]
+----
+// Route premium users to best model, free users to cost-effective model
+request.headers["x-user-tier"] == "premium"
+  ? "anthropic/claude-opus-4.6"
+  : "anthropic/claude-sonnet-4.5"
+----
+
+You can also set different rate limits and spend limits per environment to prevent staging or development traffic from consuming production budgets.
+
+=== Tenancy and access governance
+
+AI Gateway provides multi-tenant isolation by design. Create separate gateways for teams, individual developers, applications, or service accounts, each with their own budgets, rate limits, routing policies, and observability scope. This tenancy model lets platform teams govern who uses what, how much they spend, and which models and tools they can access, without building custom authorization layers.
 
 === Unified LLM access (single endpoint for all providers)
 
@@ -85,27 +109,9 @@ response = client.chat.completions.create(
 
 To switch providers, you change only the `model` parameter from `openai/gpt-5.2` to `anthropic/claude-sonnet-4.5`. No code changes or redeployment needed.
 
-=== Policy-based routing and cost control
+=== Proxy for LLM models and MCP tool servers
 
-AI Gateway lets you define routing rules, rate limits, and budgets once, then enforces them automatically for all requests.
-
-You can route requests to different models based on user attributes. For example, to direct premium users to a more capable model while routing free tier users to a cost-effective option, use a CEL expression:
-
-[source,cel]
-----
-// Route premium users to best model, free users to cost-effective model
-request.headers["x-user-tier"] == "premium"
-  ? "anthropic/claude-opus-4.6"
-  : "anthropic/claude-sonnet-4.5"
-----
-
-You can also set different rate limits and spend limits per environment to prevent staging or development traffic from consuming production budgets.
-
-For reliability, you can configure provider pools with automatic failover. If you configure OpenAI GPT-4 as your primary model and Anthropic Claude Opus as the fallback, the gateway automatically routes requests to the fallback when it detects rate limits or timeouts from the primary provider. This configuration can significantly improve uptime (potentially up to 99.9% in some configurations) even during provider outages.
-
-=== MCP aggregation and orchestration
-
-AI Gateway aggregates multiple glossterm:MCP server[,MCP servers] and provides deferred tool loading, which dramatically reduces token costs for AI agents.
+AI Gateway acts as a single proxy layer for both LLM model requests and MCP tool servers. For LLM traffic, it provides the unified endpoint described above. For AI agents that use MCP tools, it aggregates multiple MCP servers and provides deferred tool loading, which dramatically reduces token costs.
 
 Without AI Gateway, agents typically load all available glossterm:MCP tool[,tools] from multiple MCP servers at startup. This approach sends 50+ tool definitions with every request, creating high token costs (thousands of tokens per request), slow agent startup times, and no centralized governance over which tools agents can access.
 
