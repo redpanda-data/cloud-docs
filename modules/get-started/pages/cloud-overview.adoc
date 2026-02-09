@@ -6,33 +6,18 @@ Redpanda Cloud is a complete data streaming and agentic data plane platform deli
 
 == Redpanda Agentic Data Plane (ADP)
 
-Redpanda ADP is an enterprise-grade infrastructure for building, deploying, and managing AI agents at scale. Redpanda ADP provides unified governance, observability, and security for agentic applications while leveraging Redpanda's streaming and analytical foundation.
+Redpanda Agentic Data Plane (ADP) is enterprise-grade infrastructure for building, deploying, and governing glossterm:AI agent[,AI agents] at scale. It combines Redpanda's streaming-native immutable log, 300+ proven data connectors, and declarative agent definitions into a unified platform with built-in governance, cost controls, and compliance-grade audit trails.
+
+Redpanda ADP includes the following key components:
+
+* *AI Agents*: Declare the behavior you want instead of writing code. Redpanda powers declarative definitions with 300+ connectors.
+* *MCP Servers*: Translate agent intent into connections to your business systems using proven connectors, no glue code required.
+* *Transcripts*: End-to-end execution records built on an immutable log with formal correctness guarantees. Transcripts are the keystone of agent governance.
+* *AI Gateway*: High-availability model routing with fiscal controls and per-tenant cost attribution across LLM providers.
 
 NOTE: The Agentic Data Plane is supported on BYOC clusters running with AWS and Redpanda version 25.3 and later.
 
-Redpanda ADP is built on open standards and protocols, allowing you to pick and choose components that fit your needs. Integrate with existing agent frameworks, data processing systems, or custom code. It includes the following key components:
-
-* **glossterm:AI agent[,AI agents]**: Deploy declarative agents or bring your own agent frameworks (such as LangChain or LlamaIndex). Build multi-agent systems where specialized glossterm:subagent[,sub-agents] handle specific responsibilities, following single-responsibility principles.
-* **glossterm:MCP server[,MCP servers]**: Build lightweight data and action interfaces using xref:develop:connect/about.adoc[Redpanda Connect] or your own hosted MCP servers. Connect to hundreds of data sources (databases, cloud storage, APIs) and enforce fine-grained policies that programmatically prevent prompt injection and SQL injection attacks. MCP servers are extremely lightweight, with OIDC-based access control and real-time debugging capabilities.
-* **AI Gateway**: Manage large language model (LLM) provider access with cost controls, rate limiting, intelligent routing, and failover support across multiple providers.
-//* **Catalog**: Maintain a centralized repository of agents, MCP servers, tools, and policies. Share components across teams and enforce organization-wide standards.
-
-=== Enterprise capabilities for AI agents
-
-Redpanda ADP addresses critical enterprise requirements for AI agent deployments:
-
-*Security by design*: MCP servers enforce policies at the tool level, programmatically preventing prompt injection, SQL injection, and other agent-based attacks. Policy enforcement is deterministic and controlled. Agents cannot bypass security constraints even through creative prompting.
-
-*Unified authorization*: All components use OIDC-based authentication with an "on-behalf-of" authorization model. When a user invokes an agent, the agent inherits the intersection of its own permissions and the user's permissions, ensuring proper data access scoping.
-
-*Complete observability*: Redpanda ADP provides two levels of inspection: execution logs (glossterm:transcript[,transcripts]) capture every agent action with 100% sampling using OpenTelemetry standards, while real-time debugging tools allow inspection of individual MCP server calls. Traces span across services and go as deep as needed, down to individual tool invocations with full timing data. View detailed agent actions in Redpanda Console and replay data for agent evaluations.
-
-
-* *Automate operational workflows*: Create specialized agents for building management, infrastructure monitoring, compliance reporting, and other domain-specific tasks
-* *Monitor manufacturing and operations*: Deploy multi-agent systems that analyze factory machine telemetry in real-time, detect anomalies, search equipment manuals, and create maintenance tickets automatically. Use data aggregation patterns (like tumbling windows) to process high-volume sensor data before sending insights to agents.
-* *Extend enterprise productivity tools*: Integrate Microsoft Copilot or other workplace agents with internal data sources and systems that are otherwise inaccessible
-
-See also: xref:ai-agents:index.adoc[].
+To learn what makes Redpanda's approach unique, see xref:ai-agents:adp-overview.adoc[].
 
 == Redpanda Cloud deployment options
 
