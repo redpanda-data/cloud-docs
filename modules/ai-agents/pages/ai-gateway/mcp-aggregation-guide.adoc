@@ -13,14 +13,14 @@ The MCP Gateway provides glossterm:MCP[,Model Context Protocol (MCP)] aggregatio
 MCP Gateway benefits:
 
 * Single endpoint: One MCP endpoint aggregates all approved MCP servers
-* Token reduction: Often 80-90% fewer tokens through deferred tool loading (depending on configuration)
+* Token reduction: Fewer tokens through deferred tool loading (depending on configuration)
 * Centralized governance: Admin-approved MCP servers only
 * Orchestration: JavaScript-based orchestrator reduces multi-step round trips
 * Security: Controlled tool execution environment
 
 == What is MCP?
 
-glossterm:MCP[,Model Context Protocol (MCP)] is a standard for exposing tools (functions) that AI agents can discover and invoke. MCP servers provide tools like:
+Model Context Protocol (MCP) is a standard for exposing tools (functions) that AI agents can discover and invoke. MCP servers provide tools like:
 
 * Database queries
 * File system operations
@@ -58,14 +58,14 @@ glossterm:MCP[,Model Context Protocol (MCP)] is a standard for exposing tools (f
 │  (Claude, GPT)  │
 └────────┬────────┘
          │
-         │ 1. Discover tools via /mcp endpoint
+         │ 1. Discover tools with /mcp endpoint
          │ 2. Invoke specific tool
          │
 ┌────────▼────────────────────────────────┐
 │      AI Gateway (MCP Aggregator)        │
 │                                         │
 │  ┌─────────────────────────────────┐   │
-│  │  Deferred Tool Loading          │   │
+│  │  Deferred tool loading          │   │
 │  │  (Send search + orchestrator    │   │
 │  │   initially, defer others)      │   │
 │  └─────────────────────────────────┘   │
@@ -249,8 +249,8 @@ Agent receives result and can continue reasoning.
 Traditional MCP (No deferred loading):
 
 1. Agent connects to MCP endpoint
-2. Gateway sends ALL tools from ALL MCP servers (50+ tools)
-3. Agent includes ALL tool definitions in EVERY LLM request
+2. Gateway sends all tools from all MCP servers (50+ tools)
+3. Agent includes all tool definitions in every LLM request
 4. High token cost: ~5,000-10,000 tokens per request
 
 Deferred loading (AI Gateway):
@@ -259,11 +259,10 @@ Deferred loading (AI Gateway):
 2. Gateway sends only 2 tools: `search_tools` + `orchestrator`
 3. Agent includes only 2 tool definitions in LLM request (~500-1,000 tokens)
 4. When agent needs specific tool:
-   * Agent calls `search_tools` with query (e.g., "database")
+   * Agent calls `search_tools` with query (for example, "database")
    * Gateway returns matching tools
-   * Agent calls specific tool (e.g., `execute_sql`)
+   * Agent calls specific tool (for example, `execute_sql`)
 5. Total token cost: Initial 500-1,000 + per-query ~200-500
-   * Often 80-90% lower than loading all tools
 
 === When to use deferred loading
 
@@ -282,7 +281,7 @@ Don't use deferred loading when:
 
 === Configure deferred loading
 
-Deferred loading is configured per MCP server through the *Defer Loading Override* setting in the Create MCP Server dialog.
+Deferred loading is configured for each MCP server through the *Defer Loading Override* setting in the Create MCP Server dialog.
 
 . Navigate to your gateway's *MCP* tab.
 . Create or edit an MCP server.
@@ -328,7 +327,7 @@ Compare token usage before/after deferred loading:
 Savings % = ((Before - After) / Before) × 100
 ----
 
-Expected Results: Typically 80-90% reduction in average tokens per request
+Expected results: Typically 80-90% reduction in average tokens per request
 
 == Orchestrator: multi-step workflows
 
@@ -342,7 +341,7 @@ Without Orchestrator:
 2. Agent receives results, evaluates: "Results insufficient"
 3. Agent: "Fallback to web search" → Round trip 2
 4. Agent receives results, processes → Round trip 3
-5. *Total: 3 round trips* (high latency, 3× token cost)
+5. *Total: 3 round trips* (high latency, 3x token cost)
 
 With Orchestrator:
 
@@ -594,9 +593,9 @@ Common MCP servers:
 
 * Database: PostgreSQL, MySQL, MongoDB query tools
 * Filesystem: Read/write/search files
-* API Integrations: Slack, GitHub, Salesforce, Stripe
-* Search: Web search, vector search, enterprise search
-* Code Execution: Python, JavaScript sandboxes
+* API integrations: Slack, GitHub, Salesforce, Stripe
+* Search: web search, vector search, enterprise search
+* Code execution: Python, JavaScript sandboxes
 * Workflow: Zapier, n8n integrations
 
 === MCP server approval workflow
@@ -759,7 +758,7 @@ Possible causes:
 
 Solution:
 
-1. Verify MCP server is active in the Cloud console
+1. Verify MCP server is active in the Redpanda Cloud console
 2. Verify tool is in enabled_tools list
 3. If deferred loading: Agent must call `search_tools` first
 
@@ -768,13 +767,13 @@ Issue: "MCP server timeout"
 Possible causes:
 
 1. MCP server is down/unreachable
-2. Tool execution is slow (e.g., expensive database query)
+2. Tool execution is slow (for example, expensive database query)
 3. Gateway timeout too short
 
 Solution:
 
 1. Check MCP server health
-2. Optimize tool (e.g., add database index)
+2. Optimize tool (for example, add database index)
 3. Contact support if you need to adjust timeout limits
 
 Issue: "Orchestrator workflow failed"
@@ -805,8 +804,8 @@ Orchestrator sandbox:
 * No file system access
 * No network access (except via MCP tools)
 * No system calls
-* Memory limit: // PLACEHOLDER: e.g., 128MB
-* Execution timeout: // PLACEHOLDER: e.g., 30s
+* Memory limit: // PLACEHOLDER: for example, 128MB
+* Execution timeout: // PLACEHOLDER: for example, 30s
 
 MCP tool execution:
 
@@ -856,7 +855,7 @@ Best practice:
 
 * Read-only tools in production gateway
 * Write tools only in staging gateway (with approval workflows)
-* Wrap dangerous operations in MCP server with safeguards (e.g., "require confirmation token")
+* Wrap dangerous operations in MCP server with safeguards (for example, "require confirmation token")
 
 == MCP + LLM routing
 

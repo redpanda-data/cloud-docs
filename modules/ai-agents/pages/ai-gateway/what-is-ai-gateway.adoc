@@ -1,14 +1,14 @@
 = What is an AI Gateway?
 :description: Understand how AI Gateway keeps AI-powered apps highly available across providers and prevents runaway AI spend with centralized cost governance.
 :page-topic-type: concept
-:personas: app_developer, platform_admin
+:personas: evaluator, app_developer, platform_admin
 :learning-objective-1: Explain how AI Gateway keeps AI-powered apps highly available through governed provider failover
 :learning-objective-2: Describe how AI Gateway prevents runaway AI spend with centralized budget controls and tenancy-based governance
 :learning-objective-3: Identify when AI Gateway fits your use case based on availability requirements, cost governance needs, and multi-provider or MCP tool usage
 
 include::ai-agents:partial$ai-gateway-byoc-note.adoc[]
 
-Redpanda AI Gateway keeps your AI-powered applications highly available and your AI spend under control. It sits between your applications and the LLM providers and AI tools they depend on, providing automatic provider failover so your apps stay up even when a provider goes down, and centralized budget controls so costs never run away. For platform teams, it adds governance at the model-fallback level, tenancy modeling for teams, individuals, apps, and service accounts, and a single proxy layer for both LLM models and MCP tool servers.
+Redpanda AI Gateway keeps your AI-powered applications highly available and your AI spend under control. It sits between your applications and the LLM providers and AI tools they depend on. If a provider goes down, the gateway provides automatic failover to keep your apps running. It also offers centralized budget controls to prevent runaway costs. For platform teams, it adds governance at the model-fallback level, tenancy modeling for teams, individuals, apps, and service accounts, and a single proxy layer for both LLM models and glossterm:MCP server[,MCP servers].
 
 == The problem
 
@@ -22,19 +22,19 @@ These two challenges are compounded by fragmented observability across provider 
 
 == What AI Gateway solves
 
-Redpanda AI Gateway delivers two core business outcomes, high availability and cost governance, backed by platform-level controls that set it apart from simple proxy layers:
+Redpanda AI Gateway delivers two core business outcomes, high availability and cost governance, backed by platform-level controls that set it apart from simple proxy layers.
 
 === High availability through governed failover
 
-Your end users don't care whether you use OpenAI, Anthropic, or Google; they care that your app stays up. AI Gateway lets you configure provider pools with automatic failover so that when your primary provider hits rate limits, times out, or returns errors, the gateway routes requests to a fallback provider with no code changes and no downtime for your users.
+Your end users don't care whether you use OpenAI, Anthropic, or Google: they care that your app stays up. AI Gateway lets you configure provider pools with automatic failover, so when your primary provider hits rate limits, times out, or returns errors, the gateway routes requests to a fallback provider with no code changes and no downtime for your users.
 
 Unlike simple retry logic, AI Gateway provides governance at the failover level: you define which providers fail over to which, under what conditions, and with what priority. This controlled failover can significantly improve uptime even during extended provider outages.
 
 === Cost governance and budget controls
 
-AI Gateway gives you centralized fiscal control over AI spend. Set monthly budget caps per gateway, enforce them automatically, and set rate limits per team, environment, or application. No more runaway costs discovered after the fact.
+AI Gateway gives you centralized fiscal control over AI spend. Set monthly budget caps for each gateway, enforce them automatically, and set rate limits per team, environment, or application. No more runaway costs discovered after the fact.
 
-You can route requests to different models based on user attributes. For example, to direct premium users to a more capable model while routing free tier users to a cost-effective option, use a CEL expression:
+You can route requests to different models based on user attributes. For example, to direct premium users to a more capable model while routing free tier users to a cost-effective option, use a CEL expression. For example:
 
 [source,cel]
 ----
@@ -44,7 +44,7 @@ request.headers["x-user-tier"] == "premium"
   : "anthropic/claude-sonnet-4.5"
 ----
 
-You can also set different rate limits and spend limits per environment to prevent staging or development traffic from consuming production budgets.
+You can also set different rate limits and spend limits for each environment to prevent staging or development traffic from consuming production budgets.
 
 === Tenancy and access governance
 
@@ -109,11 +109,11 @@ response = client.chat.completions.create(
 
 To switch providers, you change only the `model` parameter from `openai/gpt-5.2` to `anthropic/claude-sonnet-4.5`. No code changes or redeployment needed.
 
-=== Proxy for LLM models and MCP tool servers
+=== Proxy for LLM models and MCP servers
 
-AI Gateway acts as a single proxy layer for both LLM model requests and MCP tool servers. For LLM traffic, it provides the unified endpoint described above. For AI agents that use MCP tools, it aggregates multiple MCP servers and provides deferred tool loading, which dramatically reduces token costs.
+AI Gateway acts as a single proxy layer for both LLM model requests and MCP servers. For LLM traffic, it provides a unified endpoint. For AI agents that use MCP tools, it aggregates multiple MCP servers and provides deferred tool loading, which dramatically reduces token costs.
 
-Without AI Gateway, agents typically load all available glossterm:MCP tool[,tools] from multiple MCP servers at startup. This approach sends 50+ tool definitions with every request, creating high token costs (thousands of tokens per request), slow agent startup times, and no centralized governance over which tools agents can access.
+Without AI Gateway, agents typically load all available MCP tools from multiple MCP servers at startup. This approach sends 50+ tool definitions with every request, creating high token costs (thousands of tokens per request), slow agent startup times, and no centralized governance over which tools agents can access.
 
 With AI Gateway, you configure approved MCP servers once, and the gateway loads only search and orchestrator tools initially. Agents query for specific tools only when needed, which often reduces token usage by 80-90% depending on your configuration and the number of tools aggregated. You also gain centralized approval and governance over which MCP servers your agents can access.
 
@@ -123,16 +123,16 @@ For complex workflows, AI Gateway provides a JavaScript-based orchestrator tool 
 
 AI Gateway provides a single dashboard that tracks all LLM traffic across providers, eliminating the need to switch between multiple provider dashboards.
 
-The dashboard tracks request volume per gateway, model, and provider, along with token usage for both prompt and completion tokens. You can view estimated spend per model with cross-provider comparisons, latency metrics (p50, p95, p99), and errors broken down by type, provider, and model.
+The dashboard tracks request volume for each gateway, model, and provider, along with token usage for both prompt and completion tokens. You can view estimated spend per model with cross-provider comparisons, latency metrics (p50, p95, p99), and errors broken down by type, provider, and model.
 
-This unified view helps you answer critical questions such as which model is the most cost-effective for your use case, why a specific user request failed, how much your staging environment costs per week, and what the latency difference is between providers for your workload.
+This unified view helps you answer critical questions such as which model is the most cost-effective for your use case, why a specific user request failed, how much your staging environment costs each week, and what the latency difference is between providers for your workload.
 
 ifdef::ai-hub-available[]
 == Gateway modes
 
 AI Gateway supports two modes to accommodate different organizational needs:
 
-*AI Hub Mode* provides zero-configuration access with pre-configured backend pools and intelligent routing. Platform admins simply add provider credentials (OpenAI, Anthropic, Google Gemini), and all teams immediately benefit from 17 routing rules and 6 backend pools. Users can toggle preferences like vision routing or long-context routing, but the underlying architecture is managed by Redpanda. This mode eliminates the complexity of LLM gateway configuration—IT adds API keys once, all teams benefit immediately.
+*AI Hub Mode* provides zero-configuration access with pre-configured backend pools and intelligent routing. Platform admins simply add provider credentials (OpenAI, Anthropic, Google Gemini), and all teams immediately benefit from 17 routing rules and 6 backend pools. Users can toggle preferences like vision routing or long-context routing, but the underlying architecture is managed by Redpanda. This mode eliminates the complexity of LLM gateway configuration. IT adds API keys once, and all teams benefit immediately.
 
 *Custom Mode* provides full control over routing rules, backend pools, rate limits, and policies. Admins configure every aspect of the gateway to meet specific requirements. This mode is ideal when you need custom routing logic based business rules, specific failover behavior, or integration with custom infrastructure like Azure OpenAI or AWS Bedrock.
 
@@ -143,7 +143,7 @@ endif::[]
 
 === Team isolation
 
-When multiple teams share infrastructure but need separate budgets and policies, create one gateway per team. For example, you might configure Team A's gateway with a $5K/month budget for both staging and production environments, while Team B's gateway has a $10K/month budget with different rate limits. Each team sees only their own traffic in the observability dashboards, providing clear cost attribution and isolation.
+When multiple teams share infrastructure but need separate budgets and policies, create one gateway for each team. For example, you might configure Team A's gateway with a $5K/month budget for both staging and production environments, while Team B's gateway has a $10K/month budget with different rate limits. Each team sees only their own traffic in the observability dashboards, providing clear cost attribution and isolation.
 
 === Environment separation
 
@@ -188,8 +188,6 @@ AI Gateway may not be necessary if:
 * Your application doesn't require provider switching
 
 == Next steps
-
-Now that you understand what AI Gateway is and how it can benefit your organization:
 
 * xref:ai-gateway/gateway-quickstart.adoc[Gateway Quickstart] - Get started quickly with a basic gateway setup
 

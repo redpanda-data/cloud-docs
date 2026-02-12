@@ -8,11 +8,11 @@
 
 include::ai-agents:partial$ai-gateway-byoc-note.adoc[]
 
-This page provides technical details about AI Gateway's architecture, request processing, and capabilities. For an introduction to AI Gateway and the problems it solves, see xref:ai-agents:ai-gateway/what-is-ai-gateway.adoc[]
+This page provides technical details about AI Gateway's architecture, request processing, and capabilities. For an overview of AI Gateway, see xref:ai-agents:ai-gateway/what-is-ai-gateway.adoc[]
 
 == Architecture overview
 
-AI Gateway consists of three planes: a glossterm:control plane[] for configuration and management, a glossterm:data plane[] for request processing and routing, and an observability plane for monitoring and analytics.
+AI Gateway consists of a glossterm:control plane[] for configuration and management, a glossterm:data plane[] for request processing and routing, and an observability plane for monitoring and analytics.
 
 // PLACEHOLDER: Add architecture diagram showing:
 // 1. Control Plane:
@@ -38,7 +38,7 @@ AI Gateway consists of three planes: a glossterm:control plane[] for configurati
 The control plane manages gateway configuration and policy definition:
 
 * **Workspace management**: Multi-tenant isolation with separate namespaces for different teams or environments
-* **Provider configuration**: Enable and configure LLM providers (OpenAI, Anthropic, etc.)
+* **Provider configuration**: Enable and configure LLM providers (such as OpenAI and Anthropic)
 * **Gateway creation**: Define gateways with specific routing rules, budgets, and rate limits
 * **Policy definition**: Create CEL-based routing policies, spend limits, and rate limits
 * **MCP server registration**: Configure which MCP servers are available to agents
@@ -51,7 +51,7 @@ The data plane handles all runtime request processing:
 * **Authentication**: Validate API keys and gateway access
 * **Policy evaluation**: Apply rate limits, spend limits, and routing policies
 * **Provider pool management**: Select primary or fallback providers based on availability
-* **MCP aggregation**: Aggregate tools from multiple MCP servers with deferred loading
+* **MCP proxy**: Aggregate tools from multiple MCP servers with deferred loading
 * **Response transformation**: Normalize provider-specific responses to OpenAI format
 * **Metrics collection**: Record token usage, latency, and cost for every request
 
@@ -143,7 +143,7 @@ In AI Hub mode, resources are divided into two categories:
 * Failover logic
 * Provider selection algorithms
 
-*User-Configurable Resources:*
+*User-configurable resources:*
 
 * Provider credentials (OpenAI, Anthropic, Google Gemini)
 * 6 preference toggles

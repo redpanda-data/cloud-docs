@@ -1,7 +1,7 @@
 = AI Gateway Quickstart
 :description: Get started with AI Gateway. Configure providers, create your first gateway with failover and budget controls, and route your first request.
 :page-topic-type: quickstart
-:personas: app_developer, platform_admin
+:personas: evaluator, app_developer, platform_admin
 :learning-objective-1: Enable an LLM provider and create your first gateway
 :learning-objective-2: Route your first request through AI Gateway and verify it works
 :learning-objective-3: Verify request routing and token usage in the gateway overview
@@ -61,7 +61,7 @@ ifdef::ai-hub-available[]
 ====
 When creating a gateway, you choose between two modes:
 
-* *AI Hub Mode*: Zero-configuration with pre-configured routing and backend pools. Just add provider credentials and start routing requests. Ideal for quick starts and standard use cases.
+* *AI Hub Mode*: Zero-configuration with pre-configured routing and backend pools. Just add provider credentials and start routing requests. Ideal for quickstarts and standard use cases.
 * *Custom Mode*: Full control over all routing rules, backend pools, and policies. Requires manual configuration. Ideal for custom routing logic and specialized requirements.
 
 See xref:ai-gateway/gateway-modes.adoc[] to understand which mode fits your needs. This quickstart focuses on Custom mode configuration.
@@ -273,9 +273,9 @@ The gateway provides these built-in MCP tools:
 * *Data catalog API*: Query your data catalog
 * *Memory store*: Persistent storage for agent state
 * *Vector search*: Semantic search over embeddings
-* *MCP orchestrator*: Built-in tool for programmatic multi-tool workflows
+* *MCP Orchestrator*: Built-in tool for programmatic multi-tool workflows
 
-The *MCP orchestrator* enables agents to generate JavaScript code that calls multiple tools in a single orchestrated step, reducing round trips. For example, a workflow requiring 47 file reads can be reduced from 49 round trips to just 1.
+The *MCP Orchestrator* enables agents to generate JavaScript code that calls multiple tools in a single orchestrated step, reducing round trips. For example, a workflow requiring 47 file reads can be reduced from 49 round trips to just 1.
 
 To add external tools (for example, Slack, GitHub), add their MCP server endpoints to your gateway configuration.
 
@@ -284,13 +284,9 @@ To add external tools (for example, Slack, GitHub), add their MCP server endpoin
 When many tools are aggregated, listing all tools upfront can consume significant tokens. With deferred tool loading, the MCP gateway initially returns only:
 
 * A tool search capability
-* The MCP orchestrator
+* The MCP Orchestrator
 
 Agents then search for specific tools they need, retrieving only that subset. This can reduce token usage by 80-90% when you have many tools configured.
-
-// REVIEWERS: When/how exactly do you use the orchestrator? Also what happens after they create a gateway? Please provide an example of how to validate end-to-end routing against the gateway endpoint!
-
-// REVIEWERS: How do users connect to the ADP catalog + MCP servers exposed through RPCN?
 
 == Configure CEL routing rule (optional)
 
