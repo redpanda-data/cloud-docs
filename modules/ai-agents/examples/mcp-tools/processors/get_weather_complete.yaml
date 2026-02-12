@@ -1,0 +1,55 @@
+# Complete weather tool with validation, error handling, and response formatting
+# tag::complete[]
+label: get-weather
+
+processors:
+  # Validate and sanitize input
+  - label: validate_city
+    mutation: |
+      root.city = if this.city.or("").trim() == "" {
+        throw("city is required")
+      } else {
+        this.city.trim().lowercase().re_replace_all("[^a-z\\s\\-]", "")
+      }
+      root.units = this.units.or("metric")
+
+  # Fetch weather data
+  - label: fetch_weather
+    try:
+      - http:
+          url: 'https://wttr.in/${! json("city") }?format=j1'
+          verb: GET
+          timeout: 10s
+
+      - mutation: |
+          root.weather = {
+            "location": this.nearest_area.0.areaName.0.value,
+            "country": this.nearest_area.0.country.0.value,
+            "temperature_c": this.current_condition.0.temp_C,
+            "temperature_f": this.current_condition.0.temp_F,
+            "condition": this.current_condition.0.weatherDesc.0.value,
+            "humidity": this.current_condition.0.humidity,
+            "wind_kph": this.current_condition.0.windspeedKmph
+          }
+
+  # Handle errors gracefully
+  - label: handle_errors
+    catch:
+      - mutation: |
+          root.error = true
+          root.message = "Failed to fetch weather: " + error()
+
+meta:
+  mcp:
+    enabled: true
+    description: "Get current weather for a city. Returns temperature, conditions, humidity, and wind speed."
+    properties:
+      - name: city
+        type: string
+        description: "City name (for example, 'London', 'New York', 'Tokyo')"
+        required: true
+      - name: units
+        type: string
+        description: "Temperature units: 'metric' or 'imperial' (default: metric)"
+        required: false
+# end::complete[]

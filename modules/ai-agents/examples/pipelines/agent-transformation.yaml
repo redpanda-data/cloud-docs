@@ -1,0 +1,32 @@
+# Agent as transformation node
+# Uses agent reasoning for complex transformations (natural language to SQL)
+input:
+  redpanda:
+    seed_brokers: ["${REDPANDA_BROKERS}"]
+    topics: [nl-queries]
+    consumer_group: query-converter
+    tls:
+      enabled: true
+    sasl:
+      - mechanism: SCRAM-SHA-256
+        username: "${REDPANDA_USERNAME}"
+        password: "${REDPANDA_PASSWORD}"
+
+pipeline:
+  # tag::processors[]
+  processors:
+    - a2a_message:
+        agent_card_url: "${AGENT_CARD_URL}"
+        prompt: "Convert to SQL: ${!this.natural_language_query}"
+  # end::processors[]
+
+output:
+  redpanda:
+    seed_brokers: ["${REDPANDA_BROKERS}"]
+    topic: sql-queries
+    tls:
+      enabled: true
+    sasl:
+      - mechanism: SCRAM-SHA-256
+        username: "${REDPANDA_USERNAME}"
+        password: "${REDPANDA_PASSWORD}"

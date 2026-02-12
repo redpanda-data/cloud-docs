@@ -1,0 +1,157 @@
+# Event-driven transaction dispute processing pipeline
+# Automatically flags high-risk transactions and routes them to dispute agent
+
+input:
+  kafka:
+    addresses: ["${REDPANDA_BROKERS}"]
+    topics: ["bank.transactions"]
+    consumer_group: dispute-processor
+    tls:
+      enabled: true
+    sasl:
+      mechanism: SCRAM-SHA-256
+      user: "${secrets.DISPUTE_PIPELINE_USERNAME}"
+      password: "${secrets.DISPUTE_PIPELINE_PASSWORD}"
+
+pipeline:
+  processors:
+    # Filter for high-value or suspicious transactions
+    - branch:
+        request_map: |
+          # Only process transactions above $500 or flagged by upstream systems
+          root = if this.amount > 500 || this.preliminary_flag == true {
+            this
+          } else {
+            deleted()
+          }
+
+        processors:
+          # Calculate preliminary risk score based on transaction attributes
+          - mapping: |
+              # Preserve original transaction
+              root = this
+
+              # Location risk: international transactions get higher score
+              let location_risk = if this.merchant.country != this.card.billing_country { 40 } else { 0 }
+
+              # Amount risk: large amounts relative to account averages
+              let amount_risk = if this.amount > 1000 { 30 } else if this.amount > 500 { 15 } else { 0 }
+
+              # Velocity risk: check for multiple recent transactions
+              let velocity_risk = if this.recent_transaction_count > 5 { 20 } else { 0 }
+
+              # Category risk: luxury goods and high-risk categories
+              let category_risk = match this.merchant.mcc {
+                "5944" => 20,  # Jewelry
+                "5094" => 25,  # Precious stones
+                _ => 0
+              }
+
+              # Calculate total score
+              let total_score = $location_risk + $amount_risk + $velocity_risk + $category_risk
+
+              root.preliminary_risk_score = $total_score
+              root.risk_level = if $total_score > 70 {
+                "high"
+              } else if $total_score > 40 {
+                "medium"
+              } else {
+                "low"
+              }
+
+          # Route high and medium risk transactions to dispute agent for investigation
+          - branch:
+              request_map: |
+                # Only send to agent if risk is medium or higher
+                root = if this.preliminary_risk_score >= 40 { this } else { deleted() }
+
+              processors:
+                # Invoke dispute resolution agent via A2A protocol
+                - a2a_message:
+                    agent_card_url: "${secrets.DISPUTE_AGENT_CARD_URL}"
+                    prompt: |
+                      Investigate this potentially fraudulent transaction and respond with ONLY a JSON object (no additional text):
+
+                      Transaction ID: ${! this.transaction_id }
+                      Customer ID: ${! this.customer_id }
+                      Amount: $${! this.amount } ${! this.currency }
+                      Merchant: ${! this.merchant.name }
+                      Location: ${! this.merchant.city }, ${! this.merchant.country }
+                      Date: ${! this.transaction_date }
+                      Preliminary Risk Score: ${! this.preliminary_risk_score }/100
+                      Risk Level: ${! this.risk_level }
+
+                      Return ONLY this JSON format with no other text:
+                      {
+                        "recommendation": "block_and_investigate" | "hold_for_review" | "approve",
+                        "fraud_score": <number 0-100>,
+                        "confidence": "high" | "medium" | "low",
+                        "reasoning": "<brief explanation>"
+                      }
+
+              # Map agent response back to transaction record
+              result_map: |
+                # By default, result_map preserves the original message that entered the branch
+                # Just add the agent investigation field
+                root.agent_investigation = if content().string().parse_json().catch(null) != null {
+                  content().string().parse_json()
+                } else {
+                  {
+                    "recommendation": "manual_review_required",
+                    "fraud_score": 50,
+                    "confidence": "low",
+                    "reasoning": "Agent returned unparseable response: " + content().string().slice(0, 100)
+                  }
+                }
+
+        # Merge risk scoring and agent results back to original transaction
+        result_map: |
+          root = content()
+
+    # Enrich with final decision and tracing metadata
+    - mapping: |
+        # Preserve original transaction and all computed fields
+        root = this
+
+        # Only set final_decision and alert_level if agent investigation occurred
+        root.final_decision = if this.agent_investigation.exists("recommendation") {
+          match {
+            this.agent_investigation.recommendation == "block_and_investigate" => "blocked",
+            this.agent_investigation.recommendation == "hold_for_review" => "pending_review",
+            this.agent_investigation.recommendation == "approve" => "approved",
+            _ => "manual_review_required"
+          }
+        } else {
+          "low_risk_no_investigation"
+        }
+
+        root.alert_level = if this.agent_investigation.exists("fraud_score") {
+          match {
+            this.agent_investigation.fraud_score >= 80 => "critical",
+            this.agent_investigation.fraud_score >= 60 => "high",
+            this.agent_investigation.fraud_score >= 40 => "medium",
+            _ => "low"
+          }
+        } else {
+          "low"
+        }
+
+        # Add execution metadata for tracing back to agent transcripts
+        root.pipeline_metadata = {
+          "processed_at": now().ts_format("2006-01-02T15:04:05.000Z"),
+          "transaction_id": this.transaction_id,
+          "customer_id": this.customer_id,
+          "agent_invoked": this.agent_investigation.exists("fraud_score")
+        }
+
+output:
+  kafka:
+    addresses: ["${REDPANDA_BROKERS}"]
+    topic: bank.dispute_results
+    key: "${! this.transaction_id }"
+    tls:
+      enabled: true
+    sasl:
+      mechanism: SCRAM-SHA-256
+      user: "${secrets.DISPUTE_PIPELINE_USERNAME}"
+      password: "${secrets.DISPUTE_PIPELINE_PASSWORD}"

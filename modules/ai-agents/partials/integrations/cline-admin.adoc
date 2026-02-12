@@ -1,0 +1,579 @@
+= Configure AI Gateway for Cline
+:description: Configure Redpanda AI Gateway to support Cline clients.
+:page-topic-type: how-to
+:personas: platform_admin
+:learning-objective-1: Configure AI Gateway endpoints for Cline connectivity
+:learning-objective-2: Set up authentication and access control for Cline clients
+:learning-objective-3: Deploy MCP tool aggregation for Cline tool discovery
+
+include::ai-agents:partial$ai-gateway-byoc-note.adoc[]
+
+Configure Redpanda AI Gateway to support Cline (formerly Claude Dev) clients accessing LLM providers and MCP tools through a unified endpoint.
+
+After reading this page, you will be able to:
+
+* [ ] Configure AI Gateway endpoints for Cline connectivity.
+* [ ] Set up authentication and access control for Cline clients.
+* [ ] Deploy MCP tool aggregation for Cline tool discovery.
+
+== Prerequisites
+
+* AI Gateway deployed on a BYOC cluster running Redpanda version 25.3 or later
+* Administrator access to the AI Gateway UI
+* At least one LLM provider API key (Anthropic or OpenAI)
+* Understanding of xref:ai-agents:ai-gateway/gateway-architecture.adoc[AI Gateway concepts]
+
+== About Cline
+
+Cline is a VS Code extension designed for autonomous AI development workflows. It connects to Claude models through the native Anthropic API format, sending requests to `/v1/messages` endpoints. Cline supports long-running tasks, browser integration, and autonomous operations, with full MCP support for tool discovery and execution.
+
+Key characteristics:
+
+* Uses native Anthropic format (compatible with OpenAI-compatible endpoints)
+* Designed for autonomous, multi-step workflows
+* Supports MCP protocol for external tool integration
+* Operates as a VS Code extension with persistent context
+* Requires configuration similar to Claude Code
+
+== Architecture overview
+
+Cline connects to AI Gateway through two primary endpoints:
+
+* LLM endpoint: `https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/v1` for chat completions
+* MCP endpoint: `https://{CLUSTER_ID}.cloud.redpanda.com/ai-gateway/mcp` for tool discovery and execution
+
+The gateway handles:
+
+. Authentication via bearer tokens in the `Authorization` header
+. Model routing using the `vendor/model_id` format
+. MCP server aggregation for multi-tool workflows
+. Request logging and cost tracking per gateway
+
+== Enable LLM providers
+
+Cline requires access to LLM providers through the gateway. Enable at least one provider.
+
+=== Configure Anthropic
+
+Cline uses Anthropic models by default. To enable Anthropic:
+
+. Navigate to *AI Gateway* > *Providers* in the Redpanda Cloud console
+. Select *Anthropic* from the provider list
+. Click *Add configuration*
+. Enter your Anthropic API key
+. Click *Save*
+
+The gateway can now route requests to Anthropic models.
+
+=== Configure OpenAI
+
+To enable OpenAI as a provider:
+
+. Navigate to *AI Gateway* > *Providers*
+. Select *OpenAI* from the provider list
+. Click *Add configuration*
+. Enter your OpenAI API key
+. Click *Save*
+
+=== Enable models in the catalog
+
+After enabling providers, enable specific models:
+
+. Navigate to *AI Gateway* > *Models*
+. Enable the models you want Cline clients to access
++
+Common models for Cline:
++
+* `anthropic/claude-opus-4.6-5`
+* `anthropic/claude-sonnet-4.5`
+* `openai/gpt-5.2`
+* `openai/o1-mini`
+
+. Click *Save*
+
+Models appear in the catalog with the `vendor/model_id` format that Cline uses in requests.
+
+== Create a gateway for Cline clients
+
+Create a dedicated gateway to isolate Cline traffic and apply specific policies.
+
+=== Gateway configuration
+
+. Navigate to *AI Gateway* > *Gateways*
+. Click *Create Gateway*
+. Enter gateway details:
++
+[cols="1,2"]
+|===
+|Field |Value
+
+|Name
+|`cline-gateway` (or your preferred name)
+
+|Workspace
+|Select the workspace for access control grouping
+
+|Description
+|Gateway for Cline VS Code extension clients
+|===
+
+. Click *Create*
+. Copy the gateway endpoint URL from the gateway details page
+
+=== Configure LLM routing
+
+Set up routing policies for Cline requests.
+
+==== Basic routing with failover
+
+Configure a primary provider with automatic failover:
+
+. Navigate to the gateway's *LLM* tab
+. Under *Routing*, click *Add route*
+. Configure the route:
++
+[source,cel]
+----
+true  # Matches all requests
+----
+
+. Add a *Primary provider pool*:
++
+* Provider: Anthropic
+* Model: All enabled Anthropic models
+* Load balancing: Round robin (if multiple Anthropic configurations exist)
+
+. Add a *Fallback provider pool*:
++
+* Provider: OpenAI
+* Model: All enabled OpenAI models
+* Failover conditions: Rate limits, timeouts, 5xx errors
+
+. Click *Save*
+
+Cline requests route to Anthropic by default and fail over to OpenAI if Anthropic is unavailable.
+
+==== Workspace-based routing
+
+Route requests based on VS Code workspace or project context (if Cline passes workspace identifiers):
+
+[source,cel]
+----
+request.headers["x-workspace-type"][0] == "production"
+----
+
+Create separate routes:
+
+* Production route: Claude Opus 4.6.5 (highest quality, critical code)
+* Development route: Claude Sonnet 4.5 (balanced cost and quality)
+* Experimental route: OpenAI GPT-5.2 (cost-effective testing)
+
+=== Apply rate limits
+
+Prevent runaway usage from autonomous Cline sessions:
+
+. Navigate to the gateway's *LLM* tab
+. Under *Rate Limit*, configure:
++
+[cols="1,2"]
+|===
+|Setting |Recommended Value
+
+|Global rate limit
+|120 requests per minute
+
+|Per-user rate limit
+|15 requests per minute (if using user headers)
+|===
++
+Cline can generate multiple requests during autonomous operations. Higher limits than typical interactive clients may be necessary.
+
+. Click *Save*
+
+The gateway blocks requests exceeding these limits and returns HTTP 429 errors.
+
+=== Set spending limits
+
+Control LLM costs during autonomous operations:
+
+. Under *Spend Limit*, configure:
++
+[cols="1,2"]
+|===
+|Setting |Value
+
+|Monthly budget
+|$8,000 (adjust based on expected autonomous usage)
+
+|Enforcement
+|Block requests after budget exceeded
+|===
++
+Autonomous operations can consume significant tokens. Monitor spending patterns after deployment.
+
+. Click *Save*
+
+The gateway tracks estimated costs per request and blocks traffic when the monthly budget is exhausted.
+
+== Configure MCP tool aggregation
+
+Enable Cline to discover and use tools from multiple MCP servers through a single endpoint.
+
+=== Add MCP servers
+
+. Navigate to the gateway's *MCP* tab
+. Click *Add MCP Server*
+. Enter server details:
++
+[cols="1,2"]
+|===
+|Field |Value
+
+|Display name
+|Descriptive name (for example, `filesystem-tools`, `code-analysis-tools`)
+
+|Endpoint URL
+|MCP server endpoint (for example, xref:ai-agents:mcp/remote/overview.adoc[Remote MCP server] URL)
+
+|Authentication
+|Bearer token or other authentication mechanism
+|===
+
+. Click *Save*
+
+Repeat for each MCP server you want to aggregate.
+
+=== Enable deferred tool loading
+
+Reduce token costs for Cline sessions with many available tools:
+
+. Under *MCP Settings*, enable *Deferred tool loading*
+. Click *Save*
+
+When enabled:
+
+* Cline initially receives only a search tool and orchestrator tool
+* Cline queries for specific tools by name when needed
+* Token usage decreases by 80-90% for configurations with many tools
+
+This is particularly important for Cline because autonomous operations can make many tool discovery calls.
+
+=== Add the MCP orchestrator
+
+The MCP orchestrator reduces multi-step autonomous workflows to single calls:
+
+. Under *MCP Settings*, enable *MCP Orchestrator*
+. Configure:
++
+[cols="1,2"]
+|===
+|Setting |Value
+
+|Orchestrator model
+|Select a model with strong code generation capabilities (for example, `anthropic/claude-sonnet-4.5`)
+
+|Execution timeout
+|45 seconds
+|===
++
+Longer timeout than typical interactive clients allows complex autonomous operations to complete.
+
+. Click *Save*
+
+Cline can now invoke the orchestrator tool to execute complex, multi-step operations in a single request, which is ideal for autonomous development workflows.
+
+== Configure authentication
+
+Cline clients authenticate using bearer tokens.
+
+=== Generate API tokens
+
+. Navigate to *Security* > *API Tokens* in the Redpanda Cloud console
+. Click *Create Token*
+. Enter token details:
++
+[cols="1,2"]
+|===
+|Field |Value
+
+|Name
+|`cline-access`
+
+|Scopes
+|`ai-gateway:read`, `ai-gateway:write`
+
+|Expiration
+|Set appropriate expiration based on security policies
+|===
+
+. Click *Create*
+. Copy the token (it appears only once)
+
+Distribute this token to Cline users through secure channels.
+
+=== Token rotation
+
+Implement token rotation for security:
+
+. Create a new token before the existing token expires
+. Distribute the new token to users
+. Monitor usage of the old token in (observability dashboard)
+. Revoke the old token after all users have migrated
+
+== Configure Cline clients
+
+Provide these instructions to users configuring Cline in VS Code.
+
+=== API provider configuration
+
+Users configure Cline's API provider and credentials through the Cline extension interface.
+
+IMPORTANT: API provider configuration (API keys, base URLs, custom headers) is managed via Cline's extension global state, not VS Code `settings.json`. These settings are stored in the extension's internal state and must be configured through the Cline UI.
+
+==== Configure via Cline UI
+
+. Open the Cline extension panel in VS Code
+. Click the settings icon or gear menu
+. Configure the API connection:
++
+* *API Provider*: Select "Custom" or "Anthropic"
+* *API Base URL*: The gateway endpoint URL from the gateway details page
+* *API Key*: The API token generated earlier
+
+Replace:
+
+* `YOUR_API_TOKEN`: The API token generated earlier
+
+=== MCP server configuration
+
+Configure Cline to connect to the aggregated MCP endpoint through the Cline UI or by editing `cline_mcp_settings.json`.
+
+==== Enable MCP mode
+
+. Open VS Code Settings (Cmd/Ctrl + ,)
+. Search for "Cline > Mcp: Mode"
+. Enable the MCP mode toggle
+
+==== Configure MCP server via Cline UI
+
+. Open the Cline extension panel in VS Code
+. Navigate to MCP server settings
+. Add the Redpanda AI Gateway MCP server with the connection details
+
+==== Configure via cline_mcp_settings.json
+
+Alternatively, edit `cline_mcp_settings.json` (located in the Cline extension storage directory):
+
+[source,json]
+----
+{
+  "mcpServers": {
+    "redpanda-ai-gateway": {
+      "type": "streamableHttp",
+      "url": "GATEWAY_MCP_ENDPOINT_URL",
+      "headers": {
+        "Authorization": "Bearer YOUR_API_TOKEN"
+      }
+    }
+  }
+}
+----
+
+Replace:
+
+* `GATEWAY_MCP_ENDPOINT_URL`: The gateway MCP endpoint URL from the gateway details page
+* `YOUR_API_TOKEN`: The API token generated earlier
+
+This configuration connects Cline to the aggregated MCP endpoint with authentication.
+
+=== Configuration scope
+
+Cline stores configuration in the extension's global state:
+
+* *API Provider settings*: Stored globally per VS Code instance, applies to all workspaces
+* *MCP server settings*: Can be configured per workspace using `cline_mcp_settings.json`
+
+For project-specific MCP server configurations (for example, development vs production gateways), place `cline_mcp_settings.json` in the workspace directory and configure different MCP servers per project.
+
+== Monitor Cline usage
+
+Track Cline activity through gateway observability features.
+
+=== View request logs
+
+. Navigate to *AI Gateway* > *Observability* > *Logs*
+. Filter by gateway ID: `cline-gateway`
+. Review:
++
+* Request timestamps and duration
+* Model used per request
+* Token usage (prompt and completion tokens)
+* Estimated cost per request
+* HTTP status codes and errors
+
+Cline autonomous operations may generate request sequences. Look for patterns to identify long-running sessions.
+
+=== Analyze metrics
+
+. Navigate to *AI Gateway* > *Observability* > *Metrics*
+. Select the Cline gateway
+. Review:
++
+[cols="1,2"]
+|===
+|Metric |Purpose
+
+|Request volume
+|Identify autonomous session patterns and peak times
+
+|Token usage
+|Track consumption trends from multi-step operations
+
+|Estimated spend
+|Monitor costs against budget (autonomous operations can be expensive)
+
+|Latency (p50, p95, p99)
+|Detect performance issues in autonomous workflows
+
+|Error rate
+|Identify failing requests or misconfigured clients
+|===
+
+
+=== Query logs via API
+
+Programmatically access logs for integration with monitoring systems:
+
+[source,bash]
+----
+# Set REDPANDA_API_TOKEN environment variable before running
+curl https://{CLUSTER_ID}.cloud.redpanda.com/api/ai-gateway/logs \
+  -H "Authorization: Bearer ${REDPANDA_API_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "gateway_id": "GATEWAY_ID",
+    "start_time": "2026-01-01T00:00:00Z",
+    "end_time": "2026-01-14T23:59:59Z",
+    "limit": 100
+  }'
+----
+
+NOTE: Set the `REDPANDA_API_TOKEN` environment variable to your API token before running this command.
+
+== Security considerations
+
+Apply these security best practices for Cline deployments.
+
+=== Limit token scope
+
+Create tokens with minimal required scopes:
+
+* `ai-gateway:read`: Required for MCP tool discovery
+* `ai-gateway:write`: Required for LLM requests and tool execution
+
+Avoid granting broader scopes like `admin` or `cluster:write`.
+
+Because Cline performs autonomous operations, limit what tools it can access through MCP server selection.
+
+=== Implement network restrictions
+
+If Cline clients connect from known networks (corporate VPN, office IP ranges), configure network policies:
+
+. Use cloud provider security groups to restrict access to AI Gateway endpoints
+. Allowlist only the IP ranges where Cline clients operate
+. Monitor for unauthorized access attempts in request logs
+
+=== Enforce token expiration
+
+Set short token lifetimes for high-security environments:
+
+* Development environments: 90 days
+* Production environments: 30 days
+
+Automate token rotation to reduce manual overhead.
+
+=== Audit tool access
+
+Review which MCP tools Cline clients can access:
+
+. Periodically audit the MCP servers configured in the gateway
+. Remove unused or deprecated MCP servers
+. Monitor tool execution logs for unexpected autonomous behavior
+. Consider creating separate gateways for different trust levels
+
+Because Cline operates autonomously, carefully control which tools it can invoke.
+
+=== Monitor autonomous operations
+
+Set up alerts for unusual patterns:
+
+* Request rate spikes (may indicate runaway autonomous loops)
+* High error rates (may indicate tool compatibility issues)
+* Unexpected tool invocations (may indicate misconfigured autonomous behavior)
+* Budget consumption spikes (autonomous operations can be expensive)
+
+== Troubleshooting
+
+Common issues and solutions when configuring AI Gateway for Cline.
+
+=== Cline cannot connect to gateway
+
+Symptom: Connection errors when Cline tries to discover tools or send LLM requests.
+
+Causes and solutions:
+
+* **Invalid gateway ID**: Verify the gateway endpoint URL matches the URL from the gateway details page in the console
+* **Expired token**: Generate a new API token and update the Cline settings
+* **Network connectivity**: Verify the cluster endpoint is accessible from the client network
+* **Provider not enabled**: Ensure at least one LLM provider is enabled and has models in the catalog
+* **VS Code settings not applied**: Reload VS Code window after changing settings (Cmd/Ctrl + Shift + P > "Reload Window")
+
+=== Tools not appearing in Cline
+
+Symptom: Cline does not discover MCP tools.
+
+Causes and solutions:
+
+* **MCP servers not configured**: Add MCP server endpoints in the gateway's MCP tab
+* **Deferred loading enabled but search failing**: Check that the search tool is correctly configured
+* **MCP server authentication failing**: Verify MCP server authentication credentials in the gateway configuration
+* **Cline MCP configuration missing**: Ensure `cline.mcpServers` is configured in settings
+
+=== High costs or token usage
+
+Symptom: Token usage and costs exceed expectations.
+
+Causes and solutions:
+
+* **Deferred tool loading disabled**: Enable deferred tool loading to reduce tokens by 80-90%
+* **Autonomous loops**: Monitor for repeated similar requests (may indicate autonomous operation stuck in a loop)
+* **No rate limits**: Apply per-minute rate limits to prevent runaway autonomous usage
+* **Missing spending limits**: Set monthly budget limits with blocking enforcement
+* **Expensive models for autonomous work**: Route autonomous operations to cost-effective models (for example, Claude Sonnet instead of Opus)
+* **Too many tools in context**: Reduce the number of aggregated MCP servers or enable deferred loading
+
+=== Requests failing with 429 errors
+
+Symptom: Cline receives HTTP 429 Too Many Requests errors.
+
+Causes and solutions:
+
+* **Rate limit exceeded**: Review and increase rate limits if autonomous usage is legitimate
+* **Upstream provider rate limits**: Check if the upstream LLM provider is rate-limiting; configure failover pools
+* **Budget exhausted**: Verify monthly spending limit has not been reached
+* **Autonomous operation too aggressive**: Configure Cline to slow down request rate
+
+=== Autonomous operations timing out
+
+Symptom: Cline operations fail with timeout errors.
+
+Causes and solutions:
+
+* **MCP orchestrator timeout too short**: Increase orchestrator execution timeout to 60 seconds
+* **Complex multi-step operations**: Break down tasks or use the orchestrator tool for better efficiency
+* **Slow MCP server responses**: Check MCP server performance and consider caching
+
+== Next steps
+
+* xref:ai-agents:ai-gateway/cel-routing-cookbook.adoc[]: Implement advanced routing rules
+* xref:ai-agents:mcp/remote/overview.adoc[]: Deploy Remote MCP servers for custom tools

@@ -1,0 +1,162 @@
+= Agent Concepts
+:description: Understand how declaratively configured agents execute reasoning loops, manage context, invoke tools, and handle errors.
+:page-topic-type: concepts
+:personas: agent_developer, streaming_developer, data_engineer
+:learning-objective-1: Explain how agents execute reasoning loops and make tool invocation decisions
+:learning-objective-2: Describe how agents manage context and state across interactions
+:learning-objective-3: Identify error handling strategies for agent failures
+
+After you declaratively configure an agent's behavior (its LLM, system prompt, and tools), the framework manages execution through a reasoning loop. The LLM analyzes context, decides which tools to invoke, processes results, and repeats until the task completes. Understanding this execution model helps you fine-tune agent settings like iteration limits and tool selection.
+
+include::ai-agents:partial$byoc-aws-requirement.adoc[]
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
+
+== Agent execution model
+
+Every agent request follows a reasoning loop. The agent doesn't execute all tool calls at once. Instead, it makes decisions iteratively.
+
+=== The reasoning loop
+
+The following diagram shows how agents process requests through iterative reasoning:
+
+.Agent reasoning loop with tool integration
+image::ai-agents:agent-reasoning-loop.png[Diagram showing the agent reasoning loop: User Request flows to LLM Receives Context, then to LLM Decision which branches to Tool Executes, Request Clarification, or Return Response to User]
+
+When an agent receives a request:
+
+. The LLM receives the context, including system prompt, conversation history, user request, and previous tool results.
+. The LLM chooses to invoke a tool, requests more information, or responds to user.
+. The tool runs and returns results if invoked.
+. The tool's results are added to conversation history.
+. The LLM reasons again with an expanded context.
+
+The loop continues until one of these conditions is met:
+
+.Reasoning loop exit conditions
+image::ai-agents:agent-exit-conditions.png[Diagram showing exit conditions: Task Complete returns response, Max Iterations returns partial result, Unrecoverable Error returns error, otherwise continue loop]
+
+* Agent completes the task and responds to the user
+* Agent reaches max iterations limit
+* Agent encounters an unrecoverable error
+
+NOTE: If the agent encounters an unrecoverable error on the first iteration, it returns an error immediately. Unrecoverable errors include authentication failures, invalid tool configurations, or LLM API failures.
+
+=== Why iterations matter
+
+Each iteration includes three phases:
+
+. **LLM reasoning**: The model processes the growing context to decide the next action.
+. **Tool invocation**: If the agent decides to call a tool, execution happens and waits for results.
+. **Context expansion**: Tool results are added to the conversation history for the next iteration.
+
+With higher iteration limits, agents can complete complex tasks but can cost more and take longer.
+
+With lower iteration limits, agents can respond faster and are cheaper but may fail on complex requests.
+
+==== Cost calculation
+
+Calculate the approximate cost per request by estimating average context tokens per iteration:
+
+----
+Cost per request = (iterations x context tokens x model price per token)
+----
+
+Example with 30 iterations at $0.000002 per token:
+
+----
+Iteration 1:  500 tokens x $0.000002 = $0.001
+Iteration 15: 2000 tokens x $0.000002 = $0.004
+Iteration 30: 4000 tokens x $0.000002 = $0.008
+
+Total: ~$0.013 per request
+----
+
+Actual costs vary based on:
+
+* Tool result sizes (large results increase context)
+* Model pricing (varies by provider and model tier)
+* Task complexity (determines iteration count)
+
+Setting max iterations creates a cost/capability trade-off:
+
+[cols="1,1,2,1", options="header"]
+|===
+|Limit |Range |Use Case |Cost
+
+|Low
+|10-20
+|Simple queries, single tool calls
+|Cost-effective
+
+|Medium
+|30-50
+|Multi-step workflows, tool chaining
+|Balanced
+
+|High
+|50-100
+|Complex analysis, exploratory tasks
+|Higher
+|===
+
+Iteration limits prevent runaway costs when agents encounter complex or ambiguous requests.
+
+== MCP tool invocation patterns
+
+MCP tools extend agent capabilities beyond text generation. Understanding when and how tools execute helps you design effective tool sets.
+
+=== Synchronous tool execution
+
+In Redpanda Cloud, tool calls block the agent. When the agent decides to invoke a tool, it pauses and waits while the tool executes (querying a database, calling an API, or processing data). When the tool returns its result, the agent resumes reasoning.
+
+This synchronous model means latency adds up across multiple tool calls, the agent sees tool results sequentially rather than in parallel, and long-running tools can delay or fail agent requests due to timeouts.
+
+=== Tool selection decisions
+
+The LLM decides which tool to invoke based on system prompt guidance (such as "Use get_orders when customer asks about history"), tool descriptions from the MCP schema that define parameters and purpose, and conversation context where previous tool results influence the next tool choice. Agents can invoke the same tool multiple times with different parameters if the task requires it.
+
+=== Tool chaining
+
+Agents chain tools when one tool's output feeds another tool's input. For example, an agent might first call `get_customer_info(customer_id)` to retrieve details, then use that data to call `get_order_history(customer_email)`.
+
+Tool chaining requires sufficient max iterations because each step in the chain consumes one iteration.
+
+=== Tool granularity considerations
+
+Tool design affects agent behavior. Coarse-grained tools that do many things result in fewer tool calls but less flexibility and more complex implementation. Fine-grained tools that each do one thing require more tool calls but offer higher composability and simpler implementation.
+
+Choose granularity based on how often you'll reuse tool logic across workflows, whether intermediate results help with debugging, and how much control you want over tool invocation order.
+
+For tool design guidance, see xref:ai-agents:mcp/remote/best-practices.adoc[].
+
+== Context and state management
+
+Agents handle two types of information: conversation context (what's been discussed) and state (persistent data across sessions).
+
+=== Conversation context
+
+The agent's context includes the system prompt (always present), user messages, agent responses, tool invocation requests, and tool results.
+
+As the conversation progresses, context grows. Each tool result adds tokens to the context window, which the LLM uses for reasoning in subsequent iterations.
+
+=== Context window limits
+
+LLM context windows limit how much history fits. Small models support 8K-32K tokens, medium models support 32K-128K tokens, and large models support 128K-1M+ tokens.
+
+When context exceeds the limit, the oldest tool results get truncated, the agent loses access to early conversation details, and may ask for information it already retrieved.
+
+Design workflows to complete within context limits. Avoid unbounded tool chaining.
+
+include::partial$service-account-authorization.adoc[]
+
+== Next steps
+
+* xref:ai-agents:agents/architecture-patterns.adoc[]
+* xref:ai-agents:agents/quickstart.adoc[]
+* xref:ai-agents:agents/prompt-best-practices.adoc[]
+* xref:ai-agents:mcp/remote/best-practices.adoc[]

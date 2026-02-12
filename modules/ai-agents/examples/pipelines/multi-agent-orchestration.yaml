@@ -1,0 +1,35 @@
+# Multi-agent pipeline orchestration
+# Chains multiple agents in sequence: translate -> analyze sentiment -> route
+input:
+  redpanda:
+    seed_brokers: ["${REDPANDA_BROKERS}"]
+    topics: [international-feedback]
+    consumer_group: feedback-processor
+    tls:
+      enabled: true
+    sasl:
+      - mechanism: SCRAM-SHA-256
+        username: "${REDPANDA_USERNAME}"
+        password: "${REDPANDA_PASSWORD}"
+
+pipeline:
+  # tag::processors[]
+  processors:
+    - a2a_message:
+        agent_card_url: "${TRANSLATOR_AGENT_URL}"
+    - a2a_message:
+        agent_card_url: "${SENTIMENT_AGENT_URL}"
+    - a2a_message:
+        agent_card_url: "${ROUTER_AGENT_URL}"
+  # end::processors[]
+
+output:
+  redpanda:
+    seed_brokers: ["${REDPANDA_BROKERS}"]
+    topic: processed-feedback
+    tls:
+      enabled: true
+    sasl:
+      - mechanism: SCRAM-SHA-256
+        username: "${REDPANDA_USERNAME}"
+        password: "${REDPANDA_PASSWORD}"

@@ -1,0 +1,27 @@
+# OpenAI chat completion for sentiment analysis
+# Use for text generation, classification, summarization
+label: analyze-feedback
+
+# tag::component[]
+openai_chat_completion:
+  api_key: "${secrets.OPENAI_API_KEY}"
+  model: "gpt-5.2"
+  prompt: |
+    Analyze this customer feedback and provide:
+    1. Sentiment (positive/negative/neutral)
+    2. Key themes
+    3. Actionable insights
+
+    Feedback: ${! json(feedback_text) }
+  max_tokens: 500
+# end::component[]
+
+meta:
+  mcp:
+    enabled: true
+    description: "Analyze customer feedback for sentiment and themes"
+    properties:
+      - name: feedback_text
+        type: string
+        description: "The customer feedback text to analyze"
+        required: true

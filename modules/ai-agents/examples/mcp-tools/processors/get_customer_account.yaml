@@ -1,0 +1,51 @@
+label: get_customer_account
+mapping: |
+  root = match {
+    this.customer_id == "CUST-1001" => {
+      "customer_id": "CUST-1001",
+      "name": "Dana A.",
+      "email": "s****@example.com",
+      "account_type": "premium_checking",
+      "card_last_four": "4532",
+      "card_status": "active",
+      "member_since": "2019-03-15",
+      "location": "Seattle, WA, USA",
+      "phone_masked": "***-***-7890"
+    },
+    this.customer_id == "CUST-1002" => {
+      "customer_id": "CUST-1002",
+      "name": "Alex T.",
+      "email": "m****@example.com",
+      "account_type": "standard_checking",
+      "card_last_four": "8821",
+      "card_status": "active",
+      "member_since": "2021-07-22",
+      "location": "San Francisco, CA, USA",
+      "phone_masked": "***-***-4521"
+    },
+    this.customer_id == "CUST-1003" => {
+      "customer_id": "CUST-1003",
+      "name": "Quinn N.",
+      "email": "e****@example.com",
+      "account_type": "premium_credit",
+      "card_last_four": "2193",
+      "card_status": "active",
+      "member_since": "2020-11-08",
+      "location": "Austin, TX, USA",
+      "phone_masked": "***-***-3344"
+    },
+    _ => {
+      "error": "customer_not_found",
+      "message": "No account found for customer ID: " + this.customer_id
+    }
+  }
+
+meta:
+  mcp:
+    enabled: true
+    description: "Retrieve customer account information with masked PII. Use CUST-1001, CUST-1002, or CUST-1003 for testing."
+    properties:
+      - name: customer_id
+        type: string
+        description: "Customer identifier (format CUST-XXXX)"
+        required: true

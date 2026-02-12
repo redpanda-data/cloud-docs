@@ -1,0 +1,851 @@
+= Configure Continue.dev with AI Gateway
+:description: Configure Continue.dev to use Redpanda AI Gateway for unified LLM access, MCP tool integration, and AI-assisted coding.
+:page-topic-type: how-to
+:personas: ai_agent_developer, app_developer
+:learning-objective-1: Configure Continue.dev to connect to AI Gateway for chat and autocomplete
+:learning-objective-2: Set up MCP server integration through AI Gateway
+:learning-objective-3: Optimize Continue.dev settings for cost and performance
+
+include::ai-agents:partial$ai-gateway-byoc-note.adoc[]
+
+After xref:ai-agents:ai-gateway/gateway-quickstart.adoc[configuring your AI Gateway], set up Continue.dev to route LLM requests and access MCP tools through the gateway's unified endpoints.
+
+After reading this page, you will be able to:
+
+* [ ] Configure Continue.dev to connect to AI Gateway for chat and autocomplete.
+* [ ] Set up MCP server integration through AI Gateway.
+* [ ] Optimize Continue.dev settings for cost and performance.
+
+== Prerequisites
+
+Before configuring Continue.dev, ensure you have:
+
+* Continue.dev extension installed in your code editor:
+** VS Code: Search for "Continue" in Extensions
+** JetBrains IDEs: Install from the JetBrains Marketplace
+* An active Redpanda AI Gateway with:
+** At least one LLM provider enabled (see xref:ai-agents:ai-gateway/gateway-quickstart.adoc#step-1-enable-a-provider[Enable a provider])
+** A gateway created and configured (see xref:ai-agents:ai-gateway/gateway-quickstart.adoc#step-3-create-a-gateway[Create a gateway])
+* Your AI Gateway credentials:
+** Gateway endpoint URL (for example, `\https://gw.ai.panda.com`)
+** API key with access to the gateway
+
+== About Continue.dev
+
+Continue.dev is an open-source AI coding assistant that integrates with VS Code and JetBrains IDEs. It provides:
+
+* Chat interface for code questions and generation
+* Tab autocomplete powered by LLMs
+* Codebase indexing for context-aware suggestions
+* Slash commands for common workflows
+* Extensible architecture with custom context providers
+
+By routing Continue.dev through AI Gateway, you gain centralized observability, cost controls, and the ability to aggregate multiple MCP servers into a single interface.
+
+== Configuration files
+
+Continue.dev supports two configuration file formats:
+
+* `config.json` (legacy format)
+* `config.yaml` (recommended format)
+
+Both files are stored in the same location:
+
+* VS Code: `~/.continue/`
+* JetBrains: `~/.continue/`
+
+Create the directory if it doesn't exist:
+
+[,bash]
+----
+mkdir -p ~/.continue
+----
+
+=== Choose a configuration format
+
+[cols="1,2,2"]
+|===
+|Format |Use when |Limitations
+
+|`config.json`
+|You need basic LLM configuration without MCP servers
+|Does not support MCP server configuration or environment variable interpolation
+
+|`config.yaml`
+|You need MCP server integration or environment variable interpolation
+|Requires Continue.dev version that supports YAML (recent versions)
+|===
+
+TIP: Use `config.yaml` for new setups to take advantage of MCP server integration and the `${{ secrets.* }}` environment variable syntax.
+
+== Basic configuration
+
+Create or edit `~/.continue/config.json` with the following structure to connect to AI Gateway:
+
+[,json]
+----
+{
+  "models": [
+    {
+      "title": "Redpanda AI Gateway - Claude",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4.5",
+      "apiKey": "YOUR_REDPANDA_API_KEY",
+      "apiBase": "<your-gateway-endpoint>"
+    }
+  ]
+}
+----
+
+Replace placeholder values:
+
+* `YOUR_REDPANDA_API_KEY` - Your Redpanda API key
+
+The `provider` field tells Continue.dev which SDK to use (Anthropic format), while `apiBase` routes the request through your gateway. The gateway then forwards the request to the appropriate provider based on the model name.
+
+== Configure multiple models
+
+Continue.dev can switch between different models for different tasks. Configure multiple models to optimize for quality and cost:
+
+[,json]
+----
+{
+  "models": [
+    {
+      "title": "Gateway - Claude Sonnet (default)",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4.5",
+      "apiKey": "YOUR_REDPANDA_API_KEY",
+      "apiBase": "<your-gateway-endpoint>"
+    },
+    {
+      "title": "Gateway - Claude Opus (complex tasks)",
+      "provider": "anthropic",
+      "model": "claude-opus-4.6",
+      "apiKey": "YOUR_REDPANDA_API_KEY",
+      "apiBase": "<your-gateway-endpoint>"
+    },
+    {
+      "title": "Gateway - GPT-5.2",
+      "provider": "openai",
+      "model": "gpt-5.2",
+      "apiKey": "YOUR_REDPANDA_API_KEY",
+      "apiBase": "<your-gateway-endpoint>"
+    }
+  ]
+}
+----
+
+Switch between models in Continue.dev's chat interface by clicking the model selector dropdown.
+
+== Configure tab autocomplete
+
+Continue.dev supports a separate model for tab autocomplete, which generates code suggestions as you type. Use a faster, cost-effective model for autocomplete:
+
+[,json]
+----
+{
+  "models": [
+    {
+      "title": "Gateway - Claude Sonnet",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4.5",
+      "apiKey": "YOUR_REDPANDA_API_KEY",
+      "apiBase": "<your-gateway-endpoint>"
+    }
+  ],
+  "tabAutocompleteModel": {
+    "title": "Gateway - Claude Haiku (autocomplete)",
+    "provider": "anthropic",
+    "model": "claude-haiku",
+    "apiKey": "YOUR_REDPANDA_API_KEY",
+    "apiBase": "<your-gateway-endpoint>"
+  }
+}
+----
+
+This configuration uses Claude Sonnet for chat interactions and Claude Haiku for autocomplete. Haiku provides faster responses at lower cost, which is ideal for autocomplete where speed matters more than reasoning depth.
+
+== Configure with OpenAI provider format
+
+AI Gateway supports both native provider formats and OpenAI-compatible format. If you prefer using the OpenAI format for all models, configure Continue.dev with the `openai` provider:
+
+[,json]
+----
+{
+  "models": [
+    {
+      "title": "Gateway - Claude Sonnet (OpenAI format)",
+      "provider": "openai",
+      "model": "anthropic/claude-sonnet-4.5",
+      "apiKey": "YOUR_REDPANDA_API_KEY",
+      "apiBase": "<your-gateway-endpoint>/v1"
+    },
+    {
+      "title": "Gateway - GPT-5.2 (OpenAI format)",
+      "provider": "openai",
+      "model": "openai/gpt-5.2",
+      "apiKey": "YOUR_REDPANDA_API_KEY",
+      "apiBase": "<your-gateway-endpoint>/v1"
+    }
+  ]
+}
+----
+
+When using OpenAI provider format:
+
+* Set `provider` to `"openai"`
+* Add `/v1` to the `apiBase` URL
+* Use the `vendor/model_id` format for model names (for example, `anthropic/claude-sonnet-4.5`)
+
+== Configure MCP server integration
+
+Connect Continue.dev to your AI Gateway's MCP endpoint to aggregate tools from multiple MCP servers.
+
+Add the MCP configuration to `config.yaml`:
+
+[,yaml]
+----
+models:
+  - title: Gateway - Claude Sonnet
+    provider: anthropic
+    model: claude-sonnet-4.5
+    apiKey: YOUR_REDPANDA_API_KEY
+    apiBase: <your-gateway-endpoint>
+
+mcpServers:
+  - transport:
+      type: streamable-http
+      url: <your-gateway-endpoint>/mcp
+      headers:
+        Authorization: Bearer YOUR_REDPANDA_API_KEY
+----
+
+After adding this configuration:
+
+. Restart Continue.dev (reload your editor window)
+. Click the tools icon in the Continue.dev sidebar
+. Verify that tools from your configured MCP servers appear
+
+If using deferred tool loading in your gateway, you'll see a search tool and MCP orchestrator tool instead of all tools upfront.
+
+[[configure-env-vars]]
+== Configure with environment variables
+
+For sensitive credentials or multi-environment setups, use Continue.dev's secrets interpolation in `config.yaml`.
+
+IMPORTANT: Environment variable interpolation is only supported in `config.yaml` files. The `config.json` format does not support any form of variable substitution - all values must be hardcoded.
+
+[,yaml]
+----
+models:
+  - title: Gateway - Claude Sonnet
+    provider: anthropic
+    model: claude-sonnet-4.5
+    apiKey: ${{ secrets.REDPANDA_API_KEY }}
+    apiBase: ${{ secrets.REDPANDA_GATEWAY_URL }}
+
+mcpServers:
+  - transport:
+      type: streamable-http
+      url: ${{ secrets.REDPANDA_GATEWAY_URL }}/mcp
+      headers:
+        Authorization: Bearer ${{ secrets.REDPANDA_API_KEY }}
+----
+
+IMPORTANT: Continue.dev uses the `${{ secrets.* }}` syntax for interpolation in `config.yaml`. Do not use the `${VAR}` shell syntax - Continue.dev treats it as a literal string rather than performing substitution.
+
+Set secrets in Continue.dev settings:
+
+. Open Continue.dev settings in your IDE
+. Navigate to the "Secrets" section
+. Add the following secrets:
++
+* `REDPANDA_GATEWAY_URL`: Your gateway endpoint URL
+* `REDPANDA_API_KEY`: `your-api-key`
+
+== Project-level configuration
+
+Override global settings for specific projects by creating `.continuerc.json` in your project root:
+
+[,json]
+----
+{
+  "models": [
+    {
+      "title": "Project Gateway - Claude Haiku",
+      "provider": "anthropic",
+      "model": "claude-haiku",
+      "apiKey": "your_project_api_key_here",
+      "apiBase": "<your-project-gateway-endpoint>"
+    }
+  ]
+}
+----
+
+IMPORTANT: `.continuerc.json` does not support environment variable interpolation. You must hardcode values in this file. For dynamic configuration, use `~/.continue/config.yaml` with `${{ secrets.* }}` syntax (see <<Configure with environment variables>>) or create a `~/.continue/config.ts` file for programmatic environment access.
+
+Project-level configuration takes precedence over global configuration. Use this to:
+
+* Route different projects through different gateways
+* Use cost-effective models for internal projects
+* Use premium models for customer-facing projects
+* Separate billing between projects
+
+== Verify configuration
+
+After configuring Continue.dev, verify it connects correctly to your AI Gateway.
+
+=== Test chat interface
+
+. Open Continue.dev sidebar in your editor
+. Type a simple question: "What does this function do?" (with a file open)
+. Wait for response
+
+Then verify in the AI Gateway dashboard:
+
+. Open the Redpanda Cloud Console
+. Navigate to your gateway's observability dashboard
+. Filter by gateway ID
+. Verify:
+** Request appears in logs
+** Model shows correct format (for example, `claude-sonnet-4.5` for Anthropic native or `anthropic/claude-sonnet-4.5` for OpenAI format)
+** Token usage and cost are recorded
+
+If the request doesn't appear, see <<troubleshooting>>.
+
+=== Test tab autocomplete
+
+. Open a code file in your editor
+. Start typing a function or class definition
+. Wait for autocomplete suggestions to appear
+
+Autocomplete requests also appear in the gateway dashboard, typically with:
+
+* Lower token counts than chat requests
+* Higher request frequency
+* The autocomplete model you configured
+
+=== Test MCP tool integration
+
+If you configured MCP servers:
+
+. Open Continue.dev chat
+. Ask a question that requires a tool: "What's the weather forecast?"
+. Continue.dev should:
+** Discover the tool from the MCP server
+** Invoke it with correct parameters
+** Return the result
+
+Check the gateway dashboard for MCP tool invocation logs.
+
+== Advanced configuration
+
+=== Custom request headers
+
+Add custom headers for request tracking or routing:
+
+[,json]
+----
+{
+  "models": [
+    {
+      "title": "Gateway - Claude Sonnet",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4.5",
+      "apiKey": "YOUR_REDPANDA_API_KEY",
+      "apiBase": "<your-gateway-endpoint>",
+      "requestOptions": {
+        "headers": {
+          "x-user-id": "developer-123",
+          "x-project": "main-app"
+        }
+      }
+    }
+  ]
+}
+----
+
+Use these headers with gateway CEL routing to:
+
+* Track costs per developer
+* Route based on project type
+* Apply different rate limits per user
+
+=== Temperature and max tokens
+
+Configure model parameters for different behaviors:
+
+[,json]
+----
+{
+  "models": [
+    {
+      "title": "Gateway - Precise (low temperature)",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4.5",
+      "apiKey": "YOUR_REDPANDA_API_KEY",
+      "apiBase": "<your-gateway-endpoint>",
+      "completionOptions": {
+        "temperature": 0.2,
+        "maxTokens": 2048
+      }
+    },
+    {
+      "title": "Gateway - Creative (high temperature)",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4.5",
+      "apiKey": "YOUR_REDPANDA_API_KEY",
+      "apiBase": "<your-gateway-endpoint>",
+      "completionOptions": {
+        "temperature": 0.8,
+        "maxTokens": 4096
+      }
+    }
+  ]
+}
+----
+
+* Lower temperature (0.0-0.3): More deterministic, better for code generation
+* Higher temperature (0.7-1.0): More creative, better for brainstorming
+* `maxTokens`: Limit response length to control costs
+
+=== Context providers
+
+Configure which code context Continue.dev includes in requests:
+
+[,json]
+----
+{
+  "models": [
+    {
+      "title": "Gateway - Claude Sonnet",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4.5",
+      "apiKey": "YOUR_REDPANDA_API_KEY",
+      "apiBase": "<your-gateway-endpoint>"
+    }
+  ],
+  "contextProviders": [
+    {
+      "name": "code",
+      "params": {
+        "maxFiles": 5
+      }
+    },
+    {
+      "name": "diff"
+    },
+    {
+      "name": "terminal"
+    }
+  ]
+}
+----
+
+Available context providers:
+
+* `code`: Includes open files and highlighted code
+* `diff`: Includes git diff of current changes
+* `terminal`: Includes recent terminal output
+* `problems`: Includes editor warnings and errors
+* `folder`: Includes file tree structure
+
+Limiting context providers reduces token usage and costs.
+
+=== Slash commands
+
+Configure custom slash commands for common workflows:
+
+[,json]
+----
+{
+  "models": [
+    {
+      "title": "Gateway - Claude Sonnet",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4.5",
+      "apiKey": "YOUR_REDPANDA_API_KEY",
+      "apiBase": "<your-gateway-endpoint>"
+    }
+  ],
+  "slashCommands": [
+    {
+      "name": "review",
+      "description": "Review code for bugs and improvements",
+      "prompt": "Review this code for potential bugs, performance issues, and suggest improvements. Focus on:\n- Error handling\n- Edge cases\n- Code clarity\n\n{{{ input }}}"
+    },
+    {
+      "name": "test",
+      "description": "Generate unit tests",
+      "prompt": "Generate comprehensive unit tests for this code. Include:\n- Happy path tests\n- Edge case tests\n- Error handling tests\n\n{{{ input }}}"
+    }
+  ]
+}
+----
+
+Use slash commands in Continue.dev chat:
+
+* `/review` - Triggers code review prompt
+* `/test` - Generates tests
+
+Custom commands help standardize prompts across teams and reduce token costs by avoiding repetitive instruction typing.
+
+[[troubleshooting]]
+== Troubleshooting
+
+=== Continue.dev shows connection error
+
+**Symptom**: Continue.dev displays "Failed to connect" or requests return errors.
+
+**Causes and solutions**:
+
+. **Incorrect apiBase URL**
++
+Verify the URL format matches your provider choice:
++
+[,text]
+----
+# Anthropic/native format (no /v1)
+"apiBase": "<your-gateway-endpoint>"
+
+# OpenAI format (with /v1)
+"apiBase": "<your-gateway-endpoint>/v1"
+----
+
+. **Provider mismatch**
++
+Ensure the `provider` field matches the API format you're using:
++
+* Native Anthropic: `"provider": "anthropic"` with no `/v1` in URL
+* Native OpenAI: `"provider": "openai"` with `/v1` in URL
+* OpenAI-compatible: `"provider": "openai"` with `/v1` in URL
+
+. **Authentication failure**
++
+Verify your API key is valid:
++
+[,bash]
+----
+curl -H "Authorization: Bearer YOUR_API_KEY" \
+     <your-gateway-endpoint>/v1/models
+----
++
+You should receive a list of available models. If you get `401 Unauthorized`, regenerate your API key in the Redpanda Cloud Console.
+
+. **Invalid JSON syntax**
++
+Validate your `config.json` file:
++
+[,bash]
+----
+python3 -m json.tool ~/.continue/config.json
+----
++
+Fix any syntax errors reported.
+
+=== Autocomplete not working
+
+**Symptom**: Tab autocomplete suggestions don't appear or are very slow.
+
+**Causes and solutions**:
+
+. **No autocomplete model configured**
++
+Verify `tabAutocompleteModel` is set in `config.json`. If missing, Continue.dev may fall back to chat model, which is slower and more expensive.
+
+. **Model too slow**
++
+Use a faster model for autocomplete:
++
+[,json]
+----
+{
+  "tabAutocompleteModel": {
+    "title": "Gateway - Claude Haiku",
+    "provider": "anthropic",
+    "model": "claude-haiku",
+    "apiKey": "YOUR_API_KEY",
+    "apiBase": "<your-gateway-endpoint>"
+  }
+}
+----
+
+. **Network latency**
++
+Check gateway latency in the observability dashboard. If p95 latency is over 500ms, autocomplete will feel slow. Consider:
++
+* Using a gateway in a closer geographic region
+* Switching to a faster model (Haiku over Sonnet)
+
+. **Autocomplete disabled**
++
+Check Continue.dev settings in your editor:
++
+* VS Code: Settings → Continue → Enable Tab Autocomplete
+* JetBrains: Settings → Tools → Continue → Enable Autocomplete
+
+=== MCP tools not appearing
+
+**Symptom**: Continue.dev doesn't show tools from the MCP server.
+
+**Causes and solutions**:
+
+. **MCP configuration missing**
++
+Verify the `mcpServers` section exists in `config.yaml`.
+
+. **Incorrect MCP endpoint**
++
+The MCP URL should be `{gateway-url}/mcp`:
++
+[,text]
+----
+# Correct
+"url": "<your-gateway-endpoint>/mcp"
+
+# Incorrect
+"url": "<your-gateway-endpoint>"
+----
+
+. **No MCP servers in gateway**
++
+Verify your gateway has at least one MCP server configured in the AI Gateway UI.
+
+. **Deferred tool loading enabled**
++
+If deferred tool loading is enabled, you'll see only a search tool initially. This is expected behavior.
+
+. **Editor restart needed**
++
+MCP configuration changes require reloading the editor window:
++
+* VS Code: Command Palette → Developer: Reload Window
+* JetBrains: File → Invalidate Caches / Restart
+
+=== Requests not appearing in gateway dashboard
+
+**Symptom**: Continue.dev works, but requests don't appear in the AI Gateway observability dashboard.
+
+**Causes and solutions**:
+
+. **Wrong gateway endpoint**
++
+Verify that the `apiBase` URL matches the gateway endpoint you're viewing in the dashboard.
+
+. **Using direct provider connection**
++
+If `apiBase` points directly to a provider (for example, `https://api.anthropic.com`), requests won't route through the gateway. Verify it points to your gateway endpoint.
+
+. **Log ingestion delay**
++
+Gateway logs can take 5-10 seconds to appear in the dashboard. Wait briefly and refresh.
+
+=== High token costs
+
+**Symptom**: Continue.dev uses more tokens than expected, resulting in high costs.
+
+**Causes and solutions**:
+
+. **Too much context included**
++
+Continue.dev may be including too many files. Solutions:
++
+* Limit `maxFiles` in context providers
+* Use `.continueignore` file to exclude unnecessary directories
+* Close unused editor tabs before using Continue.dev
+
+. **Autocomplete using expensive model**
++
+Verify you're using a cost-effective model for autocomplete:
++
+[,json]
+----
+{
+  "tabAutocompleteModel": {
+    "provider": "anthropic",
+    "model": "claude-haiku"
+  }
+}
+----
+
+. **Model parameters too high**
++
+Reduce `maxTokens` in `completionOptions` to limit response length:
++
+[,json]
+----
+{
+  "completionOptions": {
+    "maxTokens": 2048
+  }
+}
+----
+
+. **MCP overhead**
++
+If not using deferred tool loading, all tools load with every request. Enable deferred tool loading in your AI Gateway configuration (see xref:ai-agents:ai-gateway/mcp-aggregation-guide.adoc[]).
+
+=== Configuration changes not taking effect
+
+**Symptom**: Changes to `config.json` don't apply.
+
+**Solutions**:
+
+. **Reload editor window**
++
+Configuration changes require reloading:
++
+* VS Code: Command Palette → Developer: Reload Window
+* JetBrains: File → Invalidate Caches / Restart
+
+. **Invalid JSON syntax**
++
+Validate JSON syntax:
++
+[,bash]
+----
+python3 -m json.tool ~/.continue/config.json
+----
+
+. **Project config overriding**
++
+Check if `.continuerc.json` in your project root overrides global settings.
+
+. **File permissions**
++
+Verify Continue.dev can read the config file:
++
+[,bash]
+----
+ls -la ~/.continue/config.json
+----
++
+Fix permissions if needed:
++
+[,bash]
+----
+chmod 600 ~/.continue/config.json
+----
+
+== Cost optimization tips
+
+=== Use different models for chat and autocomplete
+
+Chat interactions benefit from reasoning depth, while autocomplete needs speed:
+
+[,json]
+----
+{
+  "models": [
+    {
+      "title": "Gateway - Claude Sonnet",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4.5"
+    }
+  ],
+  "tabAutocompleteModel": {
+    "title": "Gateway - Claude Haiku",
+    "provider": "anthropic",
+    "model": "claude-haiku"
+  }
+}
+----
+
+This can reduce costs by 5-10x for autocomplete while maintaining quality for chat.
+
+=== Limit context window size
+
+Reduce the amount of code included in requests:
+
+Create `.continueignore` in your project root:
+
+[,text]
+----
+# Exclude build artifacts
+dist/
+build/
+node_modules/
+
+# Exclude tests when not working on tests
+**/*.test.*
+**/*.spec.*
+
+# Exclude documentation
+docs/
+*.md
+
+# Exclude large data files
+*.json
+*.csv
+----
+
+Then limit files in `config.json`:
+
+[,json]
+----
+{
+  "contextProviders": [
+    {
+      "name": "code",
+      "params": {
+        "maxFiles": 3
+      }
+    }
+  ]
+}
+----
+
+=== Use MCP tools for documentation
+
+Instead of pasting documentation into chat, create MCP tools that fetch relevant sections on-demand. This reduces token costs by including only needed information.
+
+=== Monitor usage patterns
+
+Use the AI Gateway dashboard to identify optimization opportunities:
+
+. Navigate to your gateway's observability dashboard
+. Filter by Continue.dev requests (use custom header if configured)
+. Analyze:
+** Token usage per request type (chat vs autocomplete)
+** Most expensive queries
+** High-frequency low-value requests
+
+=== Set model-specific limits
+
+Prevent runaway costs by configuring `maxTokens`:
+
+[,json]
+----
+{
+  "models": [
+    {
+      "title": "Gateway - Claude Sonnet",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4.5",
+      "completionOptions": {
+        "maxTokens": 2048
+      }
+    }
+  ],
+  "tabAutocompleteModel": {
+    "completionOptions": {
+      "maxTokens": 256
+    }
+  }
+}
+----
+
+Autocomplete rarely needs more than 256 tokens, while chat responses can vary.
+
+== Next steps
+
+* xref:ai-agents:ai-gateway/mcp-aggregation-guide.adoc[]: Configure deferred tool loading to reduce token costs
+* xref:ai-agents:ai-gateway/cel-routing-cookbook.adoc[]: Use CEL expressions to route Continue.dev requests based on context
+
+== Related pages
+
+* xref:ai-agents:ai-gateway/gateway-quickstart.adoc[]: Create and configure your AI Gateway
+* xref:ai-agents:ai-gateway/gateway-architecture.adoc[]: Learn about AI Gateway architecture and benefits
+* xref:ai-agents:ai-gateway/integrations/claude-code-user.adoc[]: Configure Claude Code with AI Gateway
+* xref:ai-agents:ai-gateway/integrations/cline-user.adoc[]: Configure Cline with AI Gateway

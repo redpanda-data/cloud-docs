@@ -1,7 +1,7 @@
 = Remote MCP Server Quickstart
-:description: Learn how to extend AI agents with custom tools that interact with your Redpanda data using the Model Context Protocol (MCP).
+:description: Build and deploy your first MCP tools to connect AI agents to your Redpanda data without writing custom integration code.
 :page-topic-type: tutorial
-:personas: ai_agent_developer, streaming_developer, evaluator
+:personas: agent_developer, streaming_developer, evaluator
 // Reader journey: "I want to try it now"
 // Learning objectives - what readers will achieve by completing this quickstart:
 :learning-objective-1: Create an MCP server in Redpanda Cloud
@@ -181,7 +181,7 @@ Cloud Console::
 --
 . Log in to the link:https://cloud.redpanda.com/[Redpanda Cloud Console^].
 
-. Navigate to *Remote MCP*.
+. Navigate to *Agentic AI* > *Remote MCP*.
 +
 This page shows a list of existing servers.
 
@@ -191,12 +191,7 @@ This page shows a list of existing servers.
 * *Description*: Explain what the server does. For example, `Generates fake user event data and publishes it to Redpanda topics`.
 * *Tags*: Add key/value tags such as `owner=platform` or `env=demo`. The tag names `service_account_id` and `secret_id` are reserved and cannot be used.
 * *Resources*: Choose a size (XSmall / Small / Medium / Large / XLarge). Larger sizes allow more concurrent requests and faster processing, but cost more. You can change this later.
-* *Service Account*: A service account is automatically created for authenticating the MCP server to your cluster. The name is pre-filled. You can customize this name or keep the default.
-+
-[NOTE]
-====
-Service accounts authenticate MCP server requests to your Redpanda cluster. The service account has editor permissions to the cluster, allowing it to perform operations like reading and writing data, managing topics, and accessing cluster resources. Service account credentials are stored in the xref:develop:connect/configuration/secret-management.adoc[Secrets Store] with the ID `SERVICE_ACCOUNT_<mcp-server-id>` and scope set to *MCP server*.
-====
+* *Service Account*: A service account is automatically created for authenticating the MCP server to your cluster. The name is pre-filled but you can customize it. For details about default permissions and how to manage service accounts, see xref:ai-agents:mcp/remote/concepts.adoc#service-account-authorization[Service account authorization].
 
 . Click *Next* to define tools.
 +
@@ -304,10 +299,10 @@ Now that your MCP server is running with two tools available, you'll connect Cla
 
 When you connect Claude Code:
 
-. Claude automatically discovers your `generate_input` and `redpanda_output` tools
-. You can ask Claude in natural language to perform tasks using these tools
-. Claude decides which tools to call and in what order based on your request
-. The Redpanda CLI acts as a secure proxy, forwarding Claude's tool requests to your MCP server in the cloud
+. Claude automatically discovers your `generate_input` and `redpanda_output` tools.
+. You can ask Claude in natural language to perform tasks using these tools.
+. Claude decides which tools to call and in what order based on your request.
+. The Redpanda CLI acts as a secure proxy, forwarding Claude's tool requests to your MCP server in the cloud.
 
 This example uses Claude Code, but the same pattern works with any MCP-compatible client.
 
@@ -389,9 +384,10 @@ For detailed solutions, see xref:ai-agents:mcp/remote/troubleshooting.adoc[].
 
 You've deployed an MCP server and connected Claude Code to your Redpanda cluster. Here's where to go next:
 
-* xref:ai-agents:mcp/remote/concepts.adoc[]: Understand how MCP tools differ from pipelines
-* xref:ai-agents:mcp/remote/create-tool.adoc[]: Build production-quality tools with validation
-* xref:ai-agents:mcp/remote/best-practices.adoc[]: Apply naming and design guidelines
-* xref:ai-agents:mcp/remote/tool-patterns.adoc[]: Find reusable patterns
-* xref:ai-agents:mcp/remote/troubleshooting.adoc[]: Diagnose common issues
-* xref:ai-agents:mcp/remote/admin-guide.adoc[]: Scale resources, monitor activity, and administer your MCP servers
+* xref:ai-agents:agents/quickstart.adoc[]
+* xref:ai-agents:mcp/remote/concepts.adoc[]
+* xref:ai-agents:mcp/remote/create-tool.adoc[]
+* xref:ai-agents:mcp/remote/best-practices.adoc[]
+* xref:ai-agents:mcp/remote/tool-patterns.adoc[]
+* xref:ai-agents:mcp/remote/troubleshooting.adoc[]
+* xref:ai-agents:mcp/remote/admin-guide.adoc[]

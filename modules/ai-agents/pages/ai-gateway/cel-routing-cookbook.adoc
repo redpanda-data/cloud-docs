@@ -1,0 +1,953 @@
+= CEL Routing Cookbook
+:description: CEL routing cookbook for Redpanda AI Gateway with common patterns, examples, and best practices.
+:page-topic-type: cookbook
+:personas: app_developer, platform_admin
+:learning-objective-1: Write CEL expressions to route requests based on user tier or custom headers
+:learning-objective-2: Test CEL routing logic using the UI editor or test requests
+:learning-objective-3: Troubleshoot common CEL errors using safe patterns
+
+include::ai-agents:partial$ai-gateway-byoc-note.adoc[]
+
+Redpanda AI Gateway uses CEL (Common Expression Language) for dynamic request routing. CEL expressions evaluate request properties (headers, body, context) and determine which model or provider should handle each request.
+
+CEL enables:
+
+* User-based routing (free vs premium tiers)
+* Content-based routing (by prompt topic, length, complexity)
+* Environment-based routing (staging vs production models)
+* Cost controls (reject expensive requests in test environments)
+* A/B testing (route percentage of traffic to new models)
+* Geographic routing (by region header)
+* Custom business logic (any condition you can express)
+
+== CEL basics
+
+=== What is CEL?
+
+CEL (Common Expression Language) is a non-Turing-complete expression language designed for fast, safe evaluation. It's used by Google (Firebase, Cloud IAM), Kubernetes, Envoy, and other systems.
+
+Key properties:
+
+* Safe: Cannot loop infinitely or access system resources
+* Fast: Evaluates in microseconds
+* Readable: Similar to Python/JavaScript expressions
+* Type-safe: Errors caught at configuration time, not runtime
+
+=== CEL syntax primer
+
+Comparison operators:
+
+[source,cel]
+----
+== // equal
+!=   // Not equal
+<    // Less than
+>    // Greater than
+<=   // Less than or equal
+>=   // Greater than or equal
+----
+
+
+Logical operators:
+
+[source,cel]
+----
+&&   // AND
+||   // OR
+!    // NOT
+----
+
+
+Ternary operator (most common pattern):
+
+[source,cel]
+----
+condition ? value_if_true : value_if_false
+----
+
+
+Functions:
+
+[source,cel]
+----
+.size()           // Length of string or array
+.contains("text") // String contains substring
+.startsWith("x")  // String starts with
+.endsWith("x")    // String ends with
+.matches("regex") // Regex match
+has(field)        // Check if field exists
+----
+
+
+Examples:
+
+[source,cel]
+----
+// Simple comparison
+request.headers["tier"] == "premium"
+
+// Ternary (if-then-else)
+request.headers["tier"] == "premium" ? "openai/gpt-5.2" : "openai/gpt-5.2-mini"
+
+// Logical AND
+request.headers["tier"] == "premium" && request.headers["region"] == "us"
+
+// String contains
+request.body.messages[0].content.contains("urgent")
+
+// Size check
+request.body.messages.size() > 10
+----
+
+
+== Request object schema
+
+CEL expressions evaluate against the `request` object, which contains:
+
+=== `request.headers` (map<string, string>)
+
+All HTTP headers (lowercase keys).
+
+[source,cel]
+----
+request.headers["x-user-tier"]     // Custom header
+request.headers["x-customer-id"]   // Custom header
+request.headers["user-agent"]      // Standard header
+request.headers["x-request-id"]    // Standard header
+----
+
+
+NOTE: Header names are case-insensitive in HTTP, but CEL requires lowercase keys.
+
+=== `request.body` (object)
+
+The JSON request body (for `/chat/completions`).
+
+[source,cel]
+----
+request.body.model                      // String: Requested model
+request.body.messages                   // Array: Conversation messages
+request.body.messages[0].role           // String: "system", "user", "assistant"
+request.body.messages[0].content        // String: Message content
+request.body.messages.size()            // Int: Number of messages
+request.body.max_tokens                 // Int: Max completion tokens (if set)
+request.body.temperature                // Float: Temperature (if set)
+request.body.stream                     // Bool: Streaming enabled (if set)
+----
+
+
+NOTE: Fields are optional. Use `has()` to check existence:
+
+[source,cel]
+----
+has(request.body.max_tokens) ? request.body.max_tokens : 1000
+----
+
+
+=== `request.path` (string)
+
+The request path.
+
+[source,cel]
+----
+request.path == "/v1/chat/completions"
+request.path.startsWith("/v1/")
+----
+
+
+=== `request.method` (string)
+
+The HTTP method.
+
+[source,cel]
+----
+request.method == "POST"
+----
+
+
+== CEL routing patterns
+
+Each pattern follows this structure:
+
+* When to use: Scenario description
+* Expression: CEL code
+* What happens: Routing behavior
+* Verify: How to test
+* Cost/performance impact: Implications
+
+=== Tier-based routing
+
+When to use: Different user tiers (free, pro, enterprise) should get different model quality
+
+Expression:
+
+[source,cel]
+----
+request.headers["x-user-tier"] == "enterprise" ? "openai/gpt-5.2" :
+request.headers["x-user-tier"] == "pro" ? "anthropic/claude-sonnet-4.5" :
+"openai/gpt-5.2-mini"
+----
+
+
+What happens:
+
+* Enterprise users → GPT-5.2 (best quality)
+* Pro users → Claude Sonnet 4.5 (balanced)
+* Free users → GPT-5.2-mini (cost-effective)
+
+Verify:
+
+[source,python]
+----
+# Test enterprise
+response = client.chat.completions.create(
+    model="openai/gpt-5.2",  # CEL routing rules override model selection
+    messages=[{"role": "user", "content": "Test"}],
+    extra_headers={"x-user-tier": "enterprise"}
+)
+# Check logs: Should route to openai/gpt-5.2
+
+# Test free
+response = client.chat.completions.create(
+    model="openai/gpt-5.2",  # CEL routing rules override model selection
+    messages=[{"role": "user", "content": "Test"}],
+    extra_headers={"x-user-tier": "free"}
+)
+# Check logs: Should route to openai/gpt-5.2-mini
+----
+
+
+Cost impact:
+
+* Enterprise: ~$5.00 per 1K requests
+* Pro: ~$3.50 per 1K requests
+* Free: ~$0.50 per 1K requests
+
+Use case: SaaS product with tiered pricing where model quality is a differentiator
+
+=== Environment-based routing
+
+When to use: Prevent staging from using expensive models
+
+Expression:
+
+[source,cel]
+----
+request.headers["x-environment"] == "production"
+  ? "openai/gpt-5.2"
+  : "openai/gpt-5.2-mini"
+----
+
+
+What happens:
+
+* Production → GPT-5.2 (best quality)
+* Staging/dev → GPT-5.2-mini (10x cheaper)
+
+Verify:
+
+[source,python]
+----
+# Set environment header
+response = client.chat.completions.create(
+    model="openai/gpt-5.2",  # CEL routing rules override model selection
+    messages=[{"role": "user", "content": "Test"}],
+    extra_headers={"x-environment": "staging"}
+)
+# Check logs: Should route to gpt-5.2-mini
+----
+
+
+Cost impact:
+
+* Prevents staging from inflating costs
+* Example: Staging with 100K test requests/day
+  * GPT-5.2: $500/day ($15K/month)
+  * GPT-5.2-mini: $50/day ($1.5K/month)
+  * *Savings: $13.5K/month*
+
+Use case: Protect against runaway staging costs
+
+
+=== Content-length guard rails
+
+When to use: Block or downgrade long prompts to prevent cost spikes
+
+////
+Expression (Block):
+
+[source,cel]
+----
+request.body.messages.size() > 10 || request.body.max_tokens > 4000
+  ? "reject"
+  : "openai/gpt-5.2"
+----
+
+What happens:
+* Requests with >10 messages or >4000 max_tokens -> Rejected with 400 error
+* Normal requests -> GPT-5.2
+////
+
+Expression (Downgrade):
+
+[source,cel]
+----
+request.body.messages.size() > 10 || request.body.max_tokens > 4000
+  ? "openai/gpt-5.2-mini"  // Cheaper model
+  : "openai/gpt-5.2"        // Normal model
+----
+
+
+What happens:
+
+* Long conversations → Downgraded to cheaper model
+* Short conversations → Premium model
+
+Verify:
+
+[source,python]
+----
+# Test rejection
+response = client.chat.completions.create(
+    model="openai/gpt-5.2",  # CEL routing rules override model selection
+    messages=[{"role": "user", "content": f"Message {i}"} for i in range(15)],
+    max_tokens=5000
+)
+# Should return 400 error (rejected)
+
+# Test normal
+response = client.chat.completions.create(
+    model="openai/gpt-5.2",  # CEL routing rules override model selection
+    messages=[{"role": "user", "content": "Short message"}],
+    max_tokens=100
+)
+# Should route to gpt-5.2
+----
+
+
+Cost impact:
+
+* Prevents unexpected bills from verbose prompts
+* Example: Block requests >10K tokens (would cost $0.15 each)
+
+Use case: Staging cost controls, prevent prompt injection attacks that inflate token usage
+
+=== Topic-based routing
+
+When to use: Route different question types to specialized models
+
+Expression:
+
+[source,cel]
+----
+request.body.messages[0].content.contains("code") ||
+request.body.messages[0].content.contains("debug") ||
+request.body.messages[0].content.contains("programming")
+  ? "openai/gpt-5.2"  // Better at code
+  : "anthropic/claude-sonnet-4.5"  // Better at general writing
+----
+
+
+What happens:
+
+* Coding questions → GPT-5.2 (optimized for code)
+* General questions → Claude Sonnet (better prose)
+
+Verify:
+
+[source,python]
+----
+# Test code question
+response = client.chat.completions.create(
+    model="openai/gpt-5.2",  # CEL routing rules override model selection
+    messages=[{"role": "user", "content": "Debug this Python code: ..."}]
+)
+# Check logs: Should route to gpt-5.2
+
+# Test general question
+response = client.chat.completions.create(
+    model="openai/gpt-5.2",  # CEL routing rules override model selection
+    messages=[{"role": "user", "content": "Write a blog post about AI"}]
+)
+# Check logs: Should route to claude-sonnet-4.5
+----
+
+
+Cost impact:
+
+* Optimize model selection for task type
+* Could improve quality without increasing costs
+
+Use case: Multi-purpose chatbot with both coding and general queries
+
+
+=== Geographic/regional routing
+
+When to use: Route by user region to different providers or gateways for compliance or latency optimization
+
+Expression:
+
+[source,cel]
+----
+request.headers["x-user-region"] == "eu"
+  ? "anthropic/claude-sonnet-4.5"  // EU traffic to Anthropic
+  : "openai/gpt-5.2"                // Other traffic to OpenAI
+----
+
+
+What happens:
+
+* EU users -> Anthropic (for EU data processing requirements)
+* Other users -> OpenAI (default provider)
+
+NOTE: To achieve true data residency, configure separate gateways per region with provider pools that meet your compliance requirements.
+
+Verify:
+
+[source,python]
+----
+response = client.chat.completions.create(
+    model="openai/gpt-5.2",  # CEL routing rules override model selection
+    messages=[{"role": "user", "content": "Test"}],
+    extra_headers={"x-user-region": "eu"}
+)
+# Check logs: Should route to anthropic/claude-sonnet-4.5
+----
+
+
+Cost impact: Varies by provider pricing
+
+Use case: GDPR compliance, data residency requirements
+
+
+=== Customer-specific routing
+
+When to use: Different customers have different model access (enterprise features)
+
+Expression:
+
+[source,cel]
+----
+request.headers["x-customer-id"] == "customer_vip_123"
+  ? "anthropic/claude-opus-4.6"  // Most expensive, best quality
+  : "anthropic/claude-sonnet-4.5"  // Standard
+----
+
+
+What happens:
+
+* VIP customer → Best model
+* Standard customers → Normal model
+
+Verify:
+
+[source,python]
+----
+response = client.chat.completions.create(
+    model="openai/gpt-5.2",  # CEL routing rules override model selection
+    messages=[{"role": "user", "content": "Test"}],
+    extra_headers={"x-customer-id": "customer_vip_123"}
+)
+# Check logs: Should route to claude-opus-4
+----
+
+
+Cost impact:
+
+* VIP: ~$7.50 per 1K requests
+* Standard: ~$3.50 per 1K requests
+
+Use case: Enterprise contracts with premium model access
+
+
+////
+=== A/B testing (percentage-based routing)
+
+When to use: Test new models with a percentage of traffic
+
+PLACEHOLDER: Confirm if CEL can access random functions or if A/B testing requires different mechanism
+
+Expression (if random is available):
+
+[source,cel]
+----
+PLACEHOLDER: Verify CEL random function availability
+random() < 0.10
+  ? "anthropic/claude-opus-4.6"  // 10% traffic to new model
+  : "openai/gpt-5.2"             // 90% traffic to existing model
+----
+
+
+Alternative (hash-based):
+
+[source,cel]
+----
+// Use customer ID hash for stable routing
+hash(request.headers["x-customer-id"]) % 100 < 10
+  ? "anthropic/claude-opus-4.6"
+  : "openai/gpt-5.2"
+----
+
+
+What happens:
+
+* 10% of requests -> New model (Opus 4)
+* 90% of requests -> Existing model (GPT-5.2)
+
+Verify:
+
+[source,python]
+----
+# Send 100 requests, count which model was used
+for i in range(100):
+    response = client.chat.completions.create(
+        model="openai/gpt-5.2",
+        messages=[{"role": "user", "content": f"Test {i}"}],
+        extra_headers={"x-customer-id": f"customer_{i}"}
+    )
+# Check logs: ~10 should use opus-4.6, ~90 should use gpt-5.2
+----
+
+
+Cost impact:
+
+* Allows safe, incremental rollout of new models
+* Monitor quality/cost for new model before full adoption
+
+Use case: Evaluate new models in production with real traffic
+////
+
+=== Complexity-based routing
+
+When to use: Route simple queries to cheap models, complex queries to expensive models
+
+Expression:
+
+[source,cel]
+----
+request.body.messages.size() == 1 &&
+request.body.messages[0].content.size() < 100
+  ? "openai/gpt-5.2-mini"  // Simple, short question
+  : "openai/gpt-5.2"        // Complex or long conversation
+----
+
+
+What happens:
+
+* Single short message (<100 chars) → Cheap model
+* Multi-turn or long messages → Premium model
+
+Verify:
+
+[source,python]
+----
+# Test simple
+response = client.chat.completions.create(
+    model="openai/gpt-5.2",  # CEL routing rules override model selection
+    messages=[{"role": "user", "content": "Hi"}]  # 2 chars
+)
+# Check logs: Should route to gpt-5.2-mini
+
+# Test complex
+response = client.chat.completions.create(
+    model="openai/gpt-5.2",  # CEL routing rules override model selection
+    messages=[
+        {"role": "user", "content": "Long question here..." * 10},
+        {"role": "assistant", "content": "Response"},
+        {"role": "user", "content": "Follow-up"}
+    ]
+)
+# Check logs: Should route to gpt-5.2
+----
+
+
+Cost impact:
+
+* Can reduce costs significantly if simple queries are common
+* Example: 50% of queries are simple, save 90% on those = 45% total savings
+
+Use case: FAQ chatbot with mix of simple lookups and complex questions
+
+////
+=== Time-based routing
+
+When to use: Use cheaper models during off-peak hours
+
+PLACEHOLDER: Confirm if CEL has access to current timestamp
+
+Expression (if time functions available):
+
+[source,cel]
+----
+PLACEHOLDER: Verify CEL time function availability
+now().hour >= 22 || now().hour < 6  // 10pm - 6am
+  ? "openai/gpt-5.2-mini"  // Off-peak: cheaper model
+  : "openai/gpt-5.2"        // Peak hours: best model
+----
+
+
+What happens:
+
+* Off-peak hours (10pm-6am) -> Cheap model
+* Peak hours (6am-10pm) -> Premium model
+
+Cost impact:
+
+* Optimize for user experience during peak usage
+* Save costs during low-traffic hours
+
+Use case: Consumer apps with time-zone-specific usage patterns
+////
+
+
+=== Fallback chain (multi-level)
+
+When to use: Complex fallback logic beyond simple primary/secondary
+
+Expression:
+
+[source,cel]
+----
+request.headers["x-priority"] == "critical"
+  ? "openai/gpt-5.2"  // First choice for critical
+  : request.headers["x-user-tier"] == "premium"
+    ? "anthropic/claude-sonnet-4.5"  // Second choice for premium
+    : "openai/gpt-5.2-mini"  // Default for everyone else
+----
+
+
+What happens:
+
+* Critical requests → Always GPT-5.2
+* Premium non-critical → Claude Sonnet
+* Everyone else → GPT-5.2-mini
+
+Verify: Test with different header combinations
+
+Cost impact: Ensures SLA for critical requests while optimizing costs elsewhere
+
+Use case: Production systems with SLA requirements
+
+
+== Advanced CEL patterns
+
+=== Default values with `has()`
+
+Problem: Field might not exist in request
+
+Expression:
+
+[source,cel]
+----
+has(request.body.max_tokens) && request.body.max_tokens > 2000
+  ? "openai/gpt-5.2"  // Long response expected
+  : "openai/gpt-5.2-mini"  // Short response
+----
+
+
+What happens: Safely checks if `max_tokens` exists before comparing
+
+=== Multiple conditions with parentheses
+
+Expression:
+
+[source,cel]
+----
+(request.headers["x-user-tier"] == "premium" ||
+ request.headers["x-customer-id"] == "vip_123") &&
+request.headers["x-environment"] == "production"
+  ? "openai/gpt-5.2"
+  : "openai/gpt-5.2-mini"
+----
+
+
+What happens: Premium users OR VIP customer, AND production → GPT-5.2
+
+=== Regex matching
+
+Expression:
+
+[source,cel]
+----
+request.body.messages[0].content.matches("(?i)(urgent|asap|emergency)")
+  ? "openai/gpt-5.2"  // Route urgent requests to best model
+  : "openai/gpt-5.2-mini"
+----
+
+
+What happens: Messages containing "urgent", "ASAP", or "emergency" (case-insensitive) → GPT-5.2
+
+=== String array contains
+
+Expression:
+
+[source,cel]
+----
+["customer_1", "customer_2", "customer_3"].exists(c, c == request.headers["x-customer-id"])
+  ? "openai/gpt-5.2"  // Whitelist of customers
+  : "openai/gpt-5.2-mini"
+----
+
+
+What happens: Only specific customers get premium model
+
+////
+=== Reject invalid requests
+
+Expression:
+
+[source,cel]
+----
+!has(request.body.messages) || request.body.messages.size() == 0
+  ? "reject"  // PLACEHOLDER: Confirm "reject" is supported
+  : "openai/gpt-5.2"
+----
+
+What happens: Requests without messages are rejected (400 error)
+////
+
+== Test CEL expressions
+
+=== Option 1: CEL editor in UI (if available)
+
+1. Navigate to Gateways → Routing Rules
+2. Enter CEL expression
+3. Click "Test"
+4. Input test headers/body
+5. View evaluated result
+
+=== Option 2: Send test requests
+
+[source,python]
+----
+def test_cel_routing(headers, messages):
+    """Test CEL routing with specific headers and messages"""
+    response = client.chat.completions.create(
+        model="openai/gpt-5.2",  # CEL routing rules override model selection
+        messages=messages,
+        extra_headers=headers,
+        max_tokens=10  # Keep it cheap
+    )
+
+    # Check logs to see which model was used
+    print(f"Headers: {headers}")
+    print(f"Routed to: {response.model}")
+
+# Test tier-based routing
+test_cel_routing(
+    {"x-user-tier": "premium"},
+    [{"role": "user", "content": "Test"}]
+)
+test_cel_routing(
+    {"x-user-tier": "free"},
+    [{"role": "user", "content": "Test"}]
+)
+----
+
+
+////
+=== Option 3: CLI test (if available)
+
+[source,bash]
+----
+# PLACEHOLDER: If CLI tool exists for testing CEL
+rpk cloud ai-gateway test-cel \
+  --gateway-id gw_abc123 \
+  --expression 'request.headers["tier"] == "premium" ? "openai/gpt-5.2" : "openai/gpt-5.2-mini"' \
+  --header 'tier: premium' \
+  --body '{"messages": [{"role": "user", "content": "Test"}]}'
+
+# Expected output: openai/gpt-5.2
+----
+////
+
+
+== Common CEL errors
+
+=== Error: "unknown field"
+
+Symptom:
+
+[source,text]
+----
+Error: Unknown field 'request.headers.x-user-tier'
+----
+
+
+Cause: Wrong syntax (dot notation instead of bracket notation for headers)
+
+Fix:
+
+[source,cel]
+----
+// Wrong
+request.headers.x-user-tier
+
+// Correct
+request.headers["x-user-tier"]
+----
+
+
+=== Error: "type mismatch"
+
+Symptom:
+
+[source,text]
+----
+Error: Type mismatch: expected bool, got string
+----
+
+
+Cause: Forgot comparison operator
+
+Fix:
+
+[source,cel]
+----
+// Wrong (returns string)
+request.headers["tier"]
+
+// Correct (returns bool)
+request.headers["tier"] == "premium"
+----
+
+
+=== Error: "field does not exist"
+
+Symptom:
+
+[source,text]
+----
+Error: No such key: max_tokens
+----
+
+
+Cause: Accessing field that doesn't exist in request
+
+Fix:
+[source,cel]
+----
+// Wrong (crashes if max_tokens not in request)
+request.body.max_tokens > 1000
+
+// Correct (checks existence first)
+has(request.body.max_tokens) && request.body.max_tokens > 1000
+----
+
+
+=== Error: "index out of bounds"
+
+Symptom:
+
+[source,text]
+----
+Error: Index 0 out of bounds for array of size 0
+----
+
+
+Cause: Accessing array element that doesn't exist
+
+Fix:
+
+[source,cel]
+----
+// Wrong (crashes if messages empty)
+request.body.messages[0].content.contains("test")
+
+// Correct (checks size first)
+request.body.messages.size() > 0 && request.body.messages[0].content.contains("test")
+----
+
+
+== CEL performance considerations
+
+=== Expression complexity
+
+Fast (<1ms evaluation):
+
+[source,cel]
+----
+request.headers["tier"] == "premium" ? "openai/gpt-5.2" : "openai/gpt-5.2-mini"
+----
+
+
+Slower (~5-10ms evaluation):
+
+[source,cel]
+----
+request.body.messages[0].content.matches("complex.*regex.*pattern")
+----
+
+
+Recommendation: Keep expressions simple. Complex regex can add latency.
+
+=== Number of evaluations
+
+Each request evaluates CEL expression once. Total latency impact:
+* Simple expression: <1ms
+* Complex expression: ~5-10ms
+
+*Acceptable for most use cases.*
+
+== CEL function reference
+
+=== String functions
+
+[cols="2,3,3"]
+|===
+| Function | Description | Example
+
+| `size()` 
+| String length 
+| `"hello".size() == 5`
+
+| `contains(s)` 
+| String contains 
+| `"hello".contains("ell")`
+
+| `startsWith(s)` 
+| String starts with 
+| `"hello".startsWith("he")`
+
+| `endsWith(s)` 
+| String ends with 
+| `"hello".endsWith("lo")`
+
+| `matches(regex)` 
+| Regex match 
+| `"hello".matches("h.*o")`
+|===
+
+=== Array functions
+
+[cols="2,3,3"]
+|===
+| Function | Description | Example
+
+| `size()` 
+| Array length 
+| `[1,2,3].size() == 3`
+
+| `exists(x, cond)` 
+| Any element matches 
+| `[1,2,3].exists(x, x > 2)`
+
+| `all(x, cond)` 
+| All elements match 
+| `[1,2,3].all(x, x > 0)`
+|===
+
+=== Utility functions
+
+[cols="2,3,3"]
+|===
+| Function | Description | Example
+
+| `has(field)`
+| Field exists
+| `has(request.body.max_tokens)`
+|===
+
+== Next steps
+
+* *Apply CEL routing*: See the gateway configuration options available in the Redpanda Cloud console.

@@ -1,0 +1,310 @@
+= Discover Available Gateways
+:description: Find which AI Gateways you can access and their configurations.
+:page-topic-type: how-to
+:personas: app_developer
+:learning-objective-1: List all AI Gateways you have access to and retrieve their endpoints and IDs
+:learning-objective-2: View which models and MCP tools are available through each gateway
+:learning-objective-3: Test gateway connectivity before integration
+
+include::ai-agents:partial$ai-gateway-byoc-note.adoc[]
+
+As a builder, you need to know which gateways are available to you before integrating your agent or application. This page shows you how to discover accessible gateways, understand their configurations, and verify connectivity.
+
+After reading this page, you will be able to:
+
+* [ ] List all AI Gateways you have access to and retrieve their endpoints and IDs
+* [ ] View which models and MCP tools are available through each gateway
+* [ ] Test gateway connectivity before integration
+
+== Before you begin
+
+* You have a Redpanda Cloud account with access to at least one AI Gateway
+* You have access to the Redpanda Cloud Console or API credentials
+
+== List your accessible gateways
+
+[tabs]
+====
+Using the Console::
++
+. Navigate to *Gateways* in the Redpanda Cloud Console.
+. Review the list of gateways you can access. For each gateway, you'll see the gateway name, ID, endpoint URL, status, available models, and provider performance.
++
+Click the Configuration, API, MCP Tools, and Changelog tabs for additional information.
+
+Using the API::
++
+To list gateways programmatically:
++
+[source,bash]
+----
+curl https://api.redpanda.com/v1/gateways \
+  -H "Authorization: Bearer ${REDPANDA_CLOUD_TOKEN}"
+----
++
+Response:
++
+[source,json]
+----
+{
+  "gateways": [
+    {
+      "id": "gw_abc123",
+      "name": "production-gateway",
+      "mode": "ai_hub",
+      "endpoint": "https://gw.ai.panda.com",
+      "status": "active",
+      "workspace_id": "ws_xyz789",
+      "created_at": "2025-01-15T10:30:00Z"
+    },
+    {
+      "id": "gw_def456",
+      "name": "staging-gateway",
+      "mode": "custom",
+      "endpoint": "https://gw-staging.ai.panda.com",
+      "status": "active",
+      "workspace_id": "ws_xyz789",
+      "created_at": "2025-01-10T08:15:00Z"
+    }
+  ]
+}
+----
+====
+
+== Understand gateway information
+
+Each gateway provides specific information you'll need for integration:
+
+=== Gateway endpoint
+
+The gateway endpoint is the URL where you send all API requests. It replaces direct provider URLs (like `api.openai.com` or `api.anthropic.com`). The gateway ID is embedded directly in the endpoint URL.
+
+Example:
+[source,bash]
+----
+https://example/gateways/gw_abc123/v1
+----
+
+Your application configures this as the `base_url` in your SDK client.
+
+=== Available models
+
+Each gateway exposes specific models based on administrator configuration. Models use the `vendor/model_id` format:
+
+* `openai/gpt-5.2`
+* `anthropic/claude-sonnet-4.5`
+* `openai/gpt-5.2-mini`
+
+To see which models are available through a specific gateway:
+
+[source,bash]
+----
+curl ${GATEWAY_ENDPOINT}/models \
+  -H "Authorization: Bearer ${REDPANDA_CLOUD_TOKEN}"
+----
+
+Response:
+
+[source,json]
+----
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "openai/gpt-5.2",
+      "object": "model",
+      "owned_by": "openai"
+    },
+    {
+      "id": "anthropic/claude-sonnet-4.5",
+      "object": "model",
+      "owned_by": "anthropic"
+    },
+    {
+      "id": "openai/gpt-5.2-mini",
+      "object": "model",
+      "owned_by": "openai"
+    }
+  ]
+}
+----
+
+=== Rate limits and quotas
+
+Each gateway may have configured rate limits and monthly budgets. Check the console or contact your administrator to understand:
+
+* Requests per minute/hour/day
+* Monthly spend limits
+* Token usage quotas
+
+These limits help control costs and ensure fair resource allocation across teams.
+
+=== MCP Tools
+
+If glossterm:MCP[,Model Context Protocol (MCP)] aggregation is enabled for your gateway, you can access glossterm:MCP tool[,tools] from multiple glossterm:MCP server[,MCP servers] through a single endpoint.
+
+To discover available MCP tools:
+
+[source,bash]
+----
+curl ${GATEWAY_ENDPOINT}/mcp/tools \
+  -H "Authorization: Bearer ${REDPANDA_CLOUD_TOKEN}" \
+  -H "rp-aigw-mcp-deferred: true"
+----
+
+With deferred loading enabled, you'll receive search and orchestrator tools initially. You can then query for specific tools as needed.
+
+// See xref:ai-gateway/builders/use-mcp-tools.adoc[] for more details.
+
+ifdef::ai-hub-available[]
+== Identify gateway mode
+
+Gateways can operate in two modes: AI Hub mode or Custom mode. Understanding which mode your gateway uses helps you know what to expect.
+
+include::ai-agents:partial$ai-hub-mode-indicator.adoc[]
+
+=== What it means for builders
+
+*AI Hub Mode:*
+
+* Routing is pre-configured and intelligent
+* Models are automatically routed based on system-managed rules
+* You cannot see or modify routing rules (they're managed by Redpanda)
+* Limited customization via administrator-configured preference toggles
+* See xref:ai-gateway/builders/use-ai-hub-gateway.adoc[] for AI Hub-specific guidance
+
+*Custom Mode:*
+
+* Routing is configured by your administrator
+* You can view configured routing rules in the console
+* Administrator has full control over backend pools and policies
+* Standard discovery and usage patterns apply (rest of this page)
+
+[TIP]
+====
+If you need specific routing behavior or custom configuration that AI Hub doesn't support, ask your administrator about ejecting to Custom mode or creating a Custom mode gateway.
+====
+endif::[]  
+
+== Check gateway availability
+
+Before integrating your application, verify that you can successfully connect to the gateway:
+
+=== Test connectivity
+
+[source,bash]
+----
+curl ${GATEWAY_ENDPOINT}/models \
+  -H "Authorization: Bearer ${REDPANDA_CLOUD_TOKEN}" \
+  -v
+----
+
+Expected result: HTTP 200 response with a list of available models.
+
+=== Test a simple request
+
+Send a minimal chat completion request to verify end-to-end functionality:
+
+[source,bash]
+----
+curl ${GATEWAY_ENDPOINT}/chat/completions \
+  -H "Authorization: Bearer ${REDPANDA_CLOUD_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "openai/gpt-5.2-mini",
+    "messages": [{"role": "user", "content": "Hello"}],
+    "max_tokens": 10
+  }'
+----
+
+Expected result: HTTP 200 response with a completion.
+
+=== Troubleshoot connectivity issues
+
+If you cannot connect to a gateway:
+
+. *Verify authentication*: Ensure your API token is valid and has not expired
+. *Check gateway endpoint*: Confirm the endpoint URL includes the correct gateway ID
+. *Verify endpoint URL*: Check for typos in the gateway endpoint
+. *Check permissions*: Confirm with your administrator that you have access to this gateway
+. *Review network connectivity*: Ensure your network allows outbound HTTPS connections
+
+== Choose the right gateway
+
+If you have access to multiple gateways, consider which one to use based on your needs:
+
+=== By environment
+
+Organizations often create separate gateways for different environments:
+
+* Production gateway: Higher rate limits, access to all models, monitoring enabled
+* Staging gateway: Lower rate limits, restricted models, aggressive cost controls
+* Development gateway: Minimal limits, all models for experimentation
+
+Choose the gateway that matches your deployment environment.
+
+=== By team or project
+
+Gateways may be organized by team or project for cost tracking and isolation:
+
+* team-ml-gateway: For machine learning team
+* team-product-gateway: For product team
+* customer-facing-gateway: For production customer workloads
+
+Use the gateway designated for your team to ensure proper cost attribution.
+
+=== By capability
+
+Different gateways may have different features enabled:
+
+* Gateway with MCP tools: Use if your agent needs to call tools
+* Gateway without MCP: Use for simple LLM completions
+* Gateway with specific models: Use if you need access to particular models
+
+== Example: Complete discovery workflow
+
+Here's a complete workflow to discover and validate gateway access:
+
+[source,bash]
+----
+#!/bin/bash
+
+# Set your API token
+export REDPANDA_CLOUD_TOKEN="your-token-here"
+
+# Step 1: List all accessible gateways
+echo "=== Discovering gateways ==="
+curl -s https://api.redpanda.com/v1/gateways \
+  -H "Authorization: Bearer ${REDPANDA_CLOUD_TOKEN}" \
+  | jq '.gateways[] | {name: .name, id: .id, endpoint: .endpoint}'
+
+# Step 2: Select a gateway (example)
+export GATEWAY_ENDPOINT="https://example/gateways/gw_abc123/v1"
+
+# Step 3: List available models
+echo -e "\n=== Available models ==="
+curl -s ${GATEWAY_ENDPOINT}/models \
+  -H "Authorization: Bearer ${REDPANDA_CLOUD_TOKEN}" \
+  | jq '.data[] | .id'
+
+# Step 4: Test with a simple request
+echo -e "\n=== Testing request ==="
+curl -s ${GATEWAY_ENDPOINT}/chat/completions \
+  -H "Authorization: Bearer ${REDPANDA_CLOUD_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "openai/gpt-5.2-mini",
+    "messages": [{"role": "user", "content": "Say hello"}],
+    "max_tokens": 10
+  }' \
+  | jq '.choices[0].message.content'
+
+echo -e "\n=== Gateway validated successfully ==="
+----
+
+== Next steps
+
+* xref:ai-gateway/builders/connect-your-agent.adoc[Connect Your Agent] - Integrate your application
+// * xref:ai-gateway/builders/available-models.adoc[Available Models] - Learn about model selection and routing
+// * xref:ai-gateway/builders/use-mcp-tools.adoc[Use MCP Tools] - Access tools from MCP servers
+// * xref:ai-gateway/builders/monitor-your-usage.adoc[Monitor Your Usage] - Track requests and costs

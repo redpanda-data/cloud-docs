@@ -1,0 +1,281 @@
+= Create an Agent
+:description: Declaratively configure an agent by choosing an LLM, writing a system prompt, connecting tools from built-in connectors, and setting execution parameters.
+:page-topic-type: how-to
+:personas: agent_developer, app_developer, streaming_developer
+:learning-objective-1: Configure an agent with model selection and system prompt
+:learning-objective-2: Connect MCP servers and select tools for your agent
+:learning-objective-3: Set agent execution parameters including max iterations
+
+Create a new AI agent declaratively through the Redpanda Cloud Console. No Python or JavaScript code required. This guide walks you through configuring the agent's model, writing the system prompt, connecting tools from built-in connectors, and setting execution parameters.
+
+include::ai-agents:partial$byoc-aws-requirement.adoc[]
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
+
+== Prerequisites
+
+* A xref:get-started:cluster-types/byoc/index.adoc[BYOC cluster].
+* xref:ai-agents:ai-gateway/gateway-quickstart.adoc[AI Gateway configured] with at least one LLM provider enabled.
+* At least one xref:ai-agents:mcp/remote/overview.adoc[Remote MCP server] deployed with tools.
+* System prompt prepared (see xref:ai-agents:agents/prompt-best-practices.adoc[System Prompt Best Practices]).
+
+== Access the agents UI
+
+. Log in to the link:https://cloud.redpanda.com[Redpanda Cloud Console^].
+. Navigate to your cluster.
+. Click *Agentic AI* > *AI Agents* in the left navigation.
+
+== Configure basic settings
+
+. Click *Create Agent*.
+. Enter a display name (3-128 characters, alphanumeric with spaces, hyphens, underscores, or slashes).
+. Optionally, add a description (maximum 256 characters).
+. Select a resource tier based on your workload characteristics:
++
+Resource tiers control CPU and memory allocated to your agent. Choose based on:
++
+* **Concurrency:** How many simultaneous requests the agent handles.
+* **Tool memory:** Whether tools process large datasets in memory.
+* **Response time:** How quickly the agent needs to respond.
++
+Available tiers:
++
+* XSmall: 100m CPU, 400M RAM (single-user testing, simple queries)
+* Small: 200m CPU, 800M RAM (light workloads, few concurrent users)
+* Medium: 300m CPU, 1200M RAM (recommended for most production use cases)
+* Large: 400m CPU, 1600M RAM (high concurrency or memory-intensive tools)
+* XLarge: 500m CPU, 2G RAM (very high concurrency or large data processing)
++
+Start with Medium for production workloads. Monitor CPU and memory usage, then adjust if you see resource constraints.
+
+. Optionally, add tags (maximum 16 tags) for organization and filtering:
++
+* Keys: Maximum 64 characters, must be unique
+* Values: Maximum 256 characters, allowed characters: letters, numbers, spaces, and `_.:/=+-@`
+
+== Choose a model
+
+Agents use large language models (LLMs) to interpret user intent and decide which tools to invoke.
+
+. Select your AI Gateway:
++
+Choose the gateway that contains your configured LLM providers and API keys. If you have multiple gateways, select the appropriate one for this agent's workload (for example, production vs staging, or team-specific gateways).
+
+. Select your LLM provider from those available in the gateway:
++
+* OpenAI (GPT models)
+* Google (Gemini models)
+* Anthropic (Claude models)
+* OpenAI Compatible (custom OpenAI-compatible endpoints)
+
+. If using OpenAI Compatible, provide the base URL:
++
+* Base URL is required for OpenAI Compatible
+* Must start with `http://` or `https://`
+* Example: `https://api.example.com/v1`
+
+. Select the specific model version from the dropdown.
++
+The dropdown shows available models with descriptions.
+
+For detailed model specifications and pricing:
+
+* link:https://platform.openai.com/docs/models[OpenAI Models^]
+* link:https://docs.anthropic.com/claude/docs/models-overview[Anthropic Claude Models^]
+* link:https://ai.google.dev/gemini-api/docs/models[Google Gemini Models^]
+
+For model selection based on architecture patterns, see xref:ai-agents:agents/architecture-patterns.adoc#model-selection-guide[Model selection guide].
+
+== Write the system prompt
+
+. In the *System Prompt* section, enter your prompt (minimum 10 characters).
+. Follow these guidelines:
++
+* Define agent role and responsibilities
+* List available tools
+* Specify constraints and safety rules
+* Set output format expectations
+
+. Use the *Preview* button to review formatted prompt.
+
+Example system prompt structure:
+
+[,text]
+----
+You are an [agent role].
+
+Responsibilities:
+- [Task 1]
+- [Task 2]
+
+Available tools:
+- [tool_name]: [description]
+
+Never:
+- [Constraint 1]
+- [Constraint 2]
+
+Response format:
+- [Format guideline]
+----
+
+For complete prompt guidelines, see xref:ai-agents:agents/prompt-best-practices.adoc[System Prompt Best Practices].
+
+== Add MCP servers and select tools
+
+. In the *Tools* section, click *Add MCP Server*.
+. Select an MCP server from your cluster.
+. The UI displays all tools exposed by that server.
+. Select which tools this agent can use:
++
+* Check the box next to each tool
+* Review tool descriptions to confirm they match agent needs
+
+. Repeat to add tools from multiple MCP servers.
+. Verify your tool selection:
++
+* Ensure tools match those listed in your system prompt
+* Remove tools the agent doesn't need (principle of least privilege)
+
+== Add subagents (optional)
+
+Subagents are internal specialists within a single agent. Each subagent can have its own name, description, system prompt, and MCP tools, but all subagents share the parent agent's model, budget, and policies.
+
+. In the *Subagents* section, click *Add Subagent*.
+. Configure the subagent:
++
+* *Name*: 1-64 characters, only letters, numbers, hyphens, and underscores (for example: `order-agent` or `Order_Agent`)
+* *Description*: Maximum 256 characters (optional)
+* *System Prompt*: Minimum 10 characters, domain-specific instructions
+* *MCP Tools*: Select tools this subagent can access
+
+The root agent orchestrates and delegates work to appropriate subagents based on the request.
+
+For multi-agent design patterns, see xref:ai-agents:agents/architecture-patterns.adoc[Agent Architecture Patterns].
+
+=== Set max iterations
+
+Max iterations determine how many reasoning loops the agent can perform before stopping. Each iteration consumes tokens and adds latency. For detailed cost calculations and the cost/capability/latency trade-off, see xref:ai-agents:agents/concepts.adoc[].
+
+In the *Execution Settings* section, configure *Max Iterations* (range: 10-100, default: 30).
+
+Choose based on task complexity:
+
+* **Simple queries** (10-20): Single tool call, direct answers, minimal reasoning
+* **Balanced workflows** (20-40): Multiple tool calls, data aggregation, moderate analysis
+* **Complex analysis** (40-100): Exploratory queries, extensive tool chaining, deep reasoning
+
+Start with 30 for most use cases.
+
+=== Configure A2A discovery metadata (optional)
+
+After creating your agent, configure discovery metadata for external integrations. For detailed agent card design guidance, see link:https://agent2agent.info/docs/guides/create-agent-card/[Create an Agent Card^].
+
+. Click on your agent.
+. Open the *A2A* tab.
+. Configure identity fields:
++
+* *Icon URL*: A publicly accessible image URL (recommended: 256x256px PNG or SVG)
+* *Documentation URL*: Link to comprehensive agent documentation
+
+. Configure provider information:
++
+* *Organization*: Your organization or team name
+* *URL*: Website or contact URL
+
+. Configure capabilities by adding skills:
++
+Skills describe what your agent can do for capability-based discovery. External systems use skills to find agents with the right capabilities.
++
+.. Click *+ Add Skill* to define what this agent can do.
+.. For each skill, configure:
++
+* *Skill ID* (required): Unique identifier using lowercase letters, numbers, and hyphens (for example, `fraud-analysis`, `order-lookup`)
+* *Skill Name* (required): Human-readable name displayed in agent directories (for example, "Fraud Analysis", "Order Lookup")
+* *Description* (required): Explain what this skill does and when to use it. Be specific about inputs, outputs, and use cases.
+* *Tags* (optional): Add tags for categorization and search. Use common terms like `fraud`, `security`, `finance`, `orders`.
+* *Examples* (optional): Click *+ Add Example* to provide sample queries demonstrating how to invoke this skill. Examples help users understand how to interact with your agent.
++
+.. Add multiple skills if your agent handles different types of requests. For example, a customer service agent might have separate skills for "Order Status Lookup", "Shipping Tracking", and "Returns Processing".
+
+. Click *Save Changes*.
+
+The updated metadata appears immediately at `\https://your-agent-url/.well-known/agent-card.json`. For more about what these fields mean and how they're used, see xref:ai-agents:agents/a2a-concepts.adoc#agent-cards[Agent cards].
+
+=== Review and create
+
+. Review all settings.
+
+. Configure the service account name (optional):
++
+A service account is automatically created to authenticate your agent with cluster resources. The default name follows the pattern `cluster-<cluster-id>-agent-<agent-name>-sa`. You can customize this name (3-128 characters, cannot contain `<` or `>` characters).
++
+For details about default permissions and how to manage service accounts, see xref:ai-agents:agents/concepts.adoc#service-account-authorization[Service account authorization].
+
+. Click *Create Agent*.
+
+. Wait for agent creation to complete.
+
+When your agent is running, Redpanda Cloud provides an HTTP endpoint URL with the pattern:
+
+----
+https://<agent-id>.ai-agents.<cluster-id>.<cluster-domain>
+----
+
+You can use this URL to call your agent programmatically or integrate it with external systems.
+
+The *Inspector* tab in the Cloud Console automatically uses this URL to connect to your agent for testing.
+
+For programmatic access or external agent integration, see xref:ai-agents:agents/integration-overview.adoc[].
+
+== Test your agent
+
+. In the agent details view, click the *Inspector* tab.
+. Enter a test prompt.
+. Verify the agent:
++
+* Selects appropriate tools
+* Follows system prompt constraints
+* Returns expected output format
+
+. Iterate on the system prompt or tool selection as needed.
+
+For detailed testing strategies, see xref:ai-agents:agents/monitor-agents.adoc[].
+
+== Example configurations
+
+Here are example configurations for different agent types:
+
+=== Simple query agent
+
+* *Model*: GPT-5 Mini (fast, cost-effective)
+* *Tools*: Single MCP server with `get_orders` tool
+* *Max iterations*: 10
+* *Use case*: Customer order lookups
+
+=== Complex analytics agent
+
+* *Model*: Claude Sonnet 4.5 (balanced)
+* *Tools*: Multiple servers with data query, aggregation, and formatting tools
+* *Max iterations*: 30
+* *Use case*: Multi-step data analysis
+
+=== Multi-agent orchestrator
+
+* *Model*: Claude Opus 4.5 (advanced reasoning)
+* *Tools*: Agent delegation tools
+* *Subagents*: Order Agent, Inventory Agent, Customer Agent
+* *Max iterations*: 20
+* *Use case*: E-commerce operations
+
+== Next steps
+
+* xref:ai-agents:agents/integration-overview.adoc[]
+* xref:ai-agents:agents/prompt-best-practices.adoc[]
+* xref:ai-agents:mcp/remote/create-tool.adoc[]
+* xref:ai-agents:agents/architecture-patterns.adoc[]
+* xref:ai-agents:agents/troubleshooting.adoc[]

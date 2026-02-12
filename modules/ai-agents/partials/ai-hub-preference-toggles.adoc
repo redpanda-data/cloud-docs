@@ -1,0 +1,66 @@
+AI Hub mode provides 6 user-configurable preference toggles that influence routing behavior without modifying the underlying rules.
+
+[cols="2,1,3,3",options="header"]
+|===
+|Preference |Default |Purpose |When to Enable
+
+|*infer_provider_from_model_name*
+|`true`
+|Infer provider from model name patterns when no prefix specified
+|Enabled by default. When true, `gpt-5.2` routes to OpenAI, `claude-sonnet-4.5` routes to Anthropic without requiring `openai/` or `anthropic/` prefixes. Disable to require explicit vendor prefixes for all requests.
+
+|*auto_route_vision*
+|`false`
+|Automatically route requests containing images or multimodal content to vision-capable models
+|Enable when your applications use vision capabilities and you want AI Hub to automatically select vision-capable models. When disabled, you must explicitly specify a vision-capable model in your request.
+
+|*auto_route_long_context*
+|`false`
+|Automatically route requests with >100K tokens to Anthropic models
+|Enable when your applications process large documents or long conversations. Anthropic models support longer context windows (up to 200K tokens). When disabled, requests use the model you specify regardless of context length. Configure `long_context_threshold_tokens` to adjust the token threshold (default: 100,000).
+
+|*rate_limit_resilience*
+|`false`
+|Automatically failover to alternate providers when receiving 429 (rate limit) errors
+|Enable when you want higher availability during rate limit conditions. The gateway temporarily routes to an alternate provider when the primary provider returns 429 errors. Configure `rate_limit_cooldown_seconds` to adjust the cooldown period (default: 60 seconds). When disabled, 429 errors are returned to your application.
+
+|*cost_optimization*
+|`"none"`
+|Cost optimization strategy: `"none"`, `"prefer_cheaper"`, or `"prefer_quality"`
+|Set to `"prefer_cheaper"` to route requests to cost-effective models when multiple providers can handle the request. Set to `"prefer_quality"` to prefer higher-quality models. AI Hub uses LLM-as-a-Judge to analyze prompt complexity when `"prefer_cheaper"` is enabled. Default `"none"` routes based on model specified without cost optimization.
+
+|*fallback_provider*
+|`"openai"`
+|Fallback provider when no routing rule matches: `"openai"`, `"anthropic"`, or `"none"`
+|Set the default provider when model inference fails and no explicit provider prefix is given. `"openai"` routes unmatched requests to OpenAI (default). `"anthropic"` routes to Anthropic. `"none"` returns 400 error instead of guessing. Most organizations use `"openai"` as the default fallback.
+|===
+
+=== How preferences interact with routing
+
+Preferences work in combination with AI Hub's immutable routing rules:
+
+. *Routing rules evaluate first* (model prefix, pattern matching, special routing for embeddings/images/audio)
+. *Preferences influence decisions* when multiple valid options exist
+. *Protected routing rules cannot be overridden* by preferences (for example, embeddings always go to OpenAI)
+
+For example, if you specify `model: "openai/gpt-5.2"`, the model prefix rule routes to OpenAI regardless of preference toggles. But if you specify `model: "gpt-5.2"` without a prefix and `infer_provider_from_model_name` is enabled, AI Hub routes to OpenAI based on the `gpt-*` pattern.
+
+=== Best practices
+
+* *Start with defaults*: Most organizations use default settings initially and enable preferences based on observed usage patterns
+* *Test inference before disabling*: The `infer_provider_from_model_name` preference is enabled by default because it provides the best user experience. Only disable if you want to enforce explicit vendor prefixes.
+* *Monitor before enabling auto-routing*: Review your request patterns in the observability dashboard before enabling `auto_route_vision` or `auto_route_long_context`
+* *Test failover behavior*: Enable `rate_limit_resilience` in staging first to understand failover behavior before enabling in production
+* *Cost vs quality trade-offs*: `cost_optimization` set to `"prefer_cheaper"` prioritizes cost savings, which may impact response quality for complex requests
+* *Document your choices*: Record why each preference is enabled to help future administrators understand your configuration
+
+=== Configuring preferences
+
+ifdef::ai-hub-available[]
+Platform administrators configure preferences when creating or updating an AI Hub gateway. For detailed configuration instructions, see xref:ai-gateway/admin/configure-ai-hub.adoc[].
+endif::[]
+ifndef::ai-hub-available[]
+Platform administrators configure preferences when creating or updating an AI Hub gateway.
+endif::[]
+
+Builders cannot modify preferences directly. If you need different routing behavior, contact your administrator to adjust preference toggles or request ejection to Custom mode for full control.
