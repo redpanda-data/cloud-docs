@@ -7,7 +7,9 @@
 :learning-objective-2: Describe how each component addresses enterprise governance and reliability requirements
 :learning-objective-3: Determine whether Redpanda ADP fits your organization's requirements for AI agent deployment
 
-glossterm:AI agent[,AI agents] are moving from demos to production. Enterprises need governance, reliability, and cost control to deploy them safely. Redpanda Agentic Data Plane (ADP) combines a streaming-native immutable log, 300+ proven data connectors, and declarative AI agents into a unified platform with built-in compliance-grade audit trails.
+As glossterm:AI agent[,AI agents] evolve from experimental prototypes to business-critical systems, companies face new challenges. How do you ensure your AI agents are reliable? How do you maintain control over costs and compliance? And how do you scale them across your organization without creating technical debt?
+
+Redpanda Agentic Data Plane (ADP) solves these problems by bringing together key capabilities: a solid data foundation, over 300 proven connectors, and a declarative approach to building AI agents. The result is a unified platform that automatically tracks every agent decision for compliance and audit requirements.
 
 After reading this page, you will be able to:
 
@@ -15,23 +17,27 @@ After reading this page, you will be able to:
 * [ ] {learning-objective-2}
 * [ ] {learning-objective-3}
 
-NOTE: The Agentic Data Plane is supported on BYOC clusters running with AWS and Redpanda version 25.3 and later.
+include::ai-agents:partial$ai-gateway-byoc-note.adoc[]
 
-== AI Agents
+== AI agents
 
-Instead of writing Python or JavaScript, you declare the agent behavior you want and Redpanda handles execution and orchestration. You define behaviors in YAML, orchestrate multiple specialized glossterm:subagent[,sub-agents], or bring your own frameworks like LangChain or LlamaIndex.
+With Redpanda AI agents, you declare the agent behavior you want and Redpanda handles execution and orchestration. Instead of writing Python or JavaScript, you define behaviors in YAML, orchestrate multiple specialized glossterm:subagent[,sub-agents], or bring your own frameworks like LangChain or LlamaIndex.
 
 What makes this practical at scale is xref:develop:connect/about.adoc[Redpanda Connect]. More than 300 connectors with built-in filtering, enrichment, and routing give declarative definitions real power. Upcoming templates will provide default behaviors for common domains such as customer success, legal, and finance.
 
 The result is faster time-to-production, lower maintenance (declarative definitions instead of imperative code), and organizational consistency across teams.
 
-== MCP Servers
+For more information, see xref:ai-agents:agents/overview.adoc[].
+
+== MCP servers
 
 glossterm:MCP server[,MCP servers] translate agent intent into connections to databases, queues, HRIS, CRMs, and other business systems. They are the simplest way to give agents context and capabilities without writing glue code.
 
 Under the hood, MCP servers wrap the same proven connectors that power some of the world's largest e-commerce, EV, electricity, and AI companies. Built on xref:develop:connect/about.adoc[Redpanda Connect], they are lightweight, support OIDC-based authentication, and enforce deterministic policies at the tool level. You define tools in YAML, and policy enforcement programmatically prevents prompt injection, SQL injection, and other agent-based attacks.
 
-With over 300 connectors out-of-the-box and real-time debugging capabilities, you reduce integration time while getting enterprise-grade security. You can reuse your existing infrastructure and data sources rather than building new integrations from scratch.
+With 300+ out-of-the-box connectors and real-time debugging capabilities, you reduce integration time while getting enterprise-grade security. You can reuse your existing infrastructure and data sources rather than building new integrations from scratch.
+
+For more information, see xref:ai-agents:mcp/overview.adoc[MCP Servers Overview].
 
 == Transcripts
 
@@ -41,6 +47,8 @@ Transcripts are the keystone of agent governance. They are built on Redpanda's i
 
 Redpanda captures 100% of agent actions through OpenTelemetry standards, with end-to-end lineage across the entire execution chain. You can materialize execution logs to Iceberg tables for long-term retention and analysis, or replay them to evaluate and improve agent performance over time.
 
+For more information, see xref:ai-agents:observability/concepts.adoc[Transcripts Overview].
+
 == AI Gateway
 
 The AI Gateway manages LLM provider access with two priorities: keeping your application up and keeping costs under control.
@@ -48,6 +56,8 @@ The AI Gateway manages LLM provider access with two priorities: keeping your app
 For high availability, the gateway provides provider-agnostic routing with intelligent failover. Your users don't care which provider serves a request. They care that the application stays up. For fiscal control, you get per-tenant budgets and rate limiting, so there are no runaway costs and no surprise bills.
 
 The gateway also supports tenancy modeling for teams, individuals, applications, and service accounts, giving you chargeback transparency for internal cost allocation. You can proxy both models and MCP gateways, centralizing compliance for all LLM interactions without locking into any single provider.
+
+For more information, see xref:ai-agents:ai-gateway/what-is-ai-gateway.adoc[AI Gateway Overview].
 
 == Enterprise governance
 
@@ -71,4 +81,7 @@ Organizations use Redpanda ADP to:
 
 == Next steps
 
-* xref:ai-agents:mcp/overview.adoc[]
+* xref:ai-agents:agents/overview.adoc[AI Agents Overview]
+* xref:ai-agents:mcp/overview.adoc[MCP Server Overview]
+* xref:ai-agents:observability/concepts.adoc[Transcripts Overview]
+* xref:ai-agents:ai-gateway/what-is-ai-gateway.adoc[AI Gateway Overview]
