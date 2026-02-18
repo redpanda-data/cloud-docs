@@ -146,7 +146,7 @@ Switch between gateways by selecting the appropriate MCP server when using Claud
 
 === Configuration with environment variables
 
-For sensitive credentials, use environment variables instead of hardcoding values:
+For sensitive credentials, use environment variables instead of hardcoding values. Claude Code supports `${VAR}` interpolation in project-level `.mcp.json` files but not in `~/.claude.json`. To use environment variables, create a `.mcp.json` file in your project root:
 
 [,json]
 ----
@@ -163,9 +163,7 @@ For sensitive credentials, use environment variables instead of hardcoding value
 }
 ----
 
-NOTE: Claude Code supports `${VAR}` interpolation syntax in the `mcpServers` section. The variables `REDPANDA_GATEWAY_URL` and `REDPANDA_API_KEY` will be resolved from environment variables at runtime.
-
-Set environment variables before launching Claude Code:
+Set the environment variables before launching Claude Code:
 
 [,bash]
 ----
