@@ -71,16 +71,15 @@ This command configures the HTTP transport for MCP, which allows Claude Code to 
 
 === Configure LLM routing through gateway
 
-To route Claude Code's LLM requests through the gateway instead of directly to Anthropic:
+To route Claude Code's LLM requests through the gateway instead of directly to Anthropic, set the following environment variables:
 
 [,bash]
 ----
-claude config set \
-  --api-provider redpanda \
-  --base-url <your-gateway-endpoint>
+export ANTHROPIC_BASE_URL=<your-gateway-endpoint>
+export ANTHROPIC_AUTH_TOKEN=YOUR_API_KEY
 ----
 
-This routes all Claude model requests through your gateway, giving you centralized observability and policy enforcement.
+This routes all Claude model requests through your gateway, giving you centralized observability and policy enforcement. To persist these values, add them to your shell profile or store them in the Claude settings JSON (`~/.claude.json`).
 
 == Configure using configuration file
 
