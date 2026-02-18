@@ -87,7 +87,7 @@ Each trace must follow the OTLP specification with these required fields:
 | Identifies the library that created the span
 
 | `status`
-| Operation status with code (0 = OK, 2 = ERROR)
+| Operation status with code (0 = UNSET, 1 = OK, 2 = ERROR)
 |===
 
 Optional but recommended fields:
@@ -538,7 +538,7 @@ Before deploying to production, verify your traces match the expected format:
    * `traceId`, `spanId`, `name`
    * `startTimeUnixNano`, `endTimeUnixNano`
    * `instrumentationScope` with a `name` field
-   * `status` with a `code` field (0 for success, 2 for error)
+   * `status` with a `code` field (1 for success, 2 for error)
 . Check that `service.name` is set in the resource attributes to identify your agent in the Transcripts view.
 . Verify GenAI semantic convention attributes if you want proper display in the Transcripts view:
    * `gen_ai.operation.name` set to `"invoke_agent"` for agent spans
