@@ -277,7 +277,7 @@ If you relied on AI Hub preference toggles, replicate their behavior with custom
 [,cel]
 ----
 // Route vision requests to GPT-5.2 (vision-capable)
-request.headers["content-type"].contains("multipart") ? "openai/gpt-5.2" : request.model
+request.headers["content-type"].contains("multipart") ? "openai/gpt-5.2" : request.body.model
 ----
 
 *Example: Replicate auto_route_long_context*
@@ -285,7 +285,7 @@ request.headers["content-type"].contains("multipart") ? "openai/gpt-5.2" : reque
 [,cel]
 ----
 // Route large prompts to Claude Opus (200K context)
-request.prompt.size() > 100000 ? "anthropic/claude-opus-4.6" : request.model
+request.body.messages.size() > 100000 ? "anthropic/claude-opus-4.6" : request.body.model
 ----
 
 *Example: Replicate fallback_provider (Anthropic)*
@@ -293,9 +293,9 @@ request.prompt.size() > 100000 ? "anthropic/claude-opus-4.6" : request.model
 [,cel]
 ----
 // Route to Anthropic when model cannot be inferred
-!request.model.contains("/") && !request.model.startsWith("gpt-") && !request.model.startsWith("claude-")
+!request.body.model.contains("/") && !request.body.model.startsWith("gpt-") && !request.body.model.startsWith("claude-")
   ? "anthropic/claude-sonnet-4.5"
-  : request.model
+  : request.body.model
 ----
 
 For CEL routing patterns, see xref:ai-agents:ai-gateway/cel-routing-cookbook.adoc[].

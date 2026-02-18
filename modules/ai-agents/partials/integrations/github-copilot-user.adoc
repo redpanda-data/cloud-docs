@@ -414,9 +414,9 @@ request.headers["x-user-level"] == "junior"
 
 // Block access for contractors to expensive models
 request.headers["x-user-type"] == "contractor" &&
-request.model.contains("opus")
+request.body.model.contains("opus")
   ? error("Contractors cannot use Opus models")
-  : request.model
+  : request.body.model
 ----
 
 == Verify configuration
@@ -882,7 +882,7 @@ Use separate gateways or CEL routing to enforce team budgets:
 request.headers["x-team"] == "frontend" &&
 monthly_tokens > 1000000
   ? error("Team budget exceeded")
-  : request.model
+  : request.body.model
 ----
 
 Configure alerts in the dashboard when teams approach their limits.
