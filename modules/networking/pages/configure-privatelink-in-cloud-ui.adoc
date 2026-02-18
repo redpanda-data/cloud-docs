@@ -38,6 +38,34 @@ include::networking:partial$dns_resolution.adoc[]
 
 NOTE: For help with issues when enabling PrivateLink, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda support^].
 
+== Configure PrivateLink connection to Redpanda Cloud
+
+When you have a PrivateLink-enabled cluster, create a VPC endpoint to connect your client VPC to your cluster.
+
+=== Get cluster domain
+
+Get the domain (`cluster_domain`) of the cluster from the bootstrap server URL in the *How to Connect* section of the cluster overview in the Redpanda Cloud Console.
+
+For example, if the bootstrap server URL is: `seed-3da65a4a.cki01qgth38kk81ard3g.fmc.dev.cloud.redpanda.com:9092`, then `cluster_domain` is: `cki01qgth38kk81ard3g.fmc.dev.cloud.redpanda.com`.
+
+[,bash]
+----
+CLUSTER_DOMAIN=<cluster_domain>
+----
+
+NOTE: Use `<cluster_domain>` as the domain you target with your DNS conditional forward (optionally also `*.<cluster_domain>` if your DNS platform requires a wildcard).
+
+=== Get the PrivateLink endpoint service name
+
+You need the service name to <<create-vpc-endpoint,create a VPC endpoint>>. You can find the service name on the *Cluster settings* page after PrivateLink is enabled, or in the *How to Connect* section of the cluster overview.
+
+[,bash]
+----
+PL_SERVICE_NAME=<vpc_endpoint_service_name>
+----
+
+include::networking:partial$private-links-aws-client-vpc-setup.adoc[]
+
 == Access Redpanda services through VPC endpoint
 
 After you have enabled PrivateLink for your cluster, your connection URLs are available in the *How to Connect* section of the cluster overview in the Redpanda Cloud Console.
