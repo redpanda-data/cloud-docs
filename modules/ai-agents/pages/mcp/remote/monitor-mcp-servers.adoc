@@ -92,7 +92,7 @@ Filter for error spans where `status.code` is `2`:
 [,bash]
 ----
 rpk topic consume redpanda.otel_traces --offset start \
-  | jq 'select(.status.code == 2)'
+  | jq '.value | select(.status.code == 2)'
 ----
 
 Check `status.message` for error details and the `events` array for error events with timestamps. Use `traceId` to correlate related spans across the distributed system.
