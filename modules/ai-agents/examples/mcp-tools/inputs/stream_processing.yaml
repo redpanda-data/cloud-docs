@@ -16,7 +16,7 @@ redpanda:
   processors:
     - mapping: |
         root.sensor_id = this.sensor_id
-        root.avg_temperature = this.readings.map_each(r -> r.temperature).mean()
+        root.avg_temperature = this.readings.map_each(r -> r.temperature).sum() / this.readings.length()
         root.max_temperature = this.readings.map_each(r -> r.temperature).max()
         root.reading_count = this.readings.length()
         root.window_end = now()
