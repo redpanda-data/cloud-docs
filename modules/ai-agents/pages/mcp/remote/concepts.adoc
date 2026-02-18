@@ -1,8 +1,8 @@
 = MCP Tool Execution and Components
-:description: Understand the MCP execution model, choose the right component type, and use traces for observability.
+:description: Understand how MCP tools execute requests, choose the right Redpanda Connect component type, and use traces for observability.
 :page-aliases: ai-agents:mcp/remote/understanding-mcp-tools.adoc
 :page-topic-type: concepts
-:personas: ai_agent_developer, streaming_developer
+:personas: agent_developer, streaming_developer
 // Reader journey: "I want to understand how it works"
 // Learning objectives - what readers should know after reading this page:
 :learning-objective-1: Describe the request/response execution model
@@ -23,141 +23,25 @@ include::redpanda-connect:ai-agents:partial$mcp/concepts/component-mapping.adoc[
 // Execution model - single-sourced from partial
 include::redpanda-connect:ai-agents:partial$mcp/concepts/execution-model.adoc[]
 
+MCP tools use an agent-initiated execution model where agents invoke tools on-demand. Redpanda also supports pipeline-initiated integration where pipelines call agents using the `a2a_message` processor. For guidance on choosing between these patterns, see xref:ai-agents:agents/integration-overview.adoc[].
+
 [[component-selection]]
 == Choose the right component type
 
 // Component selection guide - single-sourced from partial
 include::redpanda-connect:ai-agents:partial$mcp/concepts/component-selection.adoc[]
 
-[[execution-log]]
-== Execution log and observability
+== Observability
 
-Every MCP server automatically emits OpenTelemetry traces to a topic called `redpanda.otel_traces`. These traces provide detailed observability into your MCP server's operations, creating a complete execution log.
+MCP servers automatically emit OpenTelemetry traces for monitoring and debugging. For detailed information about traces, spans, and the trace structure, see xref:ai-agents:observability/concepts.adoc[].
 
-=== Traces and spans
+To monitor MCP server activity, consume traces, and debug failures, see xref:ai-agents:mcp/remote/monitor-mcp-servers.adoc[].
 
-OpenTelemetry traces provide a complete picture of how a request flows through your system:
-
-* A _trace_ represents the entire lifecycle of a request (for example, a tool invocation from start to finish).
-* A _span_ represents a single unit of work within that trace (such as a data processing operation or an external API call).
-* A trace contains one or more spans organized hierarchically, showing how operations relate to each other.
-
-With 100% sampling, every operation is captured, creating a complete execution log that you can use for debugging, monitoring, and performance analysis.
-
-=== How Redpanda stores traces
-
-The `redpanda.otel_traces` topic stores OpenTelemetry spans in JSON format, following the https://opentelemetry.io/docs/specs/otel/protocol/[OpenTelemetry Protocol (OTLP)^] specification. A Protobuf schema named `redpanda.otel_traces-value` is also automatically registered with the topic, enabling clients to deserialize trace data correctly.
-
-The `redpanda.otel_traces` topic and its schema are managed automatically by Redpanda. If you delete either the topic or the schema, they are recreated automatically. However, deleting the topic permanently deletes all trace data, and the topic comes back empty. Do not produce your own data to this topic. It is reserved for OpenTelemetry traces.
-
-Each span in the execution log represents a specific operation performed by your MCP server, such as:
-
-* Tool invocation requests
-* Data processing operations
-* External API calls
-* Error conditions
-* Performance metrics
-
-=== Topic configuration and lifecycle
-
-The `redpanda.otel_traces` topic has a predefined retention policy. Configuration changes to this topic are not supported. If you modify settings, Redpanda reverts them to the default values.
-
-The topic persists in your cluster even after all MCP servers are deleted, allowing you to retain historical trace data for analysis.
-
-Trace data may contain sensitive information from your tool inputs and outputs. Consider implementing appropriate glossterm:ACL[,access control lists (ACLs)] for the `redpanda.otel_traces` topic, and review the data in traces before sharing or exporting to external systems.
-
-=== Understand the trace structure
-
-Each span captures a unit of work. Here's what a typical MCP tool invocation looks like:
-
-[,json]
-----
-{
-    "traceId": "71cad555b35602fbb35f035d6114db54",
-    "spanId": "43ad6bc31a826afd",
-    "name": "http_processor",
-    "attributes": [
-        {"key": "city_name", "value": {"stringValue": "london"}},
-        {"key": "result_length", "value": {"intValue": "198"}}
-    ],
-    "startTimeUnixNano": "1765198415253280028",
-    "endTimeUnixNano": "1765198424660663434",
-    "instrumentationScope": {"name": "rpcn-mcp"},
-    "status": {"code": 0, "message": ""}
-}
-----
-
-Key elements to understand:
-
-* **`traceId`**: Links all spans belonging to the same request. Use this to follow a tool invocation through its entire lifecycle.
-* **`name`**: The tool name (`http_processor` in this example). This tells you which tool was invoked.
-* **`instrumentationScope.name`**: When this is `rpcn-mcp`, the span represents an MCP tool. When it's `redpanda-connect`, it's internal processing.
-* **`attributes`**: Context about the operation, like input parameters or result metadata.
-* **`status.code`**: `0` means success, `2` means error.
-
-=== Parent-child relationships
-
-Traces show how operations relate. A tool invocation (parent) may trigger internal operations (children):
-
-[,json]
-----
-{
-    "traceId": "71cad555b35602fbb35f035d6114db54",
-    "spanId": "ed45544a7d7b08d4",
-    "parentSpanId": "43ad6bc31a826afd",
-    "name": "http",
-    "instrumentationScope": {"name": "redpanda-connect"},
-    "status": {"code": 0, "message": ""}
-}
-----
-
-The `parentSpanId` links this child span to the parent tool invocation. Both share the same `traceId`, so you can reconstruct the complete operation.
-
-=== Error events in traces
-
-When something goes wrong, traces capture error details:
-
-[,json]
-----
-{
-    "traceId": "71cad555b35602fbb35f035d6114db54",
-    "spanId": "ba332199f3af6d7f",
-    "parentSpanId": "43ad6bc31a826afd",
-    "name": "http_request",
-    "events": [
-        {
-            "name": "event",
-            "timeUnixNano": "1765198420254169629",
-            "attributes": [{"key": "error", "value": {"stringValue": "type"}}]
-        }
-    ],
-    "status": {"code": 0, "message": ""}
-}
-----
-
-The `events` array captures what happened and when. Use `timeUnixNano` to see exactly when the error occurred within the operation.
-
-=== Traces compared to audit logs
-
-OpenTelemetry traces are designed for observability and debugging, not audit logging or compliance.
-
-Traces provide:
-
-* Hierarchical view of request flow through your system (parent-child span relationships)
-* Detailed timing information for performance analysis
-* Ability to reconstruct execution paths and identify bottlenecks
-* Insights into how operations flow through distributed systems
-
-Traces are not:
-
-* Immutable audit records for compliance purposes
-* Designed for "who did what" accountability tracking
-
-For monitoring tasks like consuming traces, debugging failures, and measuring performance, see xref:ai-agents:mcp/remote/monitor-activity.adoc[].
+include::partial$service-account-authorization.adoc[]
 
 == Next steps
 
 * xref:ai-agents:mcp/remote/create-tool.adoc[]
-* xref:ai-agents:mcp/remote/best-practices.adoc[]: Apply naming and design guidelines
-* xref:ai-agents:mcp/remote/tool-patterns.adoc[]: Find reusable patterns
-* xref:ai-agents:mcp/remote/troubleshooting.adoc[]: Diagnose common issues
+* xref:ai-agents:mcp/remote/best-practices.adoc[]
+* xref:ai-agents:mcp/remote/tool-patterns.adoc[]
+* xref:ai-agents:mcp/remote/troubleshooting.adoc[]

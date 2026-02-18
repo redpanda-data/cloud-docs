@@ -1,14 +1,27 @@
 = Redpanda Cloud Overview
-:description: Learn about Redpanda Serverless, Bring Your Own Cloud (BYOC), and Dedicated clusters.
+:description: Learn about the Redpanda Agentic Data Plane (ADP) and deployment options including BYOC, Dedicated, and Serverless clusters.
 :page-aliases: cloud:dedicated-byoc.adoc, deploy:deployment-option/cloud/dedicated-byoc.adoc, deploy:deployment-option/cloud/cloud-overview.adoc
 
-Redpanda Cloud is a complete data streaming platform delivered as a fully-managed service. It provides automated upgrades and patching, data balancing, and support while continuously monitoring your clusters and underlying infrastructure to meet strict performance, availability, reliability, and security requirements. All Redpanda Cloud clusters are deployed with an integrated glossterm:Redpanda Console[], and all clusters have access to unlimited retention and 300+ data connectors with xref:develop:connect/about.adoc[Redpanda Connect].
+Redpanda Cloud is a complete data streaming and agentic data plane platform delivered as a fully-managed service. It provides automated upgrades and patching, data balancing, and support while continuously monitoring your data to meet strict performance, availability, reliability, and security requirements. All Redpanda Cloud clusters are deployed with an integrated glossterm:Redpanda Console[], and all clusters have access to unlimited retention and 300+ data connectors with glossterm:Redpanda Connect[].
 
-TIP: For more detailed information about the Redpanda platform, see xref:get-started:intro-to-events.adoc[] and xref:get-started:architecture.adoc[].
+== Redpanda Agentic Data Plane (ADP)
 
-== Redpanda Cloud cluster types
+Redpanda ADP is enterprise-grade infrastructure for building, deploying, and governing glossterm:AI agent[,AI agents] at scale. It combines Redpanda's streaming-native immutable log, 300+ data connectors, and declarative agent definitions into a unified platform with built-in governance, cost controls, and compliance-grade audit trails.
 
-Redpanda Cloud offers three fully-managed cloud deployment options, each designed for different use cases:
+Redpanda ADP includes the following key components:
+
+* *AI agents*: Declare the behavior you want instead of writing code. Redpanda powers declarative definitions with 300+ connectors.
+* *MCP servers*: Translate agent intent into connections to your business systems using proven connectors, no glue code required.
+* *Transcripts*: End-to-end execution records built on an immutable log with formal correctness guarantees. Transcripts are the keystone of agent governance.
+* *AI Gateway*: High-availability model routing with fiscal controls and per-tenant cost attribution across LLM providers.
+
+For more information, see xref:ai-agents:adp-overview.adoc[Redpanda Agentic Data Plane Overview].
+
+include::ai-agents:partial$ai-gateway-byoc-note.adoc[]
+
+== Redpanda Cloud deployment options
+
+Redpanda Cloud applications are supported by three fully-managed deployment options:
 
 * **<<Serverless>>**: Fastest way to get started with automatic scaling
 * **<<Dedicated>>**: Production clusters in Redpanda's cloud with enhanced isolation
@@ -32,6 +45,11 @@ Redpanda Cloud offers three fully-managed cloud deployment options, each designe
 | Redpanda's cloud (AWS/GCP)
 | Redpanda's cloud (AWS/Azure/GCP)
 | Your cloud account (AWS/Azure/GCP)
+
+| *Redpanda ADP*
+| ✗
+| ✗
+| ✓
 
 | *Tenancy*
 | Multi-tenant
@@ -73,11 +91,6 @@ Redpanda Cloud offers three fully-managed cloud deployment options, each designe
 | ✓
 | ✓
 
-| *Kafka Connect*
-| ✗
-| ✓ (disabled by default)
-| ✓ (disabled by default)
-
 | *RBAC & audit logs*
 | ✗
 | ✓
@@ -97,6 +110,11 @@ Redpanda Cloud offers three fully-managed cloud deployment options, each designe
 | ✗
 | ✓ (AWS/GCP)
 | ✓ (AWS/GCP)
+
+| *Kafka Connect*
+| ✗
+| ✓ (disabled by default)
+| ✓ (disabled by default)
 
 | *Redpanda Support*
 | Enterprise support with annual contracts 
@@ -127,8 +145,7 @@ include::get-started:partial$get-started-serverless.adoc[]
 
 === Dedicated
 
-With Dedicated clusters, you host your data on Redpanda Cloud resources (AWS, GCP, or Azure), and Redpanda handles provisioning, operations, and maintenance. Dedicated clusters are single-tenant deployments that support private networking (for example, VPC peering to talk over private IPs) for better data isolation.
-When you create a Dedicated cluster, you select the supported xref:reference:tiers/dedicated-tiers.adoc[tier] that meets your compute and storage needs. 
+With Dedicated clusters, you host your data on Redpanda Cloud resources (AWS, GCP, or Azure), and Redpanda handles provisioning, operations, and maintenance. When you create a Dedicated cluster, you select the supported xref:reference:tiers/dedicated-tiers.adoc[tier] that meets your compute and storage needs. 
 
 ==== Sign up for Dedicated
 
@@ -152,6 +169,8 @@ Redpanda creates a cloud organization for you and sends you a welcome email.
 
 === Bring Your Own Cloud (BYOC)
 
+With BYOC clusters, the Redpanda data plane (including Redpanda ADP components and Redpanda brokers) deploys into your existing VPC or VNet, ensuring all data remains in your environment.
+
 With BYOC clusters, you deploy the Redpanda glossterm:data plane[] into your existing VPC (for AWS and GCP) or VNet (for Azure), and all data is
 contained in your own environment. This provides an additional layer of security and isolation. (See xref:get-started:byoc-arch.adoc[].) Redpanda manages provisioning, monitoring, upgrades, and security policies, and it manages required resources in your VPC or VNet, including subnets (subnetworks in GCP), IAM roles, and object storage resources (for example, S3 buckets or Azure Storage accounts). 
 
@@ -160,6 +179,8 @@ contained in your own environment. This provides an additional layer of security
 With BYOVPC/BYOVNet clusters, you take full control of the networking lifecycle. Compared to standard BYOC, BYOVPC/BYOVNet provides more security, but the configuration is more complex. See the xref:get-started:cloud-overview.adoc#shared-responsibility-model[shared responsibility model] to understand what you manage versus what Redpanda manages.
 
 The BYOC infrastructure that Redpanda manages should not be used to deploy any other workloads.
+
+For details about the control plane - data plane framework in BYOC, see xref:get-started:byoc-arch.adoc[BYOC architecture].
 
 ==== Sign up for BYOC
 
@@ -176,6 +197,7 @@ Serverless clusters are a good fit for the following use cases:
 
 Consider BYOC or Dedicated if you need more control over the deployment or if you have workloads with consistently-high throughput. BYOC and Dedicated clusters offer the following features:
 
+* Redpanda Agentic Data Plane (ADP): BYOC only
 * Multiple availability zones (AZs). A multi-AZ cluster provides higher resiliency in the event of a failure in one of the zones. 
 * Role-based access control (RBAC) in the data plane
 * Kafka Connect
@@ -185,7 +207,11 @@ Consider BYOC or Dedicated if you need more control over the deployment or if yo
 
 When you sign up for a Redpanda account, Redpanda creates an organization for you. Your organization contains all your Redpanda resources, including your clusters and networks. Within your organization, Redpanda creates a default resource group to contain your resources. You can rename this resource group, and you can create more resource groups. For example, you may want different resource groups for production and testing.
 
-For details about the control plane - data plane framework in BYOC, see xref:get-started:byoc-arch.adoc[BYOC architecture].
+[TIP]
+====
+
+For more detailed information about the Redpanda platform, see xref:get-started:intro-to-events.adoc[] and xref:get-started:architecture.adoc[].
+==== 
 
 == Shared responsibility model
 
@@ -300,10 +326,6 @@ xref:develop:connect/about.adoc[Redpanda Connect] lets you compose pipelines fro
 
 xref:develop:managed-connectors/index.adoc[Kafka Connect] is disabled by default on all new clusters. To unlock this feature for your BYOC or Dedicated cluster, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda Support^]. When enabled, a Kafka Connect node runs even if no connectors are configured.
 
-=== Redpanda Connect vs data transforms
-
-xref:develop:data-transforms/how-transforms-work.adoc[Data transforms] (Wasm) provide lightweight, per-record changes between Redpanda topics with minimal latency. Transforms run inside the broker, map one input topic to one or more output topics, and are intentionally sandboxed (no external network or disk access). They're ideal for validation, redaction, format/schema conversion, and simple routing.
-
 [cols="1,2,2",options="header",stripes=none]
 |===
 |  | Data transforms | Redpanda Connect
@@ -338,6 +360,10 @@ xref:develop:data-transforms/how-transforms-work.adoc[Data transforms] (Wasm) pr
 * Use data transforms for simple, in-broker, per-record changes with minimal latency.
 * Use Redpanda Connect if your pipeline must talk to external systems (HTTP services, databases, cloud storage), or when you need advanced flow control, such as batching and windowed processing. 
 ====
+
+=== Redpanda Connect vs data transforms
+
+xref:develop:data-transforms/how-transforms-work.adoc[Data transforms] (Wasm) provide lightweight, per-record changes between Redpanda topics with minimal latency. Transforms run inside the broker, map one input topic to one or more output topics, and are intentionally sandboxed (no external network or disk access). They're ideal for validation, redaction, format/schema conversion, and simple routing.
 
 == Redpanda Cloud vs Self-Managed feature compatibility
 
@@ -374,12 +400,14 @@ Redpanda Cloud deployments do not support the following functionality available 
 +
 NOTE: The `rpk cloud` commands are not supported in Self-Managed deployments.
 
+
 == Features in limited availability
 
 Features in limited availability are production-ready and are covered by Redpanda Support for early adopters.
 
 The following features are currently in limited availability in Redpanda Cloud:
 
+* xref:ai-agents:adp-overview.adoc[Redpanda ADP] including AI agents, AI Gateway, and transcripts
 * Dedicated for Azure
 
 == Features in beta
@@ -388,25 +416,17 @@ Features in beta are available for testing and feedback. They are not covered by
 
 The following features are currently in beta in Redpanda Cloud:
 
-* Serverless on GCP
 * BYOVPC for AWS
 * BYOVNet for Azure
-* Secrets Management for BYOVPC on GCP and AWS
-* xref:ai-agents:index.adoc[AI agents with MCP servers]
+* Secrets management for BYOVPC on GCP and AWS
 * Several Redpanda Connect components 
-
-== Next steps
-* xref:manage:maintenance.adoc[Learn about upgrades and maintenance]
-* xref:get-started:cluster-types/serverless.adoc[Create a Serverless cluster]
-* xref:get-started:cluster-types/byoc/index.adoc[Create a BYOC cluster]
-* xref:get-started:cluster-types/dedicated/create-dedicated-cloud-cluster-aws.adoc[Create a Dedicated cluster]
-
-include::shared:partial$suggested-reading.adoc[]
-
-* https://redpanda.com/blog/deploy-redpanda-clusters-cloud-aws-gcp[Bring Your Own Cloud (BYOC): best of both worlds^]
-
-* https://redpanda.com/blog/data-sovereignty-fully-managed-cloud-byoc[A middle path for data sovereignty: Bring Your Own Cloud^]
 
 include::shared:partial$suggested-video.adoc[]
 
 * https://www.youtube.com/watch?v=gVlzsJAYT64&ab_channel=RedpandaData[YouTube - What is Redpanda BYOC? (3 mins)^]
+
+== Next steps
+* xref:ai-agents:index.adoc[Build AI agents with Redpanda ADP]
+* xref:manage:maintenance.adoc[Learn about upgrades and maintenance]
+* xref:get-started:cluster-types/serverless.adoc[Create a Serverless cluster]
+* xref:get-started:cluster-types/byoc/index.adoc[Create a BYOC cluster]

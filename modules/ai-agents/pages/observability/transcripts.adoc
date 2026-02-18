@@ -1,0 +1,132 @@
+= View Transcripts
+:description: Filter and navigate the Transcripts interface to investigate end-to-end agent execution records stored on Redpanda's immutable log.
+:page-topic-type: how-to
+:personas: agent_developer, platform_admin
+:learning-objective-1: Filter transcripts to find specific execution traces
+:learning-objective-2: Use the timeline interactively to navigate to specific time periods
+:learning-objective-3: Navigate between detail views to inspect span information at different levels
+
+include::ai-agents:partial$ai-gateway-byoc-note.adoc[]
+
+Use the Transcripts view to filter, inspect, and debug agent execution records. Filter by operation type, time range, or service to isolate specific executions, then drill into span hierarchies to trace request flow and identify where failures or performance bottlenecks occur.
+
+For conceptual background on spans and trace structure, see xref:ai-agents:observability/concepts.adoc[].
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
+
+== Prerequisites
+
+* xref:ai-agents:agents/create-agent.adoc[Running agent] or xref:ai-agents:mcp/remote/quickstart.adoc[MCP server] with at least one execution
+* Access to the Transcripts view (requires appropriate permissions to read the `redpanda.otel_traces` glossterm:topic[])
+
+== Navigate the Transcripts interface
+
+=== Filter transcripts
+
+Use filters to narrow down transcripts and quickly locate specific executions. When you use any of the filters, the transcript table updates to show only matching results.
+
+The Transcripts view provides several quick-filter buttons:
+
+* *Service*: Isolate operations from a particular component in your agentic data plane (agents, MCP servers, or AI Gateway)
+* *LLM Calls*: Inspect large language model (LLM) invocations, including chat completions and embeddings
+* *Tool Calls*: View tool executions by agents
+* *Agent Spans*: Inspect agent invocation and reasoning
+* *Errors Only*: Filter for failed operations or errors
+* *Slow (>5s)*: Isolate operations that exceeded five seconds in duration, useful for performance investigation
+
+You can combine multiple filters to narrow results further. For example, use *Tool Calls* and *Errors Only* together to investigate failed tool executions.
+
+Toggle *Full traces* on to see the complete execution context, in grayed-out text, for the filtered transcripts in the table.
+
+==== Filter by attribute
+
+Click the *Attribute* button to query exact matches on specific span metadata such as the following:
+
+* Agent names
+* LLM model names, for example, `gemini-3-flash-preview`
+* Tool names
+* Span and trace IDs
+
+You can add multiple attribute filters to refine results.
+
+=== Use the interactive timeline
+
+Use the timeline visualization to quickly identify when errors began or patterns changed, and navigate directly to transcripts from specific time windows when investigating issues that occurred at known times.
+
+Click on any bar in the timeline to zoom into transcripts from that specific time period. The transcript table automatically scrolls to show operations from the time bucket in view.
+
+[NOTE]
+====
+When viewing time ranges with many transcripts (hundreds or thousands), the table displays a subset of the data to maintain performance and usability. The timeline bar indicates the actual time range of data currently loaded into view, which may be narrower than your selected time range. 
+
+Refer to the timeline header to check the exact range and count of visible transcripts, for example, "Showing 100 of 299 transcripts from 13:17 to 15:16".
+====
+
+== Inspect span details
+
+The transcript table shows:
+
+* **Time**: When the glossterm:span[] started (sortable)
+* **Span**: Span type and name with hierarchical tree structure
+* **Duration**: Total time or relative duration shown as visual bars
+
+To view nested operations, expand any parent span. To learn more about span hierarchies and cross-service traces, see xref:ai-agents:observability/concepts.adoc[].
+
+Click any span to view details in the panel:
+
+* **Summary tab**: High-level overview with token usage, operation counts, and conversation history.
+* **Attributes tab**: Structured metadata for debugging (see xref:ai-agents:observability/concepts.adoc#key-attributes-by-layer[standard attributes by layer]).
+* **Raw data tab**: Complete glossterm:OpenTelemetry[] span in JSON format. You can also view raw transcript data in the `redpanda.otel_traces` topic.
+
+[NOTE]
+====
+Rows labeled "awaiting root — waiting for parent span" indicate incomplete glossterm:trace[,traces]. This occurs when child spans arrive before parent spans due to network latency or service failures. Consistent "awaiting root" entries suggest instrumentation issues.
+====
+
+== Common investigation tasks
+
+The following patterns demonstrate how to use the Transcripts view for understanding and troubleshooting your agentic systems.
+
+=== Debug errors
+
+. Use *Errors Only* to filter for failed operations, or review the timeline to identify and zoom in to when errors began occurring.
+. Expand error spans to examine the failure context.
+. Check preceding tool call arguments and LLM responses for root cause.
+
+=== Investigate performance issues
+
+. Use the *Slow (>5s)* filter to identify operations with high latency.
+. Expand slow spans to identify bottlenecks in the execution tree.
+. Compare duration bars across similar operations to spot anomalies.
+
+=== Analyze tool usage
+
+. Apply the *Tool Calls* filter and optionally use the *Attribute* filter to focus on a specific tool.
+. Review tool execution frequency in the timeline.
+. Click individual tool call spans to inspect arguments and responses.
+.. Check the Description field to understand tool invocation context.
+.. Use the Arguments field to verify correct parameter passing.
+
+=== Monitor LLM interactions
+
+. Click *LLM Calls* to focus on model invocations and optionally filter by model name and provider using the *Attribute* filter.
+. Review token usage patterns across different time periods.
+. Examine conversation history to understand model behavior.
+. Spot unexpected model calls or token consumption spikes.
+
+=== Trace multi-service operations
+
+. Locate the parent agent or gateway span in the transcript table.
+. Use the *Attribute* filter to follow the trace ID through agent and MCP server boundaries.
+. Expand the transcript tree to reveal child spans across services.
+. Review durations to understand where latency occurs in distributed calls.
+
+== Next steps
+
+* xref:ai-agents:agents/monitor-agents.adoc[]
+* xref:ai-agents:mcp/remote/monitor-mcp-servers.adoc[]
+* xref:ai-agents:agents/troubleshooting.adoc[]

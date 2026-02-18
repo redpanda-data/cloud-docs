@@ -1,0 +1,130 @@
+= Integration Patterns Overview
+:description: Choose the right integration pattern for connecting agents, pipelines, and external applications.
+:page-topic-type: best-practices
+:personas: agent_developer, streaming_developer, app_developer, data_engineer
+:learning-objective-1: Choose the integration pattern that fits your use case
+:learning-objective-2: Apply appropriate authentication for internal versus external integration
+:learning-objective-3: Select the right communication protocol for your integration scenario
+
+Redpanda Cloud supports multiple integration patterns for agents, pipelines, and external applications. Choose the pattern that matches your integration scenario.
+
+include::ai-agents:partial$byoc-aws-requirement.adoc[]
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
+
+== Integration scenarios
+
+Redpanda Cloud supports three primary integration scenarios based on who initiates the call and where the caller is located:
+
+[cols="1,2,2,1"]
+|===
+| Scenario | Description | When to Use | Guide
+
+| Agent needs capabilities
+| Your agent invokes MCP tools to fetch data, call APIs, or access external systems on-demand
+| Agent-initiated, synchronous, interactive workflows
+| xref:ai-agents:mcp/remote/tool-patterns.adoc[]
+
+| Pipeline processes events
+| Your Redpanda Connect pipeline invokes agents for each event in a stream using the `a2a_message` processor
+| Event-driven, automated, high-volume stream processing
+| xref:ai-agents:agents/pipeline-integration-patterns.adoc[]
+
+| External system calls agent
+| Your application or agent (hosted outside Redpanda Cloud) calls Redpanda Cloud agents using the A2A protocol
+| Backend services, CLI tools, custom UIs, multi-platform agent workflows
+| xref:ai-agents:agents/a2a-concepts.adoc[]
+|===
+
+== Common use cases by pattern
+
+Each integration pattern serves different scenarios based on how data flows and who initiates the interaction.
+
+[[agent-needs-capabilities]]
+=== Agent needs capabilities (MCP tools)
+
+Use MCP tools when your agent needs on-demand access to data or capabilities.
+
+The agent decides when to invoke tools as part of its reasoning process. It waits for responses before continuing.
+
+This pattern works well for interactive workflows: customer support lookups, approval flows, or context-aware chatbots.
+
+Avoid MCP tools for high-volume stream processing or automated workflows without user interaction. Use pipeline-initiated integration instead.
+
+For implementation details, see xref:ai-agents:mcp/remote/tool-patterns.adoc[].
+
+[[pipeline-processes-events]]
+=== Pipeline processes events (`a2a_message`)
+
+Use the `a2a_message` processor when your pipeline needs to invoke agents for every event in a stream.
+
+The pipeline controls when agents execute. This pattern is ideal for automated, high-volume processing where each event requires AI reasoning.
+
+Common scenarios include real-time fraud detection, sentiment scoring for customer reviews, and content moderation that classifies and routes content.
+
+For implementation details, see xref:ai-agents:agents/pipeline-integration-patterns.adoc[].
+
+=== External system calls agent
+
+Use external integration when your applications, services, or agents hosted outside Redpanda Cloud need to call Redpanda Cloud agents.
+
+External systems send requests using the A2A protocol and receive responses synchronously. This works for backend services, CLI tools, custom UIs, and agents hosted on other platforms.
+
+Common scenarios include backend services analyzing data as part of workflows, CLI tools invoking agents for batch tasks, custom UIs displaying agent responses, CRM agents coordinating with Redpanda agents, and multi-platform workflows spanning different infrastructure.
+
+To learn how the A2A protocol enables this integration, see xref:ai-agents:agents/a2a-concepts.adoc[].
+
+== Pattern comparison
+
+The following table compares the two primary internal integration patterns:
+
+[cols="1,2,2"]
+|===
+| Criterion | Agents Invoking MCP Tools | Pipelines Calling Agents
+
+| Trigger
+| User question or agent decision
+| Event arrival in topic
+
+| Frequency
+| Ad-hoc, irregular, as needed
+| Continuous, every event
+
+| Latency
+| Low (agent waits for response)
+| Higher (async acceptable)
+
+| Control Flow
+| Agent decides when to invoke
+| Pipeline decides when to invoke
+
+| Use Case
+| "Fetch me data", "Run this query"
+| "Process this stream", "Enrich all events"
+
+| Human in Loop
+| Often yes (user-driven)
+| Often no (automated)
+|===
+
+== Security considerations for external integration
+
+When integrating external applications with Redpanda Cloud agents, protect credentials and tokens.
+
+=== Protect service account credentials
+
+Store the client ID and secret in secure credential stores, not in code. Use environment variables or xref:security:secrets.adoc[secrets management]. Rotate credentials if compromised and restrict access based on the principle of least privilege.
+
+=== Protect access tokens
+
+Access tokens grant full access to the agent. Anyone with a valid token can send requests, receive responses, and consume agent resources (subject to rate limits). Treat access tokens like passwords and never log them or include them in error messages.
+
+== Next steps
+
+* xref:ai-agents:agents/a2a-concepts.adoc[]
+* xref:ai-agents:mcp/remote/tool-patterns.adoc[]
+* xref:ai-agents:agents/pipeline-integration-patterns.adoc[]

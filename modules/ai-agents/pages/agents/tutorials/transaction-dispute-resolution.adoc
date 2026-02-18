@@ -1,0 +1,665 @@
+= Build Multi-Agent Systems for Transaction Dispute Resolution
+:description: Learn how to build multi-agent systems with domain separation, handle sensitive financial data, and monitor multi-agent execution through transaction investigation.
+:page-topic-type: tutorial
+:personas: agent_developer, platform_admin
+:learning-objective-1: Design multi-agent systems with domain-specific sub-agents
+:learning-objective-2: pass:q[Monitor multi-agent execution using *Transcripts*]
+:learning-objective-3: Integrate agents with streaming pipelines for event-driven processing
+
+This tutorial shows you how to build a transaction dispute resolution system using multi-agent architecture, secure data handling, and execution monitoring.
+
+include::ai-agents:partial$byoc-aws-requirement.adoc[]
+
+After completing this tutorial, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
+
+== What you'll learn
+
+This tutorial advances from xref:ai-agents:agents/tutorials/customer-support-agent.adoc[basic multi-tool orchestration] to multi-agent systems. You'll build a transaction dispute resolution system where a root agent delegates to specialized sub-agents (account, fraud, merchant, compliance), each with focused responsibilities and PII-protected data access. You'll also monitor execution using glossterm:transcript[,transcripts] and process disputes from transaction streams for automated detection.
+
+These patterns apply beyond banking to any domain requiring specialized expertise and data security: healthcare systems, insurance claims processing, or regulatory compliance workflows.
+
+== The scenario
+
+Banks handle thousands of dispute calls daily. Customers report unauthorized charges, billing errors, or unrecognized transactions. Each investigation requires cross-referencing multiple systems and applying consistent fraud detection logic.
+
+Traditionally, human agents manually open multiple systems, cross-reference data, and take notes. A 10-15 minute process prone to inconsistencies and incomplete compliance logging.
+
+Multi-agent automation transforms this workflow by enabling instant data aggregation from all sources, consistent logic applied every time, 10-15 second resolution, and structured results for compliance. Human agents handle only complex escalations.
+
+When a customer calls saying "I see a $247.83 charge from 'ACME CORP' but I never shopped there. Is this fraud?", the system must investigate account history, calculate fraud scores, verify merchant legitimacy, and make a recommendation with structured results.
+
+== Prerequisites
+
+* A xref:get-started:cluster-types/byoc/index.adoc[BYOC cluster].
+* xref:ai-agents:ai-gateway/gateway-quickstart.adoc[AI Gateway configured] with at least one LLM provider enabled (this tutorial uses OpenAI GPT-5.2 or Claude Sonnet 4.5 for reasoning).
+* The xref:manage:rpk/rpk-install.adoc[Redpanda CLI (`rpk`)] installed (for testing the pipeline with sample data).
+* Completed xref:ai-agents:agents/tutorials/customer-support-agent.adoc[] (foundational multi-tool concepts).
+
+== Create MCP tools for each domain
+
+Before creating agents, create the tools they'll use. You'll organize tools by domain, matching each sub-agent's responsibility.
+
+=== Account tools
+
+Account tools retrieve customer and transaction data with PII protection.
+
+. Navigate to your cluster in the link:https://cloud.redpanda.com[Redpanda Cloud Console^].
+. Go to *Agentic AI* > *Remote MCP*.
+. Click *Create MCP Server*.
+. Configure the server:
++
+* *Name*: `account-tools`
+* *Description*: `Customer account and transaction data retrieval`
+* *Resource Tier*: XSmall
+
+. Add the following tools. For each tool, select *Processor* from the component type dropdown, then click *Lint* to validate:
++
+[tabs]
+====
+get_customer_account::
++
+This mock tool returns account data with sensitive fields already protected. Card numbers only include the last 4 digits, while full names remain for verification. In production, implement similar protections in your data layer.
++
+[,yaml]
+----
+include::ai-agents:example$mcp-tools/processors/get_customer_account.yaml[]
+----
+
+get_transaction_details::
++
+This tool returns complete transaction details including merchant information, location, and timestamp. Notice how it returns structured data the fraud agent can analyze.
++
+[,yaml]
+----
+include::ai-agents:example$mcp-tools/processors/get_transaction_details.yaml[]
+----
+
+get_transaction_history::
++
+This tool returns aggregated spending patterns instead of raw transaction lists. This privacy-preserving approach gives fraud analysis what it needs (typical spending by category, location patterns) without exposing individual transaction details unnecessarily.
++
+[,yaml]
+----
+include::ai-agents:example$mcp-tools/processors/get_transaction_history.yaml[]
+----
+====
+
+. Click *Create MCP Server*.
+
+Wait for the server status to show *Running*.
+
+[NOTE]
+====
+This tutorial uses XSmall resource tier for all MCP servers because the mock tools run lightweight Bloblang transformations. Production deployments with external API calls require larger tiers based on throughput needs. See xref:ai-agents:mcp/remote/scale-resources.adoc[].
+====
+
+=== Fraud tools
+
+Fraud tools calculate risk scores and identify fraud indicators.
+
+. Click *Create MCP Server*.
+. Configure the server:
++
+* *Name*: `fraud-tools`
+* *Description*: `Fraud detection and risk scoring`
+* *Resource Tier*: XSmall
+
+. Add the following tools. For each tool, select *Processor* from the component type dropdown, then click *Lint* to validate:
++
+[tabs]
+====
+calculate_fraud_score::
++
+This tool implements multi-factor fraud scoring with location risk (0-35 for international/unusual cities), merchant risk (0-30 for reputation/fraud reports), amount risk (0-25 for deviation from averages), velocity risk (0-15 for rapid transactions), and category risk (0-20 for unusual spending categories). The tool returns both the total score and breakdown, allowing agents to explain their reasoning.
++
+[,yaml,role="no-placeholders"]
+----
+include::ai-agents:example$mcp-tools/processors/calculate_fraud_score.yaml[]
+----
+
+get_risk_indicators::
++
+This tool provides detailed fraud signals with severity levels. Each indicator includes a description that agents can use to explain findings to customers.
++
+[,yaml]
+----
+include::ai-agents:example$mcp-tools/processors/get_risk_indicators.yaml[]
+----
+====
+
+. Click *Create MCP Server*.
+
+Wait for the server status to show *Running*.
+
+=== Merchant tools
+
+Merchant tools verify business legitimacy and analyze merchant categories.
+
+. Click *Create MCP Server*.
+. Configure the server:
++
+* *Name*: `merchant-tools`
+* *Description*: `Merchant verification and category analysis`
+* *Resource Tier*: XSmall
+
+. Add the following tools. For each tool, select *Processor* from the component type dropdown, then click *Lint* to validate:
++
+[tabs]
+====
+verify_merchant::
++
+This tool returns reputation scores, fraud report counts, business verification status, and red flags. Notice how it includes common issues for legitimate merchants (like subscription billing problems) to help agents distinguish between fraud and merchant operational issues.
++
+[,yaml]
+----
+include::ai-agents:example$mcp-tools/processors/verify_merchant.yaml[]
+----
+
+get_merchant_category::
++
+This tool decodes MCC (Merchant Category Codes) and provides typical transaction ranges for each category. This helps identify mismatches (like a grocery store charging $2000).
++
+[,yaml]
+----
+include::ai-agents:example$mcp-tools/processors/get_merchant_category.yaml[]
+----
+====
+
+. Click *Create MCP Server*.
+
+Wait for the server status to show *Running*.
+
+=== Compliance tools
+
+Compliance tools handle audit logging and regulatory requirements.
+
+. Click *Create MCP Server*.
+. Configure the server:
++
+* *Name*: `compliance-tools`
+* *Description*: `Audit logging and regulatory compliance`
+* *Resource Tier*: XSmall
+
+. Add the following tools. For each tool, select *Processor* from the component type dropdown, then click *Lint* to validate:
++
+[tabs]
+====
+log_audit_event::
++
+This tool creates audit records for every investigation. In production, this would write to an immutable audit log. For this tutorial, it returns a confirmation with the audit ID.
++
+[,yaml]
+----
+include::ai-agents:example$mcp-tools/processors/log_audit_event.yaml[]
+----
+
+check_regulatory_requirements::
++
+This tool returns applicable regulations, customer rights, bank obligations, and required documentation for different dispute types. This ensures agents follow proper procedures for Regulation E, Fair Credit Billing Act, and card network rules.
++
+[,yaml]
+----
+include::ai-agents:example$mcp-tools/processors/check_regulatory_requirements.yaml[]
+----
+====
+
+. Click *Create MCP Server*.
+
+Wait for the server status to show *Running*. You now have four MCP servers with nine total tools, organized by domain.
+
+== Create the root agent with subagents
+
+The root agent orchestrates sub-agents and makes final recommendations. You'll configure the root agent first, then add four specialized sub-agents within the same form.
+
+[IMPORTANT]
+====
+Sub-agents inherit the LLM provider, model, resource tier, and max iterations from the root agent. This tutorial uses GPT-5 Mini and max iterations of 15 to optimize performance. Using slower models (GPT-5.2, Claude Sonnet 4.5) or high max iterations (50+) will cause sub-agents to execute slowly. Each sub-agent call could take 60-90 seconds instead of 10-15 seconds.
+====
+
+. Go to *Agentic AI* > *AI Agents*.
+. Click *Create Agent*.
+. Configure the root agent:
++
+* *Name*: `dispute-resolution-agent`
+* *Description*: `Orchestrates transaction dispute investigations`
+* *Resource Tier*: Large
+* *AI Gateway*: Select the gateway you configured
+* *Provider*: OpenAI
+* *Model*: GPT-5 Mini (fast, cost-effective for structured workflows)
+* *Max Iterations*: 15
+
+. In the *System Prompt* field, enter:
++
+[source,text]
+----
+include::ai-agents:example$agents/dispute-root-agent-prompt.txt[]
+----
+
+. Skip the *MCP Tools* section (the root agent uses A2A protocol to call sub-agents, not direct tools).
+
+. In the *Subagents* section, click *+ Add Subagent*.
+
+=== Add account agent subagent
+
+The account agent retrieves customer account and transaction data.
+
+. Configure the subagent:
++
+* *Name*: `account-agent`
+* *Description*: `Retrieves customer account and transaction data`
+
+. In the subagent's *System Prompt* field, enter:
++
+[source,text]
+----
+include::ai-agents:example$agents/account-agent-prompt.txt[]
+----
+
+. In the subagent's *MCP Tools* section, select `account-tools`.
+
+=== Add fraud agent subagent
+
+The fraud agent calculates fraud risk scores and identifies fraud indicators.
+
+. Click *+ Add Subagent* again.
+. Configure the subagent:
++
+* *Name*: `fraud-agent`
+* *Description*: `Calculates fraud risk scores and identifies fraud indicators`
+
+. In the subagent's *System Prompt* field, enter:
++
+[source,text]
+----
+include::ai-agents:example$agents/fraud-agent-prompt.txt[]
+----
+
+. In the subagent's *MCP Tools* section, select `fraud-tools`.
+
+=== Add merchant agent subagent
+
+The merchant agent verifies merchant legitimacy and reputation.
+
+. Click *+ Add Subagent* again.
+. Configure the subagent:
++
+* *Name*: `merchant-agent`
+* *Description*: `Verifies merchant legitimacy and reputation`
+
+. In the subagent's *System Prompt* field, enter:
++
+[source,text]
+----
+include::ai-agents:example$agents/merchant-agent-prompt.txt[]
+----
+
+. In the subagent's *MCP Tools* section, select `merchant-tools`.
+
+=== Add compliance agent subagent
+
+The compliance agent handles audit logging and regulatory requirements.
+
+. Click *+ Add Subagent* again.
+. Configure the subagent:
++
+* *Name*: `compliance-agent`
+* *Description*: `Handles audit logging and regulatory requirements`
+
+. In the subagent's *System Prompt* field, enter:
++
+[source,text]
+----
+include::ai-agents:example$agents/compliance-agent-prompt.txt[]
+----
+
+. In the subagent's *MCP Tools* section, select `compliance-tools`.
+
+. Click *Create Agent* to create the root agent with all four subagents.
+
+Wait for the agent status to show *Running*.
+
+== Test investigation scenarios
+
+Test the multi-agent system with realistic dispute scenarios. Each scenario demonstrates different patterns: clear fraud, legitimate transactions, escalation cases, and edge cases.
+
+. Go to *Agentic AI* > *AI Agents*.
+. Click on `dispute-resolution-agent`.
+. Open the *Inspector* tab.
+
+=== Clear fraud case
+
+Test how the system handles obvious fraud.
+
+Enter this query:
+
+[source,text]
+----
+I see a $1,847.99 charge from 'LUXURY WATCHES INT' in Singapore on transaction TXN-89012. I've never been to Singapore and don't buy watches. My customer ID is CUST-1001. This is fraud.
+----
+
+Watch the conversation panel as the investigation progresses. You'll see the root agent call each sub-agent in sequence. After all sub-agents complete (30-90 seconds), the agent sends its final response to the chat.
+
+The final response should clearly state the transaction is fraudulent, summarize findings from each sub-agent, and provide a list of actions the agent is going to take.
+
+This flow demonstrates multi-agent coordination for high-confidence fraud decisions with realistic banking communication.
+
+=== Escalation required
+
+Test how the system handles ambiguous cases requiring human review.
+
+Click *Clear context*. Then enter:
+
+[source,text]
+----
+I see three $29.99 charges from 'EXAMPLE STREAMING' last month, but I only subscribed once. My customer ID is CUST-1002 and one of the transactions is TXN-89014.
+----
+
+Watch the conversation panel as the agent investigates. After the sub-agent calls complete, the agent should send a response with a realistic escalation.
+
+This demonstrates the escalation pattern when evidence is ambiguous and requires human review.
+
+== Monitor multi-agent execution
+
+*Inspector* shows real-time progress in the conversation panel, but *Transcripts* provides detailed post-execution analysis with timing, token usage, and full trace hierarchy.
+
+. In the left navigation, click *Transcripts*.
+. Select a recent transcript from your fraud case test.
+
+In the trace hierarchy, you'll see:
+
+* Root agent invocation (top-level span)
+* Multiple `invoke_agent` spans for each sub-agent call
+* Individual LLM calls within each agent
+* MCP tool invocations within sub-agents
+
+In the summary panel, check:
+
+* *Duration*: Total investigation time (typically 5-15 seconds)
+* *Token Usage*: Cost tracking across all agents
+* *LLM Calls*: How many reasoning steps were needed
+
+This visibility helps you:
+
+* Verify sub-agents are being called in the right order
+* Identify slow sub-agents that need optimization
+* Track costs per investigation for budgeting
+
+For detailed trace structure, see xref:ai-agents:observability/concepts.adoc#agent-trace-hierarchy[Agent trace hierarchy].
+
+== Integrate with streaming pipeline
+
+Process disputes automatically from transaction streams. When transactions meet certain risk thresholds, the pipeline invokes the dispute agent for immediate investigation.
+
+=== Create a secret for the agent card URL
+
+The pipeline needs the agent card URL to invoke the dispute resolution agent.
+
+. Go to *Agentic AI* > *AI Agents*.
+. Click on `dispute-resolution-agent`.
+. Open the *A2A* tab.
+. Copy the agent URL displayed at the top.
+. Go to *Connect* > *Secrets*.
+. Click *Create Secret*.
+. Create the secret:
++
+* *Name*: `DISPUTE_AGENT_CARD_URL`
+* *Value*: Paste the agent URL and append `/.well-known/agent-card.json` to the end
++
+For example, if the agent URL is:
++
+----
+https://abc123.ai-agents.def456.cloud.redpanda.com
+----
++
+The secret value should be:
++
+----
+https://abc123.ai-agents.def456.cloud.redpanda.com/.well-known/agent-card.json
+----
+
+. Click *Create Secret*.
+
+=== Create topics for transaction data
+
+Create the topics the pipeline will use for input and output.
+
+. Go to *Topics* in the Redpanda Cloud Console.
+. Click *Create Topic*.
+. Create the input topic:
++
+* *Name*: `bank.transactions`
+* *Partitions*: 3
+* *Replication factor*: 3
+
+. Click *Create Topic* again.
+. Create the output topic:
++
+* *Name*: `bank.dispute_results`
+* *Partitions*: 3
+* *Replication factor*: 3
+
+=== Create a SASL user for topic access
+
+The pipeline needs SASL credentials to read from and write to Redpanda topics.
+
+. Go to *Security* > *Users* in the Redpanda Cloud Console.
+. Click *Create User*.
+. Configure the user:
++
+* *Username*: `dispute-pipeline-user`
+* *Password*: Generate a secure password
+* *Mechanism*: SCRAM-SHA-256
+
+. Save the username and password. You'll need them for the pipeline secrets.
+
+. Click *Create*.
+
+. Click *Create ACLs* to grant permissions.
+
+. Click the *Clusters* tab for cluster permissions and select *Allow all*.
+
+. Click *Add rule* to add another ACL.
+
+. Click the *Topics* tab for topic permissions:
++
+* *Principal*: `dispute-pipeline-user`
+* *Host*: Allow all hosts (`*`)
+* *Resource Type*: Topic
+* *Selector*: Topic names starting with `bank.`
+* *Operations*: Allow all
+
+. Click *Add rule* to add another ACL.
+
+. Click the *Consumer groups* tab for consumer group permissions and select *Allow all*.
+
+. Click *Create*.
+
+=== Create secrets for SASL authentication
+
+The pipeline needs SASL credentials stored as secrets to authenticate with Redpanda topics.
+
+. Go to *Connect* > *Secrets* in the Redpanda Cloud Console (if not already there).
+. Click *Create Secret*.
+. Create two secrets with these values:
++
+* *Name*: `DISPUTE_PIPELINE_USERNAME`, *Value*: `dispute-pipeline-user`
+* *Name*: `DISPUTE_PIPELINE_PASSWORD`, *Value*: The password you created for `dispute-pipeline-user`
+
+=== Create the pipeline
+
+. Go to *Connect* in the Redpanda Cloud Console.
+. Click *Create a pipeline*.
+. In the numbered steps, click *4 Add permissions*.
+. Select *Service Account*.
++
+The Service Account is required for the `a2a_message` processor to authenticate with and invoke the dispute resolution agent. Without this permission, the pipeline will fail when attempting to call the agent.
+
+. Click *Next*.
+. Name the pipeline `dispute-pipeline`.
+. Paste this configuration and click *Create Pipeline*:
++
+[,yaml,role="no-placeholders"]
+----
+include::ai-agents:example$pipelines/dispute-pipeline.yaml[]
+----
+
+This pipeline:
+
+* Consumes transactions from `bank.transactions` topic
+* Filters for high-value transactions (>$500) or pre-flagged transactions
+* Calculates preliminary risk score based on location, amount, velocity, and category
+* Routes transactions with risk score ≥40 to the dispute-resolution-agent via A2A
+* Outputs investigation results to `bank.dispute_results` topic
+
+=== Test the pipeline
+
+. Authenticate with your Redpanda Cloud cluster:
++
+[,bash]
+----
+rpk cloud login
+----
+
+. Create a test transaction that will trigger the agent investigation:
++
+[,bash]
+----
+echo '{
+  "transaction_id": "TXN-89012",
+  "customer_id": "CUST-1001",
+  "amount": 1847.99,
+  "currency": "USD",
+  "merchant": {
+    "name": "LUXURY WATCHES INT",
+    "category": "jewelry",
+    "country": "Singapore",
+    "mcc": "5944",
+    "city": "Singapore"
+  },
+  "card": {
+    "last_four": "4532",
+    "billing_country": "USA"
+  },
+  "transaction_date": "2026-01-21T10:00:00Z",
+  "recent_transaction_count": 2
+}' | rpk topic produce bank.transactions
+----
++
+This transaction will trigger agent investigation because:
++
+* International transaction (Singapore vs USA): +40 risk points
+* Amount is greater than $1000: +30 risk points
+* Jewelry category (MCC 5944): +20 risk points
+* **Total preliminary risk score: 90** (well above the 40 threshold)
+
+. Wait a minute for the pipeline to process the transaction. You can monitor the progress in *Transcripts*. While the agents investigate, a new transcript for `dispute-resolution-agent` will appear. Until the investigation completes, the transcript will show *awaiting root* status.
+
+. Consume the results:
++
+[,bash]
+----
+rpk topic consume bank.dispute_results --offset end -n 1
+----
++
+You'll see the complete transaction with agent investigation results:
++
+[,json,role="no-wrap"]
+----
+{
+    "agent_investigation": {
+        "confidence": "high",
+        "fraud_score": 91,
+        "reasoning": "Transaction is an international purchase with no recent international activity, from a merchant with strong fraud indicators, and the amount is a large outlier for this account; immediate block and investigation recommended.",
+        "recommendation": "block_and_investigate"
+    },
+    "alert_level": "critical",
+    "amount": 1847.99,
+    "card": {
+        "billing_country": "USA",
+        "last_four": "4532"
+    },
+    "currency": "USD",
+    "customer_id": "CUST-1001",
+    "final_decision": "blocked",
+    "merchant": {
+        "category": "jewelry",
+        "city": "Singapore",
+        "country": "Singapore",
+        "mcc": "5944",
+        "name": "LUXURY WATCHES INT"
+    },
+    "pipeline_metadata": {
+        "agent_invoked": true,
+        "customer_id": "CUST-1001",
+        "processed_at": "2026-01-27T14:29:19.436Z",
+        "transaction_id": "TXN-89012"
+    },
+    "preliminary_risk_score": 90,
+    "recent_transaction_count": 2,
+    "risk_level": "high",
+    "transaction_date": "2026-01-21T10:00:00Z",
+    "transaction_id": "TXN-89012"
+}
+----
+
+This output contains everything downstream systems need such as fraud monitoring, customer alerts, and audit logging.
+
+The pipeline uses a two-stage filter:
+
+- Only processes transactions with `amount > 500` or `preliminary_flag == true`
+- Only sends transactions to the agent if `preliminary_risk_score >= 40`
+
+Transactions that pass the first filter but not the second (for example, a $600 domestic transaction with low risk) will appear in the output with:
+
+* `final_decision: "low_risk_no_investigation"`
+* `alert_level: "low"`
+* No `agent_investigation` field
+
+Only transactions meeting the risk threshold invoke the dispute resolution agent.
+
+=== Trace pipeline execution to agent transcripts
+
+Use the pipeline metadata timestamp to find the corresponding agent execution in the *Transcripts* view.
+
+. Note the `processed_at` timestamp from the pipeline output (for example: `2026-01-26T18:30:45.000Z`).
+. Go to *Agentic AI* > *Transcripts*.
+. Find transcripts for `dispute-resolution-agent` that match your timestamp.
+
+[NOTE]
+====
+The search function does not search through prompt content or attribute values. Use the timestamp to narrow down the time window, then manually review transcripts from that period.
+====
+
+In the transcript details, you'll see:
+
+* The full prompt sent to the agent (including transaction ID and details)
+* Each sub-agent invocation (account-agent, fraud-agent, merchant-agent, compliance-agent)
+* Token usage and execution time for the investigation
+* The complete JSON response returned to the pipeline
+
+== Troubleshoot
+
+For comprehensive troubleshooting guidance, see xref:ai-agents:agents/troubleshooting.adoc[].
+
+=== Test with mock data
+
+The mock tools in this tutorial use hardcoded customer and transaction IDs for testing:
+
+* Customer IDs: `CUST-1001`, `CUST-1002`, `CUST-1003`
+* Transaction IDs: `TXN-89012`, `TXN-89013`, `TXN-89014`, `TXN-89015`
+
+Use these documented test IDs when testing in *Inspector* or the pipeline. The sub-agents' mock tools require valid IDs to return transaction details, account history, and fraud indicators. Using other IDs (like `TXN-TEST-001` or `CUST-9999`) will cause the tools to return "not found" errors, and the root agent won't be able to complete its investigation.
+
+For production deployments, replace the mock tools with API calls to your account, fraud detection, merchant verification, and compliance systems.
+
+== Next steps
+
+* xref:ai-agents:agents/architecture-patterns.adoc[]
+* xref:ai-agents:agents/integration-overview.adoc[]
+* xref:ai-agents:agents/pipeline-integration-patterns.adoc[]
+* xref:ai-agents:agents/monitor-agents.adoc[]
+* xref:ai-agents:mcp/remote/best-practices.adoc[]

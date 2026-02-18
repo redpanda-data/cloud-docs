@@ -1,0 +1,101 @@
+= Monitor Agent Activity
+:description: Monitor agent execution, analyze conversation history, track token usage, and debug issues using Inspector, Transcripts, and agent data topics.
+:page-topic-type: how-to
+:personas: agent_developer, platform_admin
+:learning-objective-1: pass:q[Verify agent behavior using the *Inspector* tab]
+:learning-objective-2: Track token usage and performance metrics
+:learning-objective-3: pass:q[Debug agent execution using *Transcripts*]
+
+Use monitoring to track agent performance, analyze conversation patterns, debug execution issues, and optimize token costs.
+
+include::ai-agents:partial$byoc-aws-requirement.adoc[]
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
+
+For conceptual background on traces and observability, see xref:ai-agents:observability/concepts.adoc[].
+
+== Prerequisites
+
+You must have a running agent. If you do not have one, see xref:ai-agents:agents/quickstart.adoc[].
+
+== Debug agent execution with Transcripts
+
+The *Transcripts* view shows execution traces with detailed timing, errors, and performance metrics. Use this view to debug issues, verify agent behavior, and monitor performance in real-time.
+
+:context: agent
+include::ai-agents:partial$transcripts-ui-guide.adoc[]
+
+=== Check agent health
+
+Use the *Transcripts* view to verify your agent is healthy. Look for consistent green bars in the timeline, which indicate successful executions. Duration should stay within your expected range, while token usage remains stable without unexpected growth.
+
+Several warning signs indicate problems. Red bars in the timeline mean errors or failures that need investigation. When duration increases over time, your context window may be growing or tool calls could be slowing down. Many LLM calls for simple requests often signal that the agent is stuck in loops or making unnecessary iterations. If you see missing transcripts, the agent may be stopped or encountering deployment issues.
+
+Pay attention to patterns across multiple executions. When all recent transcripts show errors, start by checking agent status, MCP server connectivity, and system prompt configuration. A spiky timeline that alternates between success and error typically points to intermittent tool failures or external API issues. If duration increases steadily over a session, your context window is likely filling up. Clear the conversation history to reset it. High token usage combined with relatively few LLM calls usually means tool results are large or your system prompts are verbose.
+
+=== Debug with Transcripts
+
+Use *Transcripts* to diagnose specific issues:
+
+If the agent is not responding:
+
+. Check the timeline for recent transcripts. If none appear, the agent may be stopped.
+. Verify agent status in the main *AI Agents* view.
+. Look for error transcripts with deployment or initialization failures.
+
+If the agent fails during execution:
+
+. Select the failed transcript (red bar in timeline).
+. Expand the trace hierarchy to find the tool invocation span.
+. Check the span details for error messages.
+. Cross-reference with MCP server status.
+
+If performance is slow:
+
+. Compare duration across multiple transcripts in the summary panel.
+. Look for specific spans with long durations (wide bars in trace list).
+. Check if LLM calls are taking longer than expected.
+. Verify tool execution time by examining nested spans.
+
+=== Track token usage and costs
+
+View token consumption in the *Summary* panel when you select a transcript. The breakdown shows input tokens (everything sent to the LLM including system prompt, conversation history, and tool results), output tokens (what the LLM generates in agent responses), and total tokens as the sum of both.
+
+Calculate cost per request:
+
+----
+Cost = (input_tokens x input_price) + (output_tokens x output_price)
+----
+
+Example: GPT-5.2 with 4,302 input tokens and 1,340 output tokens at $0.00000175 per input token and $0.000014 per output token costs $0.026 per request.
+
+For cost optimization strategies, see xref:ai-agents:agents/concepts.adoc#cost-calculation[Cost calculation].
+
+== Test agent behavior with Inspector
+
+The *Inspector* tab provides real-time conversation testing. Use it to test agent responses interactively and verify behavior before deploying changes.
+
+=== Access Inspector
+
+. Navigate to *Agentic AI* > *AI Agents* in the Redpanda Cloud Console.
+. Click your agent name.
+. Open the *Inspector* tab.
+. Enter test queries and review responses.
+. Check the conversation panel to see tool calls.
+. Start a new session to test fresh conversations or click *Clear context* to reset history.
+
+=== Testing best practices
+
+Test your agents systematically by exploring edge cases and potential failure scenarios. Begin with boundary testing. Requests at the edge of agent capabilities verify that scope enforcement works correctly. Error handling becomes clear when you request unavailable data and observe whether the agent degrades gracefully. Even with proper system prompt constraints, testing confirms that your agent responds appropriately to edge cases.
+
+Monitor iteration counts during complex requests to ensure they complete within your configured limits. Ambiguous or vague queries reveal whether the agent asks clarifying questions or makes risky assumptions. Throughout testing, track token usage per request to estimate costs and identify which query patterns consume the most resources.
+
+== Next steps
+
+* xref:ai-agents:observability/concepts.adoc[]
+* xref:ai-agents:agents/troubleshooting.adoc[]
+* xref:ai-agents:agents/concepts.adoc[]

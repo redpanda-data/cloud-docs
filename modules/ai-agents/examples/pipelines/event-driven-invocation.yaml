@@ -1,0 +1,30 @@
+# Event-driven agent invocation pipeline
+# Invokes an agent for each event in a stream
+input:
+  redpanda:
+    seed_brokers: ["${REDPANDA_BROKERS}"]
+    topics: [transactions]
+    consumer_group: fraud-detector
+    tls:
+      enabled: true
+    sasl:
+      - mechanism: SCRAM-SHA-256
+        username: "${REDPANDA_USERNAME}"
+        password: "${REDPANDA_PASSWORD}"
+
+pipeline:
+  processors:
+    - a2a_message:
+        agent_card_url: "${AGENT_CARD_URL}"
+        prompt: "Analyze this transaction: ${!content()}"
+
+output:
+  redpanda:
+    seed_brokers: ["${REDPANDA_BROKERS}"]
+    topic: fraud-alerts
+    tls:
+      enabled: true
+    sasl:
+      - mechanism: SCRAM-SHA-256
+        username: "${REDPANDA_USERNAME}"
+        password: "${REDPANDA_PASSWORD}"

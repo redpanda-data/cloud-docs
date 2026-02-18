@@ -1,0 +1,38 @@
+label: get_shipping_info
+
+processors:
+  - mapping: |
+      let order_id = this.order_id
+      root = if $order_id == "ORD-12345" {
+        {
+          "order_id": $order_id,
+          "tracking_number": "FX1234567890",
+          "carrier": "Example Shipping",
+          "status": "in_transit",
+          "estimated_delivery": "2025-01-17",
+          "last_location": "San Francisco Distribution Center",
+          "last_update": "2025-01-15T14:30:00Z"
+        }
+      } else if $order_id == "ORD-67890" {
+        {
+          "order_id": $order_id,
+          "error": true,
+          "message": "Order has not shipped yet"
+        }
+      } else {
+        {
+          "order_id": $order_id,
+          "error": true,
+          "message": "No shipping information available"
+        }
+      }
+
+meta:
+  mcp:
+    enabled: true
+    description: "Get tracking and shipping information. ORD-12345 has shipping info, ORD-67890 has not shipped yet."
+    properties:
+      - name: order_id
+        type: string
+        description: "The order ID to track"
+        required: true

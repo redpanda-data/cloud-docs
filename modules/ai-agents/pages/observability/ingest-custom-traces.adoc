@@ -1,0 +1,620 @@
+= Ingest OpenTelemetry Traces from Custom Agents
+:description: Configure a Redpanda Connect pipeline to ingest OpenTelemetry traces from custom agents into Redpanda's immutable log for unified governance and observability.
+:page-topic-type: how-to
+:learning-objective-1: Configure and deploy a Redpanda Connect pipeline to receive OpenTelemetry traces from custom agents via HTTP and publish them to `redpanda.otel_traces`
+:learning-objective-2: Validate trace data format and compatibility with existing MCP server traces
+:learning-objective-3: Secure the ingestion endpoint using authentication mechanisms
+
+include::ai-agents:partial$ai-gateway-byoc-note.adoc[]
+
+You can extend Redpanda's transcript observability to custom agents built with frameworks like LangChain or instrumented with OpenTelemetry SDKs. By ingesting traces from external applications into the `redpanda.otel_traces` topic, you gain unified visibility across all agent executions, from Redpanda's declarative agents, Remote MCP servers, to your own custom implementations.
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
+
+== Prerequisites
+
+* A BYOC cluster
+* Ability to manage secrets in Redpanda Cloud
+* The latest version of xref:manage:rpk/rpk-install.adoc[`rpk`] installed
+* Custom agent or application instrumented with OpenTelemetry SDK
+* Basic understanding of the https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-agent-spans/[OpenTelemetry span format^] and https://opentelemetry.io/docs/specs/otlp/[OpenTelemetry Protocol (OTLP)^]
+
+== Quickstart for LangChain users
+
+If you're using LangChain with OpenTelemetry tracing, you can send traces to Redpanda's `redpanda.otel_traces` glossterm:topic[] to view them in the Transcripts view.
+
+. Configure LangChain's OpenTelemetry integration by following the https://docs.langchain.com/langsmith/trace-with-opentelemetry[LangChain documentation^]. 
+
+. Deploy a Redpanda Connect pipeline using the `otlp_http` input to receive OTLP traces over HTTP. Create the pipeline in the **Connect** page of your cluster, or see the <<configure-the-ingestion-pipeline,Configure the ingestion pipeline>> section below for a sample configuration.
+
+. Configure your OTEL exporter to send traces to your Redpanda Connect pipeline using environment variables:
++
+[,bash]
+----
+# Configure LangChain OTEL integration
+export LANGSMITH_OTEL_ENABLED=true
+export LANGSMITH_TRACING=true
+
+# Send traces to Redpanda Connect pipeline (use your pipeline URL)
+export OTEL_EXPORTER_OTLP_ENDPOINT="https://<pipeline-id>.pipelines.<cluster-id>.clusters.rdpa.co"
+export OTEL_EXPORTER_OTLP_HEADERS="Authorization=Bearer <auth-token>"
+----
+
+By default, traces are sent to both LangSmith and your Redpanda Connect pipeline. If you want to send traces only to Redpanda (not LangSmith), set:
+
+[,bash]
+----
+export LANGSMITH_OTEL_ONLY="true"
+----
+
+Your LangChain application will send traces to the `redpanda.otel_traces` topic, making them visible in the Transcripts view in your cluster  alongside Remote MCP server and declarative agent traces.
+
+For non-LangChain applications or custom instrumentation, continue with the sections below.
+
+== About custom trace ingestion
+
+Custom agents are applications with OpenTelemetry instrumentation that operate independently of Redpanda's Remote MCP servers or declarative agents (such as LangChain, CrewAI, or manually instrumented applications).
+
+When these agents send traces to `redpanda.otel_traces`, you gain unified observability alongside Remote MCP server and declarative agent traces. See xref:ai-agents:observability/concepts.adoc#cross-service-transcripts[Cross-service transcripts] for details on how traces correlate across services.
+
+=== Trace format requirements
+
+Custom agents must emit traces in OTLP format. The xref:develop:connect/components/inputs/otlp_http.adoc[`otlp_http`] input accepts both OTLP Protobuf (`application/x-protobuf`) and JSON (`application/json`) payloads. For <<use-grpc,gRPC transport>>, use the xref:develop:connect/components/inputs/otlp_grpc.adoc[`otlp_grpc`] input.
+
+Each trace must follow the OTLP specification with these required fields:
+
+[cols="1,3", options="header"]
+|===
+| Field | Description
+
+| `traceId`
+| Hex-encoded unique identifier for the entire trace
+
+| `spanId`
+| Hex-encoded unique identifier for this span
+
+| `name`
+| Descriptive operation name
+
+| `startTimeUnixNano` and `endTimeUnixNano`
+| Timing information in nanoseconds
+
+| `instrumentationScope`
+| Identifies the library that created the span
+
+| `status`
+| Operation status with code (0 = UNSET, 1 = OK, 2 = ERROR)
+|===
+
+Optional but recommended fields:
+
+- `parentSpanId` for hierarchical traces
+- `attributes` for contextual information
+
+For complete trace structure details, see xref:ai-agents:observability/concepts.adoc#understand-the-transcript-structure[Understand the transcript structure].
+
+== Configure the ingestion pipeline
+
+Create a Redpanda Connect pipeline that receives OTLP traces and publishes them to the `redpanda.otel_traces` topic. Choose HTTP or gRPC transport based on your agent's requirements.
+
+=== Create the pipeline configuration
+
+Create a pipeline configuration file that defines the OTLP ingestion endpoint.
+
+[tabs]
+====
+HTTP::
++
+--
+The `otlp_http` input component:
+
+* Exposes an OpenTelemetry Collector HTTP receiver
+* Accepts traces at the standard `/v1/traces` endpoint
+* Converts incoming OTLP data into individual Redpanda OTEL v1 Protobuf messages
+
+The following example shows a minimal pipeline configuration. Redpanda Cloud automatically injects authentication handling, so you don't need to configure `auth_token` in the input.
+
+[,yaml]
+----
+input:
+  otlp_http: {}
+
+output:
+  redpanda:
+    seed_brokers:
+      - "${PRIVATE_REDPANDA_BROKERS}"
+    tls:
+      enabled: ${PRIVATE_REDPANDA_TLS_ENABLED}
+    sasl:
+      - mechanism: "REDPANDA_CLOUD_SERVICE_ACCOUNT"
+    topic: "redpanda.otel_traces"
+----
+--
+
+gRPC::
++
+--
+The `otlp_grpc` input component:
+
+* Exposes an OpenTelemetry Collector gRPC receiver
+* Accepts traces via the OTLP gRPC protocol
+* Converts incoming OTLP data into individual Redpanda OTEL v1 Protobuf messages
+
+The following example shows a minimal pipeline configuration. Redpanda Cloud automatically injects authentication handling.
+
+[,yaml]
+----
+input:
+  otlp_grpc: {}
+
+output:
+  redpanda:
+    seed_brokers:
+      - "${PRIVATE_REDPANDA_BROKERS}"
+    tls:
+      enabled: ${PRIVATE_REDPANDA_TLS_ENABLED}
+    sasl:
+      - mechanism: "REDPANDA_CLOUD_SERVICE_ACCOUNT"
+    topic: "redpanda.otel_traces"
+----
+
+NOTE: Clients must include the authentication token in gRPC metadata as `authorization: Bearer <token>`.
+--
+====
+
+The OTLP input automatically handles format conversion, so no processors are needed for basic trace ingestion. Each span becomes a separate message in the `redpanda.otel_traces` topic.
+
+=== Deploy the pipeline in Redpanda Cloud
+
+. In the *Connect* page of your Redpanda Cloud cluster, click *Create Pipeline*.
+. For the input, select the *otlp_http* (or *otlp_grpc*) component.
+. Skip to *Add a topic* and select `redpanda.otel_traces` from the list of existing topics. Leave the default advanced settings.
+. In the *Add permissions* step, create a service account with write access to the `redpanda.otel_traces` topic.
+. In the *Create pipeline* step, enter a name for your pipeline and paste the configuration. Redpanda Cloud automatically handles authentication for incoming requests.
+
+== Send traces from your custom agent
+
+Configure your custom agent to send OpenTelemetry traces to the pipeline endpoint. After deploying the pipeline, you can find its URL in the Redpanda Cloud UI on the pipeline details page.
+
+[cols="1,3", options="header"]
+|===
+| Transport | URL Format
+
+| HTTP
+| `+https://<pipeline-id>.pipelines.<cluster-id>.clusters.rdpa.co/v1/traces+`
+
+| gRPC
+| `<pipeline-id>.pipelines.<cluster-id>.clusters.rdpa.co:443`
+|===
+
+=== Authenticate to the pipeline
+
+The OTLP pipeline uses the same authentication mechanism as the Redpanda Cloud API. Obtain an access token using your service account credentials as described in xref:redpanda-cloud:security:cloud-authentication.adoc#authenticate-to-the-cloud-api[Authenticate to the Cloud API].
+
+Include the token in your requests:
+
+* HTTP: Set the `Authorization` header to `Bearer <token>`
+* gRPC: Set the `authorization` metadata field to `Bearer <token>`
+
+=== Configure your OTEL exporter
+
+Install the OpenTelemetry SDK for your language and configure the OTLP exporter to target your Redpanda Connect pipeline endpoint.
+
+The exporter configuration requires:
+
+* Endpoint: Your pipeline's URL (the SDK adds `/v1/traces` automatically for HTTP)
+* Headers: Authorization header with your bearer token
+* Protocol: HTTP to match the `otlp_http` input (or gRPC for `otlp_grpc`)
+
+[tabs]
+======
+HTTP::
++
+--
+.View Python example
+[%collapsible]
+====
+[,python]
+----
+from opentelemetry import trace
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.sdk.resources import Resource
+
+# Configure resource attributes to identify your agent
+resource = Resource(attributes={
+    "service.name": "my-custom-agent",
+    "service.version": "1.0.0"
+})
+
+# Configure the OTLP HTTP exporter
+exporter = OTLPSpanExporter(
+    endpoint="https://<pipeline-id>.pipelines.<cluster-id>.clusters.rdpa.co/v1/traces",
+    headers={"Authorization": "Bearer YOUR_TOKEN"}
+)
+
+# Set up tracing with batch processing
+provider = TracerProvider(resource=resource)
+processor = BatchSpanProcessor(exporter)
+provider.add_span_processor(processor)
+trace.set_tracer_provider(provider)
+
+# Use the tracer with GenAI semantic conventions
+tracer = trace.get_tracer(__name__)
+with tracer.start_as_current_span(
+    "invoke_agent my-assistant",
+    kind=trace.SpanKind.INTERNAL
+) as span:
+    # Set GenAI semantic convention attributes
+    span.set_attribute("gen_ai.operation.name", "invoke_agent")
+    span.set_attribute("gen_ai.agent.name", "my-assistant")
+    span.set_attribute("gen_ai.provider.name", "openai")
+    span.set_attribute("gen_ai.request.model", "gpt-4")
+
+    # Your agent logic here
+    result = process_request()
+
+    # Set token usage if available
+    span.set_attribute("gen_ai.usage.input_tokens", 150)
+    span.set_attribute("gen_ai.usage.output_tokens", 75)
+----
+====
+
+.View Node.js example
+[%collapsible]
+====
+[,javascript]
+----
+const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
+const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-http');
+const { BatchSpanProcessor } = require('@opentelemetry/sdk-trace-base');
+const { Resource } = require('@opentelemetry/resources');
+const { trace, SpanKind } = require('@opentelemetry/api');
+
+// Configure resource
+const resource = new Resource({
+  'service.name': 'my-custom-agent',
+  'service.version': '1.0.0'
+});
+
+// Configure OTLP HTTP exporter
+const exporter = new OTLPTraceExporter({
+  url: 'https://<pipeline-id>.pipelines.<cluster-id>.clusters.rdpa.co/v1/traces',
+  headers: {
+    'Authorization': 'Bearer YOUR_TOKEN'
+  }
+});
+
+// Set up provider
+const provider = new NodeTracerProvider({ resource });
+provider.addSpanProcessor(new BatchSpanProcessor(exporter));
+provider.register();
+
+// Use the tracer with GenAI semantic conventions
+const tracer = trace.getTracer('my-agent');
+const span = tracer.startSpan('invoke_agent my-assistant', {
+  kind: SpanKind.INTERNAL
+});
+
+// Set GenAI semantic convention attributes
+span.setAttribute('gen_ai.operation.name', 'invoke_agent');
+span.setAttribute('gen_ai.agent.name', 'my-assistant');
+span.setAttribute('gen_ai.provider.name', 'openai');
+span.setAttribute('gen_ai.request.model', 'gpt-4');
+
+// Your agent logic
+processRequest().then(result => {
+  // Set token usage if available
+  span.setAttribute('gen_ai.usage.input_tokens', 150);
+  span.setAttribute('gen_ai.usage.output_tokens', 75);
+  span.end();
+});
+----
+====
+
+.View Go example
+[%collapsible]
+====
+[,go]
+----
+package main
+
+import (
+    "context"
+    "log"
+
+    "go.opentelemetry.io/otel"
+    "go.opentelemetry.io/otel/attribute"
+    "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+    "go.opentelemetry.io/otel/sdk/resource"
+    sdktrace "go.opentelemetry.io/otel/sdk/trace"
+    semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
+    "go.opentelemetry.io/otel/trace"
+)
+
+func main() {
+    ctx := context.Background()
+
+    // Configure OTLP HTTP exporter
+    exporter, err := otlptracehttp.New(ctx,
+        otlptracehttp.WithEndpoint("<pipeline-id>.pipelines.<cluster-id>.clusters.rdpa.co"),
+        otlptracehttp.WithHeaders(map[string]string{
+            "Authorization": "Bearer YOUR_TOKEN",
+        }),
+    )
+    if err != nil {
+        log.Fatalf("Failed to create exporter: %v", err)
+    }
+
+    // Configure resource
+    res, _ := resource.New(ctx,
+        resource.WithAttributes(
+            semconv.ServiceName("my-custom-agent"),
+            semconv.ServiceVersion("1.0.0"),
+        ),
+    )
+
+    // Set up tracer provider
+    tp := sdktrace.NewTracerProvider(
+        sdktrace.WithBatcher(exporter),
+        sdktrace.WithResource(res),
+    )
+    defer tp.Shutdown(ctx)
+    otel.SetTracerProvider(tp)
+
+    tracer := tp.Tracer("my-agent")
+
+    // Create span with GenAI semantic conventions
+    _, span := tracer.Start(ctx, "invoke_agent my-assistant",
+        trace.WithSpanKind(trace.SpanKindInternal),
+    )
+    span.SetAttributes(
+        attribute.String("gen_ai.operation.name", "invoke_agent"),
+        attribute.String("gen_ai.agent.name", "my-assistant"),
+        attribute.String("gen_ai.provider.name", "openai"),
+        attribute.String("gen_ai.request.model", "gpt-4"),
+        attribute.Int("gen_ai.usage.input_tokens", 150),
+        attribute.Int("gen_ai.usage.output_tokens", 75),
+    )
+    span.End()
+
+    tp.ForceFlush(ctx)
+}
+----
+====
+--
+
+gRPC::
++
+--
+.View Python example
+[%collapsible]
+====
+[,python]
+----
+from opentelemetry import trace
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.sdk.resources import Resource
+
+resource = Resource(attributes={
+    "service.name": "my-custom-agent",
+    "service.version": "1.0.0"
+})
+
+# gRPC endpoint without https:// prefix
+exporter = OTLPSpanExporter(
+    endpoint="<pipeline-id>.pipelines.<cluster-id>.clusters.rdpa.co:443",
+    headers={"authorization": "Bearer YOUR_TOKEN"}
+)
+
+provider = TracerProvider(resource=resource)
+provider.add_span_processor(BatchSpanProcessor(exporter))
+trace.set_tracer_provider(provider)
+----
+====
+
+.View Node.js example
+[%collapsible]
+====
+[,javascript]
+----
+const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
+const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-grpc');
+const { BatchSpanProcessor } = require('@opentelemetry/sdk-trace-base');
+const { Resource } = require('@opentelemetry/resources');
+
+const resource = new Resource({
+  'service.name': 'my-custom-agent',
+  'service.version': '1.0.0'
+});
+
+// gRPC exporter with TLS
+const exporter = new OTLPTraceExporter({
+  url: 'https://<pipeline-id>.pipelines.<cluster-id>.clusters.rdpa.co:443',
+  headers: {
+    'authorization': 'Bearer YOUR_TOKEN'
+  }
+});
+
+const provider = new NodeTracerProvider({ resource });
+provider.addSpanProcessor(new BatchSpanProcessor(exporter));
+provider.register();
+----
+====
+
+.View Go example
+[%collapsible]
+====
+[,go]
+----
+package main
+
+import (
+    "context"
+
+    "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+    "google.golang.org/grpc"
+    "google.golang.org/grpc/credentials"
+)
+
+func createGRPCExporter(ctx context.Context) (*otlptracegrpc.Exporter, error) {
+    return otlptracegrpc.New(ctx,
+        otlptracegrpc.WithEndpoint("<pipeline-id>.pipelines.<cluster-id>.clusters.rdpa.co:443"),
+        otlptracegrpc.WithDialOption(grpc.WithTransportCredentials(credentials.NewTLS(nil))),
+        otlptracegrpc.WithHeaders(map[string]string{
+            "authorization": "Bearer YOUR_TOKEN",
+        }),
+    )
+}
+----
+====
+--
+======
+
+TIP: Use environment variables for the endpoint URL and authentication token to keep credentials out of your code.
+
+=== Use recommended semantic conventions
+
+The Transcripts view recognizes https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-agent-spans/[OpenTelemetry semantic conventions for GenAI operations^]. Following these conventions ensures your traces display correctly with proper attribution, token usage, and operation identification.
+
+==== Required attributes for agent operations
+
+Following the OpenTelemetry semantic conventions, agent spans should include these attributes:
+
+* Operation identification:
+** `gen_ai.operation.name` - Set to `"invoke_agent"` for agent execution spans
+** `gen_ai.agent.name` - Human-readable name of your agent (displayed in Transcripts view)
+* LLM provider details:
+** `gen_ai.provider.name` - LLM provider identifier (e.g., `"openai"`, `"anthropic"`, `"gcp.vertex_ai"`)
+** `gen_ai.request.model` - Model name (e.g., `"gpt-4"`, `"claude-sonnet-4"`)
+* Token usage (for cost tracking):
+** `gen_ai.usage.input_tokens` - Number of input tokens consumed
+** `gen_ai.usage.output_tokens` - Number of output tokens generated
+* Session correlation:
+** `gen_ai.conversation.id` - Identifier linking related agent invocations in the same conversation
+
+==== Required attributes for proper display
+
+Set these attributes on your spans for proper display and filtering in the Transcripts view:
+
+[cols="2,3", options="header"]
+|===
+| Attribute | Purpose
+
+| `gen_ai.operation.name`
+| Set to `"invoke_agent"` for agent execution spans
+
+| `gen_ai.agent.name`
+| Human-readable name displayed in Transcripts view
+
+| `gen_ai.provider.name`
+| LLM provider (e.g., `"openai"`, `"anthropic"`)
+
+| `gen_ai.request.model`
+| Model name (e.g., `"gpt-4"`, `"claude-sonnet-4"`)
+
+| `gen_ai.usage.input_tokens` / `gen_ai.usage.output_tokens`
+| Token counts for cost tracking
+
+| `gen_ai.conversation.id`
+| Links related agent invocations in the same conversation
+|===
+
+See the code examples earlier in this page for how to set these attributes in Python, Node.js, or Go.
+
+=== Validate trace format
+
+Before deploying to production, verify your traces match the expected format:
+
+. Run your agent locally and enable debug logging in your OpenTelemetry SDK to inspect outgoing spans.
+. Verify required fields are present:
+   * `traceId`, `spanId`, `name`
+   * `startTimeUnixNano`, `endTimeUnixNano`
+   * `instrumentationScope` with a `name` field
+   * `status` with a `code` field (1 for success, 2 for error)
+. Check that `service.name` is set in the resource attributes to identify your agent in the Transcripts view.
+. Verify GenAI semantic convention attributes if you want proper display in the Transcripts view:
+   * `gen_ai.operation.name` set to `"invoke_agent"` for agent spans
+   * `gen_ai.agent.name` for agent identification
+   * Token usage attributes if tracking costs
+
+== Verify trace ingestion
+
+After deploying your pipeline and configuring your custom agent, verify traces are flowing correctly.
+
+=== Consume traces from the topic
+
+Check that traces are being published to the `redpanda.otel_traces` topic:
+
+[,bash]
+----
+rpk topic consume redpanda.otel_traces --offset end -n 10
+----
+
+You can also view the `redpanda.otel_traces` topic in the *Topics* page of Redpanda Cloud UI.
+
+Look for spans with your custom `instrumentationScope.name` to identify traces from your agent.
+
+=== View traces in Transcripts 
+
+After your custom agent sends traces through the pipeline, they appear in your cluster's *Agentic AI > Transcripts* view alongside traces from Remote MCP servers, declarative agents, and AI Gateway.
+
+==== Identify custom agent transcripts
+
+Custom agent transcripts are identified by the `service.name` resource attribute, which differs from Redpanda's built-in services (`ai-agent` for declarative agents, `mcp-{server-id}` for MCP servers). See xref:ai-agents:observability/concepts.adoc#cross-service-transcripts[Cross-service transcripts] to understand how the `service.name` attribute identifies transcript sources.
+
+Your custom agent transcripts display with:
+
+* **Service name** in the service filter dropdown (from your `service.name` resource attribute)
+* **Agent name** in span details (from the `gen_ai.agent.name` attribute)
+* **Operation names** like `"invoke_agent my-assistant"` indicating agent executions
+
+For detailed instructions on filtering, searching, and navigating transcripts in the UI, see xref:ai-agents:observability/transcripts.adoc[View Transcripts].
+
+==== Token usage tracking
+
+If your spans include the recommended token usage attributes (`gen_ai.usage.input_tokens` and `gen_ai.usage.output_tokens`), they display in the summary panel's token usage section. This enables cost tracking alongside Remote MCP server and declarative agent transcripts.
+
+== Troubleshooting
+
+If traces from your custom agent aren't appearing in the Transcripts view, use these diagnostic steps to identify and resolve common ingestion issues.
+
+=== Pipeline not receiving requests
+
+If your custom agent cannot reach the ingestion endpoint:
+
+. Verify the endpoint URL format:
+   * HTTP: `\https://<pipeline-id>.pipelines.<cluster-id>.clusters.rdpa.co/v1/traces`
+   * gRPC: `<pipeline-id>.pipelines.<cluster-id>.clusters.rdpa.co:443` (no `https://` prefix for gRPC clients)
+. Check network connectivity and firewall rules.
+. Ensure authentication tokens are valid and properly formatted in the `Authorization: Bearer <token>` header (HTTP) or `authorization` metadata field (gRPC).
+. Verify the Content-Type header matches your data format (`application/x-protobuf` or `application/json`).
+. Review pipeline logs for connection errors or authentication failures.
+
+=== Traces not appearing in topic
+
+If requests succeed but traces do not appear in `redpanda.otel_traces`:
+
+. Check pipeline output configuration.
+. Verify topic permissions.
+. Validate trace format matches OTLP specification.
+
+== Limitations
+
+* The `otlp_http` and `otlp_grpc` inputs accept only traces, logs, and metrics, not profiles.
+* Only traces are published to the `redpanda.otel_traces` topic.
+* Exceeded rate limits return HTTP 429 (HTTP) or ResourceExhausted status (gRPC).
+
+== Next steps
+
+* xref:ai-agents:observability/transcripts.adoc[]
+* xref:ai-agents:agents/monitor-agents.adoc[Observability for declarative agents]
+* xref:develop:connect/components/inputs/otlp_http.adoc[OTLP HTTP input reference] - Complete configuration options for the `otlp_http` component
+* xref:develop:connect/components/inputs/otlp_grpc.adoc[OTLP gRPC input reference] - Alternative gRPC-based trace ingestion

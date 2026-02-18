@@ -2,7 +2,7 @@
 :page-aliases: ai-agents:mcp/remote/pipeline-patterns.adoc
 :description: Catalog of patterns for MCP server tools in Redpanda Cloud.
 :page-topic-type: cookbook
-:personas: ai_agent_developer, data_engineer
+:personas: agent_developer, data_engineer
 // Reader journey: "I need an example for X"
 :learning-objective-1: Find reusable patterns for common MCP tool scenarios
 :learning-objective-2: Apply validation and error handling patterns for production robustness
@@ -15,8 +15,6 @@ After reading this page, you will be able to:
 * [ ] {learning-objective-1}
 * [ ] {learning-objective-2}
 * [ ] {learning-objective-3}
-
-
 
 [[read-data]]
 == Read data
@@ -32,7 +30,7 @@ Use xref:develop:connect/components/inputs/about.adoc[inputs] to create tools th
 
 [source,yaml]
 ----
-include::ai-agents:example$generate_input.yaml[]
+include::ai-agents:example$mcp-tools/inputs/generate_input.yaml[]
 ----
 
 See also: xref:develop:connect/components/inputs/generate.adoc[`generate` input component]
@@ -46,17 +44,7 @@ See also: xref:develop:connect/components/inputs/generate.adoc[`generate` input 
 
 [source,yaml]
 ----
-redpanda:
-  seed_brokers: [ "${REDPANDA_BROKERS}" ]
-  topics: [ "user-events" ]
-  consumer_group: "mcp-event-processor"
-  start_from_oldest: true
-  tls:
-    enabled: true
-  sasl:
-    - mechanism: "${REDPANDA_SASL_MECHANISM}"
-      username: "${REDPANDA_SASL_USERNAME}"
-      password: "${REDPANDA_SASL_PASSWORD}"
+include::ai-agents:example$mcp-tools/inputs/consume_redpanda.yaml[tag=component,indent=0]
 ----
 
 See also: xref:develop:connect/components/inputs/redpanda.adoc[`redpanda` input]
@@ -70,23 +58,7 @@ See also: xref:develop:connect/components/inputs/redpanda.adoc[`redpanda` input]
 
 [source,yaml]
 ----
-redpanda:
-  seed_brokers: [ "${REDPANDA_BROKERS}" ]
-  topics: [ "sensor-readings" ]
-  consumer_group: "analytics-processor"
-  tls:
-    enabled: true
-  sasl:
-    - mechanism: "${REDPANDA_SASL_MECHANISM}"
-      username: "${REDPANDA_SASL_USERNAME}"
-      password: "${REDPANDA_SASL_PASSWORD}"
-  processors:
-    - mapping: |
-        root.sensor_id = this.sensor_id
-        root.avg_temperature = this.readings.map_each(r -> r.temperature).mean()
-        root.max_temperature = this.readings.map_each(r -> r.temperature).max()
-        root.reading_count = this.readings.length()
-        root.window_end = now()
+include::ai-agents:example$mcp-tools/inputs/stream_processing.yaml[tag=component,indent=0]
 ----
 
 See also: xref:develop:connect/components/inputs/redpanda.adoc[`redpanda` input]
@@ -105,7 +77,7 @@ Use xref:develop:connect/components/processors/about.adoc[processors] to fetch d
 
 [source,yaml]
 ----
-include::ai-agents:example$http_processor.yaml[]
+include::ai-agents:example$mcp-tools/processors/http_processor.yaml[]
 ----
 
 See also: xref:develop:connect/components/processors/http.adoc[`http` processor], xref:develop:connect/components/processors/mutation.adoc[`mutation` processor]
@@ -119,10 +91,26 @@ See also: xref:develop:connect/components/processors/http.adoc[`http` processor]
 
 [source,yaml]
 ----
-include::ai-agents:example$gcp_bigquery_select_processor.yaml[]
+include::ai-agents:example$mcp-tools/processors/gcp_bigquery_select_processor.yaml[]
 ----
 
 See also: xref:develop:connect/components/processors/gcp_bigquery_select.adoc[`gcp_bigquery_select` processor], xref:develop:connect/components/processors/sql_select.adoc[`sql_select` processor]
+
+[[jira-queries]]
+=== Query Jira issues
+
+*When to use:* Fetching tickets by status, checking assignments, finding recent issues, or building AI agents that interact with project management data.
+
+*Example use cases:* Get open bugs for a sprint, find issues assigned to a user, list recently updated tickets, search by custom fields.
+
+NOTE: The `jira` processor is available on Dedicated and BYOC clusters.
+
+[source,yaml]
+----
+include::ai-agents:example$mcp-tools/processors/search_jira.yaml[tag=complete,indent=0]
+----
+
+For more patterns including pagination, custom fields, and creating issues via the HTTP processor, see xref:develop:connect/cookbooks/jira.adoc[].
 
 [[ai-llm-integration]]
 === Integrate with AI/LLM services
@@ -135,17 +123,7 @@ See also: xref:develop:connect/components/processors/gcp_bigquery_select.adoc[`g
 
 [source,yaml]
 ----
-openai_chat_completion:
-  api_key: "${secrets.OPENAI_API_KEY}"
-  model: "gpt-4"
-  prompt: |
-    Analyze this customer feedback and provide:
-    1. Sentiment (positive/negative/neutral)
-    2. Key themes
-    3. Actionable insights
-
-    Feedback: ${! json("feedback_text") }
-  max_tokens: 500
+include::ai-agents:example$mcp-tools/processors/openai_chat.yaml[tag=component,indent=0]
 ----
 
 See also: xref:develop:connect/components/processors/openai_chat_completion.adoc[`openai_chat_completion`], xref:develop:connect/components/processors/openai_embeddings.adoc[`openai_embeddings`]
@@ -154,10 +132,7 @@ See also: xref:develop:connect/components/processors/openai_chat_completion.adoc
 
 [source,yaml]
 ----
-openai_embeddings:
-  api_key: "${secrets.OPENAI_API_KEY}"
-  model: "text-embedding-3-small"
-  text: ${! json("content") }
+include::ai-agents:example$mcp-tools/processors/openai_embeddings.yaml[tag=component,indent=0]
 ----
 
 See also: xref:develop:connect/components/processors/cohere_embeddings.adoc[`cohere_embeddings`], xref:develop:connect/components/processors/gcp_vertex_ai_embeddings.adoc[`gcp_vertex_ai_embeddings`]
@@ -176,7 +151,7 @@ Use xref:develop:connect/components/outputs/about.adoc[outputs] to write data to
 
 [source,yaml]
 ----
-include::ai-agents:example$redpanda_output.yaml[]
+include::ai-agents:example$mcp-tools/outputs/redpanda_output.yaml[]
 ----
 
 See also: xref:develop:connect/components/outputs/redpanda.adoc[`redpanda` output]
@@ -189,7 +164,7 @@ Output tools can include processors to transform data before publishing. This pa
 
 [source,yaml]
 ----
-include::ai-agents:example$redpanda_output_with_processors.yaml[]
+include::ai-agents:example$mcp-tools/outputs/redpanda_output_with_processors.yaml[]
 ----
 
 [[caching]]
@@ -202,13 +177,13 @@ include::ai-agents:example$redpanda_output_with_processors.yaml[]
 .Redpanda-backed cache
 [source,yaml]
 ----
-include::ai-agents:example$redpanda_cache.yaml[]
+include::ai-agents:example$mcp-tools/caches/redpanda_cache.yaml[]
 ----
 
 .In-memory cache
 [source,yaml]
 ----
-include::ai-agents:example$memory_cache.yaml[]
+include::ai-agents:example$mcp-tools/caches/memory_cache.yaml[]
 ----
 
 See also: xref:develop:connect/components/caches/memory.adoc[`memory` cache], xref:develop:connect/components/outputs/redpanda.adoc[`redpanda` output]
@@ -227,17 +202,7 @@ Use Bloblang and processors to transform, validate, and route data.
 
 [source,yaml]
 ----
-mapping: |
-  # Parse and validate incoming data
-  root.user_id = this.user_id.or(throw("user_id is required"))
-  root.timestamp = now().ts_format("2006-01-02T15:04:05Z07:00")
-
-  # Transform and enrich
-  root.email_domain = this.email.split("@").index(1)
-  root.is_premium = this.subscription_tier == "premium"
-
-  # Filter sensitive data
-  root.profile = this.profile.without("ssn", "credit_card")
+include::ai-agents:example$mcp-tools/processors/transform_validate.yaml[tag=mapping,indent=0]
 ----
 
 See also: xref:develop:connect/components/processors/mapping.adoc[`mapping` processor], xref:develop:connect/guides/bloblang/about.adoc[Bloblang guide]
@@ -251,30 +216,7 @@ See also: xref:develop:connect/components/processors/mapping.adoc[`mapping` proc
 
 [source,yaml]
 ----
-redpanda:
-  seed_brokers: [ "${REDPANDA_BROKERS}" ]
-  topics: [ "order-events" ]
-  consumer_group: "workflow-orchestrator"
-  tls:
-    enabled: true
-  sasl:
-    - mechanism: "${REDPANDA_SASL_MECHANISM}"
-      username: "${REDPANDA_SASL_USERNAME}"
-      password: "${REDPANDA_SASL_PASSWORD}"
-  processors:
-    - switch:
-        - check: this.event_type == "order_created"
-          processors:
-            - http:
-                url: "${secrets.INVENTORY_API}/reserve"
-                verb: POST
-                body: '{"order_id": "${! this.order_id }", "items": ${! json("items") }}'
-        - check: this.event_type == "payment_confirmed"
-          processors:
-            - http:
-                url: "${secrets.FULFILLMENT_API}/ship"
-                verb: POST
-                body: '{"order_id": "${! this.order_id }"}'
+include::ai-agents:example$mcp-tools/inputs/event_driven_workflow.yaml[tag=component,indent=0]
 ----
 
 See also: xref:develop:connect/components/inputs/redpanda.adoc[`redpanda` input]
@@ -310,6 +252,7 @@ include::redpanda-connect:ai-agents:partial$mcp/tool-patterns/production-workflo
 
 == Next steps
 
-* xref:ai-agents:mcp/remote/create-tool.adoc[]: Step-by-step tool creation guide
-* xref:ai-agents:mcp/remote/best-practices.adoc[]: Apply naming and design guidelines
-* xref:ai-agents:mcp/remote/troubleshooting.adoc[]: Diagnose and fix common issues
+* xref:ai-agents:agents/integration-overview.adoc[]
+* xref:ai-agents:mcp/remote/create-tool.adoc[]
+* xref:ai-agents:mcp/remote/best-practices.adoc[]
+* xref:ai-agents:mcp/remote/troubleshooting.adoc[]

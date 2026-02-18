@@ -1,0 +1,274 @@
+= AI Gateway Modes
+:description: Understand AI Hub mode and Custom mode, and choose the right approach for your organization.
+:page-topic-type: concept
+:personas: evaluator, platform_admin, app_developer
+:learning-objective-1: Differentiate between AI Hub and Custom gateway modes
+:learning-objective-2: Determine which mode suits your use case based on configuration needs
+:learning-objective-3: Identify which mode a gateway is running in using Console or API
+
+include::ai-agents:partial$ai-gateway-byoc-note.adoc[]
+
+AI Gateway supports two modes to accommodate different organizational needs: AI Hub mode for zero-configuration access and Custom mode for full control over routing and policies.
+
+After reading this page, you will be able to:
+
+* [ ] Differentiate between AI Hub and Custom gateway modes
+* [ ] Determine which mode suits your use case based on configuration needs
+* [ ] Identify which mode a gateway is running in using Console or API
+
+== Overview
+
+When you create a gateway, you choose between two modes that differ in configuration complexity and control:
+
+[cols="1,2,2",options="header"]
+|===
+|Aspect |AI Hub Mode |Custom Mode
+
+|*Setup time*
+|Minutes (just add API keys)
+|Hours (configure everything)
+
+|*Backend pools*
+|Pre-configured (6 pools)
+|User creates from scratch
+
+|*Routing rules*
+|Pre-configured (17 rules)
+|User creates from scratch
+
+|*Transforms*
+|Pre-configured (OpenAI compat)
+|User configures
+
+|*API keys*
+|Central (IT-managed)
+|Central (IT-managed)
+
+|*Routing preferences*
+|6 configurable toggles
+|N/A (full control via rules)
+
+|*Modify backends*
+|Cannot modify/delete
+|Full control
+
+|*Custom routing rules*
+|Not allowed (eject first)
+|Full control
+
+|*Rate/spend limits*
+|Can add custom rules
+|Full control
+|===
+
+== AI Hub mode
+
+AI Hub mode provides instant, pre-configured access to OpenAI, Anthropic, and Google Gemini with zero setup complexity.
+
+=== What it is
+
+AI Hub mode eliminates complex LLM gateway configuration by providing pre-built routing rules and backend pools. Platform admins add provider credentials (OpenAI, Anthropic, Google Gemini) once, and all teams immediately benefit from intelligent routing across both providers.
+
+Teams adopting LLMs typically face significant friction: configuring backends and routing rules takes hours, different providers have incompatible APIs, and developers must learn each provider's quirks. AI Hub mode solves this by providing instant access—IT adds API keys once, all teams benefit immediately.
+
+=== Pre-configured components
+
+When you create an AI Hub gateway, you automatically get:
+
+*6 Backend Pools:*
+
+* OpenAI (standard requests)
+* OpenAI Streaming (real-time streaming responses)
+* Anthropic with OpenAI-compatible transform (standard requests)
+* Anthropic with OpenAI-compatible transform (streaming)
+* Anthropic Native (direct passthrough for `/v1/messages` endpoint)
+* Anthropic Native Streaming (direct passthrough streaming)
+
+*17 Routing Rules* across 5 priority tiers:
+
+* Model prefix routing: `openai/*`, `anthropic/*`
+* Model name pattern routing: `gpt-*`, `claude-*`, `o1-*`
+* Special routing: embeddings, images, audio → OpenAI only
+* Native SDK detection: `/v1/messages` → Anthropic passthrough
+* Streaming detection → Extended timeout backends
+
+These rules are immutable and managed by Redpanda. You cannot modify or delete them, which ensures consistent, reliable behavior.
+
+=== User-configurable preferences
+
+While routing rules are managed, you can customize behavior through 6 preference toggles:
+
+include::ai-agents:partial$ai-hub-preference-toggles.adoc[]
+
+These preferences influence routing decisions without requiring you to write or maintain routing rules.
+
+=== Protected resources
+
+In AI Hub mode, system-managed resources are protected to ensure reliability:
+
+*Cannot be modified or deleted:*
+
+* Backend pool definitions
+* Core routing rules
+* Failover logic
+* Provider selection algorithms
+
+*Can be configured:*
+
+* Provider credentials (OpenAI, Anthropic, Google Gemini)
+* Preference toggles (6 available)
+* Rate limits (within bounds)
+* Spend limits
+
+This separation ensures that the underlying architecture remains stable and tested, while allowing customization of common preferences.
+
+=== Supported providers
+
+AI Hub mode currently supports:
+
+* *OpenAI* - `https://api.openai.com` with Bearer token authentication
+* *Anthropic* - `https://api.anthropic.com` with x-api-key header
+
+Both providers work through a unified OpenAI-compatible API. AI Hub automatically transforms requests to Anthropic's native format when needed.
+
+Other providers like Google AI and AWS Bedrock are not yet supported in AI Hub mode. If you need these providers, use Custom mode instead.
+
+== Custom mode
+
+Custom mode provides full control over all aspects of gateway configuration, from routing rules to backend pools to policies.
+
+=== What it is
+
+In Custom mode, administrators configure every aspect of the gateway to meet specific requirements. You create backend pools, define routing rules using CEL expressions, configure failover behavior, and set up policies from scratch.
+
+This mode provides maximum flexibility for organizations with specialized requirements that AI Hub's pre-configured rules don't cover.
+
+=== When to use
+
+Choose Custom mode when you need:
+
+* Custom routing rules based on specific business logic (for example, route by customer tier, geography, or feature flags)
+* Full control over backend pool configuration (custom timeouts, retries, health checks)
+* Custom failover strategies (multi-region, specific fallback chains)
+* Integration with custom infrastructure (Azure OpenAI, AWS Bedrock, self-hosted models)
+* Complex routing logic that combines multiple conditions
+* Specialized requirements not covered by AI Hub's 17 pre-configured rules
+
+Custom mode requires more setup time and maintenance, but provides complete flexibility.
+
+=== Configuration requirements
+
+In Custom mode, you must configure:
+
+* Backend pools: Create pools for each provider and model family
+* Routing rules: Write CEL expressions to route requests
+* Transforms: Configure request/response transforms if needed
+* Rate limits: Define per-gateway, per-user, or per-model limits
+* Spend limits: Set budget controls and alerting
+* Observability: Configure logging and metrics
+
+For detailed setup instructions, see xref:ai-gateway/admin/setup-guide.adoc[].
+
+== Decision matrix
+
+Use this decision matrix to choose the right mode for your use case:
+
+[cols="2,1,1",options="header"]
+|===
+|Use Case |AI Hub |Custom
+
+|Quick start, just want to use LLMs
+|✓ Recommended
+|
+
+|Production with OpenAI and/or Anthropic
+|✓ Recommended
+|✓ Possible
+
+|Need custom routing rules
+|
+|✓ Required
+
+|Need custom provider (Azure OpenAI, AWS Bedrock)
+|
+|✓ Required
+
+|Complex routing logic
+|
+|✓ Required
+
+|Multi-region failover
+|
+|✓ Required
+
+|Started with AI Hub, now need full control
+|Eject to Custom
+|✓ Target mode
+
+|Minimize configuration complexity
+|✓ Recommended
+|
+
+|Need provider-specific API features
+|
+|✓ Required
+|===
+
+== Identify gateway mode
+
+You can identify which mode a gateway is running in through the Console or API.
+
+include::ai-agents:partial$ai-hub-mode-indicator.adoc[]
+
+== Eject to Custom mode
+
+Gateways can be ejected from AI Hub mode to Custom mode in a one-way transition. After ejection, all previously system-managed resources become user-configurable, and the gateway behaves exactly like a Custom mode gateway.
+
+=== What ejection means
+
+When you eject an AI Hub gateway to Custom mode:
+
+* `gateway.mode` changes from `ai_hub` to `custom`
+* All resources: `ai_hub_managed` metadata set to `false`
+* Backend pools become editable and deletable
+* Routing rules become editable and deletable
+* You can add custom routing rules
+* No more automatic AI Hub version updates
+* Preference toggles are removed (configure rules directly instead)
+
+[WARNING]
+====
+Ejection is a one-way transition and cannot be undone. To get back to AI Hub mode, you must create a new gateway and migrate your applications to it.
+====
+
+=== When to eject
+
+Consider ejecting when:
+
+* You need custom routing rules that AI Hub doesn't support
+* You want to modify or optimize backend pool configuration
+* You need to integrate with providers not supported by AI Hub
+* Your requirements have grown beyond AI Hub's capabilities
+* You need provider-specific features not available through the unified API
+
+Most organizations start with AI Hub mode and eject to Custom mode only when they outgrow the pre-configured capabilities.
+
+=== Ejection process
+
+For detailed instructions on ejecting to Custom mode, see xref:ai-gateway/admin/eject-to-custom-mode.adoc[].
+
+== Next steps
+
+Now that you understand gateway modes:
+
+*For Administrators:*
+
+* xref:ai-gateway/admin/configure-ai-hub.adoc[Configure AI Hub Gateway] - Set up AI Hub mode
+* xref:ai-gateway/admin/setup-guide.adoc[Setup Guide] - Configure Custom mode
+* xref:ai-gateway/admin/eject-to-custom-mode.adoc[Eject to Custom Mode] - Transition from AI Hub to Custom
+
+*For Builders:*
+
+* xref:ai-gateway/builders/use-ai-hub-gateway.adoc[Use AI Hub Gateway] - Connect to AI Hub gateways
+* xref:ai-gateway/builders/discover-gateways.adoc[Discover Gateways] - Find available gateways
+* xref:ai-gateway/builders/connect-your-agent.adoc[Connect Your Agent] - Integrate your application

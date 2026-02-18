@@ -1,0 +1,60 @@
+label: log_audit_event
+processors:
+  - mapping: |
+      root = {
+        "audit_id": uuid_v4(),
+        "timestamp": now(),
+        "event_type": "dispute_investigation",
+        "transaction_id": this.transaction_id,
+        "customer_id": this.customer_id,
+        "agent_decision": this.decision,
+        "risk_score": this.risk_score,
+        "evidence_reviewed": this.evidence,
+        "outcome": this.outcome,
+        "escalated": this.escalated,
+        "compliance_notes": this.notes,
+        "logged_by": "dispute-resolution-agent",
+        "status": "recorded"
+      }
+
+  - log:
+      level: INFO
+      message: "Compliance audit event: ${!json()}"
+
+meta:
+  mcp:
+    enabled: true
+    description: "Log compliance audit events for dispute resolution. Records customer ID, transaction details, decision, and notes."
+    properties:
+      - name: customer_id
+        type: string
+        description: "Customer identifier (format CUST-XXXX)"
+        required: true
+      - name: transaction_id
+        type: string
+        description: "Transaction identifier (format TXN-XXXXX)"
+        required: true
+      - name: decision
+        type: string
+        description: "Dispute resolution decision (approve_refund, deny_claim, etc.)"
+        required: true
+      - name: risk_score
+        type: number
+        description: "Calculated fraud risk score (0-100)"
+        required: true
+      - name: evidence
+        type: object
+        description: "Evidence reviewed during investigation"
+        required: true
+      - name: outcome
+        type: string
+        description: "Final outcome of the dispute (approved, denied, escalated, pending)"
+        required: true
+      - name: escalated
+        type: boolean
+        description: "Whether case was escalated for manual review"
+        required: false
+      - name: notes
+        type: string
+        description: "Additional compliance notes"
+        required: false

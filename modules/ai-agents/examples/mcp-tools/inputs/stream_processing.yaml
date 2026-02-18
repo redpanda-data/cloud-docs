@@ -1,0 +1,28 @@
+# Process streaming data with aggregations
+# Use for real-time analytics, windowed aggregations, computing metrics
+label: process-sensor-data
+
+# tag::component[]
+redpanda:
+  seed_brokers: [ "${REDPANDA_BROKERS}" ]
+  topics: [ "sensor-readings" ]
+  consumer_group: "analytics-processor"
+  tls:
+    enabled: true
+  sasl:
+    - mechanism: "${REDPANDA_SASL_MECHANISM}"
+      username: "${REDPANDA_SASL_USERNAME}"
+      password: "${REDPANDA_SASL_PASSWORD}"
+  processors:
+    - mapping: |
+        root.sensor_id = this.sensor_id
+        root.avg_temperature = this.readings.map_each(r -> r.temperature).sum() / this.readings.length()
+        root.max_temperature = this.readings.map_each(r -> r.temperature).max()
+        root.reading_count = this.readings.length()
+        root.window_end = now()
+# end::component[]
+
+meta:
+  mcp:
+    enabled: true
+    description: "Process sensor readings and compute aggregations"

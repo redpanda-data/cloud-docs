@@ -1,0 +1,43 @@
+[tabs]
+====
+Redpanda Cloud Console::
++
+In the Redpanda Cloud Console:
++
+. Navigate to *AI Gateway* → *Gateways*.
+. Select a gateway from your list.
+. Look for the *Mode* indicator in the gateway details:
++
+--
+* *AI Hub*: Pre-configured with intelligent routing
+* *Custom*: Administrator-configured routing
+--
++
+The mode badge appears prominently in the gateway overview and helps you quickly identify which configuration approach is in use.
+
+Gateway API::
++
+Query a gateway's configuration to see its mode:
++
+[,bash]
+----
+curl https://api.redpanda.com/v1/gateways/${GATEWAY_ID} \
+  -H "Authorization: Bearer ${REDPANDA_CLOUD_TOKEN}"
+----
++
+Response:
++
+[,json]
+----
+{
+  "id": "gw_abc123",
+  "name": "production-gateway",
+  "mode": "ai_hub",  // or "custom"
+  "endpoint": "https://gw.ai.panda.com",
+  "workspace_id": "ws_xyz789",
+  "created_at": "2025-01-15T10:30:00Z"
+}
+----
++
+The `mode` field indicates whether the gateway uses `ai_hub` (pre-configured) or `custom` (user-configured) mode.
+====

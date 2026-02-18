@@ -1,0 +1,28 @@
+# tag::config[]
+input:
+  generate:
+    count: 1
+    mapping: |
+      root.fields = {
+        "project": {"key": "MYPROJECT"},
+        "summary": "Issue created from Redpanda Connect",
+        "description": {
+          "type": "doc",
+          "version": 1,
+          "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Created via API"}]}]
+        },
+        "issuetype": {"name": "Task"}
+      }
+
+pipeline:
+  processors:
+    - http:
+        url: "${secrets.JIRA_BASE_URL}/rest/api/3/issue"
+        verb: POST
+        headers:
+          Content-Type: application/json
+          Authorization: "Basic ${secrets.JIRA_AUTH_TOKEN}"
+
+output:
+  stdout: {}
+# end::config[]

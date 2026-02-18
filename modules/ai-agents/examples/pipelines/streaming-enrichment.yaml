@@ -1,0 +1,35 @@
+# Streaming data enrichment pipeline
+# Adds AI-generated metadata (sentiment) to events
+input:
+  redpanda:
+    seed_brokers: ["${REDPANDA_BROKERS}"]
+    topics: [customer-feedback]
+    consumer_group: sentiment-enricher
+    tls:
+      enabled: true
+    sasl:
+      - mechanism: SCRAM-SHA-256
+        username: "${REDPANDA_USERNAME}"
+        password: "${REDPANDA_PASSWORD}"
+
+pipeline:
+  # tag::processors[]
+  processors:
+    - branch:
+        request_map: 'root = this.text'
+        processors:
+          - a2a_message:
+              agent_card_url: "${AGENT_CARD_URL}"
+        result_map: 'root.sentiment = content()'
+  # end::processors[]
+
+output:
+  redpanda:
+    seed_brokers: ["${REDPANDA_BROKERS}"]
+    topic: enriched-feedback
+    tls:
+      enabled: true
+    sasl:
+      - mechanism: SCRAM-SHA-256
+        username: "${REDPANDA_USERNAME}"
+        password: "${REDPANDA_PASSWORD}"

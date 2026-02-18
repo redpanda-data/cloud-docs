@@ -1,0 +1,20 @@
+# Publish event to Redpanda
+# Example of output tool
+# tag::complete[]
+label: publish-event
+
+redpanda:
+  seed_brokers: ["${REDPANDA_BROKERS}"]
+  topic: "processed-events"
+  tls:
+    enabled: true
+  sasl:
+    - mechanism: SCRAM-SHA-256
+      username: "${secrets.MCP_USERNAME}"
+      password: "${secrets.MCP_PASSWORD}"
+
+meta:
+  mcp:
+    enabled: true
+    description: "Publish event to Redpanda"
+# end::complete[]

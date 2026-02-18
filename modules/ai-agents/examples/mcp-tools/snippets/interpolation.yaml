@@ -1,0 +1,13 @@
+# Bloblang interpolation in string fields
+# Use ${! ... } to embed expressions in URLs, topics, headers
+
+# tag::http_url[]
+http:
+  url: 'https://api.weather.com/v1/current?city=${! json("city") }&units=${! json("units").or("metric") }'
+# end::http_url[]
+
+# tag::redpanda_topic[]
+redpanda:
+  seed_brokers: ["${REDPANDA_BROKERS}"]  # <1>
+  topic: '${! json("topic_name") }'  # <2>
+# end::redpanda_topic[]

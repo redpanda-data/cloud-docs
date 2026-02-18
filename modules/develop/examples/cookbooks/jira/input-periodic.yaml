@@ -1,0 +1,19 @@
+# tag::config[]
+input:
+  generate:
+    interval: 30s
+    mapping: |
+      root.jql = "project = MYPROJECT AND updated >= -1h ORDER BY updated DESC"
+      root.maxResults = 50
+      root.fields = ["key", "summary", "status", "assignee", "priority"]
+
+pipeline:
+  processors:
+    - jira:
+        base_url: "${secrets.JIRA_BASE_URL}"
+        username: "${secrets.JIRA_USERNAME}"
+        api_token: "${secrets.JIRA_API_TOKEN}"
+
+output:
+  stdout: {}
+# end::config[]

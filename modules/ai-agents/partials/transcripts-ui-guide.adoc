@@ -1,0 +1,89 @@
+// =============================================================================
+// PARTIAL: transcripts-ui-guide.adoc
+// =============================================================================
+//
+// PURPOSE:
+//   Documents the Transcripts UI interface for both AI agents and MCP servers.
+//   Single-sources UI navigation and component descriptions that are identical
+//   across both contexts.
+//
+// INCLUDED BY:
+//   - cloud-docs: modules/ai-agents/pages/agents/monitor-agents.adoc
+//   - cloud-docs: modules/ai-agents/pages/mcp/remote/monitor-mcp-servers.adoc
+//
+// INCLUDE SYNTAX:
+//   :context: agent
+//   include::partial$transcripts-ui-guide.adoc[]
+//
+//   :context: mcp
+//   include::partial$transcripts-ui-guide.adoc[]
+//
+// ATTRIBUTES USED:
+//   - context: Controls agent-specific vs MCP-specific content
+//     Valid values: "agent" | "mcp"
+//
+// DEPENDENCIES:
+//   - xref:ai-agents:observability/concepts.adoc#agent-trace-hierarchy[]
+//   - xref:ai-agents:observability/concepts.adoc#mcp-server-trace-hierarchy[]
+//
+// CONTENT TYPE:
+//   UI navigation and interface explanation (procedural context for how-to pages)
+//
+// =============================================================================
+
+=== Navigate the transcripts view
+
+// Navigation is identical for both contexts
+. Click *Transcripts*.
+ifeval::["{context}" == "agent"]
+. Select a recent transcript from your agent executions.
+endif::[]
+ifeval::["{context}" == "mcp"]
+. Select a recent transcript from your MCP server tool invocations.
+endif::[]
+
+The transcripts view displays:
+
+* *Timeline*: Visual history of recent executions with success/error indicators
+* *Trace list*: Hierarchical view of traces and spans
+* *Summary panel*: Detailed metrics when you select a transcript
+
+// UI component descriptions
+==== Timeline visualization
+
+The timeline shows execution patterns over time:
+
+* Green bars: Successful executions
+* Red bars: Failed executions with errors
+* Gray bars: Incomplete traces or traces still loading
+* Time range: Displays the last few hours by default
+
+Use the timeline to spot patterns like error clusters, performance degradation over time, or gaps indicating downtime.
+
+==== Trace hierarchy
+
+The trace list shows nested operations with visual duration bars indicating how long each operation took. Click the expand arrows (▶) to drill into nested spans and see the complete execution flow.
+
+// Link to appropriate concepts section based on context
+ifeval::["{context}" == "agent"]
+For details on span types, see xref:ai-agents:observability/concepts.adoc#agent-trace-hierarchy[Agent trace hierarchy].
+endif::[]
+ifeval::["{context}" == "mcp"]
+For details on span types, see xref:ai-agents:observability/concepts.adoc#mcp-server-trace-hierarchy[MCP server trace hierarchy].
+endif::[]
+
+==== Summary panel
+
+When you select a transcript, the summary panel shows:
+
+* Duration: Total execution time for this request
+* Total Spans: Number of operations in the trace
+ifeval::["{context}" == "agent"]
+* Token Usage: Input tokens, output tokens, and total (critical for cost tracking)
+* LLM Calls: How many times the agent called the language model
+* Service: The agent identifier
+* Conversation ID: Links to session data topics
+endif::[]
+ifeval::["{context}" == "mcp"]
+* Service: The MCP server identifier
+endif::[]

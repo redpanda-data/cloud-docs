@@ -1,0 +1,187 @@
+= AI Agent Quickstart
+:description: Create your first AI agent in Redpanda Cloud that generates and publishes event data through natural language commands.
+:page-topic-type: tutorial
+:personas: agent_developer, evaluator
+:learning-objective-1: Create an AI agent in Redpanda Cloud that uses MCP tools
+:learning-objective-2: Configure the agent with a system prompt and model selection
+:learning-objective-3: Test the agent by generating and publishing events through natural language
+
+This quickstart helps you build your first AI agent in Redpanda Cloud. You'll create an agent that understands natural language requests and uses MCP tools to generate and publish event data to Redpanda topics.
+
+include::ai-agents:partial$byoc-aws-requirement.adoc[]
+
+After completing this quickstart, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
+
+== Prerequisites
+
+* A xref:get-started:cluster-types/byoc/index.adoc[BYOC cluster] (agents are not available on Dedicated or Serverless clusters)
+
+* xref:ai-agents:ai-gateway/gateway-quickstart.adoc[AI Gateway configured] with at least one LLM provider enabled (OpenAI, Anthropic, or Google AI)
+
+* Completed the xref:ai-agents:mcp/remote/quickstart.adoc[Remote MCP Quickstart] to create an MCP server with the following tools deployed:
++
+** `generate_input`: Generates fake user event data
+** `redpanda_output`: Publishes data to Redpanda topics
+
+== What you'll build
+
+An Event Data Manager agent that:
+
+* Generates fake user event data (logins, purchases, page views)
+* Publishes events to Redpanda topics
+* Understands natural language requests like "Generate 5 login events and publish them"
+
+The agent orchestrates the `generate_input` and `redpanda_output` tools you created in the Remote MCP quickstart.
+
+== Create the agent
+
+. Log in to the link:https://cloud.redpanda.com/[Redpanda Cloud Console^].
+
+. Navigate to your cluster and click *Agentic AI* > *AI Agents* in the left navigation.
+
+. Click *Create Agent*.
+
+. Configure basic settings:
++
+* *Display Name*: `event-data-manager`
+* *Description*: `Generates and publishes fake user event data to Redpanda topics`
+* *Resource Tier*: Select *XSmall* (sufficient for this quickstart)
+
+. Select your AI Gateway and model:
++
+* *AI Gateway*: Select the gateway you configured (contains provider and API key configuration)
+* *Provider*: Select a provider available in your gateway (OpenAI, Anthropic, or Google)
+* *Model*: Choose any balanced model from the dropdown
+
+. Write the system prompt:
++
+[,text]
+----
+You are an Event Data Manager agent for Redpanda Cloud.
+
+Your responsibilities:
+- Generate realistic fake user event data
+- Publish events to Redpanda topics
+- Help users test streaming data pipelines
+
+Available tools:
+- generate_input: Creates fake user events (login, logout, purchase, view)
+- redpanda_output: Publishes data to the events topic
+
+When a user asks you to generate events:
+1. Use generate_input to create the event data
+2. Use redpanda_output to publish the events to Redpanda
+3. Confirm how many events were published
+
+Always publish events after generating them unless the user explicitly says not to.
+
+Response format:
+- State what you're doing before calling each tool
+- Show the generated event data
+- Confirm successful publication with a count
+----
+
+. Select MCP tools:
++
+* Click *Add MCP Server*
+* Select the `event-data-generator` server (created in the MCP quickstart)
+* Check both tools:
+** `generate_input`
+** `redpanda_output`
+
+. Set execution parameters:
++
+* *Max Iterations*: `30` (allows multiple tool calls per request)
+
+. Review your configuration and click *Create Agent*.
++
+TIP: A service account is automatically created to authenticate your agent with cluster resources. For details about default permissions and how to manage service accounts, see xref:ai-agents:agents/concepts.adoc#service-account-authorization[Service account authorization].
+
+. Wait for the agent status to change from *Starting* to *Running*.
+
+== Test your agent
+
+Now test your agent with natural language requests.
+
+. In the agent details view, open the *Inspector* tab.
+
+. Try these example requests:
++
+.Generate and publish 3 events
+[%collapsible]
+====
+[.no-copy]
+----
+Generate 3 user events and publish them to the events topic.
+----
+
+The agent should respond with these steps:
+
+. Call `generate_input` to create 3 fake user events.
+. Call `redpanda_output` to publish them to the `events` topic.
+. Confirm the events were published.
+
+You should see the agent's reasoning and the tool execution results.
+====
++
+.Generate specific event types
+[%collapsible]
+====
+[.no-copy]
+----
+Create 5 login events for testing and publish them to Redpanda.
+----
+
+The agent understands the request requires login events specifically and generates appropriate test data.
+====
++
+.Generate events without publishing
+[%collapsible]
+====
+[.no-copy]
+----
+Show me what 3 sample purchase events would look like, but don't publish them yet.
+----
+
+The agent calls only `generate_input` and displays the data without publishing.
+====
+
+. Navigate to *Topics* in the left navigation to verify events were published to the `events` topic.
+
+== Iterate on your agent
+
+Try modifying the agent to change its behavior:
+
+. Click *Edit configuration* in the agent details view.
+
+. Update the system prompt to change how the agent responds. For example:
++
+* Add constraints: "Never publish more than 10 events at once"
+* Change output format: "Always format events as a table"
+* Add validation: "Before publishing, show the user the generated data and ask for confirmation"
+
+. Click *Save* to update the agent.
+
+. Test your changes in the *Inspector* tab.
+
+== Troubleshoot
+
+For comprehensive troubleshooting guidance, see xref:ai-agents:agents/troubleshooting.adoc[].
+
+Common quickstart issue:
+
+**Events not appearing in topic:** Verify the `events` topic exists and review the MCP server logs for publishing errors.
+
+== Next steps
+
+You've created an agent that orchestrates MCP tools through natural language. Explore more:
+
+* xref:ai-agents:agents/overview.adoc[]
+* xref:ai-agents:agents/create-agent.adoc[]
+* xref:ai-agents:agents/prompt-best-practices.adoc[]
+* xref:ai-agents:agents/architecture-patterns.adoc[]
+* xref:ai-agents:mcp/remote/tool-patterns.adoc[]

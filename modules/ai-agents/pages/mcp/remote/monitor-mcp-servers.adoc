@@ -1,0 +1,104 @@
+= Monitor MCP Server Activity
+:description: Consume traces, track tool invocations, measure performance, and debug failures in MCP servers.
+:page-topic-type: how-to
+:personas: platform_admin, agent_developer, data_engineer
+:learning-objective-1: Consume traces from the redpanda.otel_traces topic
+:learning-objective-2: Track tool invocations and measure performance
+:learning-objective-3: Debug tool failures using trace data
+
+Monitor MCP server activity using OpenTelemetry traces emitted to the `redpanda.otel_traces` glossterm:topic[].
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
+
+For conceptual background on traces, spans, and the trace data structure, see xref:ai-agents:observability/concepts.adoc[].
+
+== Prerequisites
+
+You must have an existing MCP server. If you do not have one, see xref:ai-agents:mcp/remote/quickstart.adoc[].
+
+== View transcripts in the Cloud Console
+
+:context: mcp
+include::ai-agents:partial$transcripts-ui-guide.adoc[]
+
+== Analyze traces programmatically
+
+MCP servers emit OpenTelemetry traces to the `redpanda.otel_traces` topic. Consume these traces to build custom monitoring, track tool usage, and analyze performance.
+
+=== Consume traces
+
+[tabs]
+=====
+Cloud Console::
++
+--
+. In the Redpanda Cloud Console, navigate to *Topics*.
+. Select `redpanda.otel_traces`.
+. Click *Messages* to view recent traces.
+. Use filters to search for specific trace IDs, span names, or time ranges.
+--
+
+rpk::
++
+--
+Consume the most recent traces:
+
+[,bash]
+----
+rpk topic consume redpanda.otel_traces --offset end -n 10
+----
+
+Filter for specific MCP server activity by examining the span attributes.
+--
+
+Data Plane API::
++
+--
+Use the link:/api/doc/cloud-dataplane/[Data Plane API^] to programmatically consume traces and integrate with your monitoring pipeline.
+--
+=====
+
+=== Track tool invocations
+
+Monitor which tools are being called and how often by filtering spans where `instrumentationScope.name` is `rpcn-mcp`. The `name` field shows which tool was invoked.
+
+Example: Find all invocations of a specific tool:
+
+[,bash]
+----
+rpk topic consume redpanda.otel_traces --offset start \
+  | jq '.value | select(.instrumentationScope.name == "rpcn-mcp" and .name == "weather")'
+----
+
+=== Measure performance
+
+Calculate tool execution time using span timestamps:
+
+[,bash]
+----
+Duration (ms) = (endTimeUnixNano - startTimeUnixNano) / 1000000
+----
+
+Track percentiles (p50, p95, p99) to identify performance issues and set alerts for durations exceeding acceptable thresholds.
+
+=== Debug failures
+
+Filter for error spans where `status.code` is `2`:
+
+[,bash]
+----
+rpk topic consume redpanda.otel_traces --offset start \
+  | jq '.value | select(.status.code == 2)'
+----
+
+Check `status.message` for error details and the `events` array for error events with timestamps. Use `traceId` to correlate related spans across the distributed system.
+
+== Next steps
+
+* xref:ai-agents:observability/concepts.adoc[]
+* xref:ai-agents:mcp/remote/troubleshooting.adoc[]
+* xref:ai-agents:mcp/remote/manage-servers.adoc[]

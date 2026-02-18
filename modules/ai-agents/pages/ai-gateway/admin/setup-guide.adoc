@@ -1,0 +1,396 @@
+= AI Gateway Setup Guide
+:description: Set up AI Gateway for your organization. Enable providers, configure failover for high availability, set budget controls, and create gateways with team-level isolation.
+:page-topic-type: how-to
+:personas: platform_admin
+:learning-objective-1: Enable LLM providers and models in the catalog
+:learning-objective-2: Create and configure gateways with routing policies, rate limits, and spend limits
+:learning-objective-3: Set up MCP tool aggregation for AI agents
+
+include::ai-agents:partial$ai-gateway-byoc-note.adoc[]
+
+This guide walks administrators through the setup process for AI Gateway, from enabling LLM providers to configuring routing policies and MCP tool aggregation.
+
+After completing this guide, you will be able to:
+
+* [ ] Enable LLM providers and models in the catalog
+* [ ] Create and configure gateways with routing policies, rate limits, and spend limits
+* [ ] Set up MCP tool aggregation for AI agents
+
+== Prerequisites
+
+* Access to the Redpanda Cloud Console with administrator privileges
+* API keys for at least one LLM provider (OpenAI, Anthropic, Google AI)
+* (Optional) MCP server endpoints if you plan to use tool aggregation
+
+== Enable a provider
+
+Providers represent upstream services (Anthropic, OpenAI, Google AI) and associated credentials. Providers are disabled by default and must be enabled explicitly by an administrator.
+
+. In the Redpanda Cloud Console, navigate to *Agentic AI* → *Providers*.
+. Select a provider (for example, Anthropic).
+. On the Configuration tab for the provider, click *Add configuration*.
+. Enter your API Key for the provider.
++
+TIP: Store provider API keys securely. Each provider configuration can have multiple API keys for rotation and redundancy.
+
+. Click *Save* to enable the provider.
+
+Repeat this process for each LLM provider you want to make available through AI Gateway.
+
+== Enable models
+
+The model catalog is the set of models made available through the gateway. Models are disabled by default. After enabling a provider, you can enable its models.
+
+The infrastructure that serves the model differs based on the provider you select. For example, OpenAI has different reliability and availability metrics than Anthropic. When you consider all metrics, you can design your gateway to use different providers for different use cases.
+
+. Navigate to *Agentic AI* → *Models*.
+. Review the list of available models from enabled providers.
+. For each model you want to expose through gateways, toggle it to *Enabled*. For example:
++
+--
+* `openai/gpt-5.2`
+* `openai/gpt-5.2-mini`
+* `anthropic/claude-sonnet-4.5`
+* `anthropic/claude-opus-4.6`
+--
+
+. Click *Save changes*.
+
+Only enabled models will be accessible through gateways. You can enable or disable models at any time without affecting existing gateways.
+
+=== Model naming convention
+
+Model requests must use the `vendor/model_id` format in the model property of the request body. This format allows AI Gateway to route requests to the appropriate provider. For example:
+
+* `openai/gpt-5.2`
+* `anthropic/claude-sonnet-4.5`
+* `openai/gpt-5.2-mini`
+
+ifdef::ai-hub-available[]
+== Choose a gateway mode
+
+Before creating a gateway, decide which mode fits your needs.
+
+*AI Hub Mode* is ideal when you:
+
+* Want to minimize configuration complexity
+* Need to quickly enable LLM access for multiple teams
+* Want pre-configured intelligent routing with automatic provider failover
+* Are satisfied with managed routing rules and backend pools (17 pre-configured rules)
+* Need only basic customization (provider credentials, 6 preference toggles)
+* Use OpenAI and/or Anthropic providers
+
+*Custom Mode* is ideal when you:
+
+* Need custom routing rules based on specific business logic
+* Require full control over backend pool configuration
+* Want to implement custom failover strategies
+* Need to integrate with custom infrastructure (Azure OpenAI, AWS Bedrock, other providers)
+* Have specialized requirements not covered by AI Hub's pre-configured rules
+
+[TIP]
+====
+You can start with AI Hub mode and later eject to Custom mode if you need more control. Ejection is a one-way transition. See xref:ai-gateway/admin/eject-to-custom-mode.adoc[].
+====
+
+For detailed comparison, see xref:ai-gateway/gateway-modes.adoc[].
+
+*Next sections:*
+
+* *AI Hub Mode*: See xref:ai-gateway/admin/configure-ai-hub.adoc[] for setup instructions
+* *Custom Mode*: Continue with "Create a gateway" below for manual configuration
+endif::[]
+
+== Create a gateway
+
+A gateway is a logical configuration boundary (policies + routing + observability) on top of a single deployment. It's a "virtual gateway" that you can create per team, environment (staging/production), product, or customer.
+
+. Navigate to *Agentic AI* → *Gateways*.
+. Click *Create Gateway*.
+. Configure the gateway:
++
+--
+* *Name*: Choose a descriptive name (for example, `production-gateway`, `team-ml-gateway`, `staging-gateway`)
+* *Workspace*: Select the workspace this gateway belongs to
++
+TIP: A workspace is conceptually similar to a resource group in Redpanda streaming.
++
+* *Description* (optional): Add context about this gateway's purpose
+* *Tags* (optional): Add metadata for organization and filtering
+--
+
+. Click *Create*.
+
+. After creation, note the following information:
++
+--
+* *Gateway endpoint*: URL for API requests (for example, `https://example/gateways/d633lffcc16s73ct95mg/v1`) 
++
+The gateway ID is embedded in the URL.
+--
+
+You'll share the gateway endpoint with users who need to access this gateway.
+
+== Configure LLM routing
+
+On the gateway details page, select the *LLM* tab to configure rate limits, spend limits, routing, and provider pools with fallback options.
+
+The LLM routing pipeline visually represents the request lifecycle:
+
+. *Rate Limit*: Global rate limit (for example, 100 requests/second)
+. *Spend Limit / Monthly Budget*: Monthly budget with blocking enforcement (for example, $15K/month)
+. *Routing*: Primary provider pool with optional fallback provider pools
+
+=== Configure rate limits
+
+Rate limits control how many requests can be processed within a time window.
+
+. In the *LLM* tab, locate the *Rate Limit* section.
+. Click *Add rate limit*.
+. Configure the limit:
++
+--
+* *Requests per second*: Maximum requests per second (for example, `100`)
+* *Burst allowance* (optional): Allow temporary bursts above the limit
+--
+
+. Click *Save*.
+
+Rate limits apply to all requests through this gateway, regardless of model or provider.
+
+=== Configure spend limits and budgets
+
+Spend limits prevent runaway costs by blocking requests after a monthly budget is exceeded.
+
+. In the *LLM* tab, locate the *Spend Limit* section.
+. Click *Configure budget*.
+. Set the budget:
++
+--
+* *Monthly budget*: Maximum spend per month (for example, `$15000`)
+* *Enforcement*: Choose *Block* to reject requests after the budget is exceeded, or *Alert* to notify but allow requests
+* *Notification threshold* (optional): Alert when X% of budget is consumed (for example, `80%`)
+--
+
+. Click *Save*.
+
+Budget tracking uses estimated costs based on token usage and public provider pricing.
+
+=== Configure routing and provider pools
+
+Provider pools define which LLM providers handle requests, with support for primary and fallback configurations.
+
+. In the *LLM* tab, locate the *Routing* section.
+. Click *Add provider pool*.
+. Configure the primary pool:
++
+--
+* *Name*: For example, `primary-anthropic`
+* *Providers*: Select one or more providers (for example, Anthropic)
+* *Models*: Choose which models to include (for example, `anthropic/claude-sonnet-4.5`)
+* *Load balancing*: If multiple providers are selected, choose distribution strategy (round-robin, weighted, etc.)
+--
+
+. (Optional) Click *Add fallback pool* to configure automatic failover:
++
+--
+* *Name*: For example, `fallback-openai`
+* *Providers*: Select fallback provider (for example, OpenAI)
+* *Models*: Choose fallback models (for example, `openai/gpt-5.2`)
+* *Trigger conditions*: When to activate fallback:
+  ** Rate limit exceeded (429 from primary)
+  ** Timeout (primary provider slow)
+  ** Server errors (5xx from primary)
+--
+
+. Configure routing rules using CEL expressions (optional):
++
+For simple routing, select *Route all requests to primary pool*.
++
+For advanced routing based on request properties, use CEL expressions. See xref:ai-gateway/cel-routing-cookbook.adoc[] for examples.
++
+Example CEL expression for tier-based routing:
++
+[source,cel]
+----
+request.headers["x-user-tier"] == "premium"
+  ? "anthropic/claude-opus-4.6"
+  : "anthropic/claude-sonnet-4.5"
+----
+
+. Click *Save routing configuration*.
+
+TIP: Provider pool (UI) = Backend pool (API)
+
+=== Load balancing and multi-provider distribution
+
+If a provider pool contains multiple providers, you can distribute traffic to balance load or optimize for cost/performance:
+
+* Round-robin: Distribute evenly across all providers
+* Weighted: Assign weights (for example, 80% to Anthropic, 20% to OpenAI)
+* Least latency: Route to fastest provider based on recent performance
+* Cost-optimized: Route to cheapest provider for each model
+
+== Configure MCP tools (optional)
+
+If your users will build glossterm:AI agent[,AI agents] that need access to glossterm:MCP tool[,tools] via glossterm:MCP[,Model Context Protocol (MCP)], configure MCP tool aggregation.
+
+On the gateway details page, select the *MCP* tab to configure tool discovery and execution. The MCP proxy aggregates multiple glossterm:MCP server[,MCP servers], allowing agents to find and call tools through a single endpoint.
+
+=== Configure MCP rate limits
+
+Rate limits for MCP work the same way as LLM rate limits.
+
+. In the *MCP* tab, locate the *Rate Limit* section.
+. Click *Add rate limit*.
+. Configure the maximum requests per second and optional burst allowance.
+. Click *Save*.
+
+=== Add MCP servers
+
+. In the *MCP* tab, click *Create MCP Server*.
+. Configure the server:
++
+--
+* *Server ID*: Unique identifier for this server
+* *Display Name*: Human-readable name (for example, `database-server`, `slack-server`)
+* *Server Address*: Endpoint URL for the MCP server (for example, `https://mcp-database.example.com`)
+--
+
+. Configure server settings:
++
+--
+* *Timeout (seconds)*: Maximum time to wait for a response from this server
+* *Enabled*: Whether this server is active and accepting requests
+* *Defer Loading Override*: Controls whether tools from this server are loaded upfront or on demand
++
+[cols="1,2"]
+|===
+|Option |Description
+
+|Inherit from gateway
+|Use the gateway-level deferred loading setting (default)
+
+|Enabled
+|Always defer loading from this server. Agents receive only a search tool initially and query for specific tools when needed. This can reduce token usage by 80-90%.
+
+|Disabled
+|Always load all tools from this server upfront.
+|===
+
+* *Forward OIDC Token Override*: Controls whether the client's OIDC token is forwarded to this MCP server
++
+[cols="1,2"]
+|===
+|Option |Description
+
+|Inherit from gateway
+|Use the gateway-level OIDC forwarding setting (default)
+
+|Enabled
+|Always forward the OIDC token to this server
+
+|Disabled
+|Never forward the OIDC token to this server
+|===
+--
+
+. Click *Save* to add the server to this gateway.
+
+Repeat for each MCP server you want to aggregate.
+
+See xref:ai-gateway/mcp-aggregation-guide.adoc[] for detailed information about MCP aggregation.
+
+=== Configure the MCP orchestrator
+
+The MCP orchestrator is a built-in MCP server that enables programmatic tool calling. Agents can generate JavaScript code to call multiple tools in a single orchestrated step, reducing the number of round trips.
+
+Example: A workflow requiring 47 file reads can be reduced from 49 round trips to just 1 round trip using the orchestrator.
+
+The orchestrator is pre-configured when you initialize the MCP gateway. Its server configuration (Server ID, Display Name, Transport, Command, and Timeout) is system-managed and cannot be modified.
+
+You can configure blocked tool patterns to prevent specific tools from being called through the orchestrator:
+
+. In the *MCP* tab, select the orchestrator server to edit it.
+. Under *Blocked Tools*, click *Add Pattern* to add glob patterns for tools that should be blocked from execution.
++
+Example patterns:
++
+--
+* `server_id:*` - Block all tools from a specific server
+* `*:dangerous_tool` - Block a specific tool across all servers
+* `specific:tool` - Block a single tool on a specific server
+--
++
+NOTE: The orchestrator's own tools are blocked by default to prevent recursive execution.
+
+. Click *Save*.
+
+== Verify your setup
+
+After completing the setup, verify that the gateway is working correctly:
+
+=== Test the gateway endpoint
+
+[source,bash]
+----
+curl ${GATEWAY_ENDPOINT}/models \
+  -H "Authorization: Bearer ${REDPANDA_CLOUD_TOKEN}"
+----
+
+Expected result: List of enabled models.
+
+=== Send a test request
+
+[source,bash]
+----
+curl ${GATEWAY_ENDPOINT}/chat/completions \
+  -H "Authorization: Bearer ${REDPANDA_CLOUD_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "openai/gpt-5.2-mini",
+    "messages": [{"role": "user", "content": "Hello, AI Gateway!"}],
+    "max_tokens": 50
+  }'
+----
+
+Expected result: Successful completion response.
+
+=== Check the gateway overview
+
+. Navigate to *Gateways* → Select your gateway → *Overview*.
+. Check the aggregate metrics to verify your test request was processed:
++
+--
+* Total Requests: Should have incremented
+* Total Tokens: Should show tokens consumed
+* Total Cost: Should show estimated cost
+--
+
+== Share access with users
+
+Now that your gateway is configured, share access with users (builders):
+
+. Provide the *Gateway Endpoint* (for example, `https://example/gateways/gw_abc123/v1`)
+. Share API credentials (Redpanda Cloud tokens with appropriate permissions)
+. (Optional) Document available models and any routing policies
+. (Optional) Share rate limits and budget information
+
+Users can then discover and connect to the gateway using the information provided. See xref:ai-gateway/builders/discover-gateways.adoc[] for user documentation.
+
+== Next steps
+
+*Configure and optimize:*
+
+// * xref:ai-gateway/admin/manage-gateways.adoc[Manage Gateways] - List, edit, and delete gateways
+* xref:ai-gateway/cel-routing-cookbook.adoc[CEL Routing Cookbook] - Advanced routing patterns
+// * xref:ai-gateway/admin/networking-configuration.adoc[Networking Configuration] - Configure private endpoints and connectivity
+
+//*Monitor and observe:*
+//
+
+ifdef::integrations-available[]
+*Integrate tools:*
+
+* xref:ai-gateway/integrations/index.adoc[Integrations] - Admin guides for Claude Code, Cursor, and other tools
+endif::[]
