@@ -313,8 +313,9 @@ Gateway configuration (set in AI Gateway UI):
 [,cel]
 ----
 // Route simple edits to cost-effective model
-request.messages[0].content.contains("fix typo") ||
-request.messages[0].content.contains("rename") ?
+request.body.messages.size() > 0 &&
+(request.body.messages[0].content.contains("fix typo") ||
+request.body.messages[0].content.contains("rename")) ?
   "anthropic/claude-haiku" :
   "anthropic/claude-sonnet-4.5"
 ----
