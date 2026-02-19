@@ -105,7 +105,7 @@ module "redpanda_byovpc" {
 }
 ----
 
-NOTE: At least one public subnet is required to create a cluster. The example configuration includes multiple public subnets to allow for future scaling. The example above creates an Internet Gateway and an associated Route Table rule that routes traffic into the VPC, which allows the Redpanda Control Plane to access the cluster. To disable creation of the Internet Gateway, either remove the configuration and value for `create_internet_gateway` or set `"create_internet_gateway": false`.
+NOTE: At least one public subnet is required to create a cluster. The example configuration includes multiple public subnets to allow for future scaling. The example above creates an Internet Gateway and an associated Route Table rule that routes traffic into the VPC, which allows the Redpanda Control Plane to access the cluster. To disable creation of the Internet Gateway, either remove the configuration and value for `create_internet_gateway` or set `"create_internet_gateway": false`. When using a pre-existing VPC, at least one public subnet must already exist in that VPC; setting `public_subnet_cidrs = []` only prevents the module from creating new ones.
 
 [TIP]
 ====
@@ -277,7 +277,7 @@ Enable PrivateLink on the `redpanda_cluster` resource:
 resource "redpanda_cluster" "cluster" {
   # ...
   aws_private_link = {
-    allowed_principals = ["arn:aws:iam::$ACCOUNT_ID:root"]
+    allowed_principals = ["arn:aws:iam::${var.aws_account_id}:root"]
     enabled            = true
     connect_console    = false
   }
