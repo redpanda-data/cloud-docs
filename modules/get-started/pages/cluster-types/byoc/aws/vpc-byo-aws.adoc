@@ -8,7 +8,7 @@ include::shared:partial$feature-flag-rpcn.adoc[]
 
 A Bring Your Own Virtual Private Cloud (BYOVPC) cluster allows you to deploy the Redpanda glossterm:data plane[] into your existing VPC and manage the networking lifecycle yourself. Compared to a standard Bring Your Own Cloud (BYOC) setup, where Redpanda manages the networking lifecycle for you, BYOVPC provides more control. See also: xref:get-started:byoc-arch.adoc[BYOC architecture].
 
-When you create a BYOVPC cluster, you specify your VPC and the IAM role (instance profile) that the Redpanda agent will assume. The Redpanda Cloud agent doesn't create any new resources or alter any settings in your account. With BYOVPC: 
+When you create a BYOVPC cluster, you specify your VPC and the IAM role (instance profile) that the Redpanda agent will assume. The Redpanda Cloud agent doesn't create any new resources or alter any settings in your account. With BYOVPC:
 
 * You provide your own VPC in your AWS account.
 * You maintain more control over your account, because Redpanda requires fewer permissions than standard BYOC clusters.
@@ -46,7 +46,7 @@ For details on configuring the Redpanda Terraform provider, see https://registry
 
 The following example uses the Redpanda BYOVPC Terraform Module to create the resources required to create a BYOVPC cluster.
 
-NOTE: Redpanda Data recommends using a VPC in AWS with a CIDR block (10.0.0.0/16) to allow for enough address space. The subnets must be set to /24.
+NOTE: Redpanda recommends using a VPC in AWS with a CIDR block (10.0.0.0/16) to allow for enough address space. The subnets must be set to /24.
 
 [source,hcl]
 ----
@@ -112,7 +112,9 @@ NOTE: At least one public subnet is required to create a cluster. The example co
 See the full list of zones and tiers available with each provider in the link:/api/doc/cloud-controlplane/topic/topic-regions-and-usage-tiers[Control Plane API reference].
 ====
 
-== Configure the Redpanda Network and Cluster
+== Configure the Redpanda network and cluster
+
+After provisioning the AWS infrastructure, configure the Redpanda network and cluster resources using the module outputs.
 
 [source,hcl]
 ----
@@ -244,7 +246,9 @@ missing permissions are displayed in the output.
 
 == Delete cluster
 
-To delete the cluster, use Terraform. Note: This will also delete the customer managed resources created by the module.
+To delete the cluster and all associated resources, run `terraform destroy`.
+
+WARNING: This also deletes the customer-managed resources created by the module.
 
 [source,bash]
 ----
@@ -255,7 +259,7 @@ terraform destroy
 
 PrivateLink can be enabled during cluster creation or on an already existing cluster.
 
-Start by enabling PrivateLink in the Redpanda BYOVPC Terraform module. This will add the permissions required only for PrivateLink.
+Start by enabling PrivateLink in the Redpanda BYOVPC Terraform module. This adds the permissions required for PrivateLink.
 
 [source,hcl]
 ----
@@ -267,6 +271,7 @@ module "redpanda_byovpc" {
 ----
 
 Enable PrivateLink on the `redpanda_cluster` resource:
+
 [source,hcl]
 ----
 resource "redpanda_cluster" "cluster" {
@@ -281,6 +286,8 @@ resource "redpanda_cluster" "cluster" {
 ----
 
 == Deploy with pre-existing VPC and subnets
+
+If you already have a VPC and subnets in your AWS account, provide their IDs to the module instead of CIDR blocks.
 
 [source,hcl]
 ----
