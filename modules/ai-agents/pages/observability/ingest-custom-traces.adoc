@@ -25,31 +25,165 @@ After reading this page, you will be able to:
 
 If you're using LangChain with OpenTelemetry tracing, you can send traces to Redpanda's `redpanda.otel_traces` glossterm:topic[] to view them in the Transcripts view.
 
-. Configure LangChain's OpenTelemetry integration by following the https://docs.langchain.com/langsmith/trace-with-opentelemetry[LangChain documentation^]. 
+. Deploy a Redpanda Connect pipeline using the `otlp_http` input to receive OTLP traces over HTTP. Create the pipeline in the *Connect* page of your cluster. See the <<configure-the-ingestion-pipeline,Configure the ingestion pipeline>> section for the required pipeline configuration.
 
-. Deploy a Redpanda Connect pipeline using the `otlp_http` input to receive OTLP traces over HTTP. Create the pipeline in the **Connect** page of your cluster, or see the <<configure-the-ingestion-pipeline,Configure the ingestion pipeline>> section below for a sample configuration.
+. Authenticate to Redpanda Cloud using the OAuth2 client credentials flow described in xref:redpanda-cloud:security:cloud-authentication.adoc#authenticate-to-the-cloud-api[Authenticate to the Cloud API].
 
-. Configure your OTEL exporter to send traces to your Redpanda Connect pipeline using environment variables:
-
-[,bash]
+. Configure your application to export traces to the Redpanda Connect OTLP pipeline. The following example shows a complete LangChain agent that authenticates with Redpanda Cloud, streams through the AI Gateway using the native Google GenAI SDK, and exports traces to a Redpanda Connect OTLP pipeline:
++
+[,python]
 ----
-# Configure LangChain OTEL integration
-export LANGSMITH_OTEL_ENABLED=true
-export LANGSMITH_TRACING=true
+#!/usr/bin/env python3
+"""
+LangChain hello-world through Redpanda AI Gateway (Gemini native SDK)
+with OTEL tracing to Redpanda Connect.
 
-# Send traces to Redpanda Connect pipeline (use your pipeline URL)
-export OTEL_EXPORTER_OTLP_ENDPOINT="https://<pipeline-id>.pipelines.<cluster-id>.clusters.rdpa.co"
-export OTEL_EXPORTER_OTLP_HEADERS="Authorization=Bearer <auth-token>"
+Reads configuration from .env file or environment variables.
+"""
+
+import os
+import sys
+
+import requests
+from dotenv import load_dotenv
+from langchain_google_genai import ChatGoogleGenerativeAI
+from opentelemetry import trace
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+
+load_dotenv()
+
+# --- Configuration (from .env or environment) ---
+
+GATEWAY_URL = os.environ["REDPANDA_GATEWAY_URL"]
+GATEWAY_ID = os.environ["REDPANDA_GATEWAY_ID"]
+OTLP_ENDPOINT = os.environ["REDPANDA_OTLP_ENDPOINT"]
+MODEL = os.environ.get("MODEL", "gemini-3-flash-preview")
+
+CLIENT_ID = os.environ["REDPANDA_CLOUD_CLIENT_ID"]
+CLIENT_SECRET = os.environ["REDPANDA_CLOUD_CLIENT_SECRET"]
+
+AUTH_URL = "https://auth.prd.cloud.redpanda.com/oauth/token"
+AUTH_AUDIENCE = "cloudv2-production.redpanda.cloud"
+
+
+def get_access_token() -> str:
+    """Get a bearer token via OAuth2 client credentials flow."""
+    resp = requests.post(
+        AUTH_URL,
+        json={
+            "client_id": CLIENT_ID,
+            "client_secret": CLIENT_SECRET,
+            "audience": AUTH_AUDIENCE,
+            "grant_type": "client_credentials",
+        },
+        timeout=10,
+    )
+    resp.raise_for_status()
+    return resp.json()["access_token"]
+
+
+def setup_otel(auth_token: str) -> None:
+    """Configure OTEL to send traces to Redpanda Connect pipeline."""
+    os.environ["LANGSMITH_OTEL_ENABLED"] = "true"
+    os.environ["LANGSMITH_TRACING"] = "true"
+    os.environ["LANGSMITH_OTEL_ONLY"] = "true"  # skip LangSmith, only custom endpoint
+
+    exporter = OTLPSpanExporter(
+        endpoint=f"{OTLP_ENDPOINT}/v1/traces",
+        headers={"Authorization": f"Bearer {auth_token}"},
+    )
+    provider = TracerProvider()
+    provider.add_span_processor(BatchSpanProcessor(exporter))
+    trace.set_tracer_provider(provider)
+
+    # Instrument httpx so traceparent headers propagate to the AI gateway
+    HTTPXClientInstrumentor().instrument()
+
+
+DEFAULT_PROMPT = "Say hello and tell me one fun fact about streaming data."
+
+
+def main() -> None:
+    prompt = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_PROMPT
+
+    print("Authenticating with Redpanda Cloud...")
+    token = get_access_token()
+
+    print("Setting up OTEL tracing...")
+    setup_otel(token)
+
+    print(f"Creating LangChain model ({MODEL}) via gateway...")
+    llm = ChatGoogleGenerativeAI(
+        model=MODEL,
+        base_url=GATEWAY_URL,
+        google_api_key="unused",  # auth handled by gateway via Bearer token
+        additional_headers={
+            "Authorization": f"Bearer {token}",
+            "rp-aigw-id": GATEWAY_ID,
+        },
+        streaming=True,
+    )
+
+    print("Invoking model...\n")
+    tracer = trace.get_tracer("langchain-demo")
+    with tracer.start_as_current_span("llm_call", attributes={
+        "gen_ai.system": "gemini",
+        "gen_ai.request.model": MODEL,
+    }):
+        for chunk in llm.stream(prompt):
+            text = chunk.content
+            if isinstance(text, list):
+                text = "".join(
+                    part.get("text", "") for part in text if isinstance(part, dict)
+                )
+            print(text, end="", flush=True)
+    print()
+
+    # Flush traces before exit
+    trace.get_tracer_provider().force_flush()
+    print("\nTraces flushed to Redpanda.")
+
+
+if __name__ == "__main__":
+    main()
 ----
++
+The example requires the following environment variables (or a `.env` file):
++
+[cols="1,2", options="header"]
+|===
+| Variable | Description
 
-By default, traces are sent to both LangSmith and your Redpanda Connect pipeline. If you want to send traces only to Redpanda (not LangSmith), set:
+| `REDPANDA_CLOUD_CLIENT_ID`
+| Redpanda Cloud service account client ID
 
-[,bash]
-----
-export LANGSMITH_OTEL_ONLY="true"
-----
+| `REDPANDA_CLOUD_CLIENT_SECRET`
+| Redpanda Cloud service account client secret
 
-Your LangChain application will send traces to the `redpanda.otel_traces` topic, making them visible in the Transcripts view in your cluster  alongside Remote MCP server and declarative agent traces.
+| `REDPANDA_GATEWAY_URL`
+| AI Gateway base URL, for example `\https://ai-gateway.<cluster-id>.clusters.rdpa.co`
+
+| `REDPANDA_GATEWAY_ID`
+| Virtual gateway ID (the `rp-aigw-id` header value)
+
+| `REDPANDA_OTLP_ENDPOINT`
+| Redpanda Connect OTLP pipeline URL, for example `\https://<pipeline-id>.pipelines.<cluster-id>.clusters.rdpa.co`
+
+| `MODEL`
+| Model name (default: `gemini-3-flash-preview`)
+|===
++
+Key implementation details:
++
+--
+* *LangSmith OTEL integration*: Setting `LANGSMITH_OTEL_ENABLED=true` and `LANGSMITH_OTEL_ONLY=true` sends traces only to the configured OTLP endpoint (not to LangSmith).
+* *Trace context propagation*: The `HTTPXClientInstrumentor` instruments the httpx client used internally by the Google GenAI SDK, so that the W3C `traceparent` header propagates to the AI Gateway. This is necessary for client spans to appear nested under gateway spans in the Transcripts view.
+* *Explicit parent span*: The LLM call is wrapped in an explicit OTEL span (`tracer.start_as_current_span`) to ensure there is an active trace context for httpx to propagate. Without this wrapper, LangSmith creates spans after-the-fact and the httpx calls have no parent context.
+* *AI Gateway auth*: The `google_api_key` is set to `"unused"` because the gateway handles real provider authentication. The bearer token and gateway ID are passed as additional headers.
+--
 
 For non-LangChain applications or custom instrumentation, continue with the sections below.
 
@@ -89,7 +223,7 @@ Each trace must follow the OTLP specification with these required fields:
 | Identifies the library that created the span
 
 | `status`
-| Operation status with code (0 = OK, 2 = ERROR)
+| Operation status with code (1 = OK, 2 = ERROR, 0 = UNSET)
 |===
 
 Optional but recommended fields:
@@ -112,12 +246,47 @@ The `otlp_http` input component:
 * Accepts traces at the standard `/v1/traces` endpoint
 * Converts incoming OTLP data into individual Redpanda OTEL v1 Protobuf messages and publishes them to the `redpanda.otel_traces` topic
 
-The following example shows a minimal pipeline configuration. Redpanda Cloud automatically injects authentication handling, so you don't need to configure `auth_token` in the input.
+The Transcripts UI expects messages in `redpanda.otel_traces` to have:
+
+* **Protobuf encoding** with Schema Registry wire format headers (not JSON)
+* **Kafka key** in `<hex-trace-id>/<hex-span-id>` format (for example, `15eb972e47e3611f3281e57703aea3a5/349306a1fea8f67a`)
+
+The `otlp_http` input must be configured with `encoding: protobuf` and a `schema_registry` block to produce the correct wire format. A branch processor extracts the trace and span IDs from each message to construct the required Kafka key.
+
+Redpanda Cloud automatically injects authentication handling for incoming requests, so you don't need to configure `auth_token` in the input.
+
+NOTE: The `schema_registry` block currently requires SASL basic auth credentials. Service account authentication for Schema Registry is not yet supported in the `otlp_http` input.
 
 [,yaml]
 ----
 input:
-  otlp_http: {}
+  otlp_http:
+    encoding: protobuf
+    schema_registry:
+      url: <schema-registry-url> # <1>
+      basic_auth:
+        enabled: true
+        username: <sr-username>
+        password: <sr-password>
+
+pipeline:
+  processors:
+    - branch:
+        request_map: root = content()
+        processors:
+          - schema_registry_decode:
+              url: <schema-registry-url> # <1>
+              basic_auth:
+                enabled: true
+                username: <sr-username>
+                password: <sr-password>
+          - mapping: |
+              let trace_id = this.traceId | ""
+              let span_id = this.spanId | ""
+              root = if $trace_id != "" && $span_id != "" {
+                $trace_id.decode("base64").encode("hex") + "/" + $span_id.decode("base64").encode("hex")
+              } else { deleted() }
+        result_map: meta kafka_key = content().string()
 
 output:
   redpanda:
@@ -128,40 +297,25 @@ output:
     sasl:
       - mechanism: "REDPANDA_CLOUD_SERVICE_ACCOUNT"
     topic: "redpanda.otel_traces"
+    key: ${! @kafka_key }
+    metadata:
+      include_patterns: ["otel_.*"]
 ----
+<1> Your cluster's Schema Registry URL. Find it in the cluster overview page.
 
-The `otlp_http` input automatically handles format conversion, so no processors are needed for basic trace ingestion. Each span becomes a separate message in the `redpanda.otel_traces` topic.
+The branch processor decodes each protobuf message to extract `traceId` and `spanId` fields (lowerCamelCase, as the `otlp_http` input flattens spans to root level), converts them from base64 to hex, and sets the result as the Kafka key. The original protobuf payload is preserved unmodified.
 
 [[use-grpc]]
-==== Alternative: Use gRPC instead of HTTP
+==== Use gRPC transport
 
-If your custom agent requires gRPC transport, use the `otlp_grpc` input instead:
-
-[,yaml]
-----
-input:
-  otlp_grpc: {}
-
-output:
-  redpanda:
-    seed_brokers:
-      - "${PRIVATE_REDPANDA_BROKERS}"
-    tls:
-      enabled: ${PRIVATE_REDPANDA_TLS_ENABLED}
-    sasl:
-      - mechanism: "REDPANDA_CLOUD_SERVICE_ACCOUNT"
-    topic: "redpanda.otel_traces"
-----
-
-Clients must include the authentication token in gRPC metadata as `authorization: Bearer <token>`.
+If your agents use gRPC instead of HTTP, replace `otlp_http` with `otlp_grpc` in the input section. The rest of the pipeline configuration (processors, output) remains identical. See the <<grpc-exporter-examples,gRPC exporter examples>> below for client-side configuration.
 
 === Deploy the pipeline in Redpanda Cloud
 
 . In the *Connect* page of your Redpanda Cloud cluster, click *Create Pipeline*.
-. For the input, select the *otlp_http* (or *otlp_grpc*) component.
-. Skip to *Add a topic* and select `redpanda.otel_traces` from the list of existing topics. Leave the default advanced settings.
+. Paste the pipeline configuration from above, replacing the Schema Registry URL and credentials with your cluster's values.
 . In the *Add permissions* step, create a service account with write access to the `redpanda.otel_traces` topic.
-. In the *Create pipeline* step, enter a name for your pipeline and paste the configuration. Redpanda Cloud automatically handles authentication for incoming requests.
+. Deploy the pipeline. Redpanda Cloud automatically handles authentication for incoming HTTP requests.
 
 == Send traces from your custom agent
 
@@ -187,7 +341,7 @@ Install the OpenTelemetry SDK for your language and configure the OTLP exporter 
 
 The exporter configuration requires:
 
-* **Endpoint**: Your pipeline's URL (the SDK adds `/v1/traces` automatically for HTTP)
+* **Endpoint**: Your pipeline's URL (some SDKs auto-append `/v1/traces` when using the `OTEL_EXPORTER_OTLP_ENDPOINT` environment variable, but when setting the endpoint programmatically you may need to include the full path)
 * **Headers**: Authorization header with your bearer token
 * **Protocol**: HTTP to match the `otlp_http` input (or gRPC for `otlp_grpc`)
 
@@ -357,6 +511,7 @@ func main() {
 
 TIP: Use environment variables for the endpoint URL and authentication token to keep credentials out of your code.
 
+[[grpc-exporter-examples]]
 ==== gRPC transport examples
 
 If you're using the `otlp_grpc` input, configure your exporter to use gRPC transport.
@@ -488,7 +643,7 @@ with tracer.start_as_current_span(
 .Node.js example with GenAI semantic conventions
 [,javascript]
 ----
-const { trace } = require('@opentelemetry/api');
+const { trace, SpanKind } = require('@opentelemetry/api');
 
 const tracer = trace.getTracer('my-agent');
 
@@ -511,27 +666,6 @@ span.setAttribute('gen_ai.usage.input_tokens', response.usage.inputTokens);
 span.setAttribute('gen_ai.usage.output_tokens', response.usage.outputTokens);
 
 span.end();
-----
-
-=== Validate trace format
-
-Before deploying to production, verify your traces match the expected format.
-
-////
-
-* How to validate trace format against schema
-* Common format issues and solutions
-* Tools for format validation
-====
-
-////
-
-Test your agent locally and inspect the traces it produces:
-
-[,bash]
-----
-# Example validation steps
-
 ----
 
 == Verify trace ingestion
@@ -573,14 +707,6 @@ If your spans include the recommended token usage attributes (`gen_ai.usage.inpu
 
 == Troubleshooting
 
-////
-* Common issues and solutions
-* How to monitor pipeline health
-* Log locations and debugging techniques
-* Failure modes and diagnostics
-
-////
-
 === Pipeline not receiving requests
 
 If your custom agent cannot reach the ingestion endpoint:
@@ -610,6 +736,5 @@ If requests succeed but traces do not appear in `redpanda.otel_traces`:
 == Next steps
 
 * xref:ai-agents:observability/view-transcripts.adoc[]
-* xref:ai-agents:agents/monitor-agents.adoc[Observability for declarative agents] 
 * https://docs.redpanda.com/redpanda-connect/components/inputs/otlp_http/[OTLP HTTP input reference^] - Complete configuration options for the `otlp_http` component
 * https://docs.redpanda.com/redpanda-connect/components/inputs/otlp_grpc/[OTLP gRPC input reference^] - Alternative gRPC-based trace ingestion
