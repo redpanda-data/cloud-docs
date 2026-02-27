@@ -1,12 +1,11 @@
 = Create a BYOVPC Cluster on AWS
-:description: Connect Redpanda Cloud to your existing VPC for additional security.
+:description: Use the Redpanda BYOVPC Terraform module to deploy a BYOVPC cluster on AWS.
 :page-aliases: get-started:cluster-types/byoc/vpc-byo-aws.adoc
 :page-cloud: true
-:page-beta: true
 
 include::shared:partial$feature-flag-rpcn.adoc[]
 
-A Bring Your Own Virtual Private Cloud (BYOVPC) cluster allows you to deploy the Redpanda glossterm:data plane[] into your existing VPC and manage the networking lifecycle yourself. Compared to a standard Bring Your Own Cloud (BYOC) setup, where Redpanda manages the networking lifecycle for you, BYOVPC provides more control. See also: xref:get-started:byoc-arch.adoc[BYOC architecture].
+A Bring Your Own Virtual Private Cloud (BYOVPC) cluster allows you to deploy the Redpanda glossterm:data plane[] into your existing VPC and manage the networking lifecycle yourself. Compared to a standard Bring Your Own Cloud (BYOC) setup, where Redpanda manages the networking lifecycle for you, BYOVPC provides more control. For background on the architecture, see xref:get-started:byoc-arch.adoc[BYOC architecture].
 
 When you create a BYOVPC cluster, you specify your VPC and the IAM role (instance profile) that the Redpanda agent will assume. The Redpanda Cloud agent doesn't create any new resources or alter any settings in your account. With BYOVPC:
 
@@ -14,7 +13,7 @@ When you create a BYOVPC cluster, you specify your VPC and the IAM role (instanc
 * You maintain more control over your account, because Redpanda requires fewer permissions than standard BYOC clusters.
 * You control your security resources and policies, including subnets, service accounts, IAM roles, firewall rules, and storage buckets.
 
-The https://registry.terraform.io/modules/redpanda-data/redpanda-byovpc/aws/latest[Redpanda BYOVPC Terraform Module^] contains https://developer.hashicorp.com/terraform[Terraform^] code that deploys the resources required for a BYOVPC cluster on AWS. You'll need to create these resources in advance and provide them to Redpanda during cluster creation. Variables are provided in the code so you can exclude resources that already exist in your environment, such as the VPC.
+The https://registry.terraform.io/modules/redpanda-data/redpanda-byovpc/aws/latest[Redpanda BYOVPC Terraform Module^] contains https://developer.hashicorp.com/terraform[Terraform^] code that deploys the resources required for a BYOVPC cluster on AWS. You need to create these resources in advance and provide them to Redpanda during cluster creation. Variables are provided in the code so you can exclude resources that already exist in your environment, such as the VPC.
 
 [NOTE]
 ====
@@ -29,6 +28,7 @@ For existing BYOVPC clusters, contact https://support.redpanda.com/hc/en-us/requ
 * Minimum permissions in that AWS account. For the actions required by the user who will create the cluster with `terraform apply`, see https://github.com/redpanda-data/terraform-aws-redpanda-byovpc/blob/main/iam_rpk_user.tf[`iam_rpk_user.tf`^].
 * Each BYOVPC cluster requires one allocated Elastic IP (EIP) address in AWS.
 * https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli[Terraform^] version 1.8.5 or later.
+* The https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs[Redpanda Terraform provider^] configured with valid credentials. For setup details, see the provider documentation.
 
 == Limitations
 
@@ -36,11 +36,10 @@ For existing BYOVPC clusters, contact https://support.redpanda.com/hc/en-us/requ
 * After creating a BYOVPC cluster, you cannot change to a different VPC.
 * Only primary CIDR ranges are supported for the VPC.
 
-NOTE: For simplicity, the instructions are based on the assumption that Terraform is configured to use local state. You may want to configure https://developer.hashicorp.com/terraform/language/state/remote[remote state^].
-
-== Configure the Redpanda Terraform provider
-
-For details on configuring the Redpanda Terraform provider, see https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs.
+[NOTE]
+====
+For simplicity, the instructions are based on the assumption that Terraform is configured to use local state. You may want to configure https://developer.hashicorp.com/terraform/language/state/remote[remote state^].
+====
 
 == Configure the Redpanda BYOVPC Terraform module
 
@@ -48,7 +47,7 @@ The following example uses the Redpanda BYOVPC Terraform Module to create the re
 
 NOTE: Redpanda recommends using a VPC in AWS with a CIDR block (10.0.0.0/16) to allow for enough address space. The subnets must be set to /24.
 
-[source,hcl]
+[,hcl]
 ----
 locals {
   common_prefix               = "abc-stg"
@@ -105,7 +104,12 @@ module "redpanda_byovpc" {
 }
 ----
 
-NOTE: At least one public subnet is required to create a cluster. The example configuration includes multiple public subnets to allow for future scaling. The example above creates an Internet Gateway and an associated Route Table rule that routes traffic into the VPC, which allows the Redpanda Control Plane to access the cluster. To disable creation of the Internet Gateway, either remove the configuration and value for `create_internet_gateway` or set `"create_internet_gateway": false`. When using a pre-existing VPC, at least one public subnet must already exist in that VPC; setting `public_subnet_cidrs = []` only prevents the module from creating new ones.
+[NOTE]
+====
+* At least one public subnet is required to create a cluster. The example configuration includes multiple public subnets to allow for future scaling.
+* The example creates an Internet Gateway and an associated Route Table rule that routes traffic into the VPC, which allows the Redpanda control plane to access the cluster. To disable creation of the Internet Gateway, either remove the configuration and value for `create_internet_gateway` or set `"create_internet_gateway": false`.
+* When using a pre-existing VPC, at least one public subnet must already exist in that VPC. Setting `public_subnet_cidrs = []` only prevents the module from creating new ones.
+====
 
 [TIP]
 ====
@@ -116,7 +120,7 @@ See the full list of zones and tiers available with each provider in the link:/a
 
 After provisioning the AWS infrastructure, configure the Redpanda network and cluster resources using the module outputs.
 
-[source,hcl]
+[,hcl]
 ----
 locals {
   resource_group_name = "staging"
@@ -217,11 +221,11 @@ resource "redpanda_cluster" "cluster" {
 }
 ----
 
-== Deploy Terraform
+== Apply the Terraform configuration
 
 Initialize, plan, and apply Terraform to set up the AWS infrastructure:
 
-[source,bash]
+[,bash]
 ----
 terraform init &&
 terraform plan &&
@@ -244,13 +248,13 @@ missing permissions are displayed in the output.
 
 * Network: Checks that the VPC exists, checks that the subnets exist and have the expected tags, and checks that the security groups exist and have the desired ingress and egress rules.
 
-== Delete cluster
+== Delete the cluster
 
 To delete the cluster and all associated resources, run `terraform destroy`.
 
 WARNING: This also deletes the customer-managed resources created by the module.
 
-[source,bash]
+[,bash]
 ----
 terraform destroy
 ----
@@ -261,7 +265,7 @@ PrivateLink can be enabled during cluster creation or on an already existing clu
 
 Start by enabling PrivateLink in the Redpanda BYOVPC Terraform module. This adds the permissions required for PrivateLink.
 
-[source,hcl]
+[,hcl]
 ----
 module "redpanda_byovpc" {
   # ...
@@ -272,7 +276,7 @@ module "redpanda_byovpc" {
 
 Enable PrivateLink on the `redpanda_cluster` resource:
 
-[source,hcl]
+[,hcl]
 ----
 resource "redpanda_cluster" "cluster" {
   # ...
@@ -289,7 +293,7 @@ resource "redpanda_cluster" "cluster" {
 
 If you already have a VPC and subnets in your AWS account, provide their IDs to the module instead of CIDR blocks.
 
-[source,hcl]
+[,hcl]
 ----
 module "redpanda_byovpc" {
   # ...
@@ -309,3 +313,9 @@ module "redpanda_byovpc" {
   # ...
 }
 ----
+
+== Next steps
+
+* xref:get-started:byoc-arch.adoc[Learn about the BYOC architecture].
+* xref:get-started:cluster-types/byoc/aws/create-byoc-cluster-aws.adoc[Create a standard BYOC cluster on AWS].
+* xref:networking:byoc/aws/index.adoc[Configure networking for BYOC clusters on AWS].
