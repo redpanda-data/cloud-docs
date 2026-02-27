@@ -1,6 +1,5 @@
-To connect your client VPC to your PrivateLink-enabled Redpanda cluster, complete the following steps using the AWS CLI.
-
-=== Create client VPC
+// This partial requires the parent page to define a <<cross-region-privatelink>> section.
+=== Set up the client VPC
 
 If you are not using an existing VPC, you must create a new one.
 
@@ -57,11 +56,12 @@ SECURITY_GROUP_ID=<security_group_id>
 
 === Add security group rules
 
-The following example adds security group rules that work for any broker count by opening the documented per-broker port ranges.
+The following example adds security group rules that work for any broker count by opening the documented per-broker port ranges. For PrivateLink, clients connect to individual ports for each broker in ranges 32000-32500 (Kafka API) and 35000-35500 (HTTP Proxy). Opening only a few ports by broker count can break producers/consumers for topics with many partitions. See xref:networking:cloud-security-network.adoc#private-service-connectivity-network-ports[Private service connectivity network ports].
 
-NOTE: For PrivateLink, clients connect to individual ports for each broker in ranges 32000-32500 (Kafka API) and 35000-35500 (HTTP Proxy). Opening only a few ports by broker count can break producers/consumers for topics with many partitions. See xref:networking:cloud-security-network.adoc#private-service-connectivity-network-ports[Private service connectivity network ports].
-
-NOTE: The following example uses `0.0.0.0/0` as the CIDR range for illustration. In production, replace `0.0.0.0/0` with the specific CIDR range of your client VPC or on-premises network to limit exposure.
+[CAUTION]
+====
+The following example uses `0.0.0.0/0` as the CIDR range for illustration. In production, replace `0.0.0.0/0` with the specific CIDR range of your client VPC or on-premises network to limit exposure.
+====
 
 [,bash]
 ----

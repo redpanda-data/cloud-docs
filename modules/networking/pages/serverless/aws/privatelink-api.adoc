@@ -288,15 +288,15 @@ The following example shows how to add security group rules to allow access to R
 aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
   --group-id $SECURITY_GROUP_ID --protocol tcp --port 9092 --cidr 0.0.0.0/0
 
-# Allow Kafka API bootstrap (broker)
+# Allow Kafka API broker 1
 aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
   --group-id $SECURITY_GROUP_ID --protocol tcp --port 9093 --cidr 0.0.0.0/0
 
-# Allow Kafka API bootstrap (broker)
+# Allow Kafka API broker 2
 aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
   --group-id $SECURITY_GROUP_ID --protocol tcp --port 9094 --cidr 0.0.0.0/0
 
-# Allow Kafka API bootstrap (broker)
+# Allow Kafka API broker 3
 aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
   --group-id $SECURITY_GROUP_ID --protocol tcp --port 9095 --cidr 0.0.0.0/0
 
@@ -344,7 +344,7 @@ include::networking:partial$private-links-access-rp-service-serverless.adoc[]
 
 == Test the connection
 
-You can test the PrivateLink connection from any VM or container in the consumer VPC. If configuring a client isn't possible right away, you can do these checks using `rpk` or cURL:
+You can test the PrivateLink connection from any VM or container in the client VPC. If configuring a client isn't possible right away, you can do these checks using `rpk` or cURL:
 
 include::networking:partial$private-links-test-connection-serverless.adoc[]
 
