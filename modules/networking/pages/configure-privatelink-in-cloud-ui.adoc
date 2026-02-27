@@ -21,7 +21,7 @@ Consider using the endpoint service if you have multiple VPCs and could benefit 
 * Your Redpanda cluster and VPC must be in the same region, unless you configure <<cross-region-privatelink,cross-region PrivateLink>>.
 * Use the https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html[AWS CLI] to create a new client VPC or modify an existing one to use the PrivateLink endpoint.
 
-TIP: In Kafka clients, set `connections.max.idle.ms` to a value less than 350 seconds. 
+TIP: In Kafka clients, set `connections.max.idle.ms` to a value less than 350 seconds (350000 ms). 
 
 == DNS resolution with PrivateLink
 
@@ -38,6 +38,36 @@ include::networking:partial$dns_resolution.adoc[]
 
 NOTE: For help with issues when enabling PrivateLink, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda support^].
 
+== Configure PrivateLink connection to Redpanda Cloud
+
+When you have a PrivateLink-enabled cluster, create a VPC endpoint to connect your client VPC to your cluster.
+
+=== Get cluster domain
+
+Get the domain (`cluster_domain`) of the cluster from the bootstrap server URL in the *How to Connect* section of the cluster overview in the Redpanda Cloud Console.
+
+For example, if the bootstrap server URL is: `seed-3da65a4a.cki01qgth38kk81ard3g.fmc.dev.cloud.redpanda.com:9092`, then `cluster_domain` is: `cki01qgth38kk81ard3g.fmc.dev.cloud.redpanda.com`.
+
+[,bash]
+----
+CLUSTER_DOMAIN=<cluster_domain>
+----
+
+NOTE: Use `<cluster_domain>` as the domain you target with your DNS conditional forward (optionally also `*.<cluster_domain>` if your DNS platform requires a wildcard).
+
+=== Get name of PrivateLink endpoint service
+
+You need the service name to <<create-vpc-endpoint,create a VPC endpoint>>. You can find the service name on the *Cluster settings* page after PrivateLink is enabled, or in the *How to Connect* section of the cluster overview.
+
+[,bash]
+----
+PL_SERVICE_NAME=<vpc_endpoint_service_name>
+----
+
+With the service name stored, set up your client VPC to connect to the endpoint service.
+
+include::networking:partial$private-links-aws-client-vpc-setup.adoc[]
+
 == Access Redpanda services through VPC endpoint
 
 After you have enabled PrivateLink for your cluster, your connection URLs are available in the *How to Connect* section of the cluster overview in the Redpanda Cloud Console.
@@ -46,7 +76,7 @@ include::networking:partial$private-links-access-rp-services-through-vpc.adoc[]
 
 == Test the connection
 
-You can test the connection to the endpoint service from any VM or container in the consumer VPC. If configuring a client isn't possible right away, you can do these checks using `rpk` or cURL:
+You can test the connection to the endpoint service from any VM or container in the client VPC. If configuring a client isn't possible right away, you can do these checks using `rpk` or cURL:
 
 include::networking:partial$private-links-test-connection.adoc[]
 
@@ -64,7 +94,7 @@ For more information about AWS cross-region PrivateLink support, see the https:/
 
 NOTE: The *Supported regions* option only appears in the UI for multi-AZ clusters.
 
-. In the Redpanda Cloud UI, select your https://cloud.redpanda.com/clusters[cluster^], and go to the cluster settings page.
+. In the Redpanda Cloud Console, select your https://cloud.redpanda.com/clusters[cluster^], and go to the cluster settings page.
 . In the AWS PrivateLink section, click *Edit* (or *Enable* if PrivateLink is not yet enabled).
 . In the *Supported regions* section, click *Add* to add a region from which PrivateLink endpoints can connect to your cluster.
 . Select an AWS region from the dropdown. The cluster's home region is automatically included and not shown in the list.

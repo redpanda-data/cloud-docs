@@ -3,7 +3,7 @@
 :page-aliases: deploy:deployment-option/cloud/aws-privatelink.adoc
 
 
-NOTE: This guide is for configuring AWS PrivateLink using the Redpanda Cloud API. To configure and manage PrivateLink on an existing public cluster, you must use the Cloud API. See xref:networking:configure-privatelink-in-cloud-ui.adoc[Configure PrivateLink in the Cloud UI] if you want to set up the endpoint service using the Redpanda Cloud UI.
+NOTE: This guide is for configuring AWS PrivateLink using the Redpanda Cloud API. To configure and manage PrivateLink on an existing public cluster, you must use the Cloud API. See xref:networking:configure-privatelink-in-cloud-ui.adoc[Configure PrivateLink in the Cloud UI] if you want to set up the endpoint service using the Redpanda Cloud Console.
 
 The Redpanda AWS PrivateLink endpoint service provides secure access to Redpanda Cloud from your own VPC. Traffic over PrivateLink does not go through the public internet because a PrivateLink connection is treated as its own private AWS service. While your VPC has access to the Redpanda VPC, Redpanda cannot access your VPC.
 
@@ -22,11 +22,11 @@ After <<get-a-cloud-api-access-token,getting an access token>>, you can <<create
 == Prerequisites
 
 * Install `rpk`.
-* Your Redpanda cluster and <<create-client-vpc,VPC>> must be in the same region, unless you configure <<cross-region-privatelink,cross-region PrivateLink>>.
+* Your Redpanda cluster and <<set-up-the-client-vpc,VPC>> must be in the same region, unless you configure <<cross-region-privatelink,cross-region PrivateLink>>.
 * In this guide, you use the link:/api/doc/cloud-controlplane/topic/topic-cloud-api-overview[Redpanda Cloud API] to enable the Redpanda endpoint service for your clusters. Follow the steps below to <<get-an-access-token,get an access token>>.
 * Use the https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html[AWS CLI^] to create a new client VPC or modify an existing one to use the PrivateLink endpoint.
 
-TIP: In Kafka clients, set `connections.max.idle.ms` to a value less than 350 seconds. 
+TIP: In Kafka clients, set `connections.max.idle.ms` to a value less than 350 seconds (350000 ms).
 
 NOTE: Enabling PrivateLink changes private DNS behavior for your cluster. Before configuring connections, review <<dns-resolution-with-privatelink>>.
 
@@ -36,7 +36,7 @@ include::networking:partial$private-links-api-access-token.adoc[]
 
 == Create new cluster with PrivateLink endpoint service enabled
 
-. In the https://cloud.redpanda.com/[Redpanda Cloud UI^], go to **Resource groups** and select the resource group in which you want to create a cluster.
+. In the https://cloud.redpanda.com/[Redpanda Cloud Console^], go to **Resource groups** and select the resource group in which you want to create a cluster.
 +
 Copy and store the resource group ID (UUID) from the URL in the browser.
 +
@@ -87,7 +87,7 @@ Wait for the network to be ready before creating the cluster in the next step. Y
 In the example below, make sure to set your own values for the following fields:
 +
 --
-- `zones`: for example, `"usw2-az1","usw2-az2","usw2-az3"`
+- `zones`: for example, `"us-west-2a","us-west-2b","us-west-2c"`
 - `type`:  `"TYPE_BYOC"` or `"TYPE_DEDICATED"`
 - `tier`: for example, `"tier-1-aws-v2-arm"`
 - `name`
@@ -146,7 +146,7 @@ Enabling PrivateLink on your VPC interrupts all communication on existing Redpan
 To avoid disruption, consider using a staged approach to enable PrivateLink. See: xref:networking:byoc/aws/vpc-peering-aws.adoc#switch-from-vpc-peering-to-privatelink[Switch from VPC peering to PrivateLink].
 ====
 
-. In the Redpanda Cloud UI, go to the cluster overview and copy the cluster ID from the **Details** section.
+. In the Redpanda Cloud Console, go to the cluster overview and copy the cluster ID from the **Details** section.
 +
 [,bash]
 ----
@@ -204,7 +204,7 @@ When you have a PrivateLink-enabled cluster, you can create an endpoint to conne
 
 === Get cluster domain
 
-Get the domain (`cluster_domain`) of the cluster from the cluster details in the Redpanda Cloud UI.
+Get the domain (`cluster_domain`) of the cluster from the cluster details in the Redpanda Cloud Console.
 
 For example, if the bootstrap server URL is: `seed-3da65a4a.cki01qgth38kk81ard3g.fmc.dev.cloud.redpanda.com:9092`, then `cluster_domain` is: `cki01qgth38kk81ard3g.fmc.dev.cloud.redpanda.com`.
 
@@ -227,126 +227,13 @@ PL_SERVICE_NAME=`curl -X GET \
   $PUBLIC_API_ENDPOINT/v1/clusters/$CLUSTER_ID | jq -r .cluster.aws_private_link.status.service_name`
 ----
 
-=== Create client VPC
+With the service name stored, set up your client VPC to connect to the endpoint service.
 
-If you are not using an existing VPC, you must create a new one.
-
-[CAUTION]
-====
-xref:networking:byoc/aws/vpc-peering-aws.adoc[VPC peering] and PrivateLink will not work at the same time if you set them up on the same VPC where your Kafka clients run. PrivateLink endpoints take priority.
-
-VPC peering and PrivateLink can both be used at the same time if Kafka clients are connecting from distinct VPCs. For example, in a private Redpanda cluster, you can connect your internal Kafka clients over VPC peering, and enable PrivateLink for external services.
-====
-
-The client VPC must be in the same region as your Redpanda cluster, unless you have configured <<cross-region-privatelink,cross-region PrivateLink>>. To create the VPC, run:
-
-[,bash]
-----
-# See https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html for
-# information on profiles and credential files
-PROFILE=<specific-profile-from-credential-file>
-
-aws ec2 create-vpc --region $REGION --profile $PROFILE --cidr-block 10.0.0.0/20
-
-# Store the client VPC ID from the command output
-CLIENT_VPC_ID=<client_vpc_id>
-----
-
-You can also use an existing VPC. You need the VPC ID to <<modify-vpc-dns-attributes,modify its DNS attributes>>.
-
-=== Modify VPC DNS attributes
-
-To modify the VPC attributes, run:
-
-[,bash]
-----
-aws ec2 modify-vpc-attribute --region $REGION --profile $PROFILE --vpc-id $CLIENT_VPC_ID \
-    --enable-dns-hostnames "{\"Value\":true}"
-
-aws ec2 modify-vpc-attribute --region $REGION --profile $PROFILE --vpc-id $CLIENT_VPC_ID \
-    --enable-dns-support "{\"Value\":true}"
-----
-
-These commands enable DNS hostnames and resolution for instances in the VPC.
-
-=== Create security group
-
-You need the security group ID `security_group_id` from the command output to <<add-security-group-rules,add security group rules>>. To create a security group, run:
-
-[,bash]
-----
-aws ec2 create-security-group --region $REGION --profile $PROFILE --vpc-id $CLIENT_VPC_ID \
-    --description "Redpanda endpoint service client security group" \
-    --group-name "${CLUSTER_ID}-sg"
-SECURITY_GROUP_ID=<security_group_id>
-----
-
-=== Add security group rules
-
-The following example adds security group rules that work for any broker count by opening the documented per-broker port ranges.
-
-NOTE: For PrivateLink, clients connect to individual ports for each broker in ranges 32000-32500 (Kafka API) and 35000-35500 (HTTP Proxy). Opening only a few ports by broker count can break producers/consumers for topics with many partitions. See xref:networking:cloud-security-network.adoc#private-service-connectivity-network-ports[Private service connectivity network ports].
-
-[,bash]
-----
-# Allow Kafka API bootstrap (seed)
-aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
-  --group-id $SECURITY_GROUP_ID --protocol tcp --port 30292 --cidr 0.0.0.0/0
-
-# Allow Schema Registry
-aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
-  --group-id $SECURITY_GROUP_ID --protocol tcp --port 30081 --cidr 0.0.0.0/0
-
-# Allow HTTP Proxy bootstrap
-aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
-  --group-id $SECURITY_GROUP_ID --protocol tcp --port 30282 --cidr 0.0.0.0/0
-
-# Allow Redpanda Cloud Data Plane API / Prometheus (if needed)
-aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
-  --group-id $SECURITY_GROUP_ID --protocol tcp --port 443 --cidr 0.0.0.0/0
-
-# Private service connectivity broker port pools
-# Kafka API per-broker ports
-aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
-  --group-id $SECURITY_GROUP_ID \
-  --ip-permissions 'IpProtocol=tcp,FromPort=32000,ToPort=32500,IpRanges=[{CidrIp=0.0.0.0/0}]'
-
-# HTTP Proxy per-broker ports
-aws ec2 authorize-security-group-ingress --region $REGION --profile $PROFILE \
-  --group-id $SECURITY_GROUP_ID \
-  --ip-permissions 'IpProtocol=tcp,FromPort=35000,ToPort=35500,IpRanges=[{CidrIp=0.0.0.0/0}]'
-----
-
-=== Create VPC subnet
-
-You need the subnet ID `subnet_id` from the command output to <<create-vpc-endpoint,create a VPC endpoint>>. Run the following command, specifying the subnet availability zone (for example, `usw2-az1`):
-
-[,bash]
-----
-aws ec2 create-subnet --region $REGION --profile $PROFILE --vpc-id $CLIENT_VPC_ID \
-    --availability-zone <zone> \
-    --cidr-block 10.0.1.0/24
-SUBNET_ID=<subnet_id>
-----
-
-=== Create VPC endpoint
-
-[,bash]
-----
-aws ec2 create-vpc-endpoint \
-    --region $REGION --profile $PROFILE \
-    --vpc-id $CLIENT_VPC_ID \
-    --vpc-endpoint-type "Interface" \
-    --ip-address-type "ipv4" \
-    --service-name $PL_SERVICE_NAME \
-    --subnet-ids $SUBNET_ID \
-    --security-group-ids $SECURITY_GROUP_ID \
-    --private-dns-enabled
-----
+include::networking:partial$private-links-aws-client-vpc-setup.adoc[]
 
 == Access Redpanda services through VPC endpoint
 
-After you have enabled PrivateLink for your cluster, your connection URLs are available in the *How to Connect* section of the cluster overview in the Redpanda Cloud UI.
+After you have enabled PrivateLink for your cluster, your connection URLs are available in the *How to Connect* section of the cluster overview in the Redpanda Cloud Console.
 
 include::networking:partial$private-links-access-rp-services-through-vpc.adoc[]
 
@@ -407,7 +294,7 @@ aws ec2 create-vpc-endpoint \
 
 == Test the connection
 
-You can test the PrivateLink connection from any VM or container in the consumer VPC. If configuring a client isn't possible right away, you can do these checks using `rpk` or cURL:
+You can test the PrivateLink connection from any VM or container in the client VPC. If configuring a client isn't possible right away, you can do these checks using `rpk` or cURL:
 
 include::networking:partial$private-links-test-connection.adoc[]
 
