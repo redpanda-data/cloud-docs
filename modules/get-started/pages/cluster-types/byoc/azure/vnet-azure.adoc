@@ -1,10 +1,15 @@
 = Create a BYOVNet Cluster on Azure
-:description: Connect Redpanda Cloud to your existing VNet for additional security.
+:description: Use Terraform to deploy a BYOVNet cluster on Azure.
 :page-beta: true
+:page-topic-type: how-to
+:personas: platform_admin
+:learning-objective-1: Deploy a BYOVNet cluster on Azure using Terraform
+:learning-objective-2: Configure the Redpanda network and cluster resources using the Cloud API
+:learning-objective-3: Manage the lifecycle of a BYOVNet cluster, including creation and deletion
 
 include::shared:partial$feature-flag-rpcn.adoc[]
 
-A Bring Your Own Virtual Network (BYOVNet) cluster allows you to deploy the Redpanda glossterm:data plane[] into your existing VNet and manage the networking lifecycle. Compared to a standard Bring Your Own Cloud (BYOC) setup, where Redpanda manages the networking lifecycle for you, BYOVNet provides more control. See also: xref:get-started:byoc-arch.adoc[BYOC architecture].
+A Bring Your Own Virtual Network (BYOVNet) cluster allows you to deploy the Redpanda glossterm:data plane[] into your existing VNet and manage the networking lifecycle. Compared to a standard Bring Your Own Cloud (BYOC) setup, where Redpanda manages the networking lifecycle for you, BYOVNet provides more control. For background on the architecture, see xref:get-started:byoc-arch.adoc[BYOC architecture].
 
 When you create a BYOVNet cluster, you specify your VNet and managed identities. The Redpanda Cloud agent doesn't create any new resources or alter any settings in your account. With a customer-managed VNet: 
 
@@ -12,9 +17,9 @@ When you create a BYOVNet cluster, you specify your VNet and managed identities.
 * You maintain more control over your account, because Redpanda requires fewer permissions than standard BYOC clusters.
 * You control your security resources and policies, including subnets, user-assigned identities, IAM roles and assignments, security groups, storage accounts, and key vaults.
 
-The https://github.com/redpanda-data/cloud-examples/tree/main/customer-managed/azure/README.md[Redpanda Cloud Examples repository^] contains https://developer.hashicorp.com/terraform[Terraform^] code that deploys the resources required for a BYOVNet cluster on Azure. You'll need to create these resources in advance and give them to Redpanda during cluster creation. Variables are provided in the code so you can exclude resources that already exist in your environment, such as the VNet.
+The https://github.com/redpanda-data/cloud-examples/tree/main/customer-managed/azure/README.md[Redpanda Cloud Examples repository^] contains https://developer.hashicorp.com/terraform[Terraform^] code that deploys the resources required for a BYOVNet cluster on Azure. You need to create these resources in advance and provide them to Redpanda during cluster creation. Variables are provided in the code so you can exclude resources that already exist in your environment, such as the VNet.
 
-See the code for the complete list of resources required to create and deploy Redpanda cluster. Customer-managed resources can be broken down into the following groups:
+See the code for the complete list of resources required to create and deploy a Redpanda cluster. Customer-managed resources can be broken down into the following groups:
 
 * Resource group resources
 * User-assigned identities
@@ -42,11 +47,12 @@ See the code for the complete list of resources required to create and deploy Re
 
 Set environment variables for the resource group, VNet name, and Azure region. For example:
 
-```bash
+[,bash]
+----
 export AZURE_RESOURCE_GROUP_NAME=sample-redpanda-rg
 export AZURE_VNET_NAME="sample-vnet"
 export AZURE_REGION=centralus
-```
+----
 
 == Create Azure resource group and VNet
 
@@ -54,19 +60,21 @@ export AZURE_REGION=centralus
 +
 The following example uses the environment variables to create the `sample-redpanda-rg` resource group and the `sample-vnet` virtual network with an address space of `10.0.0.0/16`.
 +
-```bash
+[,bash]
+----
 az group create --name ${AZURE_RESOURCE_GROUP_NAME} --location ${AZURE_REGION}
 
 az network vnet create \
     --name ${AZURE_VNET_NAME} \
     --resource-group ${AZURE_RESOURCE_GROUP_NAME} \
     --location ${AZURE_REGION} \
-    --address-prefix 10.0.0.0/16 
-```
+    --address-prefix 10.0.0.0/16
+----
 
 . Set additional environment variables for Azure resources. For example:
 +
-```bash
+[,bash]
+----
 export AZURE_SUBSCRIPTION_ID=
 export AZURE_TENANT_ID=
 export AZURE_ZONES='["centralus-az1", "centralus-az2", "centralus-az3"]'
@@ -111,18 +119,22 @@ export KAFKA_CONNECT_USER_ASSIGNED_IDENTITY_NAME=kafka-connect-uai
 export REDPANDA_CONNECT_USER_ASSIGNED_IDENTITY_NAME=redpanda-connect-uai
 export REDPANDA_CONNECT_API_USER_ASSIGNED_IDENTITY_NAME=redpanda-connect-api-uai
 export REDPANDA_OPERATOR_USER_ASSIGNED_IDENTITY_NAME=redpanda-operator-uai
-```
+----
 
 == Configure Terraform
 
-NOTE: For simplicity, these instructions assume that Terraform is configured to use local state. You may want to configure https://developer.hashicorp.com/terraform/language/state/remote[remote state^]. 
+[NOTE]
+====
+For simplicity, these instructions assume that Terraform is configured to use local state. You may want to configure https://developer.hashicorp.com/terraform/language/state/remote[remote state^].
+====
 
 Create a JSON file called `byovnet.auto.tfvars.json` inside the Terraform directory to configure variables for your specific needs:
 
 .Show script
 [%collapsible]
 ====
-```bash
+[,bash]
+----
 cat > byovnet.auto.tfvars.json <<EOF
 {
   "azure_subscription_id": "${AZURE_SUBSCRIPTION_ID}",
@@ -226,18 +238,19 @@ cat > byovnet.auto.tfvars.json <<EOF
   "redpanda_security_group_name": "${REDPANDA_SECURITY_GROUP_NAME}"
 }
 EOF
-```
+----
 ====
 
-== Deploy Terraform
+== Apply the Terraform configuration
 
 Initialize, plan, and apply Terraform to set up the Azure infrastructure:
 
-```bash
+[,bash]
+----
 terraform init &&
 terraform plan &&
 terraform apply
-```
+----
 
 Note the output values that the `terraform apply` command displays. The output values are necessary in later steps. To continue with cluster creation, see https://github.com/redpanda-data/cloud-examples/tree/main/customer-managed/azure#create-azure-byo-vnet-redpanda-cluster[Create Azure VNet Redpanda Cluster^].
 
@@ -246,7 +259,8 @@ You can also get these values by running `terraform output`. For example:
 .Show output from `terraform output`
 [%collapsible]
 ====
-```bash
+[,bash]
+----
 agent_private_subnet_name = "my-snet-agent-private"
 agent_user_assigned_identity_name = "my-agent-uai"
 aks_user_assigned_identity_name = "my-aks-uai"
@@ -287,7 +301,7 @@ tiered_storage_account_name = "mytieredstorage"
 tiered_storage_container_name = "mytieredstorage"
 ......
 vnet_name = "my-rp-vnet"
-```
+----
 ====
 
 The https://github.com/redpanda-data/cloud-examples/blob/main/customer-managed/azure/terraform/README.md[Terraform Readme] has more information about variable files: 
@@ -302,7 +316,8 @@ The https://github.com/redpanda-data/cloud-examples/blob/main/customer-managed/a
 
 Get a glossterm:bearer token[] from the Cloud API authentication endpoint using your Redpanda credentials:
 
-```bash
+[,bash]
+----
 export REDPANDA_CLIENT_ID=
 export REDPANDA_CLIENT_SECRET=
 
@@ -313,11 +328,11 @@ export BEARER_TOKEN=$(curl --request POST \
 --data client_id=${REDPANDA_CLIENT_ID} \
 --data client_secret=${REDPANDA_CLIENT_SECRET} \
 --data audience=cloudv2-production.redpanda.cloud | jq -r '.access_token')
-```
+----
 
 TIP: To get the Redpanda authentication credentials, follow the link:/api/doc/cloud-controlplane/topic/authentication[authentication guide].
 
-== Create network
+== Create the network
 
 To create the Redpanda network:
 
@@ -326,9 +341,10 @@ To create the Redpanda network:
 .Show script
 [%collapsible]
 ====
-```bash
+[,bash]
+----
 cat > redpanda-network.json <<EOF
-{ 
+{
   "network": {
     "cloud_provider": "CLOUD_PROVIDER_AZURE",
     "cluster_type": "TYPE_BYOC",
@@ -367,20 +383,21 @@ cat > redpanda-network.json <<EOF
   }
 }
 EOF
-```
+----
 ====
 
 . Use the Cloud API to create the network and retrieve the network ID:
 +
-```bash
+[,bash]
+----
 export REDPANDA_NETWORK_ID=$(curl -X POST "https://api.redpanda.com/v1/networks" \
  -H "accept: application/json" \
  -H "content-type: application/json" \
  -H "authorization: Bearer ${BEARER_TOKEN}" \
  --data-binary @redpanda-network.json | jq -r '.operation.resource_id')
-```
+----
 
-== Create cluster
+== Create the cluster
 
 To create the Redpanda cluster:
 
@@ -389,7 +406,8 @@ To create the Redpanda cluster:
 .Show script
 [%collapsible]
 ====
-```bash
+[,bash]
+----
 cat > redpanda-cluster.json <<EOF
 {
   "cluster": {
@@ -441,77 +459,84 @@ cat > redpanda-cluster.json <<EOF
   }
 }
 EOF
-```
+----
 ====
 +
 TIP: See the full list of zones and tiers available with each provider in the link:/api/doc/cloud-controlplane/topic/topic-regions-and-usage-tiers[Control Plane API reference].
 
 . Make a Cloud API call to create a Redpanda cluster and get the network ID from the response in JSON `.operation.metadata.network_id`.
 +
-```bash
+[,bash]
+----
 export REDPANDA_ID=$(curl -X POST "https://api.redpanda.com/v1/clusters" \
- -H "accept: application/json"\ 
+ -H "accept: application/json"\
  -H "content-type: application/json" \
  -H "authorization: Bearer ${BEARER_TOKEN}" \
  --data-binary @redpanda-cluster.json | jq -r '.operation.resource_id')
-```
+----
 
-== Create cluster resources
+== Create the cluster resources
 
 To create the initial cluster resources, first log in to Redpanda Cloud, then run `rpk cloud byoc azure apply`:
 
-```bash
+[,bash]
+----
 rpk cloud login \
   --save \
   --client-id=${REDPANDA_CLIENT_ID} \
   --client-secret=${REDPANDA_CLIENT_SECRET} \
   --no-profile
-```
+----
 
-```bash
+[,bash]
+----
 rpk cloud byoc azure apply --redpanda-id="${REDPANDA_ID}" --subscription-id="${AZURE_SUBSCRIPTION_ID}"
-```
+----
 
 The Redpanda Cloud agent now is running and handles the remaining steps. This can take up to 45 minutes. When provisioning completes, the cluster status updates to `Running`. If the cluster remains in `Creating` status after 45 minutes, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda Support^].
 
-== Check cluster status
+== Check the cluster status
 
 Cluster creation is an example of an operation that can take a longer period of time to complete. You can check the operation state with the Cloud API, or check the Redpanda Cloud UI for cluster status.
 
 Example using the returned `operation_id`:
 
-```bash
+[,bash]
+----
 curl -X GET "https://api.redpanda.com/v1/operations/<operation-id>" \
  -H "accept: application/json"\
  -H "content-type: application/json" \
  -H "authorization: Bearer ${BEARER_TOKEN}"
-```
+----
 
 Example retrieving cluster:
 
-```bash
+[,bash]
+----
 curl -X GET "https://api.redpanda.com/v1/clusters/<resource-id>" \
  -H "accept: application/json"\
  -H "content-type: application/json" \
  -H "authorization: Bearer ${BEARER_TOKEN}"
-```
+----
 
-== Delete cluster
+== Delete the cluster
 
 To delete the cluster, first send a DELETE request to the Cloud API, and retrieve the `resource_id` of the DELETE operation. Then run the `rpk` command to destroy the cluster identified by the `resource_id`.
 
-```bash
+[,bash]
+----
 export REDPANDA_ID=$(curl -X DELETE "https://api.redpanda.com/v1/clusters/${REDPANDA_ID}" \
  -H "accept: application/json"\
  -H "content-type: application/json" \
  -H "authorization: Bearer ${BEARER_TOKEN}" | jq -r '.operation.resource_id')
-```
+----
 
-After that completes, run: 
+After that completes, run:
 
-```bash
+[,bash]
+----
 rpk cloud byoc azure destroy --redpanda-id ${REDPANDA_ID}
-```
+----
 
 include::get-started:partial$no-access.adoc[]
 
