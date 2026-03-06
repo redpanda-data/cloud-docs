@@ -1,0 +1,91 @@
+= COPY TO with Endpoint
+:description: When running COPY TO queries, you should have the option to include the endpoint URL.
+
+When running xref:sql:reference/sql-statements/copy-to/copy-to.adoc[COPY TO] queries, you should have the option to include the *endpoint URL*. This feature is especially useful for scenarios where you need to provide credentials and specific endpoints.
+
+=== Syntax
+
+The syntax for using `COPY TO` statement is as follows:
+
+[source,sql]
+----
+COPY table_name TO 'file_path' (AWS_CRED(AWS_REGION 'aws_region', AWS_KEY_ID
+      'key_id', AWS_PRIVATE_KEY 'access_key', ENDPOINT 'endpoint_url'));
+----
+
+[NOTE]
+====
+Replace `AWS_CRED` with `AZURE_CRED` or `GCS_CRED` when copying to the Azure Blob Storage or Google Cloud Storage.
+====
+Here’s the breakdown of parameters syntax:
+
+* *Shared parameters*:
+** `table++_++name`: table containing the data to be exported
+** `file++_++path`: CSV file location accessible from the server
+* *Parameters in `AWS++_++CRED`*:
+** `aws++_++region`: AWS region associated with the storage service (e.g. '`region1`')
+** `key++_++id`: key identifier used for authentication
+** `access++_++key`: access key used for authentication
+** `endpoint++_++url`: URL endpoint for the storage service
+* *Parameters in `GCS++_++CRED`*:
+** `++<++path++_++to++_++credentials++>++`: path to JSON credentials file.
+** `++<++json++_++credentials++_++string++>++`: contents of the GCS’s credentials file
+* *Parameters in `AZURE++_++CRED`*:
+** `tenant++_++id`: tenant identifier representing your organization’s identity in Azure
+** `client++_++id`: client identifier used for authentication.
+** `client++_++secret`: secret identifier acting as a password when authenticating
+
+=== Examples
+
+==== COPY TO with AWS S3 Bucket
+
+In this example, we use the `COPY TO` statement to export data from the `students` table to a CSV file named `students++_++file`.
+
+[source,sql]
+----
+COPY students TO 's3://oxla-testdata/cayo/students_file' (AWS_CRED(AWS_REGION 'region1', AWS_KEY_ID
+      'key_id', AWS_PRIVATE_KEY 'access_key', ENDPOINT 's3.us-east-2.amazonaws.com'));
+----
+
+*Expected Output*: `student` table data is copied to the `students++_++file` on AWS S3
+
+==== COPY TO with Google Cloud Storage
+
+This example shows how to use the `COPY TO` statement to export data, but this time, the data is stored on Google Cloud Storage.
+
+[source,sql]
+----
+COPY project TO 'gs://your-bucket/project_file' (GCS_CRED('/path/to/credentials.json'));
+----
+
+If for any reason you cannot use a path to the `credentials.json` file, you can also pass its contents as a string in the following way:
+
+[source,sql]
+----
+COPY project FROM 'gs://your-bucket/project_file' (GCS_CRED('<contents of the credentials.json file>'));
+----
+
+[NOTE]
+====
+Make sure that it is in JSON format
+====
+You can also copy the data using the `AWS++_++CRED` like below:
+
+[source,sql]
+----
+COPY project TO 'gs://your-bucket/project_file' (AWS_CRED(AWS_REGION 'region1', AWS_KEY_ID
+      'key_id', AWS_PRIVATE_KEY 'access_key', ENDPOINT 'https://storage.googleapis.com'));
+----
+
+*Expected Output*: Data from the `project` table is copied to the `project++_++file` on Google Cloud Storage
+
+==== COPY TO with Azure Blob Storage
+
+It’s a similar story for storing data in Azure Blob Storage.
+
+[source,sql]
+----
+COPY taxi_data TO 'wasbs://container-name/your_blob' (AZURE_CRED(TENANT_ID 'your_tenant_id' CLIENT_ID 'your_client_id', CLIENT_SECRET 'your_client_secret'));
+----
+
+*Expected Output*: Data from the `taxi++_++data` table is copied to `your++_++blob` on Azure Blob Storage
