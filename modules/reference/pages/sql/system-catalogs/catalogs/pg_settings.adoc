@@ -1,0 +1,52 @@
+= pg_settings
+:description: The pg_settings displays the configuration settings for the current session.
+
+The `pg++_++settings` displays the configuration settings for the current session. It mimics the https://www.postgresql.org/docs/current/catalog-pg-db-role-setting.html[pg++_++settings] PostgreSQL system catalog.
+
+== Columns
+
+[NOTE]
+====
+This table is designed for compatibility with tools that require PostgreSQL system tables, so it mostly has dummy data. Please note that not all columns in `pg_settings` are applicable to every type of relation.
+====
+The following columns are available for querying in `pg++_++settings`:
+
+[width="100%",cols="16%,7%,77%",options="header",]
+|===
+|Column |Type |Description
+|`name` |`text` |This column represents the run-time configuration parameter name
+|`setting` |`text` |This column represents the current value of the parameter
+|`unit` |`text` |_Unused_.
+|`category` |`text` |_Unused_.
+|`short++_++desc` |`text` |_Unused_.
+|`extra++_++desc` |`text` |_Unused_.
+|`context` |`text` |_Unused_.
+|`vartype` |`text` |_Unused_.
+|`source` |`text` |_Unused_.
+|`min++_++val` |`text` |_Unused_.
+|`max++_++val` |`text` |_Unused_.
+|`enumvals` |`text` |_Unused_.
+|`boot++_++val` |`text` |_Unused_.
+|`reset++_++val` |`text` |_Unused_.
+|`sourcefile` |`text` |_Unused_.
+|`sourceline` |`int` |_Unused_.
+|`pending++_++restart` |`bool` |_Unused_.
+|===
+
+== Example
+
+To retrieve information from the pg++_++settings catalog, you can execute a query like:
+
+[source,sql]
+----
+SELECT name, setting FROM pg_settings;
+----
+
+You will get the run-time configuration values as shown below.
+
+[source,sql]
+----
+     name      | setting
+----------------+---------
+ max_index_keys | 32
+----

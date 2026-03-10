@@ -1,0 +1,61 @@
+= Comment Support
+:description: Redpanda SQL fully supports comments in your queries.
+:page-topic-type: reference
+
+Redpanda SQL fully supports comments in your queries. Comments provide a way to add explanatory notes and improve the readability of queries, making it easier for developers and stakeholders to understand complex queries.
+
+There are two types of comments in Redpanda SQL: *single-line* and *multi-line (block)*.
+
+== Single Line Comments
+
+A single-line comment in Redpanda SQL starts with two consecutive hyphens (--) and extends to the end of the line. These comments are used to annotate specific parts of a query, providing brief explanations or notes to assist in understanding the query.
+
+*Syntax:*
+
+[source,sql]
+----
+-- This is an example single line comment
+----
+
+== Multi-Line (Block) Comments
+
+Redpanda SQL also supports multi-line comments, often referred to as block comments. These comments begin with `/*` and end with `*/`, allowing for multi-line explanations or temporarily disabling sections of the query.
+
+*Syntax:*
+
+[source,sql]
+----
+/*
+This is an example multi-line comment.
+It can span multiple lines and is useful for providing detailed explanations.
+*/
+----
+
+== Comment Placement
+
+In Redpanda SQL, single-line comments should always be placed at the end of the line they refer to, whereas multi-line comments can be positioned anywhere within the query.
+
+*Example - Comment on Single Line:*
+
+[source,sql]
+----
+SELECT column1, column2 -- This is an example single line comment
+FROM table_name;
+----
+
+*Example - Comment on Multiple Lines:*
+
+[source,sql]
+----
+SELECT /* comment 1 */ column1, column2
+FROM table_name /* comment 2 */
+WHERE column3 = 42 /* comment 3 */ ;
+----
+
+== Best Practices for Commenting
+
+To maximize the benefits of comments in Redpanda SQL queries, follow these best practices:
+
+* *Be concise.* Write clear and concise comments that provide meaningful insights into the specific parts of the query.
+* *Update comments during code changes.* Whenever the query is modified, update the associated comments to reflect the changes accurately.
+* *Avoid over-commenting.* While comments are helpful, excessive commenting can clutter the code and reduce readability.
