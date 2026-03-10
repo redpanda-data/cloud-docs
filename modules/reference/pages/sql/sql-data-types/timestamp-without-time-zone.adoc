@@ -18,7 +18,7 @@ YYYY-MM-DD [HH:MM:SS[.SSSSSS]]
 * `HH`: One / two-digit hour (valid values from 00 to 23)
 * `MM`: One / two-digit minutes (valid values from 00 to 59)
 * `SS`: One / two-digit seconds (valid values from 00 to 59)
-* `++[++.SSSSSS++]++`: Up to six fractional digits (microsecond precision)
+* `[.SSSSSS]`: Up to six fractional digits (microsecond precision)
 
 [NOTE]
 ====
@@ -27,7 +27,7 @@ Fractional digits are the digits after the decimal point ( . )
 
 == Examples
 
-=== Case ++#++1: Create a Table
+=== Case #1: Create a Table
 
 Here, we will create a *visitor* table to store visitor data in an office building. It consists of the visitor’s name, the purpose of the visit, company, time, and date, which uses the *Timestamp* data type.
 
@@ -57,7 +57,7 @@ COMPLETE
 INSERT 0 6
 ----
 
-=== Case ++#++2: Display the Table
+=== Case #2: Display the Table
 
 Run the `SELECT` statement to get all records of the *visitors* table:
 
@@ -82,7 +82,7 @@ It will return the result set as displayed below:
 +--------------+--------------+---------------+-----------------------+
 ----
 
-=== Case ++#++3: Look for a Specific Timestamp
+=== Case #3: Look for a Specific Timestamp
 
 In the below example, the following statement is used to get records with a specified timestamp:
 
@@ -103,7 +103,7 @@ We will get the following successful results:
 +--------------+--------------+---------------+-----------------------+
 ----
 
-=== Case ++#++4: Insert a Value That Exceeds the Standard Format
+=== Case #4: Insert a Value That Exceeds the Standard Format
 
 The time in timestamp has a standard format, i.e., for *minutes* only valid for values from 00 to 59.
 
@@ -162,8 +162,8 @@ SELECT TIMESTAMP 'input_timestamp' AT TIME ZONE 'TIME_ZONE';
 
 Here’s what each element means:
 
-* `input++_++timestamp`: This represents the date and time value you want to convert. The user’s time zone is fixed to UTC.
-* `TIME++_++ZONE`: The target time zone to which the timestamp will be converted.
+* `input_timestamp`: This represents the date and time value you want to convert. The user’s time zone is fixed to UTC.
+* `TIME_ZONE`: The target time zone to which the timestamp will be converted.
 
 === Example 1
 

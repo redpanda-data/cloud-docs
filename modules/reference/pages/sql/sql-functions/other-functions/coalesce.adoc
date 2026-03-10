@@ -27,7 +27,7 @@ Key points from the syntax:
 
 Here are some examples to illustrate the application of `COALESCE()`:
 
-=== Case ++#++1: Returning the First Non-Null Value
+=== Case #1: Returning the First Non-Null Value
 
 In this example, we have a set of values. By using the `COALESCE()` function, we’re going to get the first non-null value from this set.
 
@@ -45,7 +45,7 @@ The result will be `9`, the first value without null among the provided options.
         9
 ----
 
-=== Case ++#++2: Handling NULL Value as the Last Argument
+=== Case #2: Handling NULL Value as the Last Argument
 
 Let’s include NULL as the final argument and check the query output.
 
@@ -63,7 +63,7 @@ The function output is `3` because it returns the first non-null value.
         3
 ----
 
-=== Case ++#++3: Handling NULL Value as the First Argument
+=== Case #3: Handling NULL Value as the First Argument
 
 Consider NULL as the first argument in the following example.
 
@@ -81,7 +81,7 @@ The output is `1`, as it is the first non-null value of the argument.
         1
 ----
 
-=== Case ++#++4: Handling Multiple NULL Values
+=== Case #4: Handling Multiple NULL Values
 
 In the following query, NULL appears in the first, second, fourth, and last positions.
 
@@ -99,7 +99,7 @@ The `COALESCE()` function ignores the first two NULLs and returns the first non-
         3
 ----
 
-=== Case ++#++5: Handling All NULL Values
+=== Case #5: Handling All NULL Values
 
 Assume that the given values are entirely composed of nulls.
 
@@ -116,9 +116,9 @@ In this case, the `COALESCE()` function returns an empty value (null).
 ----------
 ----
 
-=== Case ++#++6: `COALESCE()` with Table Data
+=== Case #6: `COALESCE()` with Table Data
 
-Imagine we have the `employee++_++absent` table, which comprises a mix of NULL and non-null values:
+Imagine we have the `employee_absent` table, which comprises a mix of NULL and non-null values:
 
 [source,sql]
 ----
@@ -173,7 +173,7 @@ SELECT emp_name, COALESCE(absent, 'out of office') AS DisplayAbsent FROM employe
  Emily    | out of office
 ----
 
-=== Case ++#++7: Error Output in `COALESCE()`
+=== Case #7: Error Output in `COALESCE()`
 
 When specifying arguments with different datatypes, they should be convertible.
 

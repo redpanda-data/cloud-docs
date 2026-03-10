@@ -1,26 +1,26 @@
 = ENDS_WITH
 :description: The ENDS_WITH() function determines whether the first argument ends with a specified string in the second argument or not.
 
-The `ENDS++_++WITH()` function determines whether the first argument ends with a specified string in the second argument or not.
+The `ENDS_WITH()` function determines whether the first argument ends with a specified string in the second argument or not.
 
 [source,sql]
 ----
 ENDS_WITH(first_argument, 'second_argument')
 ----
 
-* `first++_++argument`: the specified argument, which will be the search reference. It can be a string or a column name.
-* `second++_++argument`: the specified argument, which will have the search keywords.
+* `first_argument`: the specified argument, which will be the search reference. It can be a string or a column name.
+* `second_argument`: the specified argument, which will have the search keywords.
 
 The input type will be `STRING`, and the return type is `BOOL`, shown as `true` or `false`.
 
 *Special case:*
 
 * It will return `NULL` for the `NULL` record.
-* It will return `true` (including the `NULL` record) if the `second++_++argument` is not specified.
+* It will return `true` (including the `NULL` record) if the `second_argument` is not specified.
 
 == Examples
 
-=== ++#++Case 1: `ENDS++_++WITH()` function using column
+=== #Case 1: `ENDS_WITH()` function using column
 
 Let’s say we have a table named *courses*:
 
@@ -65,7 +65,7 @@ The above query will display the following table:
 +------------+----------------------------------+-----------+
 ----
 
-Using the following query, we want to confirm the values of the *course++_++name* column that end with "`ology`" in the table above:
+Using the following query, we want to confirm the values of the *course_name* column that end with "`ology`" in the table above:
 
 [source,sql]
 ----
@@ -89,9 +89,9 @@ It will return true to all the courses with the name ending with **ology.** Othe
 +----------------------------------+-------------+
 ----
 
-=== Case 2: `ENDS++_++WITH()` function with no specified argument
+=== Case 2: `ENDS_WITH()` function with no specified argument
 
-Here we have the **patients++_++data** table with a `NULL` value in the *allergies* column.
+Here we have the **patients_data** table with a `NULL` value in the *allergies* column.
 
 [source,sql]
 ----
@@ -130,14 +130,14 @@ SELECT * FROM patients_data;
 +----------------+---------------------+---------------+--------------+-------------+
 ----
 
-For example, we run the `ENDS++_++WITH` function but with no specified `second++_++argument`.
+For example, we run the `ENDS_WITH` function but with no specified `second_argument`.
 
 [source,sql]
 ----
 SELECT allergies, ENDS_WITH(allergies, '') FROM patients_data;
 ----
 
-We will have the result where the `ENDS++_++WITH` will return true to all records (even the `null` one).
+We will have the result where the `ENDS_WITH` will return true to all records (even the `null` one).
 
 [source,sql]
 ----

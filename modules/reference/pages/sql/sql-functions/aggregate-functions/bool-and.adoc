@@ -1,7 +1,7 @@
 = BOOL_AND
 :description: The BOOL_AND() function calculates all the boolean values in the aggregated group, which will have these results:
 
-The `BOOL++_++AND()` function calculates all the boolean values in the aggregated group, which will have these results:
+The `BOOL_AND()` function calculates all the boolean values in the aggregated group, which will have these results:
 
 * `true` if all the values are `true` for every row.
 * `false` if at least one row in the group is `false`.
@@ -67,7 +67,7 @@ The above query will show the following table:
 +----------+-----------+---------------+-------------+-------+
 ----
 
-=== Case ++#++1: `BOOL++_++AND` with a false result
+=== Case #1: `BOOL_AND` with a false result
 
 We will find out if all customers have paid for their orders using the query below:
 
@@ -76,7 +76,7 @@ We will find out if all customers have paid for their orders using the query bel
 SELECT BOOL_AND(paid) AS "final_result" FROM payment;
 ----
 
-In the `BOOL++_++AND` function, if there is at least one `FALSE` value, the overall result will be `FALSE`. The final output shows that there is an order that hasn’t been paid.
+In the `BOOL_AND` function, if there is at least one `FALSE` value, the overall result will be `FALSE`. The final output shows that there is an order that hasn’t been paid.
 
 [source,sql]
 ----
@@ -87,7 +87,7 @@ In the `BOOL++_++AND` function, if there is at least one `FALSE` value, the over
 +--------------+
 ----
 
-=== Case ++#++2: `BOOL++_++AND` with a true result
+=== Case #2: `BOOL_AND` with a true result
 
 We will find out if Maya has paid for her orders using the query below:
 
@@ -98,6 +98,13 @@ FROM payment
 WHERE custname ='Maya';
 ----
 
-In the `BOOL++_++AND` function, if all values are `TRUE`, then the overall result will be `TRUE`. The final output shows that Maya has paid all her orders.
+In the `BOOL_AND` function, if all values are `TRUE`, then the overall result will be `TRUE`. The final output shows that Maya has paid all her orders.
 
-++```++sql {plus}————{plus} ++|++ maya++_++paid ++|++ {plus}————{plus} ++|++ t ++|++ {plus}————{plus}
+[source,sql]
+----
++-----------+
+| maya_paid |
++-----------+
+| t         |
++-----------+
+----

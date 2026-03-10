@@ -39,14 +39,14 @@ YYYY-MM-DD HH:MM:SS.SSSSSS+TZ
 * `HH`: One / two-digit hour (valid values from 00 to 23)
 * `MM`: One / two-digit minutes (valid values from 00 to 59)
 * `SS`: One / two-digit seconds (valid values from 00 to 59)
-* `++[++.SSSSSS++]++`: Up to six fractional digits (microsecond precision)
+* `[.SSSSSS]`: Up to six fractional digits (microsecond precision)
 * `{plus}TZ`: Time zone offset in the format {plus}/-HH:MM (e.g., {plus}05:30, -08:00)
 
 == Examples
 
-=== Case ++#++1: Create a table
+=== Case #1: Create a table
 
-Let’s create a table named `event++_++log` that consists of a timestamp without a time zone and a timestamp with time zone columns. The values in the `event++_++timestamp++_++tz` are in the “Europe/Moscow” timezone.
+Let’s create a table named `event_log` that consists of a timestamp without a time zone and a timestamp with time zone columns. The values in the `event_timestamp_tz` are in the “Europe/Moscow” timezone.
 
 [source,sql]
 ----
@@ -70,7 +70,7 @@ COMPLETE
 INSERT 0 3
 ----
 
-=== Case ++#++2: Display the table
+=== Case #2: Display the table
 
 Run the `SELECT` statement to get all records of the table:
 
@@ -80,7 +80,7 @@ SELECT event_timestamp, event_timestamp_tz
 FROM events_log;
 ----
 
-It will return the result as displayed below. We can see that the `event++_++timestamp++_++tz` is converted to UTC timezone.
+It will return the result as displayed below. We can see that the `event_timestamp_tz` is converted to UTC timezone.
 
 [source,sql]
 ----
@@ -92,9 +92,9 @@ It will return the result as displayed below. We can see that the `event++_++tim
 (3 rows)
 ----
 
-=== Case ++#++3: Ordering Table by Timestamp
+=== Case #3: Ordering Table by Timestamp
 
-Let’s assume we want to sort the events based on the `event++_++timestamp` column and display the corresponding UTC in the `event++_++timestamp++_++tz` column. Run the following query:
+Let’s assume we want to sort the events based on the `event_timestamp` column and display the corresponding UTC in the `event_timestamp_tz` column. Run the following query:
 
 [source,sql]
 ----
@@ -108,9 +108,9 @@ ORDER BY
   event_timestamp;
 ----
 
-We’ll retrieve the `event++_++timestamp` and `event++_++timestamp++_++tz` columns and calculate the corresponding UTC time using the `AT TIME ZONE 'UTC'` operator.
+We’ll retrieve the `event_timestamp` and `event_timestamp_tz` columns and calculate the corresponding UTC time using the `AT TIME ZONE 'UTC'` operator.
 
-We then order the results based on the `event++_++timestamp` column, giving us a sorted list of events with their corresponding local and UTC times.
+We then order the results based on the `event_timestamp` column, giving us a sorted list of events with their corresponding local and UTC times.
 
 [source,sql]
 ----
@@ -134,7 +134,7 @@ SELECT TIMESTAMP WITH TIME ZONE 'timestamp' AT TIME ZONE 'TIME_ZONE';
 ----
 
 * `timestamp`: The date and time value with the time zone.
-* `TIME++_++ZONE`: The target time zone to which the timestamp will be converted. The user’s timezone is fixed to UTC.
+* `TIME_ZONE`: The target time zone to which the timestamp will be converted. The user’s timezone is fixed to UTC.
 
 *Example:*
 

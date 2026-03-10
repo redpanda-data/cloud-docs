@@ -1,11 +1,11 @@
 = pg_get_expr()
 :description: The link:https://www.postgresql.org/docs/current/functions-info.html#FUNCTIONS-INFO-CATALOG[pg_get_expr()] is a system catalog information function th
 
-The link:https://www.postgresql.org/docs/current/functions-info.html++#++FUNCTIONS-INFO-CATALOG[pg++_++get++_++expr()] is a system catalog information function that retrieves the internal form of an individual expression, such as the default value for a column.
+The link:https://www.postgresql.org/docs/current/functions-info.html#FUNCTIONS-INFO-CATALOG[pg_get_expr()] is a system catalog information function that retrieves the internal form of an individual expression, such as the default value for a column.
 
 == Syntax
 
-There are two available syntax versions of the `pg++_++get++_++expr()` function:
+There are two available syntax versions of the `pg_get_expr()` function:
 
 .Version 1
 [source,sql]
@@ -18,15 +18,15 @@ SELECT pg_get_expr('expr_text', relation_oid);
 ----
 SELECT pg_get_expr('expr_text', relation_oid, pretty_bool);
 ----
-Both versions of the `pg++_++get++_++expr()` function return an empty string `""`.
+Both versions of the `pg_get_expr()` function return an empty string `""`.
 
 == Parameters
 
 The following parameters are required to execute this function:
 
-* `expr++_++text`: expression for which you want to obtain the internal representation (can be any string value)
-* `relation++_++oid`: OID (Object Identifier) of the table the expression belongs to (integer type)
-* `pretty++_++bool`: boolean value determining whether to format the expression in a more human-readable format (`TRUE`) or not (`FALSE`)
+* `expr_text`: expression for which you want to obtain the internal representation (can be any string value)
+* `relation_oid`: OID (Object Identifier) of the table the expression belongs to (integer type)
+* `pretty_bool`: boolean value determining whether to format the expression in a more human-readable format (`TRUE`) or not (`FALSE`)
 
 == Example
 
@@ -55,7 +55,7 @@ SELECT oid FROM pg_class WHERE relname = 'employees';
  1018
 ----
 
-As the last step, we will retrieve the internal form for the `salary` column using `pg++_++get++_++expr()` function
+As the last step, we will retrieve the internal form for the `salary` column using `pg_get_expr()` function
 
 [source,sql]
 ----
