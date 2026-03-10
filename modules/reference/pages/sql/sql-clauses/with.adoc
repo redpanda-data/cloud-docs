@@ -12,8 +12,8 @@ The `WITH` clause precedes the primary statement it is attached to and contains 
 WITH [with_statement_alias AS (with_statement_body)]+ primary_statement;
 ----
 
-* *`primary++_++statement`*: has to be one of the following: `SELECT`, `INSERT`, `UPDATE`, `DELETE`
-* *`with++_++statement++_++body`*: has to be a `SELECT` statement (it can refer to aliases defined earlier in the query)
+* *`primary_statement`*: has to be one of the following: `SELECT`, `INSERT`, `UPDATE`, `DELETE`
+* *`with_statement_body`*: has to be a `SELECT` statement (it can refer to aliases defined earlier in the query)
 
 == Semantic
 
@@ -50,7 +50,7 @@ SELECT * FROM
 (SELECT AVG(grade) FROM math_grades WHERE g_date >= (CURRENT_TIMESTAMP() - INTERVAL '1 y')) AS avg_year_grades
 ----
 
-Both subqueries use the same auxiliary `math++_++grades` query, but each of them filters it using different keys. This way, both scans will only read a part of the table. If materialized CTE was used (which we don’t support yet), the query engine would need to scan the whole table first and then filter the result twice, for each subquery.
+Both subqueries use the same auxiliary `math_grades` query, but each of them filters it using different keys. This way, both scans will only read a part of the table. If materialized CTE was used (which we don’t support yet), the query engine would need to scan the whole table first and then filter the result twice, for each subquery.
 
 == Alias Context
 

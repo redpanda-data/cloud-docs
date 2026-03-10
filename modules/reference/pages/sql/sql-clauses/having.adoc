@@ -3,7 +3,7 @@
 
 The `HAVING` clause specifies a search condition by using an xref:reference:sql/sql-functions/aggregate-functions/index.adoc[aggregate function]. It will filter out the records returned from a `GROUP BY` clause that do not fulfill a specified condition.
 
-=== Differences Between WHERE and HAVING Clause
+== Differences Between WHERE and HAVING Clause
 
 The following table will illustrate the differences between the `HAVING` and `WHERE` clause:
 
@@ -29,10 +29,10 @@ HAVING condition_aggregate_function
 
 Let’s explore the above syntax:
 
-* `SELECT column++_++1, column++_++2,...` selects the columns you want to display.
-* `FROM table++_++name` selects the table where the data comes from.
-* `GROUP BY column++_++name(s)` lists the columns you want to group in the GROUP BY clause.
-* `HAVING condition++_++aggregate++_++function` provides the condition for filtering rows, which the `GROUP BY` clause forms. The condition can use an aggregate function, such as `SUM()`, `COUNT()`, `MIN()`, and so on.
+* `SELECT column_1, column_2,...` selects the columns you want to display.
+* `FROM table_name` selects the table where the data comes from.
+* `GROUP BY column_name(s)` lists the columns you want to group in the GROUP BY clause.
+* `HAVING condition_aggregate_function` provides the condition for filtering rows, which the `GROUP BY` clause forms. The condition can use an aggregate function, such as `SUM()`, `COUNT()`, `MIN()`, and so on.
 
 == Examples
 
@@ -141,7 +141,7 @@ It will create a table as shown below:
 +-----------+----------+------------+------------+-------------+
 ----
 
-=== ++#++Case 1: `HAVING` Clause with `AVG` Function
+=== #Case 1: `HAVING` Clause with `AVG` Function
 
 The following example uses an `AVG` aggregate function to filter the student ID with the subject which has an average score of more than 80:
 
@@ -165,7 +165,7 @@ The above query will give the following result:
 +-----------+
 ----
 
-=== ++#++Case 2: `HAVING` Clause with `COUNT` Function
+=== #Case 2: `HAVING` Clause with `COUNT` Function
 
 The following query lists the number of score statuses that have more than 2 “*PASSED*” values:
 
@@ -189,7 +189,7 @@ The above query will show that *Math* and *Biology* have more than 2 “*PASSED*
 +--------+--------------+
 ----
 
-=== ++#++Case 3: `HAVING` Clause with `MAX` Function
+=== #Case 3: `HAVING` Clause with `MAX` Function
 
 Let’s assume that the minimum score criteria is *75*. Here we will find the maximum score of each subject with the condition that it should be more than *75*.
 
@@ -216,11 +216,11 @@ The returned result will have the maximum score of each subject, as shown below:
 +-----------+--------+
 ----
 
-=== ++#++Case 4: `HAVING` with `JOIN` Condition
+=== #Case 4: `HAVING` with `JOIN` Condition
 
 Assume that you want to know which students have failed in their subject.
 
-You can combine the *student* table with the *score* table using the `JOIN` clause and apply a condition on the `score++_++stat` column where the values should be equal to *FAILED*, as shown in the following query:
+You can combine the *student* table with the *score* table using the `JOIN` clause and apply a condition on the `score_stat` column where the values should be equal to *FAILED*, as shown in the following query:
 
 [source,sql]
 ----

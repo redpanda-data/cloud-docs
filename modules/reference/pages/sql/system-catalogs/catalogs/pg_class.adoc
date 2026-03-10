@@ -1,7 +1,7 @@
 = pg_class
 :description: The pg_class stores information about tables and indexes in the database.
 
-The `pg++_++class` stores information about tables and indexes in the database. It contains exactly one row per table (or index) created in the database. It mimics the https://www.postgresql.org/docs/15/catalog-pg-class.html[pg++_++class] PostgreSQL system catalog.
+The `pg_class` stores information about tables and indexes in the database. It contains exactly one row per table (or index) created in the database. It mimics the https://www.postgresql.org/docs/15/catalog-pg-class.html[pg_class] PostgreSQL system catalog.
 
 == Columns
 
@@ -9,7 +9,7 @@ The `pg++_++class` stores information about tables and indexes in the database. 
 ====
 This table is designed for compatibility with tools that require PostgreSQL system tables, so it mostly has dummy data. Please note that not all columns in `pg_class` are applicable to every type of relation.
 ====
-The following columns are available for querying in `pg++_++class`:
+The following columns are available for querying in `pg_class`:
 
 [width="100%",cols="15%,5%,80%",options="header",]
 |===
@@ -65,7 +65,7 @@ CREATE TABLE customer_orders (
 ----
 
 [arabic, start=2]
-. Create an index on the `customer++_++orders` table for the `customer++_++id` column:
+. Create an index on the `customer_orders` table for the `customer_id` column:
 
 [source,sql]
 ----
@@ -73,7 +73,7 @@ CREATE INDEX idx_customer_id ON customer_orders (customer_id);
 ----
 
 [arabic, start=3]
-. Query the `pg++_++class` catalog to retrieve information about the `customer++_++orders` table and the index you’ve just created:
+. Query the `pg_class` catalog to retrieve information about the `customer_orders` table and the index you’ve just created:
 
 [source,sql]
 ----
@@ -83,7 +83,7 @@ WHERE relname IN ('customer_orders', 'idx_customer_id');
 ----
 
 [arabic, start=4]
-. The query will return information about the `customer++_++orders` table and the index:
+. The query will return information about the `customer_orders` table and the index:
 
 [source,sql]
 ----

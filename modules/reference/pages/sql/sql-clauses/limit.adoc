@@ -26,21 +26,21 @@ FETCH NEXT row_count ROWS ONLY
 ----
 The parameters and arguments for specific version of the syntax are described below:
 
-* `column++_++list`: The columns or calculations that you wish to retrieve.
-* `table++_++name`: The tables that you want to retrieve records from.
+* `column_list`: The columns or calculations that you wish to retrieve.
+* `table_name`: The tables that you want to retrieve records from.
 
 [NOTE]
 ====
 It is possible to have more than one table in the `FROM` clause.
 ====
 * `ORDER BY`: It is an expression used to order the results as you wish to return. The expression could be ascending *(ASC)* or descending *(DESC)*
-* `LIMIT row++_++count`: It specifies a limited number of rows to be returned based on *row++_++count*.
+* `LIMIT row_count`: It specifies a limited number of rows to be returned based on *row_count*.
 
 === Special Case
 
 [arabic]
-. If the `row++_++count` value is *NULL,* the query will produce a similar outcome because it does not contain the `LIMIT` clause.
-. If `row++_++count` is *zero*, the statement will return an empty set.
+. If the `row_count` value is *NULL,* the query will produce a similar outcome because it does not contain the `LIMIT` clause.
+. If `row_count` is *zero*, the statement will return an empty set.
 
 == Examples
 
@@ -96,9 +96,9 @@ SELECT * FROM comporders;
 +-----------+------------+----------------------------------+-------------+----------+
 ----
 
-=== Case ++#++1: Using `LIMIT` with the `ORDER BY` Expression
+=== Case #1: Using `LIMIT` with the `ORDER BY` Expression
 
-This example uses the `LIMIT` clause to get the first four orders sorted by `order++_++id`:
+This example uses the `LIMIT` clause to get the first four orders sorted by `order_id`:
 
 [source,sql]
 ----
@@ -122,7 +122,7 @@ The above query will give the following result:
 +-----------+-------------------------------+-------------+
 ----
 
-=== Case ++#++2: Using `LIMIT` with ASC/DESC
+=== Case #2: Using `LIMIT` with ASC/DESC
 
 You can use the `LIMIT` clause to select rows with the highest or lowest values from a table.
 
@@ -180,7 +180,7 @@ We will get the below output:
 +-----------+------------+----------------------------------+-------------+----------+
 ----
 
-=== ++#++Case 3: Using `LIMIT` with `OFFSET`
+=== #Case 3: Using `LIMIT` with `OFFSET`
 
 In this example, we will use `LIMIT` and `OFFSET` clauses to get 5 orders using the below query:
 
@@ -207,5 +207,5 @@ After implementing the above command, we will get the below output:
 
 The result above shows that:
 
-* The orders with `order++_++id`= *1002 & 1003* aren’t displayed because we put the `OFFSET` value with 2. So the first 2 lines are ignored.
-* The orders with `order++_++id`= *1009 & 1010* aren’t displayed because the `LIMIT` value is 5, which will display only 5 rows.
+* The orders with `order_id`= *1002 & 1003* aren’t displayed because we put the `OFFSET` value with 2. So the first 2 lines are ignored.
+* The orders with `order_id`= *1009 & 1010* aren’t displayed because the `LIMIT` value is 5, which will display only 5 rows.

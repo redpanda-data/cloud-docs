@@ -1,26 +1,26 @@
 = STARTS_WITH
 :description: The STARTS_WITH() function determines whether the first argument starts with a specified string in the second argument or not.
 
-The `STARTS++_++WITH()` function determines whether the first argument starts with a specified string in the second argument or not.
+The `STARTS_WITH()` function determines whether the first argument starts with a specified string in the second argument or not.
 
 [source,sql]
 ----
 STARTS_WITH(first_argument, 'second_argument')
 ----
 
-* `first++_++argument`: the specified argument, which will be the search reference. It can be a string or a column name.
-* `second++_++argument`: the specified argument, which will have the search keywords.
+* `first_argument`: the specified argument, which will be the search reference. It can be a string or a column name.
+* `second_argument`: the specified argument, which will have the search keywords.
 
 The input type will be `STRING`, and the return type is `BOOL`, shown as `true` or `false`.
 
 Special case:
 
 * It will return `NULL` for the `NULL` record.
-* It will return `true` (including the `NULL` record) if the `second++_++argument` is not specified.
+* It will return `true` (including the `NULL` record) if the `second_argument` is not specified.
 
 == Examples
 
-=== Case 1: `STARTS++_++WITH()` function using column
+=== Case 1: `STARTS_WITH()` function using column
 
 Let’s say we have a table with the title *petsData*, as shown below.
 
@@ -86,7 +86,7 @@ It will return `true` to the pet with a pet starting with the letter J. Otherwis
 +---------------+--------------+
 ----
 
-=== Case 2: `STARTS++_++WITH()` function with no specified argument
+=== Case 2: `STARTS_WITH()` function with no specified argument
 
 Here we have the *petsData* table with a `NULL` value in the breed column.
 
@@ -130,14 +130,14 @@ SELECT * FROM petsData;
 +----------+--------------+------------+---------------------+------+------+
 ----
 
-For example, we run the `STARTS++_++WITH` function but with no specified `second++_++argument:`
+For example, we run the `STARTS_WITH` function but with no specified `second_argument:`
 
 [source,sql]
 ----
 SELECT breed, STARTS_WITH(breed, '') FROM petsData;
 ----
 
-We will have the following result where the `STARTS++_++WITH` will return true to all records (even the `null` one):
+We will have the following result where the `STARTS_WITH` will return true to all records (even the `null` one):
 
 [source,sql]
 ----

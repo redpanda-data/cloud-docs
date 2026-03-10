@@ -1,11 +1,11 @@
 = TO_TIMESTAMP
 :description: The TO_TIMESTAMP() function converts a string into a timestamp based on the provided format.
 
-The `TO++_++TIMESTAMP()` function converts a string into a timestamp based on the provided format. It returns a `TIMESTAMP WITH TIME ZONE` type.
+The `TO_TIMESTAMP()` function converts a string into a timestamp based on the provided format. It returns a `TIMESTAMP WITH TIME ZONE` type.
 
 == Syntax
 
-The syntax for using the `TO++_++TIMESTAMP()` function is as follows:
+The syntax for using the `TO_TIMESTAMP()` function is as follows:
 
 [source,sql]
 ----
@@ -17,42 +17,88 @@ Let’s analyze the above syntax:
 * `source`: The date/time value to be converted. The value type is `TIMESTAMP` (`YYYY-MM-DD HH:MM:SS`).
 * `format`: The format of the input string.
 
-== *Format*
+== Format
 
 Format string supports following template patterns (can be lowercase):
 
-[width="100%",cols="25%,18%,57%",options="header",]
+[cols="1,2,3",options="header"]
 |===
-|*Pattern* |*Description* |*Detail*
-|`YYYY` |Year (1-9999) |- The lowest possible value is 1 AD
-|===
+|Pattern |Description |Detail
 
-* 0001 is 1
-* 1 is 1 ++|++ ++|++ `MM` ++|++ Month number (1–12) ++|++ - Up to 2 digits
-* 01 is 1
-* 1 is 1 ++|++ ++|++ `DD` ++|++ Day of month (1–31) ++|++ - Up to 2 digits
-* 01 is 1
-* 1 is 1 ++|++ ++|++ `HH` ++|++ Hour of day (1–12) ++|++ - Up to 2 digits
-* 01 is 1
-* 1 is 1 ++|++ ++|++ `HH12` ++|++ Hour of day (1–12) ++|++ - Up to 2 digits
-* 01 is 1
-* 1 is 1 ++|++ ++|++ `HH24` ++|++ Hour of day (0–23) ++|++ - Up to 2 digits
-* 01 is 1
-* 1 is 1 ++|++ ++|++ `MI` ++|++ Minute (0–59) ++|++ - Up to 2 digits
-* 01 is 1
-* 1 is 1 ++|++ ++|++ `SS` ++|++ Second (0–59) ++|++ - Up to 2 digits
-* 01 is 1
-* 1 is 1 ++|++ ++|++ `MS` ++|++ Millisecond (0–999) ++|++ - Up to 3 digits
-* 001 is 1 millisecond
-* 1 is 100 milliseconds ++|++ ++|++ `US` ++|++ Microsecond (0–999999) ++|++ - Up to 6 digits
-* 000001 is 1 microsecond
-* 1 is 100000 milliseconds ++|++ ++|++ `AM`, `am`, `PM` or `pm` ++|++ Meridiem indicator ++|++ Without periods ++|++ ++|++ `A.M.`, `a.m.`, `P.M.` or `p.m.` ++|++ Meridiem indicator ++|++ With periods ++|++
+|`YYYY`
+|Year (1–9999)
+a|- The lowest possible value is 1 AD. +
+  0001 is 1. +
+  1 is 1.
+
+|`MM`
+|Month number (1–12)
+a|- Up to 2 digits. +
+  01 is 1. +
+  1 is 1.
+
+|`DD`
+|Day of month (1–31)
+a|- Up to 2 digits. +
+  01 is 1. +
+  1 is 1.
+
+|`HH`
+|Hour of day (1–12)
+a|- Up to 2 digits. +
+  01 is 1. +
+  1 is 1.
+
+|`HH12`
+|Hour of day (1–12)
+a|- Up to 2 digits. +
+  01 is 1. +
+  1 is 1.
+
+|`HH24`
+|Hour of day (0–23)
+a|- Up to 2 digits. +
+  01 is 1. +
+  1 is 1.
+
+|`MI`
+|Minute (0–59)
+a|- Up to 2 digits. +
+  01 is 1. +
+  1 is 1.
+
+|`SS`
+|Second (0–59)
+a|- Up to 2 digits. +
+  01 is 1. +
+  1 is 1.
+
+|`MS`
+|Millisecond (0–999)
+a|- Up to 3 digits. +
+  001 is 1 millisecond. +
+  1 is 100 milliseconds.
+
+|`US`
+|Microsecond (0–999999)
+a|- Up to 6 digits. +
+  000001 is 1 microsecond. +
+  1 is 100000 microseconds.
+
+|`AM`, `am`, `PM` or `pm`
+|Meridiem indicator
+|Without periods.
+
+|`A.M.`, `a.m.`, `P.M.` or `p.m.`
+|Meridiem indicator
+|With periods.
+|===
 
 == Examples
 
-=== Case ++#++1: Timestamp into YYYY-MM-DD HH24:MI
+=== Case #1: Timestamp into YYYY-MM-DD HH24:MI
 
-The `TO++_++TIMESTAMP()` function converts the provided string into a timestamp with the format `YYYY-MM-DD HH24:MI`.
+The `TO_TIMESTAMP()` function converts the provided string into a timestamp with the format `YYYY-MM-DD HH24:MI`.
 
 [source,sql]
 ----
@@ -68,9 +114,9 @@ The final output will be a timestamp with a timezone.
  2020-03-04 14:30:00.000000+00
 ----
 
-=== Case ++#++2: Timestamp into MM-DD HH12:MI
+=== Case #2: Timestamp into MM-DD HH12:MI
 
-The `TO++_++TIMESTAMP()` function converts the provided string into a timestamp with the format `MM-DD HH12:MI`.
+The `TO_TIMESTAMP()` function converts the provided string into a timestamp with the format `MM-DD HH12:MI`.
 
 [source,sql]
 ----
@@ -86,9 +132,9 @@ The final output will be a timestamp with a timezone.
  1-03-04 02:30:00.000000+00
 ----
 
-=== Case ++#++3: Timestamp into YYYY-MM HH12:MI(AM/PM)
+=== Case #3: Timestamp into YYYY-MM HH12:MI(AM/PM)
 
-The `TO++_++TIMESTAMP()`++`++ function converts the provided string into a timestamp with the format `YYYY-MM HH12:MI` with meridiem indicator (AM/PM).
+The `TO_TIMESTAMP()` function converts the provided string into a timestamp with the format `YYYY-MM HH12:MI` with meridiem indicator (AM/PM).
 
 *Request 1*
 
@@ -113,9 +159,9 @@ The final output of both requests will have the same result. It changes the time
  2020-02-01 00:30:00.000000+00
 ----
 
-=== Case ++#++4: Timestamp into YYYY-MM-DD HH24:MI:SS.MS.US
+=== Case #4: Timestamp into YYYY-MM-DD HH24:MI:SS.MS.US
 
-The `TO++_++TIMESTAMP()` function converts the provided string into a timestamp with `YYYY-MM-DD HH24:MI:SS.MS.US` format.
+The `TO_TIMESTAMP()` function converts the provided string into a timestamp with `YYYY-MM-DD HH24:MI:SS.MS.US` format.
 
 [source,sql]
 ----
@@ -131,9 +177,9 @@ The final output will be a timestamp with milliseconds and microseconds.
  1960-01-31 15:12:02.021230+00
 ----
 
-=== Case ++#++5: Timestamp into YYYY-MM-DD HH24:MI:SS.MS
+=== Case #5: Timestamp into YYYY-MM-DD HH24:MI:SS.MS
 
-The `TO++_++TIMESTAMP()` function converts the provided string into a timestamp with `YYYY-MM-DD HH24:MI:SS.MS` format.
+The `TO_TIMESTAMP()` function converts the provided string into a timestamp with `YYYY-MM-DD HH24:MI:SS.MS` format.
 
 [source,sql]
 ----

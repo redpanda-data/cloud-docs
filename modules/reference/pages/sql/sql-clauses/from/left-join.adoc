@@ -28,10 +28,10 @@ ON table_1.matching_field = table2.matching_field;
 In the above syntax:
 
 [arabic]
-. `SELECT column++_++1, column++_++2...` defines the *columns* from both tables where we want the data to be selected.
-. `FROM table++_++1` defines the *left table* as the main table in the FORM clause.
-. `RIGHT JOIN table++_++2` defines the *right table* as the table the main table joins.
-. `ON table++_++1.matching++_++field = table2.matching++_++field` sets the join condition after the *ON* keyword with the matching field between the two tables.
+. `SELECT column_1, column_2...` defines the *columns* from both tables where we want the data to be selected.
+. `FROM table_1` defines the *left table* as the main table in the FORM clause.
+. `RIGHT JOIN table_2` defines the *right table* as the table the main table joins.
+. `ON table_1.matching_field = table2.matching_field` sets the join condition after the *ON* keyword with the matching field between the two tables.
 
 === b) Syntax with an Alias
 
@@ -140,8 +140,8 @@ ON item.item_no = invoice.item;
 ----
 
 * The *item* = left table, and the *invoice* = right table.
-* Then it combines the values from the *item* table using the *item++_++no* and matches the records using the *item* column of each row from the *invoice* table.
-* If the records are equal, a new row will be created with `item++_++no`, *`item++_++name`*, and `sold++_++qty`, `sold++_++price` columns as defined in the `SELECT` clause.
+* Then it combines the values from the *item* table using the *item_no* and matches the records using the *item* column of each row from the *invoice* table.
+* If the records are equal, a new row will be created with `item_no`, *`item_name`*, and `sold_qty`, `sold_price` columns as defined in the `SELECT` clause.
 * *ELSE* it will create a new row with a `NULL` value from the right table *(invoice)*.
 
 {empty}2) The above query will give the following result:
@@ -166,7 +166,7 @@ Based on the data from the *item* and *invoice* tables:
 * The result matches the total item stored in the *item* table: *4 items.*
 * The result will display all the item’s data from the *left table (item table)*, even if there is 1 item that hasn’t been sold.
 * The item id: `111` matches the item `butter` and has been sold for 3pcs/9000.
-* The item id: `113` matches the item `tea` but has never been sold. Thus the sold++_++qty & sold++_++price columns are filled with: null.
+* The item id: `113` matches the item `tea` but has never been sold. Thus the sold_qty & sold_price columns are filled with: null.
 * The item id: `116` matches the item `Bread` and has been sold three times, for 6pcs/3000, 2pcs/10000, and 1pc/5000.
 * The item id: `119` matches the item `Coffee` and has been sold two times, for 5pcs/20000 and 4pcs/16000.
 

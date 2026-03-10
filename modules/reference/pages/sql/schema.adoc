@@ -11,7 +11,7 @@ A *schema* is a collection of tables. A schema also contains views, indexes, seq
 
 == Default Schema in Redpanda SQL
 
-By default, the `public` schema is used in Redpanda SQL. When unqualified `table++_++name` is used, that `table++_++name` is equivalent to `public.table++_++name`. It also applies to `CREATE`, `DROP`, and `SELECT TABLE` statements.
+By default, the `public` schema is used in Redpanda SQL. When unqualified `table_name` is used, that `table_name` is equivalent to `public.table_name`. It also applies to `CREATE`, `DROP`, and `SELECT TABLE` statements.
 
 [NOTE]
 ====
@@ -29,7 +29,7 @@ The basic syntax of creating a schema is as follows:
 CREATE SCHEMA [IF NOT EXISTS] schema_name;
 ----
 
-* `schema++_++name` is the schema name you are going to create.
+* `schema_name` is the schema name you are going to create.
 * `IF NOT EXISTS` is an optional parameter to avoid errors if the schema already exists.
 
 === 2. Create a Table in Schema
@@ -43,8 +43,8 @@ CREATE TABLE schema_name.table_name(
 );
 ----
 
-* `schema++_++name` is the schema that you have created.
-* `table++_++name` is the table name you are going to create.
+* `schema_name` is the schema that you have created.
+* `table_name` is the table name you are going to create.
 
 === 3. Select a Table in Schema
 
@@ -55,8 +55,8 @@ After creating the table and inserting some data, display all rows with the synt
 SELECT * FROM schema_name.table_name;
 ----
 
-* `schema++_++name` is the name of the schema.
-* `table++_++name` is the name of the table you want to display.
+* `schema_name` is the name of the schema.
+* `table_name` is the name of the table you want to display.
 
 === 4. Drop the Schema
 
@@ -67,7 +67,7 @@ SELECT * FROM schema_name.table_name;
 DROP SCHEMA [IF EXISTS] schema_name;
 ----
 
-* `schema++_++name` is the schema name you are going to create.
+* `schema_name` is the schema name you are going to create.
 * `IF EXISTS` is an optional parameter to avoid errors if the schema does not exist.
 
 *Option 2*: Tables reside in a schema, so it is impossible to drop a schema without also dropping the tables. With the command below, you will also drop the schema with the tables.

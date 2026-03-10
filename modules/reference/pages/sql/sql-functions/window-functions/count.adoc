@@ -1,18 +1,25 @@
 = COUNT()
 :description: The COUNT() window function allows you to retrieve the number of records that meet a specific criteria.
 
-The `COUNT()` window function allows you to retrieve the number of records that meet a specific criteria. When using it with he `RANGE` clause, it allows you to perform counts within a defined range based on the values of the current row. This function can be used with all xref:reference:sql/sql-data-types/index.adoc[data types supported by Oxla].
+The `COUNT()` window function allows you to retrieve the number of records that meet a specific criteria. When using it with he `RANGE` clause, it allows you to perform counts within a defined range based on the values of the current row. This function can be used with all xref:reference:sql/sql-data-types/index.adoc[data types supported by Redpanda SQL].
 
 == Syntax
 
 There are two available variants of that function:
 
-* `COUNT(++*++)`: counts all rows in the target table, regardless of whether they contain NULL values or not
+* `COUNT(*)`: counts all rows in the target table, regardless of whether they contain NULL values or not
 * `COUNT(expression)`: counts the number of non-NULL values in a specific column or expression
 
 The syntax for this function is as follows:
 
-`sql COUNT RANGE COUNT(expression) OVER (   ++[++PARTITION BY partition++_++expression++]++   ORDER BY sort++_++expression   ++[++ROWS ++|++ RANGE BETWEEN start++_++value AND end++_++value++]++ )`
+[source,sql]
+----
+COUNT(expression) OVER (
+  [PARTITION BY partition_expression]
+  ORDER BY sort_expression
+  [ROWS | RANGE BETWEEN start_value AND end_value]
+)
+----
 
 The `COUNT()` window function always return `BIGINT` as an output, which represents the total number of rows in a table irrespective of the input types.
 
@@ -20,7 +27,7 @@ The `COUNT()` window function always return `BIGINT` as an output, which represe
 
 * `expression`: input’s column or expression that the function operates on
 * `PARTITION BY`: optional clause, which divides the result set into partitions to which the function is applied
-* `ROWS ++|++ RANGE BETWEEN`: range-based window frame relative to the current row
+* `ROWS | RANGE BETWEEN`: range-based window frame relative to the current row
 
 == Examples
 
@@ -49,7 +56,7 @@ INSERT INTO winsales VALUES
     (30007, '9/7/2004', 3, 'c', 30, null);
 ----
 
-=== COUNT(++*++)
+=== COUNT(*)
 
 In this example, we will focus on executing the variant of this function that counts all rows in the target table:
 
@@ -113,7 +120,7 @@ Here is the output for the query presented above:
 (11 rows)
 ----
 
-=== Time Series: COUNT(++*++) with RANGE for Last 90 Days
+=== Time Series: COUNT(*) with RANGE for Last 90 Days
 
 In this example, we will demonstrate counting the number of sales within a 90-day window prior to each sale, based on `dateid`:
 

@@ -117,9 +117,9 @@ Here, we have a rental table which stores the details for car rental:
 +------------+---------------------+---------------------+-----------+---------------+-------------+
 ----
 
-=== ++#++Case 1: `SUM()` in `SELECT` statement
+=== #Case 1: `SUM()` in `SELECT` statement
 
-The following example uses the `SUM()` function to calculate the total rent price of all `rental++_++id`:
+The following example uses the `SUM()` function to calculate the total rent price of all `rental_id`:
 
 [source,sql]
 ----
@@ -127,7 +127,7 @@ SELECT SUM (total_price) AS total
 FROM rental
 ----
 
-It will return a sum value of the `total++_++price`:
+It will return a sum value of the `total_price`:
 
 [source,sql]
 ----
@@ -138,9 +138,9 @@ It will return a sum value of the `total++_++price`:
 +--------+
 ----
 
-=== ++#++Case 2: `SUM()` with a `NULL` result
+=== #Case 2: `SUM()` with a `NULL` result
 
-The following example uses the `SUM()` function to calculate the total rent price of the `customer++_++id = 11118.`
+The following example uses the `SUM()` function to calculate the total rent price of the `customer_id = 11118.`
 
 [source,sql]
 ----
@@ -149,7 +149,7 @@ FROM rental
 WHERE customer_id = 11118;
 ----
 
-Since no records in the *rental* table have the `customer++_++id = 11118`, the `SUM()` function returns a `NULL`.
+Since no records in the *rental* table have the `customer_id = 11118`, the `SUM()` function returns a `NULL`.
 
 [source,sql]
 ----
@@ -160,7 +160,7 @@ Since no records in the *rental* table have the `customer++_++id = 11118`, the `
 +--------+
 ----
 
-=== ++#++Case 3: `SUM()` with `GROUP BY` clause
+=== #Case 3: `SUM()` with `GROUP BY` clause
 
 You can use the `GROUP BY` clause to group the records in the table and apply the `SUM()` function to each group afterward.
 
@@ -174,7 +174,7 @@ FROM rental
 GROUP BY customer_id;
 ----
 
-It will calculate the `total++_++price` from a group of `customer++_++id` as shown below:
+It will calculate the `total_price` from a group of `customer_id` as shown below:
 
 [source,sql]
 ----
@@ -190,7 +190,7 @@ It will calculate the `total++_++price` from a group of `customer++_++id` as sho
 +--------------+--------------+
 ----
 
-=== ++#++Case 4: `SUM()` with `HAVING` clause
+=== #Case 4: `SUM()` with `HAVING` clause
 
 You can use the `SUM()` function with the `HAVING` clause to filter out the sum of groups based on a specific condition:
 
@@ -218,7 +218,7 @@ It will return the customers who spent greater than or equal to 3000:
 +--------------+--------------+
 ----
 
-=== ++#++Case 5: `SUM()` with multiple expression
+=== #Case 5: `SUM()` with multiple expression
 
 The example uses the following:
 

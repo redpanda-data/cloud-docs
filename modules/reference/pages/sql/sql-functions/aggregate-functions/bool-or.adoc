@@ -1,7 +1,7 @@
 = BOOL_OR
 :description: The BOOL_OR() function calculates all the boolean values in the aggregated group, which will have these results:
 
-The `BOOL++_++OR()` function calculates all the boolean values in the aggregated group, which will have these results:
+The `BOOL_OR()` function calculates all the boolean values in the aggregated group, which will have these results:
 
 * `false` if all the values are `false` for every row.
 * `true` if at least one row in the group is true.
@@ -15,7 +15,7 @@ The input and the return type must be in `BOOL`.
 
 == Examples
 
-In this example, we will use a payment++**++ ++**++table that stores details of the orders, whether the order has been paid or unpaid by the customer:
+In this example, we will use a payment table that stores details of the orders, whether the order has been paid or unpaid by the customer:
 
 [source,sql]
 ----
@@ -67,7 +67,7 @@ The above query will show the following table:
 +----------+-----------+---------------+-------------+--------+
 ----
 
-=== Case ++#++1: `BOOL++_++OR` with a true result
+=== Case #1: `BOOL_OR` with a true result
 
 We will find out if all customers have paid for their orders using the query below:
 
@@ -87,7 +87,7 @@ If there is at least one `TRUE` value, the overall result will be `TRUE`. The fi
 +--------------+
 ----
 
-=== Case ++#++2: `BOOL++_++OR` with a false result
+=== Case #2: `BOOL_OR` with a false result
 
 We will find out if Aaron has paid for his orders using the query below:
 
@@ -100,4 +100,11 @@ WHERE custname ='Aaron';
 
 If all values are `FALSE`, then the overall result will be `FALSE`. The final output shows that Aaron hasn’t paid for all his orders.
 
-++```++sql {plus}————-{plus} ++|++ aaron++_++paid ++|++ {plus}————-{plus} ++|++ f ++|++ {plus}————-{plus}
+[source,sql]
+----
++------------+
+| aaron_paid |
++------------+
+| f          |
++------------+
+----
