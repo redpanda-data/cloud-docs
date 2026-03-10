@@ -1,7 +1,7 @@
 = PERCENT_RANK()
 :description: PERCENT_RANK() window function determines the relative rank of a value in a group of values, based on the ORDER BY expression in the OVER clause.
 
-`PERCENT++_++RANK()` window function determines the relative rank of a value in a group of values, based on the `ORDER BY` expression in the `OVER` clause. It can be used with all xref:reference:sql/sql-data-types/index.adoc[data types supported by Oxla].
+`PERCENT_RANK()` window function determines the relative rank of a value in a group of values, based on the `ORDER BY` expression in the `OVER` clause. It can be used with all xref:reference:sql/sql-data-types/index.adoc[data types supported by Oxla].
 
 == Syntax
 
@@ -15,7 +15,7 @@ PERCENT_RANK() OVER (
 )
 ----
 
-The `PERCENT++_++RANK()` is calculated as:
+The `PERCENT_RANK()` is calculated as:
 
 [source,bash]
 ----
@@ -32,7 +32,7 @@ Rows with equal values for the ranking criteria receive the same relative rank. 
 == Parameters
 
 * `()`: this function takes no arguments but parentheses is required
-* `PARTITION BY`: optional clause used to divide the result set into partitions (`PERCENT++_++RANK()` function is applied to each partition independently)
+* `PARTITION BY`: optional clause used to divide the result set into partitions (`PERCENT_RANK()` function is applied to each partition independently)
 * `ORDER BY`: order of rows in each partition to which the function is applied
 
 == Examples
@@ -62,9 +62,9 @@ INSERT INTO winsales VALUES
     (30007, '9/7/2004', 3, 'c', 30, null);
 ----
 
-=== PERCENT++_++RANK() with ORDER BY
+=== PERCENT_RANK() with ORDER BY
 
-In this example, we will focus on executing the `PERCENT++_++RANK()` function with `ORDER BY` keyword and calculate the descending percent rank of all rows based on the quantity sold:
+In this example, we will focus on executing the `PERCENT_RANK()` function with `ORDER BY` keyword and calculate the descending percent rank of all rows based on the quantity sold:
 
 [source,sql]
 ----
@@ -94,9 +94,9 @@ Here is the output for the query presented above that includes the sales ID alon
    40001 |  40 |     0 |   1
 ----
 
-=== PERCENT++_++RANK() with ORDER BY and PARTITION BY
+=== PERCENT_RANK() with ORDER BY and PARTITION BY
 
-In this example, we will focus on executing the `PERCENT++_++RANK()` function with `ORDER BY` keyword and `PARTITION BY` clause, partition the table by seller ID, order each partition by the quantity and assign a percent rank to each row:
+In this example, we will focus on executing the `PERCENT_RANK()` function with `ORDER BY` keyword and `PARTITION BY` clause, partition the table by seller ID, order each partition by the quantity and assign a percent rank to each row:
 
 [source,sql]
 ----

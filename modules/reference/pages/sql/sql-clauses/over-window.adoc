@@ -18,15 +18,15 @@ OVER (PARTITION BY rows1 ORDER BY rows2)
 
 where, the `PARTITION BY` clause is a list of `expressions` interpreted in much the same fashion as the elements of a `GROUP BY` clause, with major exception that they are always simple expressions and never the name or number of an output column. Another difference is that these expressions can contain aggregate function calls, which are not allowed in a regular `GROUP BY` clause (they are allowed here because windowing occurs after grouping and aggregation)
 
-`++[++ PARTITION BY expression ++[++, ...++]++ ++]++` (optional window partition)
+`[ PARTITION BY expression [, ...] ]` (optional window partition)
 
 The `ORDER BY` clause used in the `OVER` clause above is a list of `expressions` interpreted in much the same fashion as the elements of a statement-level `ORDER BY` clause, except that the expressions are always taken as simple expressions and never the name or number of an output column.
 
-`++[++ ORDER BY expression ++[++ ASC ++|++ DESC ++|++ USING operator ++]++ ++[++ NULLS ++{++ FIRST ++|++ LAST } ++]++ ++[++, ...++]++ ++]++` (optional window ordering)
+`[ ORDER BY expression [ ASC | DESC | USING operator ] [ NULLS { FIRST | LAST } ] [, ...] ]` (optional window ordering)
 
 == WINDOW Clause
 
-In terms of window functions’ optional clauses, there is the `WINDOW` clause that defines one or more named window specification, as a `window++_++name` and `window++_++definition` pair.
+In terms of window functions’ optional clauses, there is the `WINDOW` clause that defines one or more named window specification, as a `window_name` and `window_definition` pair.
 
 === Syntax
 
@@ -37,12 +37,12 @@ The syntax for this clause looks as follows:
 WINDOW window_name AS (window_definition) [, ...]
 ----
 
-where `window++_++name` is a name that can be referenced from the `OVER` clauses or subsequent `window definition`. There are a few important things to keep in mind here:
+where `window_name` is a name that can be referenced from the `OVER` clauses or subsequent `window definition`. There are a few important things to keep in mind here:
 
-* The `window++_++definition` may use an `existing++_++window++_++name` to refer to a previous `window++_++definition` in the `WINDOW` clause, but the previous `window++_++definition` must not specify a `frame` clause
-* The `window++_++definition` copies the `PARTITION BY` clause and `ORDER BY` clause from previous `window++_++definition`, but it cannot specify its own `PARTION BY` clause, and can specify an `ORDER BY` clause if the previous `window++_++definition` does not have one.
+* The `window_definition` may use an `existing_window_name` to refer to a previous `window_definition` in the `WINDOW` clause, but the previous `window_definition` must not specify a `frame` clause
+* The `window_definition` copies the `PARTITION BY` clause and `ORDER BY` clause from previous `window_definition`, but it cannot specify its own `PARTION BY` clause, and can specify an `ORDER BY` clause if the previous `window_definition` does not have one.
 
-`++[++ existing++_++window++_++name ++]++ ++[++ PARTITION BY clause ++]++ ++[++ ORDER BY clause ++]++ ++[++ frame clause ++]++` (all arguments are optional)
+`[ existing_window_name ] [ PARTITION BY clause ] [ ORDER BY clause ] [ frame clause ]` (all arguments are optional)
 
 [NOTE]
 ====
@@ -50,8 +50,8 @@ The `window_definition` without arguments defines a window with all rows without
 ====
 The `frame` clause referenced above defines the window frame for window functions that depend on the frame (not all do). The window frame is a set of related rows for each row of the query (called the current row).
 
-* `++{++ RANGE ++|++ ROWS ++|++ GROUPS } frame++_++start ++[++ frame++_++exclusion ++]++`
-* `++{++ RANGE ++|++ ROWS ++|++ GROUPS } BETWEEN frame++_++start AND frame++_++end ++[++ frame++_++exclusion ++]++`
+* `{ RANGE | ROWS | GROUPS } frame_start [ frame_exclusion ]`
+* `{ RANGE | ROWS | GROUPS } BETWEEN frame_start AND frame_end [ frame_exclusion ]`
 
 [NOTE]
 ====
@@ -59,11 +59,11 @@ The `frame` clause of the window specification is limited to the `ROWS` clause w
 ====
 There are a couple of things, to keep in mind here:
 
-* `frame++_++start` and `frame++_++end` can be one of: `UNBOUNDED PRECEDING`, `offset PRECEDING`, `CURRENT ROW`, `offset FOLLOWING`, `UNBOUNDED FOLLOWING`.
-* If `frame++_++end` is omitted it defaults to `CURRENT ROW`. Restrictions here are as follows:
-** `frame++_++start` cannot be `UNBOUNDED FOLLOWING`
-** `frame++_++end` cannot be `UNBOUNDED PRECEDING`
-** `frame++_++end` choice cannot appear earlier in the above list of `frame++_++start` and `frame++_++end` options than the `frame++_++start` choice does
+* `frame_start` and `frame_end` can be one of: `UNBOUNDED PRECEDING`, `offset PRECEDING`, `CURRENT ROW`, `offset FOLLOWING`, `UNBOUNDED FOLLOWING`.
+* If `frame_end` is omitted it defaults to `CURRENT ROW`. Restrictions here are as follows:
+** `frame_start` cannot be `UNBOUNDED FOLLOWING`
+** `frame_end` cannot be `UNBOUNDED PRECEDING`
+** `frame_end` choice cannot appear earlier in the above list of `frame_start` and `frame_end` options than the `frame_start` choice does
 
 In `ROWS` mode, `CURRENT ROW` means that the frame starts or ends with the current row, the offset is an integer indicating that the frame starts or ends that many rows before or after the current row.
 

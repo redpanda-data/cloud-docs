@@ -20,7 +20,7 @@ FROM table2;
 
 The parameters from the syntax are explained below:
 
-* `value1, value2, ... value++_++n`: The columns you want to retrieve.
+* `value1, value2, ... value_n`: The columns you want to retrieve.
 * `table1, table2`: The tables from which you wish to retrieve records.
 
 === Example
@@ -114,7 +114,7 @@ FROM table2;
 
 The parameters from the syntax are explained below:
 
-* `value1, value2, ... value++_++n`: The columns you want to retrieve.
+* `value1, value2, ... value_n`: The columns you want to retrieve.
 * `table1, table2`: The tables from which you wish to retrieve records.
 
 [NOTE]
@@ -122,7 +122,7 @@ The parameters from the syntax are explained below:
 The data types of corresponding columns in the `SELECT` queries must be compatible.
 ====
 
-=== Example ++#++1
+=== Example #1
 
 You aim to identify customers who have bought products from one marketplace but have not purchased from another. Start by creating the tables and populating them with relevant data.
 
@@ -187,7 +187,7 @@ EXCEPT ALL
 SELECT customer_id FROM marketplace2_transactions;
 ----
 
-This result will show a `customer++_++id` who has only transacted in the first marketplace and has not engaged in any corresponding transactions in the second marketplace.
+This result will show a `customer_id` who has only transacted in the first marketplace and has not engaged in any corresponding transactions in the second marketplace.
 
 [source,sql]
 ----
@@ -197,11 +197,11 @@ customer_id
          101
 ----
 
-The diagram below shows a list of customer-product pairs found in the first marketplace (`marketplace1++_++transactions`) but missing in the second marketplace (`marketplace2++_++transactions`).
+The diagram below shows a list of customer-product pairs found in the first marketplace (`marketplace1_transactions`) but missing in the second marketplace (`marketplace2_transactions`).
 
-=== Example ++#++2
+=== Example #2
 
-Let’s create two tables, `left++_++array++_++values` and `right++_++array++_++values`, to hold sets of values.
+Let’s create two tables, `left_array_values` and `right_array_values`, to hold sets of values.
 
 [source,sql]
 ----

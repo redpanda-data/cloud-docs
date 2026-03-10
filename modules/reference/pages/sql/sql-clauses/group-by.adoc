@@ -33,9 +33,9 @@ column_1, column_2,...;
 
 Let’s explore the above syntax:
 
-* `SELECT column++_++1, column++_++2, aggregate++_++function(column++_++3)` defines the columns you want to group (`column++_++1, column++_++2`) and the column that you want to apply an aggregate function to (`column++_++3`).
-* `FROM table++_++name` defines the table where the data comes from.
-* `GROUP BY column++_++1, column++_++2,...;` lists the columns that you want to group in the `GROUP BY` clause.
+* `SELECT column_1, column_2, aggregate_function(column_3)` defines the columns you want to group (`column_1, column_2`) and the column that you want to apply an aggregate function to (`column_3`).
+* `FROM table_name` defines the table where the data comes from.
+* `GROUP BY column_1, column_2,...;` lists the columns that you want to group in the `GROUP BY` clause.
 
 [NOTE]
 ====
@@ -157,7 +157,7 @@ It will create a table as shown below:
 +------------+--------------+--------------+-------------+---------------+-----------+
 ----
 
-=== ++#++Case 1: Basic `GROUP BY`
+=== #Case 1: Basic `GROUP BY`
 
 Here we will get all product names by grouping them using the products ordered from the *orders* table:
 
@@ -181,7 +181,7 @@ The query above will return the output as below:
 +--------------+
 ----
 
-=== ++#++Case 2: `GROUP BY` on Multiple Columns
+=== #Case 2: `GROUP BY` on Multiple Columns
 
 The following example uses multiple columns in the `GROUP BY` clause:
 
@@ -210,7 +210,7 @@ The above query will create the following result:
 +-----------+--------------+
 ----
 
-=== ++#++Case 3: `GROUP BY` with Aggregate Functions
+=== #Case 3: `GROUP BY` with Aggregate Functions
 
 For this example, we will calculate the total amount each customer has paid for their orders. We will use one of the aggregate functions, i.e., the `SUM()` function.
 
@@ -237,7 +237,7 @@ The query above will return the output as shown below:
 +-----------+----------+
 ----
 
-=== ++#++Case 4: `GROUP BY` with `JOIN` Condition
+=== #Case 4: `GROUP BY` with `JOIN` Condition
 
 Unlike the previous example, the following query joins the orders table with the customer table and groups customers by their names. Here we will use `COUNT()` as the aggregate function to count the number of products each customer has purchased.
 
@@ -265,9 +265,9 @@ The above command will create the following result:
 +------------+---------+
 ----
 
-=== ++#++Case 5: `GROUP BY` with Date Data Type
+=== #Case 5: `GROUP BY` with Date Data Type
 
-The `order++_++date` column uses a `DATE` data type. In this example, we will group the order’s quantity and total price by dates using the `DATE()` function.
+The `order_date` column uses a `DATE` data type. In this example, we will group the order’s quantity and total price by dates using the `DATE()` function.
 
 [source,sql]
 ----

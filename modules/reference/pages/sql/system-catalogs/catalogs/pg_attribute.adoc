@@ -1,7 +1,7 @@
 = pg_attribute
 :description: The pg_attribute stores information about table columns.
 
-The `pg++_++attribute` stores information about table columns. It mimics the https://www.postgresql.org/docs/current/catalog-pg-attribute.html[pg++_++attribute] PostgreSQL system catalog.
+The `pg_attribute` stores information about table columns. It mimics the https://www.postgresql.org/docs/current/catalog-pg-attribute.html[pg_attribute] PostgreSQL system catalog.
 
 == Columns
 
@@ -9,14 +9,14 @@ The `pg++_++attribute` stores information about table columns. It mimics the htt
 ====
 This table is designed for compatibility with tools that require PostgreSQL system tables, so it mostly has dummy data. Please note that not all columns in `pg_attribute` are applicable to every type of relation
 ====
-The following columns are available for querying in `pg++_++attribute`:
+The following columns are available for querying in `pg_attribute`:
 
 [width="100%",cols="17%,7%,76%",options="header",]
 |===
 |Column |Type |Description
-|`attrelid` |`int` |This column represents the OID of the table (See `pg++_++class`)
+|`attrelid` |`int` |This column represents the OID of the table (See `pg_class`)
 |`attname` |`text` |This column represents the column name as specified in `CREATE TABLE`
-|`atttypid` |`int` |This column represents the OID of the column type (See `pg++_++type`)
+|`atttypid` |`int` |This column represents the OID of the column type (See `pg_type`)
 |`attnum` |`int` |This column represents the column index (1-based)
 |`attlen` |`int` |This column represents the byte size of the value (-1 for varying length types)
 |`attnotnull` |`bool` |This column represents the not-null constraint. `true` if the column was declared as NOT NULL
@@ -47,7 +47,7 @@ The following columns are available for querying in `pg++_++attribute`:
 === Retrieving Column Information for All Tables
 
 [arabic]
-. This example queries the `pg++_++attribute` to retrieve information about all columns across all tables in the database:
+. This example queries the `pg_attribute` to retrieve information about all columns across all tables in the database:
 
 [source,sql]
 ----
@@ -109,7 +109,7 @@ CREATE TABLE books (
 ----
 
 [arabic, start=2]
-. To get the OID (Object Identifier) of the *books* table, run the `pg++_++class.oid` query:
+. To get the OID (Object Identifier) of the *books* table, run the `pg_class.oid` query:
 
 [source,sql]
 ----
@@ -127,7 +127,7 @@ SELECT oid, relname FROM pg_class WHERE relname = 'books';
 ----
 
 [arabic, start=4]
-. To filter columns, we need to utilize the `pg++_++attribute` with `WHERE` clause:
+. To filter columns, we need to utilize the `pg_attribute` with `WHERE` clause:
 
 [source,sql]
 ----
@@ -150,10 +150,10 @@ WHERE attrelid = 1009;
      1009 | publication_year |       23 |      5
 ----
 
-=== Joining pg++_++attribute with pg++_++class for Table and Column Names
+=== Joining pg_attribute with pg_class for Table and Column Names
 
 [arabic]
-. In this example, a join operation with `pg++_++class` is performed to include the name of the table (`relname`):
+. In this example, a join operation with `pg_class` is performed to include the name of the table (`relname`):
 
 [source,sql]
 ----

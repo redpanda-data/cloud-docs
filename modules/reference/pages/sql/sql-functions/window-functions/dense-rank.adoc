@@ -1,7 +1,7 @@
 = DENSE_RANK()
 :description: The DENSE_RANK() window function assigns a rank for each value within a specified group, based on the ORDER BY expression in the OVER clause.
 
-The `DENSE++_++RANK()` window function assigns a rank for each value within a specified group, based on the `ORDER BY` expression in the `OVER` clause. Unlike the `RANK()` function, which can leave gaps in the ranking sequence when there are ties, `DENSE++_++RANK()` provides consecutive rank values without any gaps. This function can be used with all xref:reference:sql/sql-data-types/index.adoc[data types supported by Oxla].
+The `DENSE_RANK()` window function assigns a rank for each value within a specified group, based on the `ORDER BY` expression in the `OVER` clause. Unlike the `RANK()` function, which can leave gaps in the ranking sequence when there are ties, `DENSE_RANK()` provides consecutive rank values without any gaps. This function can be used with all xref:reference:sql/sql-data-types/index.adoc[data types supported by Oxla].
 
 == Syntax
 
@@ -25,7 +25,7 @@ Unlike `RANK()` function, there is no gap in the sequence of ranked values (if t
 == Parameters
 
 * `()`: this function takes no parameters, but empty parentheses is required
-* `PARTITION BY`: optional clause, which is used to divide the result set into partitions to which the `DENSE++_++RANK()` function is applied (if omitted, the entire result set is treated as a single partition)
+* `PARTITION BY`: optional clause, which is used to divide the result set into partitions to which the `DENSE_RANK()` function is applied (if omitted, the entire result set is treated as a single partition)
 * `ORDER BY`: order of rows in each partition to which the function is applied
 
 == Examples
@@ -55,9 +55,9 @@ INSERT INTO winsales VALUES
     (30007, '9/7/2004', 3, 'c', 30, null);
 ----
 
-=== DENSE++_++RANK() with ORDER BY
+=== DENSE_RANK() with ORDER BY
 
-In this example we will focus on executing the `DENSE++_++RANK()` function with `ORDER BY` keyword and calculate the descending dense rank of all rows based on the quantity sold:
+In this example we will focus on executing the `DENSE_RANK()` function with `ORDER BY` keyword and calculate the descending dense rank of all rows based on the quantity sold:
 
 [source,sql]
 ----
@@ -88,9 +88,9 @@ Here is the output for the query presented above that includes the sales ID alon
 (11 rows)
 ----
 
-=== DENSE++_++RANK() with ORDER BY and PARTITION++_++BY
+=== DENSE_RANK() with ORDER BY and PARTITION_BY
 
-In this example we will focus on executing the `DENSE++_++RANK()` function with `ORDER BY` keyword and `PARTITION BY` clause and partition the table by seller ID, then order each partition by the quantity and assign a dense rank to each row:
+In this example we will focus on executing the `DENSE_RANK()` function with `ORDER BY` keyword and `PARTITION BY` clause and partition the table by seller ID, then order each partition by the quantity and assign a dense rank to each row:
 
 [source,sql]
 ----
