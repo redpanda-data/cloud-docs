@@ -1,5 +1,6 @@
 = FROM
 :description: The FROM clause is used to specify which table or joins are required for the query/statement (e.g., SELECTstatement) to return or obtain data.
+:page-topic-type: reference
 
 The `FROM` clause is used to specify which table or joins are required for the query/statement (e.g., `SELECT`statement) to return or obtain data.
 
@@ -26,7 +27,7 @@ ON table1_name.column1 = table2_name.column1 ]
 
 [NOTE]
 ====
-The examples below are executed in the `public` schema, the default schema in Oxla. You can also create, insert, and display a table from other schemas -
+The examples below are executed in the `public` schema, the default schema in Redpanda SQL. You can also create, insert, and display a table from other schemas -
 click xref:reference:sql/schema.adoc[here] for more info.
 ====
 
@@ -69,17 +70,15 @@ It will create a table as shown below:
 +------------+--------------+------------------+
 ----
 
-[arabic]
 . Run the following query:
-
++
 [source,sql]
 ----
 SELECT client_name, client_origin FROM client;
 ----
 
-[arabic, start=2]
 . You will get a list of the client’s data for a successful result:
-
++
 [source,sql]
 ----
 +--------------+------------------+
@@ -100,7 +99,7 @@ xref:reference:sql/sql-clauses/from/left-join.adoc[LEFT JOIN], or
 xref:reference:sql/sql-clauses/from/outer-join.adoc[OUTER JOIN].
 ====
 
-== FROM - Sub Queries
+== FROM - sub queries
 
 FROM clause is also used to specify a sub-query expression. The relation created from the sub-query is then used as a new relation on the other query.
 
@@ -120,7 +119,6 @@ FROM table_2 as X, table_1 as Y
 WHERE conditions (X.column, Y.column);
 ----
 
-[arabic]
 . The sub-query in the first `FROM` clause will select the columns from the specific table using a new temporary relation (`SELECT X.column1, X.column2, X.column3 FROM` ).
 . Set the tables into a new temporary relation (`table_2 as X, table_1 as Y`).
 . Next, the query is evaluated, selecting only those rows from the temporary relation that fulfill the conditions stated in the `WHERE` clause.
@@ -211,17 +209,15 @@ It will create a table as shown below:
 
 '''''
 
-[arabic]
 . Run the following query to know and ensure the average value of all category’s budgets:
-
++
 [source,sql]
 ----
 select avg(budget) as avgBudget from category;
 ----
 
-[arabic, start=2]
 . The average budget of all categories from the *category* table is 7700.
-
++
 [source,sql]
 ----
 +--------------------+
@@ -231,22 +227,21 @@ select avg(budget) as avgBudget from category;
 +--------------------+
 ----
 
-[arabic, start=3]
 . Now, run the following query:
-
++
 * We specify the *product* table as *P* and the budget’s average value from the *category* table as C.
 * We will display the product’s name, category, and price.
 * We set the conditions where the product’s price exceeds the budget’s average value.
-
++
 [source,sql]
 ----
 select P.product, P.category, P.price from
 (select avg(budget) as avgBudget from category) as C, product as P
 where P.price > C.avgBudget;
 ----
-
++
 ➡️ The output will display “court vision women’s shoes nike” and “Defacto adidas” as the products with a price of more than 7700.
-
++
 [source,sql]
 ----
 +------------------------------------+-----------+----------+

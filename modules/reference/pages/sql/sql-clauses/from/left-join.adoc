@@ -1,5 +1,6 @@
 = LEFT JOIN
 :description: The LEFT JOINreturns all matching records from the left table combined with the right table.
+:page-topic-type: reference
 
 The `LEFT JOIN`returns *all* matching records from the left table combined with the right table. Even if there are no matching records in the right table, the `LEFT JOIN` will still return a row in the result, but with NULL in each column from the right table.
 
@@ -15,8 +16,6 @@ The `LEFT JOIN`returns *all* matching records from the left table combined with 
 We support table aliasing used in the `LEFT JOIN` clause.
 ====
 
-=== a) Basic Syntax
-
 [source,sql]
 ----
 SELECT column_1, column_2...
@@ -27,13 +26,12 @@ ON table_1.matching_field = table2.matching_field;
 
 In the above syntax:
 
-[arabic]
 . `SELECT column_1, column_2...` defines the *columns* from both tables where we want the data to be selected.
-. `FROM table_1` defines the *left table* as the main table in the FORM clause.
-. `RIGHT JOIN table_2` defines the *right table* as the table the main table joins.
+. `FROM table_1` defines the *left table* as the main table in the FROM clause.
+. `LEFT JOIN table_2` defines the *right table* as the table the main table joins.
 . `ON table_1.matching_field = table2.matching_field` sets the join condition after the *ON* keyword with the matching field between the two tables.
 
-=== b) Syntax with an Alias
+=== Table alias
 
 You can use an alias to refer to the table’s name. The results will stay the same. It only helps to write the query easier.
 

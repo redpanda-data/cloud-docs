@@ -1,5 +1,6 @@
 = pg_class
 :description: The pg_class stores information about tables and indexes in the database.
+:page-topic-type: reference
 
 The `pg_class` stores information about tables and indexes in the database. It contains exactly one row per table (or index) created in the database. It mimics the https://www.postgresql.org/docs/15/catalog-pg-class.html[pg_class] PostgreSQL system catalog.
 
@@ -51,9 +52,8 @@ The following columns are available for querying in `pg_class`:
 
 == Example
 
-[arabic]
 . Create a table and define its schema:
-
++
 [source,sql]
 ----
 CREATE TABLE customer_orders (
@@ -64,17 +64,15 @@ CREATE TABLE customer_orders (
 );
 ----
 
-[arabic, start=2]
 . Create an index on the `customer_orders` table for the `customer_id` column:
-
++
 [source,sql]
 ----
 CREATE INDEX idx_customer_id ON customer_orders (customer_id);
 ----
 
-[arabic, start=3]
 . Query the `pg_class` catalog to retrieve information about the `customer_orders` table and the index you’ve just created:
-
++
 [source,sql]
 ----
 SELECT oid, relname, relkind, relhasindex, relnamespace
@@ -82,9 +80,8 @@ FROM pg_class
 WHERE relname IN ('customer_orders', 'idx_customer_id');
 ----
 
-[arabic, start=4]
 . The query will return information about the `customer_orders` table and the index:
-
++
 [source,sql]
 ----
  oid  |     relname     | relkind | relhasindex | relnamespace

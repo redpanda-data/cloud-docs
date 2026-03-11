@@ -1,9 +1,10 @@
-= Time Operators
-:description: Time operators in Oxla allow you to perform various operations on dates, times, and intervals.
+= Time operators
+:description: Time operators in Redpanda SQL allow you to perform various operations on dates, times, and intervals.
+:page-topic-type: reference
 
-Time operators in Oxla allow you to perform various operations on dates, times, and intervals. Here’s a guide to using these operators:
+Time operators in Redpanda SQL allow you to perform various operations on dates, times, and intervals. Here’s a guide to using these operators:
 
-== 1. DATE {plus} INTEGER
+== DATE {plus} INTEGER
 
 Add a specific number of days to a date.
 
@@ -23,7 +24,7 @@ The result will be 14 days after '`2022-03-15`'.
  2022-03-29
 ----
 
-=== 1.1. INTEGER {plus} DATE
+=== INTEGER {plus} DATE
 
 Adding and multiplying time operators can also be done in reverse order. For example, we add a number of days to a date in the format of `Integer {plus} Date`.
 
@@ -41,7 +42,7 @@ The result will be the same, which is 14 days after '`2022-03-15`' is '`2022-03-
  2022-03-29
 ----
 
-== 2. DATE {plus} INTERVAL
+== DATE {plus} INTERVAL
 
 Add a specified interval to a date.
 
@@ -61,7 +62,7 @@ The result will be the date three months after '`2022-03-15`'.
  2022-06-15 00:00:00.000000
 ----
 
-== 3. DATE - INTEGER
+== DATE - INTEGER
 
 Subtract a certain number of days from a date.
 
@@ -81,7 +82,7 @@ The result will be 7 days before '`2022-03-15`'.
  2022-03-08
 ----
 
-== 4. DATE - INTERVAL
+== DATE - INTERVAL
 
 Subtract a specified interval from a date.
 
@@ -101,7 +102,7 @@ The result will be the timestamp with two hours before '`2022-03-15`'.
  2022-03-14 22:00:00.000000
 ----
 
-== 5. DATE - DATE
+== DATE - DATE
 
 Subtract dates.
 
@@ -121,7 +122,7 @@ The number of days elapsed between '`2023-03-15`' and '`2023-01-10`' is 64 days.
      64
 ----
 
-== 6. DATE {plus} TIME
+== DATE {plus} TIME
 
 Add a time-of-day to a date.
 
@@ -141,7 +142,7 @@ The result will be a timestamp with the specified time added to the given date.
  2010-05-20 02:00:00.000000
 ----
 
-== 7. TIME {plus} INTERVAL
+== TIME {plus} INTERVAL
 
 Add a certain interval to a given time.
 
@@ -161,7 +162,7 @@ The result will be the time 1 hour after '`12:30`'.
  13:30:00.000000
 ----
 
-== 8. TIME - INTERVAL
+== TIME - INTERVAL
 
 Subtract a specified interval from a given time.
 
@@ -181,7 +182,7 @@ The result will be the time 18:00.
  18:00:00.000000
 ----
 
-== 9. TIME - TIME
+== TIME - TIME
 
 Get a time difference by subtracting one time from another.
 
@@ -201,7 +202,7 @@ In this example, the time difference between the two provided times is 1 hour an
  01:40:00.000000
 ----
 
-== 10. TIMESTAMP {plus} INTERVAL
+== TIMESTAMP {plus} INTERVAL
 
 Add a timestamp and an interval.
 
@@ -221,7 +222,7 @@ The result will be a new timestamp, adding 5 days to '`2021-01-05 12:00:00`'.
  2021-01-10 12:00:00.000000
 ----
 
-== 11. TIMESTAMP - INTERVAL
+== TIMESTAMP - INTERVAL
 
 Subtract an interval from a timestamp.
 
@@ -241,7 +242,7 @@ In this example, it subtracts 3 days from '`2022-01-04 12:00:00`'.
  2022-01-01 12:00:00.000000
 ----
 
-== 12. TIMESTAMP - TIMESTAMP
+== TIMESTAMP - TIMESTAMP
 
 Get an interval by subtracting one timestamp from another.
 
@@ -261,7 +262,7 @@ It gives the interval between the two timestamps, 102 hours and 30 minutes.
  102:30:00.000000
 ----
 
-== 13. INTERVAL {plus} INTERVAL
+== INTERVAL {plus} INTERVAL
 
 Add intervals.
 
@@ -281,7 +282,7 @@ It adds 6 days to 2 days, resulting in a total of 2 months and 8 days.
  2 mons 8 days
 ----
 
-== 14. INTERVAL - INTERVAL
+== INTERVAL - INTERVAL
 
 Subtract intervals.
 
@@ -301,7 +302,7 @@ It subtracts 20 days from 2 months.
  2 mons -20 days
 ----
 
-== 15. INTERVAL * INTEGER
+== INTERVAL * INTEGER
 
 Multiply an interval by an integer.
 
@@ -321,7 +322,7 @@ It multiplies '`2 hours`' by 3, the result is 6 hours.
  06:00:00.000000
 ----
 
-== 16. INTERVAL * DOUBLE PRECISION
+== INTERVAL * DOUBLE PRECISION
 
 Multiply an interval by a scalar.
 
@@ -341,11 +342,11 @@ It multiplies '`2 hours`' by 1.5, and returns 3 hours.
  03:00:00.000000
 ----
 
-== 17. INTERVAL / NUMBER
+== INTERVAL / NUMBER
 
 Divide an interval by an integer or scalar.
 
-=== a) Divide by an integer
+=== Divide by an integer
 
 [source,sql]
 ----
@@ -361,7 +362,7 @@ It divides '`1 hour`' by 2, and returns 30 minutes.
  00:30:00.000000
 ----
 
-=== b) Divide by a scalar
+=== Divide by a scalar
 
 [source,sql]
 ----

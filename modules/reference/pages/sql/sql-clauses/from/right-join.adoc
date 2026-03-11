@@ -1,5 +1,6 @@
 = RIGHT JOIN
 :description: The RIGHT JOIN returns all matching records from the right table combined with the left table.
+:page-topic-type: reference
 
 The `RIGHT JOIN` returns *all* matching records from the right table combined with the left table. Even if there are no match records in the left table, the `RIGHT JOIN` will still return a row in the result, but with `NULL` in each column from the left table.
 
@@ -9,8 +10,6 @@ We support table aliasing used in the `RIGHT JOIN` clause.
 ====
 
 == Syntax
-
-=== a) Basic Syntax
 
 [source,sql]
 ----
@@ -22,13 +21,12 @@ ON table_1.matching_field = table2.matching_field;
 
 In the above syntax:
 
-[arabic]
 . `SELECT column_1, column_2...` defines the *columns* from both tables where we want to display data.
 . `FROM table_1`, defines the *left table* with table_1 in the FORM clause.
 . `RIGHT JOIN table_2` defines the *right table* with table_2 in the RIGHT JOIN condition.
 . `ON table_1.matching_field = table2.matching_field` sets the join condition after the *ON* keyword with the matching field between the two tables.
 
-=== b) Syntax with an Alias
+=== Table alias
 
 You can use an alias to refer to the table’s name. The results will stay the same. It only helps to write the query easier.
 
@@ -124,9 +122,8 @@ It will create a table as shown below:
 
 '''''
 
-[arabic]
 . Based on the above tables, we can write a `RIGHT JOIN` query as follows:
-
++
 [source,sql]
 ----
 SELECT customer_name, order_date, order_amount
@@ -134,15 +131,14 @@ FROM customer
 RIGHT JOIN orders
 ON customer.id = orders.customer_id;
 ----
-
++
 * The **customer**= left table and the *orders* = right table.
 * Then it combines the values from the *orders* table using the *customer_id* and matches the records using the *id* column from the *customer* table.
 * If the records are equal, a new row will be created with `customer_name` and `order_amount` columns as defined in the `SELECT` clause.
 * *ELSE* will still create a new row with a `NULL` value from the left table (*customer*).
 
-[arabic, start=2]
 . The above query will give the following result:
-
++
 [source,sql]
 ----
 +------------------+----------------+-----------------+
@@ -156,9 +152,9 @@ ON customer.id = orders.customer_id;
 | null             | 2022-05-27     | 6700            |
 +------------------+----------------+-----------------+
 ----
-
++
 Based on the data from the *customer* and *orders* tables:
-
++
 * The order id: `181893` matches the customer: `Ellie.`
 * The order id: `181894` matches the customer: `Ellie`.
 * The order id: `181891` matches the customer: `James`.
