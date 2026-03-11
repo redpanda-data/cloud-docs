@@ -1,5 +1,6 @@
 = IF Function
 :description: This function returns the specified value if the condition is TRUE and another value if the condition is FALSE.
+:page-topic-type: reference
 
 This function returns the specified value if the condition is `TRUE` and another value if the condition is `FALSE`. The syntax of the `IF()`function is shown below:
 
@@ -15,7 +16,7 @@ The `expression` must be a Boolean expression.
 
 == Examples
 
-== Case #1: `IF()` with a table
+== `IF()` with a table
 
 In this example, we have the *test_result* table. We want to know which participants passed and which failed from the table below:
 
@@ -55,17 +56,15 @@ The above query will display the following table:
 +---------------+--------------------+--------+
 ----
 
-[arabic]
 . IF function in the query below states that _IF the score is equal to or greater than 500, then return “PASSED“. Otherwise, if the score is smaller than 500, return “NOT PASSED”_.
-
++
 [source,sql]
 ----
 SELECT name, IF(score>=500, 'PASSED', 'NOT PASSED') FROM test_result;
 ----
 
-[arabic, start=2]
 . It will return the following result:
-
++
 [source,sql]
 ----
 +--------------------+-------------+
@@ -79,7 +78,7 @@ SELECT name, IF(score>=500, 'PASSED', 'NOT PASSED') FROM test_result;
 +--------------------+-------------+
 ----
 
-== Case #2: IF() with expressions as return value
+== IF() with expressions as return value
 
 In the second example, we have another table named “*deptcost*. We want to know which department exceeded the budget and which one did not from the following table.
 
@@ -121,17 +120,15 @@ We have *deptcost* table as seen below:
 +-----------+--------+--------+---------------+
 ----
 
-[arabic]
 . The following IF function states that _IF the actual is less than the budget, then return the budget difference, otherwise return 0_.
-
++
 [source,sql]
 ----
 SELECT dept, IF(actual < budget, budget - actual, 0) FROM deptcost;
 ----
 
-[arabic, start=2]
 . We get the following result using the `IF()` function:
-
++
 [source,sql]
 ----
 +-----------+-----+

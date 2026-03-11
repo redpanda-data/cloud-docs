@@ -1,5 +1,6 @@
 = JSON_EXTRACT_PATH_TEXT
 :description: The JSON_EXTRACT_PATH_TEXT() function extracts JSON nested value from a specified JSON value according to the defined path.
+:page-topic-type: reference
 
 The `JSON_EXTRACT_PATH_TEXT()` function extracts JSON nested value from a specified JSON value according to the defined path.
 
@@ -22,9 +23,9 @@ The required arguments are explained below.
 * `from_json`: the JSON value to extract.
 * `path`: the path to extract.
 
-=== Another Option
+=== Another option
 
-Besides the syntax above, Oxla provides and supports the use of operators in queries. See the syntax below:
+Besides the syntax above, Redpanda SQL provides and supports the use of operators in queries. See the syntax below:
 
 [source,sql]
 ----
@@ -37,26 +38,24 @@ SELECT 'from_json'::JSON ->> 'path';
 
 == Example
 
-[arabic]
 . This example shows how to use the `JSON_EXTRACT_PATH_TEXT()` function to extract values ​​from a JSON object at a specified index.
-
++
 Run the following query:
-
++
 [source,sql]
 ----
 SELECT JSON_EXTRACT_PATH_TEXT('{"a": "Oxla", "b": {"x": 1.234, "y": 4.321}}', 'a') AS "result a";
 ----
-
++
 *or*
-
++
 [source,sql]
 ----
 SELECT '{"a": "Oxla", "b": {"x": 1.234, "y": 4.321}}'::JSON ->> 'a' AS "result a";
 ----
 
-[arabic, start=2]
 . The `JSON_EXTRACT_PATH_TEXT()` function extracts the values and returns the output below:
-
++
 [source,sql]
 ----
 +------------+

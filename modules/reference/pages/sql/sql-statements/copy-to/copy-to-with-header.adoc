@@ -1,11 +1,12 @@
 = COPY TO with HEADER
 :description: When you export data from a table to a CSV file using the COPY TO command, you can include or skip the header.
+:page-topic-type: reference
 
-== *Overview*
+== Overview
 
 When you export data from a table to a CSV file using the `COPY TO` command, you can include or skip the header. Redpanda SQL provides three options for handling headers: `HEADER OFF`, `HEADER ON`, and `HEADER MATCH`.
 
-== *Syntax*
+== Syntax
 
 The syntax for `COPY TO` with `HEADER` is as follows:
 
@@ -20,7 +21,7 @@ Parameters in the syntax include:
 * `file_path`: The CSV file location where the data will be saved.
 * `Header_Syntax`: The specified header options.
 
-== Header Options
+== Header options
 
 * *HEADER OFF*
 
@@ -80,32 +81,29 @@ INSERT 0 5
 
 Now, let’s explore some cases of `COPY TO` with different header options:
 
-=== Case #1: HEADER OFF
+=== HEADER OFF
 
 [NOTE]
 ====
 Please ensure that the directory where you save the file has a write permissions.
 ====
-[arabic]
 . Run the query below to export the table.
-
++
 [source,sql]
 ----
 COPY personal_details TO '/home/acer/Documents/personalinfo.csv';
 ----
 
-[arabic, start=2]
 . You will get the following output, indicating that the table has successfully exported to the CSV file.
-
++
 [source,sql]
 ----
 --
 (0 rows)
 ----
 
-[arabic, start=3]
 . The data in the table is copied directly to the `personalinfo` file without considering the first row as a header.
-
++
 [source,sql]
 ----
 1,'Mark','Wheeler','M'
@@ -120,28 +118,25 @@ COPY personal_details TO '/home/acer/Documents/personalinfo.csv';
 To include headers, use the `HEADER ON` option.
 ====
 
-=== Case #2: HEADER ON
+=== HEADER ON
 
-[arabic]
 . Run the query below to export the table.
-
++
 [source,sql]
 ----
 COPY personal_details TO '/home/acer/Documents/personalinfo.csv' (HEADER ON);
 ----
 
-[arabic, start=2]
 . You will get a successful output below.
-
++
 [source,sql]
 ----
 --
 (0 rows)
 ----
 
-[arabic, start=3]
 . In this case, the header from the table will be included in the CSV file.
-
++
 [source,none]
 ----
 id,first_name,last_name,gender

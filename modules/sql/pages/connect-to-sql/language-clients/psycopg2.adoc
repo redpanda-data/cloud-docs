@@ -14,7 +14,7 @@ Before you begin, make sure you have the following installed:
 * Python (preferably with a virtual environment)
 * The https://www.psycopg.org/docs/install.html[Psycopg2] library
 
-== Running Redpanda SQL Docker Container
+== Running Redpanda SQL Docker container
 
 . Open your terminal
 . Pull and run Redpanda SQL Docker container using the following command:
@@ -24,7 +24,7 @@ Before you begin, make sure you have the following installed:
 docker run --rm -it -p 5432:5432 public.ecr.aws/oxla/release:latest
 ----
 
-== Establishing Connection
+== Establish a connection
 
 To connect to Redpanda SQL using Psycopg2, use the `psycopg2.connect()` function. It creates a new database session and returns a `connection` object.
 
@@ -43,7 +43,7 @@ The following parameters can be used with the https://www.psycopg.org/docs/modul
 * `host`: `localhost` or `127.0.0.1`
 * `Port`: default for PostgreSQL is `5432`
 
-== Example Usage
+== Example usage
 
 Here's an example on how to connect to Redpanda SQL using keyword arguments:
 
@@ -136,11 +136,11 @@ finally:
     print(f"Redpanda SQL connection closed.")
 ----
 
-== Supported Features And Limitations
+== Supported features and limitations
 
 While Redpanda SQL supports many core SQL features, some limitations exist, in particular related to transaction handling and certain advanced Psycopg2 functionalities. This section clarifies which functions are fully supported, which have limited support and which are currently unavailable.
 
-=== Supported Features
+=== Supported features
 
 * *Basic Connection and Cursor Management*
 +
@@ -161,7 +161,7 @@ but Redpanda SQL currently has limited transaction support and does not support 
 +
 Psycopg2 exceptions such as `psycopg2.errors` can be caught and handled normally.
 
-=== Limitations and Unsupported Features
+=== Limitations and unsupported features
 
 * *Multi-threaded Transactions*
 +
@@ -173,7 +173,7 @@ Avoid sharing connections or cursors across threads when performing transactiona
 Features such as server-side cursors, asynchronous communication, notifications, prepared statements
 and pipeline mode may not be fully supported due to Redpanda SQL's current architecture.
 
-=== Redpanda SQL - Psycopg2 Feature Compatibility Table
+=== Redpanda SQL - Psycopg2 feature compatibility table
 
 |===
 | Psycopg2 Feature | Redpanda SQL Support | Notes

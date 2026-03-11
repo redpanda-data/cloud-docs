@@ -1,7 +1,8 @@
 = Schema Definition
 :description: Have you ever wondered how to work with your fellows in one database without interfering with each other? Is it possible to organize the database obje
+:page-topic-type: reference
 
-== What is Schema?
+== What is a schema?
 
 Have you ever wondered how to work with your fellows in one database without interfering with each other? Is it possible to organize the database objects into logical groups which do not collide with the other objects’ names?
 
@@ -9,7 +10,7 @@ We can do those things with *Schema*:
 
 A *schema* is a collection of tables. A schema also contains views, indexes, sequences, data types, operators, and functions. We support multiple schemas. For example, you can have a database named `oxla` and have multiple schemas based on your needs, like `auth`, `model`, `business`, etc.
 
-== Default Schema in Redpanda SQL
+== Default schema in Redpanda SQL
 
 By default, the `public` schema is used in Redpanda SQL. When unqualified `table_name` is used, that `table_name` is equivalent to `public.table_name`. It also applies to `CREATE`, `DROP`, and `SELECT TABLE` statements.
 
@@ -18,9 +19,9 @@ By default, the `public` schema is used in Redpanda SQL. When unqualified `table
 Furthermore, you can create multiple schemas per your needs.
 ====
 
-== Schema Usage Scenarios
+== Schema usage scenarios
 
-=== 1. Create a Schema
+=== Create a schema
 
 The basic syntax of creating a schema is as follows:
 
@@ -32,7 +33,7 @@ CREATE SCHEMA [IF NOT EXISTS] schema_name;
 * `schema_name` is the schema name you are going to create.
 * `IF NOT EXISTS` is an optional parameter to avoid errors if the schema already exists.
 
-=== 2. Create a Table in Schema
+=== Create a table in schema
 
 The syntax to create a table in a specified schema is as follows:
 
@@ -46,7 +47,7 @@ CREATE TABLE schema_name.table_name(
 * `schema_name` is the schema that you have created.
 * `table_name` is the table name you are going to create.
 
-=== 3. Select a Table in Schema
+=== Select a table in schema
 
 After creating the table and inserting some data, display all rows with the syntax below:
 
@@ -58,7 +59,7 @@ SELECT * FROM schema_name.table_name;
 * `schema_name` is the name of the schema.
 * `table_name` is the name of the table you want to display.
 
-=== 4. Drop the Schema
+=== Drop the schema
 
 *Option 1*: To drop an empty schema where no objects remain in it, use the command below:
 
@@ -79,19 +80,17 @@ DROP SCHEMA schema_name CASCADE;
 
 == Examples
 
-=== Creating Schema
+=== Create schema
 
-[arabic]
 . First, connect to Redpanda SQL and create a schema as shown below:
-
++
 [source,sql]
 ----
 CREATE SCHEMA oxlarefs;
 ----
 
-[arabic, start=2]
 . Next, create a table in the above schema with the following details:
-
++
 [source,sql]
 ----
 CREATE TABLE oxlarefs.functions(
@@ -109,17 +108,15 @@ VALUES
 ('5555', 'Boolean', 'TRUE');
 ----
 
-[arabic, start=3]
 . You can verify and show the table made with the command below:
-
++
 [source,sql]
 ----
 SELECT * FROM oxlarefs.functions;
 ----
 
-[arabic, start=4]
 . You will get the following result:
-
++
 [source,sql]
 ----
 +------+---------------+---------+
@@ -133,37 +130,35 @@ SELECT * FROM oxlarefs.functions;
 +------+---------------+---------+
 ----
 
-=== Creating Schema Using IF NOT EXISTS
+=== Create schema using IF NOT EXISTS
 
 To avoid errors when the schema already exists, use the `IF NOT EXISTS` option. Here is how it works:
 
 ==== Example without IF NOT EXISTS
 
-[arabic]
 . First, create the schema without using the `IF NOT EXISTS` option.
-
++
 [source,sql]
 ----
 CREATE SCHEMA oxladb;
 ----
-
++
 Output:
-
++
 [source,sql]
 ----
 CREATE SCHEMA
 ----
 
-[arabic, start=2]
 . If you attempt to create the schema again without using `IF NOT EXISTS`, it will result in an error.
-
++
 [source,sql]
 ----
 CREATE SCHEMA oxladb;
 ----
-
++
 Output:
-
++
 [source,sql]
 ----
 ERROR:  Schema: oxladb already exists
@@ -185,7 +180,7 @@ Using `IF NOT EXISTS` allows the query to create a schema even if it already exi
 CREATE
 ----
 
-=== Dropping Schema
+=== Drop schema
 
 Use the command below to delete the schema and also the tables in it.
 
@@ -201,35 +196,33 @@ Another case is if there is no table or object created inside the schema, you ca
 DROP SCHEMA oxlarefs;
 ----
 
-=== Dropping Schema using IF EXISTS
+=== Drop schema using IF EXISTS
 
 ==== Example without IF EXISTS
 
-[arabic]
 . First, drop the schema without using the `IF EXISTS` option.
-
++
 [source,sql]
 ----
 DROP SCHEMA oxladb;
 ----
-
++
 Output:
-
++
 [source,sql]
 ----
 DROP
 ----
 
-[arabic, start=2]
 . If you attempt to drop the schema again without using `IF EXISTS`, it will result in an error.
-
++
 [source,sql]
 ----
 DROP SCHEMA oxladb;
 ----
-
++
 Output:
-
++
 [source,sql]
 ----
 ERROR:  schema "oxladb" does not exist

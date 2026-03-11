@@ -1,11 +1,12 @@
 = FLOOR
 :description: The FLOOR() returns a number rounded down that is less than or equal to the specified argument.
+:page-topic-type: reference
 
 The `FLOOR()` returns a number rounded down that is less than or equal to the specified argument.
 
 == Syntax
 
-The syntax for the `FLOOR()` function in Oxla is:
+The syntax for the `FLOOR()` function in Redpanda SQL is:
 
 [source,sql]
 ----
@@ -18,7 +19,7 @@ The `FLOOR()` function requires one argument:
 
 == Examples
 
-=== Case #1: Rounding Down a Positive Decimal Value
+=== Round down a positive decimal value
 
 The following example demonstrates how the `FLOORL()` function rounds down a positive decimal value:
 
@@ -38,7 +39,7 @@ It will return 345 as it is the closest value smaller than the argument.
 +------+
 ----
 
-=== Case #2: Rounding Down a Negative Decimal Value
+=== Round down a negative decimal value
 
 The following example demonstrates how the `FLOORL()` function rounds down a negative decimal value:
 
@@ -58,33 +59,30 @@ You will get the following result as it is the nearest integer smaller than or e
 +-------+
 ----
 
-=== Case #3: Using the FLOOR() Function With a Table
+=== Use the FLOOR() function with a table
 
 The following example demonstrates how the `FLOOR()` function can be used with a table to round down the values in a specific column:
 
-[arabic]
 . Create a new table called *FloorRecords* with double-precision values using the query below:
-
++
 [source,sql]
 ----
 CREATE TABLE FloorRecords (numbers float);
 INSERT INTO FloorRecords VALUES (3.987), (4.325), (-0.76), (-22.57);
 ----
 
-[arabic, start=2]
 . Retrieve the table with its value by running the following query:
-
++
 [source,sql]
 ----
 SELECT * ,FLOOR(numbers) AS Floorvalue FROM FloorRecords;
 ----
 
-[arabic, start=3]
 . The return table will contain the following:
-
++
 * *numbers,* the column with the initial double-precision values.
 * *FloorValue*, the column with the rounded-down values.
-
++
 [source,sql]
 ----
 +------------+---------------+

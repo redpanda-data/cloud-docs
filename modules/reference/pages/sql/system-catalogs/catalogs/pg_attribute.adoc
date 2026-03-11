@@ -1,5 +1,6 @@
 = pg_attribute
 :description: The pg_attribute stores information about table columns.
+:page-topic-type: reference
 
 The `pg_attribute` stores information about table columns. It mimics the https://www.postgresql.org/docs/current/catalog-pg-attribute.html[pg_attribute] PostgreSQL system catalog.
 
@@ -44,17 +45,16 @@ The following columns are available for querying in `pg_attribute`:
 
 == Example
 
-=== Retrieving Column Information for All Tables
+=== Retrieve column information for all tables
 
-[arabic]
 . This example queries the `pg_attribute` to retrieve information about all columns across all tables in the database:
-
++
 [source,sql]
 ----
 SELECT attrelid, attname, atttypid, attnum
 FROM pg_attribute;
 ----
-
++
 [source,sql]
 ----
  attrelid |       attname       | atttypid | attnum
@@ -92,11 +92,10 @@ FROM pg_attribute;
 If your database has many tables, the result could be quite long. You can manage the output by filtering specific criteria using `WHERE` clauses or by limiting the number of rows with `LIMIT` clauses
 ====
 
-=== Filtering Columns
+=== Filter columns
 
-[arabic]
 . Create a new table:
-
++
 [source,sql]
 ----
 CREATE TABLE books (
@@ -108,17 +107,15 @@ CREATE TABLE books (
 );
 ----
 
-[arabic, start=2]
 . To get the OID (Object Identifier) of the *books* table, run the `pg_class.oid` query:
-
++
 [source,sql]
 ----
 SELECT oid, relname FROM pg_class WHERE relname = 'books';
 ----
 
-[arabic, start=3]
 . It will return the *books* table with its OID:
-
++
 [source,sql]
 ----
  oid  | relname
@@ -126,9 +123,8 @@ SELECT oid, relname FROM pg_class WHERE relname = 'books';
  1009 | books
 ----
 
-[arabic, start=4]
 . To filter columns, we need to utilize the `pg_attribute` with `WHERE` clause:
-
++
 [source,sql]
 ----
 SELECT attrelid, attname, atttypid, attnum
@@ -136,9 +132,8 @@ FROM pg_attribute
 WHERE attrelid = 1009;
 ----
 
-[arabic, start=5]
 . The output should provide you with columns of the *books* table that you’ve just created:
-
++
 [source,sql]
 ----
  attrelid |     attname      | atttypid | attnum
@@ -150,11 +145,10 @@ WHERE attrelid = 1009;
      1009 | publication_year |       23 |      5
 ----
 
-=== Joining pg_attribute with pg_class for Table and Column Names
+=== Join pg_attribute with pg_class for table and column names
 
-[arabic]
 . In this example, a join operation with `pg_class` is performed to include the name of the table (`relname`):
-
++
 [source,sql]
 ----
 SELECT attrelid, relname, attname, atttypid, attnum
@@ -162,9 +156,8 @@ FROM pg_attribute
 JOIN pg_class ON attrelid = oid;
 ----
 
-[arabic, start=2]
 . You will receive both table and column details in a single query result:
-
++
 [source,sql]
 ----
  attrelid |     relname      |    attname    | atttypid | attnum
