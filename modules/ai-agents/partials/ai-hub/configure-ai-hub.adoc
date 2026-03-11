@@ -222,7 +222,7 @@ curl https://api.redpanda.com/v1/gateways/${GATEWAY_ID}/ai-hub/preferences \
 
 == Manage provider credentials
 
-AI Hub gateways require provider credentials to route requests. Credentials are stored encrypted and shared across all gateways in your workspace.
+AI Hub gateways require provider credentials to route requests. Credentials are automatically stored in the xref:security:secrets.adoc[Secrets Store] (backed by AWS Secrets Manager or GCP Secret Manager) and shared across all gateways in your workspace. For details on how AI Gateway manages secrets, see xref:ai-agents:ai-gateway/admin/secret-management.adoc[].
 
 === Add OpenAI credentials
 
@@ -265,7 +265,7 @@ To rotate credentials without downtime:
 . Test with a sample request to verify the new key works.
 . Delete the old API key.
 
-AI Gateway automatically load-balances across multiple API keys if you configure more than one per provider.
+When you rotate credentials, the corresponding entry in the Secrets Store is automatically updated. AI Gateway automatically load-balances across multiple API keys if you configure more than one per provider.
 
 === Verify credentials
 
