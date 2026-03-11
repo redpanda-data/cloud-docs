@@ -2,11 +2,11 @@
 :description: Dapper is a simple object-relational mapper (ORM) for .NET.
 :page-topic-type: how-to
 
-https://dappertutorial.net/[Dapper] is a simple object-relational mapper (ORM) for .NET. It provides an easy and efficient way to query databases with minimal setup and overhead, leveraging SQL directly while mapping results to C# objects. This page describes how to use Dapper with https://www.npgsql.org/[Npgsql] (a PostgreSQL data provider for .NET) to connect to Redpanda SQL.
+https://dappertutorial.net/[Dapper^] is a simple object-relational mapper (ORM) for .NET. It provides an easy and efficient way to query databases with minimal setup and overhead, leveraging SQL directly while mapping results to C# objects. This page describes how to use Dapper with https://www.npgsql.org/[Npgsql^] (a PostgreSQL data provider for .NET) to connect to Redpanda SQL.
 
 == Establishing connection
 
-There are two ways that can be utilised in order to establish a connection through https://www.npgsql.org/[Npgsql]:
+There are two ways that can be utilised in order to establish a connection through https://www.npgsql.org/[Npgsql^]:
 
 * *Npgsql's DataSource Class*
 +
@@ -26,7 +26,7 @@ var connection = new NpgsqlConnection(connectionString);
 connection.Open();
 ----
 
-For more details on connection string options, including SSL configuration, please refer to https://www.npgsql.org/doc/connection-string-parameters.html[Npgsql docs].
+For more details on connection string options, including SSL configuration, please refer to https://www.npgsql.org/doc/connection-string-parameters.html[Npgsql docs^].
 
 == Example usage
 
@@ -66,6 +66,6 @@ foreach(var c in customers)
 Here you can find a list of functions and potentially related structures, that we either do not support at all or they work incorrectly when combining Redpanda SQL and Dapper-Npgsql:
 
 * `connection.Execute` - returns improper number of rows for `DELETE`, `UPDATE`, `INSERT INTO ... (SELECT)` and `COPY` statements
-* `connection.BeginTransaction` - https://www.npgsql.org/doc/basic-usage.html#transactions[Transactions]
-* `CommandType.StoredProcedure` - https://www.npgsql.org/doc/basic-usage.html#stored-functions-and-procedures[Stored Procedures]
-* https://www.npgsql.org/doc/basic-usage.html#function-inout-parameters[Function in/out parameters]
+* `connection.BeginTransaction` - https://www.npgsql.org/doc/basic-usage.html#transactions[Transactions^]
+* `CommandType.StoredProcedure` - https://www.npgsql.org/doc/basic-usage.html#stored-functions-and-procedures[Stored Procedures^]
+* https://www.npgsql.org/doc/basic-usage.html#function-inout-parameters[Function in/out parameters^]
