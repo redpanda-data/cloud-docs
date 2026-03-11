@@ -94,9 +94,9 @@ rpk topic create <topic_name> -c redpanda.remote.readreplica=<source-cluster-buc
 ```
 
 - For `<topic_name>`, use the same name as the original topic.
-- For `<source-cluster-bucket-name>`, use the bucket/container specified in the `cloud_storage_bucket` or `cloud_storage_azure_container` properties for the origin cluster.
+- For `<source-cluster-bucket-name>`, use the bucket specified in the `cloud_storage_bucket` properties for the origin cluster.
 
-For standard BYOC clusters, the source cluster bucket name follows the pattern: `redpanda-cloud-storage-$\{SOURCE_CLUSTER_ID}`
+For standard BYOC clusters, the source cluster bucket name follows the pattern: `redpanda-cloud-storage-${SOURCE_CLUSTER_ID}`
 
 [[create-cross-region-rrr-topic]]
 === Create a cross-region remote read replica topic on AWS
@@ -117,6 +117,7 @@ In the following example, replace the placeholders:
 ----
 rpk topic create <topic_name> \
   -c redpanda.remote.readreplica=<bucket_name>?region=<origin_bucket_region>&endpoint=s3.<origin_bucket_region>.amazonaws.com
+  --tls-enabled
 ----
 
 For example, if the origin cluster stores data in a bucket called `my-bucket` in `us-east-1`:
@@ -125,6 +126,7 @@ For example, if the origin cluster stores data in a bucket called `my-bucket` in
 ----
 rpk topic create my-topic \
   -c redpanda.remote.readreplica=my-bucket?region=us-east-1&endpoint=s3.us-east-1.amazonaws.com
+  --tls-enabled
 ----
 
 NOTE: The `endpoint` value must not include the bucket name. When using `virtual_host` URL style, Redpanda automatically prepends the bucket name to the endpoint. When using `path` URL style, Redpanda appends the bucket name as a path segment.
