@@ -1,5 +1,6 @@
 = pg_statio_user_tables
 :description: The pg_statio_user_tables contains one row for each user table in the current database, showing statistics columns filled with zeros.
+:page-topic-type: reference
 
 The `pg_statio_user_tables` contains one row for each user table in the current database, showing statistics columns filled with zeros.
 
@@ -29,9 +30,8 @@ The following columns are available for querying in `pg_statio_user_tables` :
 
 == Example
 
-[arabic]
 . Create a new table:
-
++
 [source,sql]
 ----
 CREATE TABLE example_table (
@@ -41,17 +41,15 @@ CREATE TABLE example_table (
 );
 ----
 
-[arabic, start=2]
 . Run the query combined with a `WHERE` clause to look up based on the table name (`relname`):
-
++
 [source,sql]
 ----
 SELECT relid, schemaname, relname FROM pg_statio_user_tables;
 ----
 
-[arabic, start=3]
 . It will return the table size in bytes:
-
++
 [source,sql]
 ----
  relid | schemaname |  relname

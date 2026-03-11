@@ -1,5 +1,6 @@
 = CEIL
 :description: The CEIL() function returns the nearest positive or negative integer value greater than or equal to the provided decimal input number.
+:page-topic-type: reference
 
 The `CEIL()` function returns the nearest positive or negative integer value greater than or equal to the provided decimal input number.
 
@@ -18,7 +19,7 @@ The `CEIL()` function requires one argument:
 
 == Examples
 
-=== Case #1: Rounding up a positive decimal value
+=== Round up a positive decimal value
 
 The following example demonstrates how the `CEIL()`function rounds up a positive decimal value:
 
@@ -38,7 +39,7 @@ As shown below, it will return 301, as it is the nearest integer value greater t
 +------+
 ----
 
-=== Case #2: Rounding up a negative decimal value
+=== Round up a negative decimal value
 
 The following example demonstrates how the `CEIL()`function rounds up a negative decimal value:
 
@@ -58,13 +59,12 @@ The output of this statement will be -89, as -89 is the nearest integer value gr
 +-------+
 ----
 
-=== Case #3: Using the `CEIL()` function with a table
+=== Use the `CEIL()` function with a table
 
 The following example demonstrates how the `CEIL()` function can be used with a table to round up the values in a specific column:
 
-[arabic]
 . First, create a table called *_CeilRecords_* with the following query:
-
++
 [source,sql]
 ----
 CREATE TABLE CeilRecords (numbers float);
@@ -77,22 +77,21 @@ VALUES
     (78.16),
     (42.16);
 ----
-
++
 The above statement will create a table called *"`CeilRecords`"* with a column called *"`numbers`"* and insert 5 decimal values into it.
 
-[arabic, start=2]
 . The statement below can be used to retrieve and round up the value for all records in the column *numbers*:
-
++
 [source,sql]
 ----
 SELECT *, CEIL(numbers) AS CeilValue FROM CeilRecords;
 ----
-
++
 The final result will contain the following:
-
++
 * A *numbers* column with initial decimal values.
 * A *CeilValue* column with rounded-up integer values.
-
++
 [source,sql]
 ----
 +---------+------------+

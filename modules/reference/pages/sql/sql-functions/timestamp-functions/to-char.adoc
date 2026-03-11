@@ -1,5 +1,6 @@
 = TO_CHAR
 :description: The TO_CHAR function formats various data types, including date/time, integer, float point and numeric into a formatted string.
+:page-topic-type: reference
 
 The `TO_CHAR` function formats various data types, including `date/time`, `integer`, `float point` and `numeric` into a formatted string.
 
@@ -24,7 +25,7 @@ TO_CHAR(interval, format_string)
 * `timestamp`: `TIMESTAMP` or `TIMESTAMP WITH TIMEZONE` value to be formatted
 * `format`: format of the output string
 
-== Supported Formats
+== Supported formats
 
 The string format supports the following template patterns (case insensitive):
 
@@ -45,13 +46,13 @@ The string format supports the following template patterns (case insensitive):
 |`A.M.`, `a.m.`, `P.M.` or `p.m.` |Meridiem indicator with periods
 |===
 
-=== General Restrictions
+=== General restrictions
 
 * All text inside double quote `"\{text}"` will not be considered a pattern
 * The quote character (`"`) will not appear in the result string
 * Any text that is not a template pattern is simply copied verbatim i.e. preserved in the result string
 
-=== Interval Overflow Restrictions
+=== Interval overflow restrictions
 
 Interval overflow occurs when an operation involving interval values exceeds the maximum limits of the interval data type, resulting in an error or unexpected behavior. This can happen when adding, subtracting or multiplying interval values that lead to a representation that goes beyond the allowable range for any of its components i.e. years, months, days, hours, minutes and seconds. When executing the `TO_CHAR` function for intervals, it is important to be aware of the following overflow restrictions:
 

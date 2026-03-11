@@ -1,5 +1,6 @@
 = COPY TO with NULL
 :description: A NULL value indicates that the value does not exist in the database.
+:page-topic-type: reference
 
 A `NULL` value indicates that the value does not exist in the database. In Redpanda SQL, you can use the `NULL` option in the `COPY TO` state to specify a string that will replace `NULL` values ​​when copying data from the table to a CSV file.
 
@@ -20,9 +21,8 @@ Parameters in the syntax include:
 
 == Example
 
-[arabic]
 . Create a table with a `NULL` value.
-
++
 [source,sql]
 ----
 CREATE TABLE example_table (
@@ -38,17 +38,15 @@ INSERT INTO example_table (name, age, city) VALUES
   ('Bob', 30, NULL);
 ----
 
-[arabic, start=2]
 . Now, let’s use `COPY TO` with an empty string:
-
++
 [source,sql]
 ----
 COPY example_table TO '/path/to/exampleexport.csv' (NULL '');
 ----
 
-[arabic, start=3]
 . The `NULL` values in the table are replaced with the empty string in the CSV file.
-
++
 // TODO: Confirm result
 [source,text]
 ----

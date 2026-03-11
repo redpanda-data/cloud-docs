@@ -1,12 +1,11 @@
 = Timestamp with Time Zone
-:description: Oxla provides you with two data types for handling timestamps:
+:description: Redpanda SQL provides you with two data types for handling timestamps:
+:page-topic-type: reference
 
-Oxla provides you with two data types for handling timestamps:
+Redpanda SQL provides you with two data types for handling timestamps:
 
-[arabic]
 . xref:reference:sql/sql-data-types/timestamp-without-time-zone.adoc[*Timestamp without Time Zone*]: It allows you to store both date and time.
 . *Timestamp with Time Zone*: It stores date and time values but does not store time zone information within the database. Instead, it processes the time zone information during operations.
-[arabic]
 .. During *INSERT* operation, the time zone is ignored. The date and time are stored without considering the time zone.
 .. During *the SELECT* operation, the time zone information from the user’s session is also ignored. The data is returned exactly as it is stored without adjusting the time zone.
 
@@ -15,12 +14,12 @@ Oxla provides you with two data types for handling timestamps:
 *Important Note:*
  Keep in mind that all user sessions have a local timezone associated with them, affecting how timestamps `with time zone` values are displayed.
 
- The timezone information *is not stored in the database*. Consequently, every time a user requests a value of this type, Oxla converts from UTC to the user's local timezone before displaying it.
+ The timezone information *is not stored in the database*. Consequently, every time a user requests a value of this type, Redpanda SQL converts from UTC to the user's local timezone before displaying it.
 ====
 [WARNING]
 ====
 *Important Note:*
- Oxla relies on timezone information served by host machine operating system. It must be up-to-date in order to ensure correct timestamp conversions, date calculations, and compliance with regional time changes such as daylight saving adjustments.
+ Redpanda SQL relies on timezone information served by host machine operating system. It must be up-to-date in order to ensure correct timestamp conversions, date calculations, and compliance with regional time changes such as daylight saving adjustments.
 ====
 On this page, you will learn about the timestamp with the time zone.
 
@@ -44,7 +43,7 @@ YYYY-MM-DD HH:MM:SS.SSSSSS+TZ
 
 == Examples
 
-=== Case #1: Create a table
+=== Create a table
 
 Let’s create a table named `event_log` that consists of a timestamp without a time zone and a timestamp with time zone columns. The values in the `event_timestamp_tz` are in the “Europe/Moscow” timezone.
 
@@ -70,7 +69,7 @@ COMPLETE
 INSERT 0 3
 ----
 
-=== Case #2: Display the table
+=== Display the table
 
 Run the `SELECT` statement to get all records of the table:
 
@@ -92,7 +91,7 @@ It will return the result as displayed below. We can see that the `event_timesta
 (3 rows)
 ----
 
-=== Case #3: Ordering Table by Timestamp
+=== Order table by timestamp
 
 Let’s assume we want to sort the events based on the `event_timestamp` column and display the corresponding UTC in the `event_timestamp_tz` column. Run the following query:
 
@@ -122,7 +121,7 @@ We then order the results based on the `event_timestamp` column, giving us a sor
 (3 rows)
 ----
 
-== AT TIME ZONE Operator
+== AT TIME ZONE operator
 
 The `AT TIME ZONE` operator in timestamp with time zone converts the given timestamp with time zone to the new time zone, with no time zone designation.
 

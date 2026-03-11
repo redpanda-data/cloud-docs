@@ -1,5 +1,6 @@
 = COPY TO
 :description: The COPY TO statement is used to export tables, specific columns, or results of select queries into .csv files.
+:page-topic-type: reference
 
 The `COPY TO` statement is used to export tables, specific columns, or results of select queries into .csv files. It allows you to copy data from a table or query result and save it to a specified file.
 
@@ -22,19 +23,17 @@ Parameters in the syntax include:
 
 == Example
 
-=== Step #1: Create a Table
+=== Create a table
 
-[arabic]
 . Before creating The table, check for duplicate tables using the following statement:
-
++
 [source,sql]
 ----
 DESCRIBE DATABASE
 ----
 
-[arabic, start=2]
 . You will receive a list of existing tables in Redpanda SQL:
-
++
 [source,sql]
 ----
  namespace_name |      name
@@ -49,9 +48,8 @@ DESCRIBE DATABASE
 ====
 Ensure you are not creating duplicate tables.
 ====
-[arabic, start=3]
 . Now, let’s create a table for exporting data to a CSV file. Here, we’ll create a "`*salary*`" table:
-
++
 [source,sql]
 ----
 CREATE TABLE salary (
@@ -73,16 +71,15 @@ VALUES
     (2007,'Parker','Project', 'Texas', 45000);
 ----
 
-[arabic, start=4]
 . The table and data were created successfully.
-
++
 [source,sql]
 ----
 COMPLETE
 INSERT 0 7
 ----
 
-=== Step #2: Copy the Table into the CSV File
+=== Copy the table into the CSV file
 
 [WARNING]
 ====

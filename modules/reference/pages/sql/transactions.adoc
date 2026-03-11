@@ -1,5 +1,6 @@
 = Transactions
 :description: The transactions are supported only on the syntax level to allow integration with tools that requires it.
+:page-topic-type: reference
 
 The transactions are supported only on the syntax level to allow integration with tools that requires it. While the syntax is accepted, all the queries are executed immediately and with no transactional guarantees.
 
@@ -52,9 +53,8 @@ ROLLBACK;
 
 == Example
 
-[arabic]
 . Let’s define a table named `products` with columns: `product_name`, `price`, and `stock_quantity`.
-
++
 [source,sql]
 ----
 CREATE TABLE productsnew(
@@ -63,15 +63,14 @@ CREATE TABLE productsnew(
     stock_quantity INT
 );
 ----
-
++
 Upon successful creation, you will get the output below.
-
++
 [source,sql]
 ----
 CREATE
 ----
 
-[arabic, start=2]
 . Next, we want to insert product data into the `products` table.
 
 [NOTE]
@@ -93,17 +92,16 @@ BEGIN
 INSERT 0 1
 ----
 
-[arabic, start=3]
 . View the changes by displaying the products table:
-
++
 [source,sql]
 ----
 SELECT * FROM productsnew;
 COMMIT;
 ----
-
++
 The product data is now added to the table.
-
++
 [source,sql]
 ----
  product_name | price | stock_quantity

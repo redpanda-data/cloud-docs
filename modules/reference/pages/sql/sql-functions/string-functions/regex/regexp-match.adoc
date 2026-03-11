@@ -1,5 +1,6 @@
 = REGEXP_MATCH()
 :description: The REGEXP_MATCH() function matches a POSIX regular expression pattern to a string.
+:page-topic-type: reference
 
 The `REGEXP_MATCH()` function matches a POSIX regular expression pattern to a string. It returns an array of `TEXT[]` type with substring(s) of matched groups within the first match.
 
@@ -18,7 +19,7 @@ REGEXP_MATCH(source_string, pattern, [flags])
 * `pattern`: POSIX regular expression pattern to match
 * `flags`: (optional) string with flags that change the matching behavior of `REGEXP_MATCH()` function
 
-The `flags` parameter is an optional string that controls how the function operates. Here is a list of flags that are supported by Oxla:
+The `flags` parameter is an optional string that controls how the function operates. Here is a list of flags that are supported by Redpanda SQL:
 
 * `i`: use this flag for case-insensitive matching
 * `c`: `REGEXP_MATCH()` function is case sensitive by default, using the `c` flag has the same effect as having no flags at all
@@ -47,7 +48,7 @@ SELECT REGEXP_MATCH('Contact us at hello@oxla.com', '[a-zA-Z0-9._%+-]+@[a-zA-Z0-
 (1 row)
 ----
 
-=== Matching multiple groups
+=== Match multiple groups
 
 The `REGEXP_MATCH()` function can capture multiple groups within a match, which allow you to extract key parts from a string in a structured way. The example below extracts the protocol, domain and path from a given URL:
 
@@ -81,7 +82,7 @@ SELECT REGEXP_MATCH('User.Name@Example.COM', '@([a-z0-9.-]+)$', 'i');
 (1 row)
 ----
 
-=== Matching with patterns stored in a table
+=== Match with patterns stored in a table
 
 In this example we will show you how to take the source string and regex pattern directly from the table. For the needs of this section, let’s create two sample tables:
 

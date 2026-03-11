@@ -1,9 +1,9 @@
 = Overview
 :description: Window functions is a group of SQL functions, that operate on a partition or "window" of a result set, returning values for every row within that wind
 
-Window functions is a group of SQL functions, that operate on a partition or "`window`" of a result set, returning values for every row within that window. The following window functions and clauses are currently supported by Oxla:
+Window functions is a group of SQL functions, that operate on a partition or "`window`" of a result set, returning values for every row within that window. Redpanda SQL supports the following window functions and clauses:
 
-== Window Functions
+== Window functions
 
 [width="100%",cols="40%,60%",options="header",]
 |===
@@ -17,7 +17,7 @@ Window functions is a group of SQL functions, that operate on a partition or "`w
 |xref:reference:sql/sql-functions/window-functions/bool-or.adoc[BOOL_OR] |Evaluates whether at least one value within a specified window of rows is true
 |===
 
-== Ranking Functions
+== Ranking functions
 
 [width="100%",cols="<40%,<60%",options="header",]
 |===
@@ -28,7 +28,7 @@ Window functions is a group of SQL functions, that operate on a partition or "`w
 |xref:reference:sql/sql-functions/window-functions/ntile.adoc[NTILE] |Divides an ordered data set into a specified number of approximately equal groups
 |===
 
-== Distribution Functions
+== Distribution functions
 
 [width="100%",cols="<40%,<60%",options="header",]
 |===
@@ -37,7 +37,7 @@ Window functions is a group of SQL functions, that operate on a partition or "`w
 |xref:reference:sql/sql-functions/window-functions/percent-rank.adoc[PERCENT_RANK] |Calculates and returns the percent rank of a value within a specified group of values
 |===
 
-== Value Functions
+== Value functions
 
 [width="100%",cols="<40%,<60%",options="header",]
 |===
@@ -49,7 +49,7 @@ Window functions is a group of SQL functions, that operate on a partition or "`w
 |xref:reference:sql/sql-functions/window-functions/lead.adoc[LEAD] |Returns the values for a row located at a defined offset, either above or below the current row within the partition
 |===
 
-== Window Clause
+== Window clause
 
 [width="100%",cols="<35%,<65%",options="header",]
 |===
@@ -58,9 +58,9 @@ Window functions is a group of SQL functions, that operate on a partition or "`w
 |xref:reference:sql/sql-clauses/over-window.adoc[WINDOW] |Optional clause that defines one or more named window specifications
 |===
 
-== Important Notes
+== Important notes
 
-There are a few essential things to remember when using window functions in Oxla:
+There are a few essential things to remember when using window functions in Redpanda SQL:
 
 * Verify that you can effectively use window functions alongside the `PARTITION BY`, `ORDER BY` and `FRAME` clauses as part of your window specification
 * Ensure the window specification chaining is supported by executing the following command: `SELECT SUM(i0) OVER w2 FROM tb1 WINDOW w1 AS (PARTITION BY i1), w2 AS (w1 ROWS CURRENT ROW)`
