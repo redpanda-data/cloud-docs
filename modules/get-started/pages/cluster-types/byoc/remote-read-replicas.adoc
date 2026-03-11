@@ -8,9 +8,10 @@ Redpanda Cloud supports remote read replica topics in BYOC clusters on AWS or GC
 
 == Prerequisites
 
-* A BYOC source cluster in Ready state.
+To use remote read replicas, you need:
+
 * A BYOC reader cluster in Ready state. This separate reader cluster must exist in the same Redpanda organization as the source cluster.
-** AWS: The reader cluster must be in the same region as the source cluster. The reader cluster must be in the same account as the source cluster.
+** AWS: The reader cluster can be in the same or a different region as the origin cluster's S3 bucket. For cross-region remote read replica topics, see <<create-cross-region-rrr-topic>>.
 ** GCP: The reader cluster can be in the same or a different region as the source cluster. The reader cluster must be in the same project as the source cluster.
 ** Azure: Remote read replicas are not supported.
 
@@ -84,15 +85,58 @@ A source cluster cannot be deleted if it has remote read replica topics. When yo
 
 ====
 
-== Create remote read replica
+== Create remote read replica topic
 
 To create a remote read replica topic, run:
 
 ```bash
-rpk topic create my-topic -c redpanda.remote.readreplica=<source-cluster-tiered-storage-bucket-name> --tls-enabled
+rpk topic create <topic_name> -c redpanda.remote.readreplica=<source-cluster-bucket-name> --tls-enabled
 ```
 
-For standard BYOC clusters, the source cluster tiered storage bucket name follows the pattern: `redpanda-cloud-storage-$\{SOURCE_CLUSTER_ID}`
+- For `<topic_name>`, use the same name as the original topic.
+- For `<source-cluster-bucket-name>`, use the bucket/container specified in the `cloud_storage_bucket` or `cloud_storage_azure_container` properties for the origin cluster.
+
+For standard BYOC clusters, the source cluster bucket name follows the pattern: `redpanda-cloud-storage-$\{SOURCE_CLUSTER_ID}`
+
+[[create-cross-region-rrr-topic]]
+=== Create a cross-region remote read replica topic on AWS
+
+Use this configuration only when the remote cluster is in a *different AWS region* than the origin cluster's S3 bucket. For same-region AWS or GCP deployments, use the standard <<Create remote read replica topic,topic creation command>>.
+
+==== Create the topic
+
+To create a cross-region remote read replica topic, append `region` and `endpoint` query-string parameters to the bucket name.
+
+In the following example, replace the placeholders:
+
+- `<topic_name>`: The name of the topic in the cluster hosting the remote read replica.
+- `<bucket_name>`: The S3 bucket configured on the origin cluster (`cloud_storage_bucket`).
+- `<origin_bucket_region>`: The AWS region of the origin cluster's S3 bucket (not the remote cluster's region). 
+
+[,bash]
+----
+rpk topic create <topic_name> \
+  -c redpanda.remote.readreplica=<bucket_name>?region=<origin_bucket_region>&endpoint=s3.<origin_bucket_region>.amazonaws.com
+----
+
+For example, if the origin cluster stores data in a bucket called `my-bucket` in `us-east-1`:
+
+[,bash]
+----
+rpk topic create my-topic \
+  -c redpanda.remote.readreplica=my-bucket?region=us-east-1&endpoint=s3.us-east-1.amazonaws.com
+----
+
+NOTE: The `endpoint` value must not include the bucket name. When using `virtual_host` URL style, Redpanda automatically prepends the bucket name to the endpoint. When using `path` URL style, Redpanda appends the bucket name as a path segment.
+
+==== Limits
+
+Each unique combination of region and endpoint creates a separate object storage target on the remote cluster. A cluster supports a maximum of 10 targets.
+
+How targets are counted depends on `cloud_storage_url_style`:
+
+- `virtual_host`: Each unique combination of bucket, region, and endpoint counts as one target. You can create up to 10 distinct cross-region remote read replica topics for each cluster.
+- `path`: Each unique combination of region and endpoint counts as one target (the bucket name is not part of the key). You can create cross-region remote read replica topics for multiple buckets using the same region/endpoint combination, with a maximum of 10 distinct region/endpoint combinations for each cluster.
 
 == Optional: Tune for live topics
 
