@@ -1,7 +1,7 @@
 = BYOC Architecture
 :description: Learn about the control plane - data plane architecture in BYOC. 
 
-With Bring Your Own Cloud (BYOC) clusters, you deploy Redpanda in your own cloud (AWS, Azure, or GCP), and all data is contained in your own environment. This provides an additional layer of security and isolation. Redpanda handles provisioning, operations, and maintenance.
+With Bring Your Own Cloud (BYOC) clusters, you deploy Redpanda in your own cloud (AWS, Azure, or GCP), and all data is contained in your own environment. This provides an additional layer of security and isolation. Redpanda handles provisioning, operations, and maintenance of the underlying infrastructure, including Kubernetes.
 
 == Control plane - data plane 
 
@@ -9,7 +9,7 @@ For high availability, Redpanda Cloud uses the following control plane - data pl
 
 image::shared:control_d_plane.png[Control plane and data plane]
 
-* *Control plane*: This is where most cluster management, operations, and maintenance takes place. The control plane enforces rules in the data plane. You can use role-based access control xref:security:authorization/rbac/rbac.adoc[(RBAC) in the control plane] to manage access to organization-level resources like clusters, resource groups, and networks. 
+* *Control plane*: This is a Redpanda Cloud managed service that manages provisioning, operations, and maintenance of clusters with Kubernetes under the hood, including Kubernetes version upgrades and infrastructure maintenance. The control plane enforces rules in the data plane. You can use role-based access control xref:security:authorization/rbac/rbac.adoc[(RBAC) in the control plane] to manage access to organization-level resources like clusters, resource groups, and networks.
 
 * *Data plane*: This is where your cluster lives. The term _data plane_ is sometimes used interchangeably with _cluster_. The data plane is where you manage topics, consumer groups, connectors, and schemas. You can use xref:security:authorization/rbac/rbac_dp.adoc[RBAC in the data plane] to configure cluster-level permissions for provisioned users at scale. 
 

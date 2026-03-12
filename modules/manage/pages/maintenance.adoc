@@ -1,7 +1,9 @@
 = Upgrades and Maintenance
 :description: Learn how Redpanda Cloud manages maintenance operations.
 
-As a fully-managed service, the Redpanda Cloud glossterm:control plane[] handles all maintenance operations, such as upgrades to your software and infrastructure.
+As a fully-managed service, the Redpanda Cloud glossterm:control plane[] handles all maintenance operations, such as upgrades to your software and infrastructure. Here, _control plane_ refers to the Redpanda Cloud managed service that orchestrates cluster operations, not the Kubernetes control plane.
+
+For BYOC and Dedicated deployments, Redpanda manages all maintenance operations for the underlying infrastructure and Kubernetes, ensuring high availability. This includes Kubernetes version upgrades (both the Kubernetes control plane and worker nodes), security patches, and VM image updates. You do not need to act on Kubernetes end-of-life or deprecation notices from your cloud provider (for example, EKS, GKE, or AKS version warnings). Redpanda handles these upgrades on your behalf, targeting completion before the Kubernetes version reaches end of life.
 
 Redpanda runs maintenance operations on clusters in a rolling fashion, accompanied by a series of health checks, so there is no disruption to the availability of your service. As part of the Kafka protocol, recycling nodes triggers client connections to be restarted. All mainstream client libraries support automatic reconnections when a restart occurs.
 
