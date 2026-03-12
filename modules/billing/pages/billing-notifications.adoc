@@ -1,0 +1,74 @@
+= Manage Billing Notifications
+:description: Learn about billing notifications in Redpanda Cloud, including what alerts you receive, who receives them, and how to manage your notification preferences.
+:page-topic-type: how-to
+
+Redpanda Cloud sends email notifications to help you monitor your billing balance. Organization admins receive alerts when credit or commit balances reach spending thresholds.
+
+In this guide, you will:
+
+- Identify which billing notifications you receive and when.
+- Manage who in your organization receives billing notifications.
+- Opt out of billing notification emails.
+
+== What notifications you receive
+
+Redpanda Cloud monitors your balance and sends a notification when it crosses each threshold. Each threshold triggers one notification only. You won't receive repeated reminders at the same level. For example:
+
+[cols="1,2,1",options="header"]
+|===
+| Notification | Description | Thresholds
+
+| Low credit balance
+| Sent when your pre-paid credit balance is running low. Credits are drawn down by usage, similar to a prepaid account.
+| 25%, 10%, 5% remaining
+
+| Low commit balance
+| Sent when your contractual commit balance is running low. Commits represent a minimum spend over a contract period.
+| 25%, 10%, 5% remaining
+|===
+
+Notifications are sent to email only. The subject line follows this format:
+
+`Action Required: Your Redpanda Cloud <type> is <X>% remaining`
+
+== Who receives notifications
+
+All users with the **Admin** role in your organization receive billing notifications by default. To change who receives notifications, update role assignments on the **Organization IAM** page. See xref:security:authorization/rbac/index.adoc[Role-Based Access Control].
+
+== Opt out of notifications
+
+=== Individual opt-out
+
+To stop receiving billing notification emails:
+
+. Open any billing notification email.
+. Click the *Unsubscribe* or *Manage notification preferences* link at the bottom of the email.
+
+No support ticket is needed. The change takes effect within 24-48 hours.
+
+=== Organization-wide opt-out
+
+To disable billing notifications for all admins in your organization, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda support^].
+
+NOTE: If billing notifications are enabled for the organization, individual admins who have not unsubscribed will continue to receive notifications.
+
+== Frequently asked questions
+
+[qanda]
+I didn't sign up for these emails. Why am I receiving them?::
+Billing notifications are sent automatically to all organization admins. If you don't want to receive them, click the *Unsubscribe* link at the bottom of the email.
+
+I got an alert but I already added credits. Why?::
+Notifications are triggered when your balance crosses a threshold. If you added credits after the threshold was crossed, the notification was already queued. Each threshold sends only one notification, so you won't receive it again.
+
+Who else in my organization is getting these?::
+All users with the Admin role receive billing notifications. To see who has the Admin role, check the *Organization IAM* > *Users* page in Redpanda Cloud.
+
+I unsubscribed but still received a notification. What happened?::
+Unsubscribe requests take 24-48 hours to process. If you receive a notification during that window, it was sent before your request was fully applied.
+
+What should I do when I get an alert?::
+Review your current balance on the *Billing* page. You can add credits or contact your Redpanda account team to discuss your usage and plan options.
+
+Do trial accounts get notifications?::
+Only if the trial has promotional credits. Standard trial accounts without a credit balance do not receive billing notifications.
