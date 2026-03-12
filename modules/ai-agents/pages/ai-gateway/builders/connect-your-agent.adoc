@@ -35,7 +35,7 @@ Connecting to AI Gateway requires two configuration changes:
 [[authenticate-with-oidc]]
 == Authenticate with OIDC
 
-AI Gateway uses OIDC (OAuth 2.0 `client_credentials` grant) with a service account for authentication.
+AI Gateway uses OIDC through service accounts that can be used as a `client_credentials` grant to authenticate and exchange for access and ID tokens.
 
 === Step 1: Create a service account
 
@@ -64,6 +64,8 @@ Use the following OIDC configuration:
 |Grant type
 |`client_credentials`
 |===
+
+The discovery URL returns OIDC metadata, including the token endpoint and other configuration details. Use an OIDC client library that supports metadata discovery (such as `openid-client` for Node.js) so that endpoints are resolved automatically. If your library does not support discovery, you can fetch the discovery URL directly and extract the required endpoints from the JSON response.
 
 [tabs]
 ====
@@ -96,8 +98,15 @@ client = OAuth2Session(
     client_secret="<client-secret>",
 )
 
+# Discover token endpoint from OIDC metadata
+import requests
+metadata = requests.get(
+    "https://auth.prd.cloud.redpanda.com/.well-known/openid-configuration"
+).json()
+token_endpoint = metadata["token_endpoint"]
+
 token = client.fetch_token(
-    "https://auth.prd.cloud.redpanda.com/oauth/token",
+    token_endpoint,
     grant_type="client_credentials",
     audience="cloudv2-production.redpanda.cloud",
 )
@@ -105,7 +114,7 @@ token = client.fetch_token(
 access_token = token["access_token"]
 ----
 
-`authlib` automatically handles token caching and refresh.
+This example performs a one-time token fetch. For automatic token renewal on subsequent requests, pass `token_endpoint` to the `OAuth2Session` constructor. Note that for `client_credentials` grants, `authlib` obtains a new token rather than using a refresh token.
 --
 
 Node.js (openid-client)::
@@ -235,10 +244,10 @@ curl ${REDPANDA_GATEWAY_URL}/chat/completions \
 
 === Token lifecycle management
 
-IMPORTANT: Your agent is responsible for refreshing tokens before they expire. OIDC tokens have a limited TTL and are not automatically renewed.
+IMPORTANT: Your agent is responsible for refreshing tokens before they expire. OIDC tokens have a limited TTL and are not automatically renewed by the AI Gateway.
 
 * Proactively refresh tokens at approximately 80% of the token's TTL to avoid failed requests.
-* `authlib` (Python) handles token refresh automatically when you use `OAuth2Session`.
+* `authlib` (Python) can handle token renewal automatically when you pass `token_endpoint` to the `OAuth2Session` constructor. For `client_credentials` grants, it obtains a new token rather than using a refresh token.
 * For other languages, cache the token and its expiry time, then request a new token before the current one expires.
 
 == Model naming convention
