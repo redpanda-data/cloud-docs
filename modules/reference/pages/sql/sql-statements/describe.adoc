@@ -11,21 +11,17 @@ It is recommended to be used before creating a new table to avoid tables duplica
 
 == Syntax
 
-Below you can find the basic syntax for describing tables within a database as well as columns within tables:
-
 [source,sql]
 ----
 DESCRIBE DATABASE;
-----
-
-[source,sql]
-----
 DESCRIBE TABLE table_name;
+DESCRIBE TABLE catalog_name=>table_name;
+DESCRIBE REDPANDA CATALOG catalog_name;
 ----
 
-where:
-
-`table_name`: name of the table that you want to show
+* `table_name`: Name of the table to describe.
+* `catalog_name=>table_name`: Describes a table that is mapped to a Redpanda topic through a catalog.
+* `catalog_name`: Name of a Redpanda catalog. Lists the tables and topic mappings in that catalog.
 
 [NOTE]
 ====
