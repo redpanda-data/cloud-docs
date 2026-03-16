@@ -13,12 +13,20 @@ Note that the time returned by this function is the time when the query was exec
 
 [source,sql]
 ----
-CURRENT_TIMESTAMP() // The parentheses are optional
+CURRENT_TIMESTAMP
+CURRENT_TIMESTAMP()
+CURRENT_TIMESTAMP(precision)
 ----
+
+== Arguments
+
+* `precision`: Optional. An integer literal from 0 to 6 that controls how many fractional-second digits to include. When omitted, full microsecond precision (6 digits) is returned.
 
 == Examples
 
-The following example shows how to get the current date and time with a `CURRENT_TIMESTAMP()`function:
+=== Default precision
+
+The following example returns the current date and time with full microsecond precision:
 
 [source,sql]
 ----
@@ -34,4 +42,22 @@ The final result will display the current date and time in your timezone:
 -----------------------------
  2022-08-31 16:56:06.464016
 -----------------------------
+----
+
+=== Truncated precision
+
+The following example returns the current timestamp with no fractional seconds:
+
+[source,sql]
+----
+SELECT CURRENT_TIMESTAMP(0) AS "Current Time";
+----
+
+[source,sql]
+----
+---------------------
+ Current Time
+---------------------
+ 2022-08-31 16:56:06
+---------------------
 ----

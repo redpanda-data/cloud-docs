@@ -1,19 +1,17 @@
-= COPY TO with Delimiter
-:description: A delimiter is a character that separates text strings.
+= COPY TO with delimiter
+:description: A delimiter is a character that separates text strings in exported CSV data.
 :page-topic-type: reference
 
 A delimiter is a character that separates text strings. Common delimiters include:
 
 * Commas (,)
-* Semicolon (;)
-* Quotes ( “, ’ )
-* Dash (-)
+* Semicolons (;)
+* Quotes ( ", ' )
+* Dashes (-)
 * Pipes (|)
-* Slashes ( /  ).
+* Slashes ( / )
 
 == Syntax
-
-The syntax for `COPY TO` with a delimiter is as follows:
 
 [source,sql]
 ----
@@ -22,88 +20,22 @@ COPY table_name TO 'file_path' (DELIMITER 'delimiter');
 
 Parameters in the syntax include:
 
-* `table_name`: The table containing the data to be exported.
-* `file_path`: The CSV file location where the data will be saved.
-* `DELIMITER ‘delimiter'`: The Delimiter used in the exported CSV file.
+* `table_name`: The table containing the data to export.
+* `file_path`: The CSV file location where the data is saved.
+* `DELIMITER 'delimiter'`: The delimiter used in the exported CSV file.
 
-[NOTE]
-====
-*Default delimiter is a comma (*`,`*).*
-====
+NOTE: The default delimiter is a comma (`,`).
 
 == Example
 
-=== Create a table
+The following examples use a table mapped to a Redpanda topic through a catalog. For information on setting up catalogs and tables, see xref:reference:sql/sql-statements/create-table.adoc[CREATE TABLE].
 
-. Before creating a table, check for duplicate tables using the following statement:
-+
-[source,sql]
-----
-DESCRIBE DATABASE
-----
-
-. You will receive a list of existing tables in Redpanda SQL:
-+
-[source,sql]
-----
- namespace_name |      name
-----------------+----------------
- public         | client
- public         | distance_table
- public         | weight
- public         | product
- public         | salary
-----
-
-[WARNING]
-====
-Ensure you are not creating duplicate tables.
-====
-. Create a "`*customer*`" table.
-+
-[source,sql]
-----
-CREATE TABLE customer (
-  cust_id int,
-  cust_name text
-);
-INSERT INTO customer
-    (cust_id, cust_name)
-VALUES
-    (11001, 'Maya'),
-    (11003, 'Ricky'),
-    (11009, 'Sean'),
-    (11008, 'Chris'),
-    (11002, 'Emily'),
-    (11005, 'Rue'),
-    (11007, 'Tom'),
-    (11006, 'Casey');
-----
-
-. The table and data were created successfully.
-+
-[source,sql]
-----
-COMPLETE
-INSERT 0 8
-----
-
-=== Export data to a CSV file using delimiter
-
-[WARNING]
-====
-*Important Notes:*
- - By default, the `COPY TO` command overwrites the CSV file if it already exists.
- - Please ensure that the directory where you save the file has a write permissions.
-====
-In the example below, we are using a Comma ( `,` ).
+Export the `customer` table using a comma delimiter:
 
 [source,sql]
 ----
-COPY salary TO '/home/acer/Documents/customerexport.csv' (DELIMITER ',');
+COPY my_catalog=>customer TO '/path/to/customerexport.csv' (DELIMITER ',');
 ----
-
-You will get the successful output below.
 
 [source,sql]
 ----
@@ -111,9 +43,9 @@ You will get the successful output below.
 (0 rows)
 ----
 
-Using the comma ( `,` ) as the delimiter for the `customer` table, the expected output would be:
+Using the comma (`,`) as the delimiter, the expected output would be:
 
-[source,sql]
+[source,text]
 ----
 cust_id,cust_name
 11001,Maya
