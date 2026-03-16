@@ -1,0 +1,74 @@
+= DROP
+:description: The DROP statement removes catalog tables, Redpanda catalogs, or storage definitions.
+:page-topic-type: reference
+
+The `DROP` statement removes database objects. In Redpanda SQL, `DROP` supports removing catalog tables, Redpanda catalogs, and storage definitions.
+
+== DROP TABLE
+
+Removes a table that was mapped to a Redpanda topic through a catalog. This does not delete the underlying Redpanda topic.
+
+=== Syntax
+
+[source,sql]
+----
+DROP TABLE [IF EXISTS] catalog_name=>table_name;
+----
+
+* `catalog_name`: Name of the Redpanda catalog containing the table.
+* `table_name`: Name of the table to remove.
+* `IF EXISTS`: Optional. Prevents an error if the table does not exist.
+
+=== Example
+
+[source,sql]
+----
+DROP TABLE my_catalog=>transactions;
+----
+
+[source,sql]
+----
+DROP TABLE IF EXISTS my_catalog=>old_events;
+----
+
+== DROP REDPANDA CATALOG
+
+Removes a Redpanda catalog connection.
+
+=== Syntax
+
+[source,sql]
+----
+DROP REDPANDA CATALOG [IF EXISTS] catalog_name;
+----
+
+* `catalog_name`: Name of the catalog to remove.
+* `IF EXISTS`: Optional. Prevents an error if the catalog does not exist.
+
+=== Example
+
+[source,sql]
+----
+DROP REDPANDA CATALOG my_catalog;
+----
+
+== DROP STORAGE
+
+Removes a named storage definition.
+
+=== Syntax
+
+[source,sql]
+----
+DROP STORAGE [IF EXISTS] storage_name;
+----
+
+* `storage_name`: Name of the storage definition to remove.
+* `IF EXISTS`: Optional. Prevents an error if the storage definition does not exist.
+
+=== Example
+
+[source,sql]
+----
+DROP STORAGE my_s3_storage;
+----
