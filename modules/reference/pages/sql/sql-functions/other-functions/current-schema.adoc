@@ -1,0 +1,45 @@
+= current_schema()
+:description: The link:https://www.postgresql.org/docs/current/functions-info.html#FUNCTIONS-INFO-SESSION[current_schema()^] is a session information function that r
+:page-topic-type: reference
+
+The link:https://www.postgresql.org/docs/current/functions-info.html#FUNCTIONS-INFO-SESSION[current_schema()^] is a session information function that returns the name of the first existing schema.
+
+== Syntax
+
+There are two available syntax versions of `current_schema()` function:
+
+.Version 1
+[source,sql]
+----
+SELECT current_schema();
+----
+
+.Version 2
+[source,sql]
+----
+SELECT current_schema;
+----
+[NOTE]
+====
+It will return `NULL` if none of the schemas from `search_path` exist
+====
+
+== Example
+
+The following example shows how to get the current schema name using this function
+
+[source,sql]
+----
+SELECT current_schema();
+----
+
+The output from the above query can be as follows:
+
+[source,sql]
+----
++------------+
+| f          |
++------------+
+| public     |
++------------+
+----

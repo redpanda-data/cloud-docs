@@ -1,0 +1,177 @@
+= Interval
+:description: The Interval data type represents periods between dates or times, which can be precisely calculated and expressed through various units.
+:page-topic-type: reference
+
+The Interval data type represents periods between dates or times, which can be precisely calculated and expressed through various units. Those can be combined and include additional options for different interval calculations.
+
+In this doc, you’ll find more about the *interval syntax*, learn what are *supported units and abbreviations*, browse through *examples* and finally find out how to *extract data from intervals*.
+
+== Syntax
+
+The syntax for specifying an interval is as follows:
+
+[source,sql]
+----
+SELECT INTERVAL 'quantity unit [quantity unit...] [direction]' [OPTION]
+----
+
+[cols="1,3",options="header"]
+|===
+|Parameter |Description
+
+|`quantity`
+|The value representing the number of units.
+
+|`unit`
+a|Year, month, day, hour, minute, etc. Abbreviations, short forms, and dash format are supported. Plural forms are also acceptable (e.g. months, days, weeks).
+
+|`direction`
+|An optional parameter: *ago* or empty string.
+
+|`OPTION`
+|Additional options when parsing interval.
+|===
+
+== Supported units and abbreviations
+
+[cols=",",options="header",]
+|===
+|*Unit* |*Abbreviations*
+|Millennium |-
+|Century |-
+|Decade |-
+|Year |`y`, `yr`, `yrs`
+|Month |-
+|Week |-
+|Day |`d`
+|Hour |`h`, `hr`, `hrs`
+|Minute |`min`, `mins`, `m`
+|Second |`s`, `sec`, `secs`
+|Millisecond |`ms`
+|Microsecond |-
+|===
+
+== Options for interval parsing
+
+* `YEAR`, `MONTH`, `DAY`, `HOUR`, `MINUTE`, `SECOND`
+* `YEAR TO MONTH`, `DAY TO HOUR`, `DAY TO MINUTE`, `DAY TO SECOND`, `HOUR TO MINUTE`, `HOUR TO SECOND`, `MINUTE TO SECOND`
+
+== Examples
+
+=== Select interval with multiple units
+
+In this example, we’ll calculate the interval by combining multiple units of time.
+
+[source,sql]
+----
+SELECT INTERVAL '5 years 4 months 2 weeks 3 days 5 hours 10 minutes 25 seconds' as "Interval";
+----
+
+[source,sql]
+----
+            Interval
+---------------------------------
+ 5 years 4 mons 17 days 05:10:25
+(1 row)
+----
+
+=== Use abbreviations
+
+This example shows how to use abbreviated units for time intervals.
+
+[source,sql]
+----
+SELECT INTERVAL '10 yr 8 months 2 weeks 6 days 5 hrs 10 min 20 s as "Interval";
+----
+
+[source,sql]
+----
+             Interval
+----------------------------------
+ 10 years 8 mons 20 days 05:10:20
+(1 row)
+----
+
+=== Use dash format
+
+Here you’ll find out how to use the dash format for specifying intervals.
+
+[source,sql]
+----
+SELECT INTERVAL '1-2 3 DAYS 04:05:06.070809' as "Interval";
+----
+
+[source,sql]
+----
+               Interval
+--------------------------------------
+ 1 year 2 mons 3 days 04:05:06.070809
+(1 row)
+----
+
+=== Parse intervals using specific units
+
+By running the code below, the output will show everything up to minutes and ignore seconds and miliseconds.
+
+[source,sql]
+----
+SELECT INTERVAL '1-2 5 DAYS 07:08:06.040809' MINUTE as "Interval";
+----
+
+[source,sql]
+----
+           Interval
+-------------------------------
+ 1 year 2 mons 5 days 07:08:00
+(1 row)
+----
+
+=== Display specific range only
+
+Executing the query below will result only years and months being displayed excluding days, hours, minutes, and seconds from the input.
+
+[source,sql]
+----
+SELECT INTERVAL '2-4 5 DAYS 04:05:06.070809' YEAR TO MONTH as "Interval";
+----
+
+[source,sql]
+----
+    Interval
+----------------
+ 2 years 4 mons
+(1 row)
+----
+
+=== Extract data from interval
+
+In order to extract the interval numbers from the timestamp, you can use the *EXTRACT()* function the following way:
+
+[source,sql]
+----
+SELECT EXTRACT (field FROM interval)
+----
+
+* `field`: supports time units, such as `YEAR`, `MONTH`, `DAY`, `HOUR`, etc.
+* `interval`: specified timestamp.
+
+[source,sql]
+----
+SELECT EXTRACT (MINUTE
+FROM INTERVAL '2 hours 30 minutes');
+----
+
+As the output of the above query, only the minutes part will be returned.
+
+[source,sql]
+----
+   extract
+------------
+        30
+(1 row)
+----
+
+[NOTE]
+====
+If you query a field that is not specified in the timestamp, you will get `0` as an output.
+====

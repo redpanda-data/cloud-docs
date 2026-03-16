@@ -1,0 +1,71 @@
+= C# (Dapper - Npgsql)
+:description: Dapper is a simple object-relational mapper (ORM) for .NET.
+:page-topic-type: how-to
+
+https://dappertutorial.net/[Dapper^] is a simple object-relational mapper (ORM) for .NET. It provides an easy and efficient way to query databases with minimal setup and overhead, leveraging SQL directly while mapping results to C# objects. This page describes how to use Dapper with https://www.npgsql.org/[Npgsql^] (a PostgreSQL data provider for .NET) to connect to Redpanda SQL.
+
+== Establishing connection
+
+There are two ways that can be utilised in order to establish a connection through https://www.npgsql.org/[Npgsql^]:
+
+* *Npgsql's DataSource Class*
++
+[source,csharp]
+----
+var connectionString = "Server=127.0.0.1:5432;Username=user;Password=password;Database=db;";
+var dataSource = NpgsqlDataSource.Create(connectionString);
+var connection = dataSource.OpenConnection();
+----
+
+* *Creating Connection Directly*
++
+[source,csharp]
+----
+var connectionString = "Server=127.0.0.1:5432;Username=user;Password=password;Database=db;";
+var connection = new NpgsqlConnection(connectionString);
+connection.Open();
+----
+
+For more details on connection string options, including SSL configuration, please refer to https://www.npgsql.org/doc/connection-string-parameters.html[Npgsql docs^].
+
+== Example usage
+
+This example shows basic query execution for the following C# class, once the connection has been established:
+
+[source,csharp]
+----
+public class Customer
+{
+    public int ClientId { get; set; }
+    public double Height { get; set; }
+    public string FirstName { get; set; }
+}
+----
+
+[source,csharp]
+----
+connection.Execute("CREATE TABLE Customer (ClientId INTEGER, Height DOUBLE, FirstName TEXT)");
+
+var customer = new Customer{ClientId = 1, Height = 3.14, FirstName = "John"};
+connection.Execute("INSERT INTO Customer VALUES (@ClientId, @Height, @FirstName)", customer);
+
+var customers = connection.Query<Customer>("SELECT * FROM Customer");
+foreach(var c in customers)
+{
+    Console.WriteLine($"Customer #{c.ClientId}: {c.FirstName} is {c.Height} tall.");
+}
+----
+
+[WARNING]
+====
+`INSERT INTO Customer VALUES (@ClientId, @Height, @FirstName)` syntax uses prepared statements under the hood, which are not supported by Redpanda SQL. We translate incoming binary input back into string, thus no benefits of such statements apply (no security or performance improvements)
+====
+
+== Unsupported functions and structures
+
+Here you can find a list of functions and potentially related structures, that we either do not support at all or they work incorrectly when combining Redpanda SQL and Dapper-Npgsql:
+
+* `connection.Execute` - returns improper number of rows for `DELETE`, `UPDATE`, `INSERT INTO ... (SELECT)` and `COPY` statements
+* `connection.BeginTransaction` - https://www.npgsql.org/doc/basic-usage.html#transactions[Transactions^]
+* `CommandType.StoredProcedure` - https://www.npgsql.org/doc/basic-usage.html#stored-functions-and-procedures[Stored Procedures^]
+* https://www.npgsql.org/doc/basic-usage.html#function-inout-parameters[Function in/out parameters^]
