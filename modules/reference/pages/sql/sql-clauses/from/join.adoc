@@ -4,27 +4,36 @@
 
 `JOIN` clause is used to create a new table by combining records and using common fields between two tables in a database.
 
-[TIP]
-====
-We support table aliasing used in the `JOIN` clause.
-====
+TIP: Table aliasing is supported in the `JOIN` clause.
 
 == Syntax
 
-The following is the syntax of the `JOIN` clause:
+=== JOIN ... ON
 
 [source,sql]
 ----
 SELECT table_1.column_1, table_2.column_2...
 FROM table_1
 JOIN table_2
-ON table_1.common_filed = table_2.common_field
+ON table_1.common_field = table_2.common_field
 ----
 
-. `SELECT table_1.column_1, table_2.column_2...` will select the columns to be displayed from both tables.
+. `SELECT table_1.column_1, table_2.column_2...` selects the columns to display from both tables.
 . `FROM table_1 JOIN table_2` represents the joined tables.
-. `ON table_1.common_filed = table_2.common_field` compares each row of table_1 with each row of table_2 to find all pairs of rows that meet the join-common field.
-. When the join-common field is met, column values for each matched pair of rows from table_1 and table_2 are combined into a result row.
+. `ON table_1.common_field = table_2.common_field` compares each row of table_1 with each row of table_2 to find all pairs of rows that meet the join condition.
+. When the condition is met, column values for each matched pair of rows from table_1 and table_2 are combined into a result row.
+
+=== JOIN ... USING
+
+[source,sql]
+----
+SELECT column_1, column_2...
+FROM table_1
+JOIN table_2
+USING (column_name [, column_name2 ...])
+----
+
+The `USING` clause is a shorthand for joining tables when both tables share columns with the same name. Instead of writing `ON table_1.id = table_2.id`, you can write `USING (id)`. When joining on multiple shared columns, separate them with commas: `USING (id, name)`.
 
 === Table alias
 

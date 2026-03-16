@@ -6,24 +6,22 @@ The `ROUND()` function rounds numbers using round half to even method (bankers r
 
 == Syntax
 
-The following illustrates the syntax of the `ROUND()` function:
-
 [source,sql]
 ----
-ROUND(number);
+ROUND(number)
+ROUND(number, scale)
 ----
 
-Where:
+== Arguments
 
-* `number`: The number to round, it can be positive, negative, or zero, and it can be an xref:reference:sql/sql-data-types/numeric-type/numeric.adoc[Integer] or a xref:reference:sql/sql-data-types/numeric-type/numeric.adoc[Double Precision].
+* `number`: The number to round. It can be positive, negative, or zero, and it can be an xref:reference:sql/sql-data-types/numeric-type/numeric.adoc[Integer] or a xref:reference:sql/sql-data-types/numeric-type/numeric.adoc[Double Precision].
+* `scale`: Optional. An integer specifying the number of decimal places to round to. When omitted, the function rounds to the nearest integer.
 
 == Examples
 
-Let’s explore some examples to see how the `ROUND()` function works.
+=== Round to integer
 
-=== Basic usage
-
-In this example, we round decimal numbers to integers:
+In this example, the function rounds decimal numbers to integers:
 
 [source,sql]
 ----
@@ -45,49 +43,21 @@ The query will return the nearest integer for all provided values.
            28 |           13 |           -9 |          102 |          102 |           -41
 ----
 
-=== Use `ROUND` with table
+=== Round to a specific number of decimal places
 
-Suppose you have a table named *Product* that stores product prices with multiple decimal places. You want to round the prices.
-
-[source,sql]
-----
-CREATE TABLE Product (
-    ProductID INT,
-    ProductName TEXT,
-    Price DOUBLE PRECISION
-);
-
-INSERT INTO Product (ProductID, ProductName, Price)
-VALUES
-    (1, 'Widget A', 12.345),
-    (2, 'Widget B', 34.678),
-    (3, 'Widget C', 9.99),
-    (4, 'Widget D', 45.00),
-    (5, 'Widget E', 7.12345),
-    (6, 'Widget F', 19.876),
-    (7, 'Widget G', 3.5),
-    (8, 'Widget H', 29.999);
-----
-
-We use the `ROUND()` function to round the Price column when retrieving the data.
+Use the two-argument form to specify the number of decimal places:
 
 [source,sql]
 ----
-SELECT ProductName, ROUND(Price) AS RoundedPrice FROM Product;
+SELECT
+    round(3.14159, 2) AS "round(3.14159, 2)",
+    round(123.456, 1) AS "round(123.456, 1)",
+    round(99.995, 2) AS "round(99.995, 2)";
 ----
-
-The result will display the product names along with their prices rounded.
 
 [source,sql]
 ----
- productname | roundedprice
--------------+--------------
- Widget A    |           12
- Widget B    |           35
- Widget C    |           10
- Widget D    |           45
- Widget E    |            7
- Widget F    |           20
- Widget G    |            4
- Widget H    |           30
+ round(3.14159, 2) | round(123.456, 1) | round(99.995, 2)
+-------------------+-------------------+------------------
+              3.14 |             123.5 |              100
 ----
