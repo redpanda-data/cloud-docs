@@ -37,14 +37,14 @@ Connecting to AI Gateway requires two configuration changes:
 
 AI Gateway uses OIDC through service accounts that can be used as a `client_credentials` grant to authenticate and exchange for access and ID tokens.
 
-=== Step 1: Create a service account
+=== Create a service account
 
 . In the Redpanda Cloud UI, go to https://cloud.redpanda.com/organization-iam?tab=service-accounts[*Organization IAM* > *Service account*^].
 . Create a new service account and note the *Client ID* and *Client Secret*.
 
 For details, see xref:security:cloud-authentication.adoc#authenticate-to-the-cloud-api[Authenticate to the Cloud API].
 
-=== Step 2: Configure your OIDC client
+=== Configure your OIDC client
 
 Use the following OIDC configuration:
 
@@ -141,7 +141,7 @@ const accessToken = tokenSet.access_token;
 ----
 ====
 
-=== Step 3: Make authenticated requests
+=== Make authenticated requests
 
 Requests require two headers:
 
@@ -244,7 +244,7 @@ curl ${REDPANDA_GATEWAY_URL}/chat/completions \
 
 === Token lifecycle management
 
-IMPORTANT: Your agent is responsible for refreshing tokens before they expire. OIDC tokens have a limited TTL and are not automatically renewed by the AI Gateway.
+IMPORTANT: Your agent is responsible for refreshing tokens before they expire. OIDC access tokens have a limited time-to-live (TTL), determined by the identity provider, and are not automatically renewed by the AI Gateway. Check the `expires_in` field in the token response for the exact duration.
 
 * Proactively refresh tokens at approximately 80% of the token's TTL to avoid failed requests.
 * `authlib` (Python) can handle token renewal automatically when you pass `token_endpoint` to the `OAuth2Session` constructor. For `client_credentials` grants, it obtains a new token rather than using a refresh token.
