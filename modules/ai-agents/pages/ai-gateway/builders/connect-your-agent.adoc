@@ -22,7 +22,7 @@ After completing this guide, you will be able to:
 +
 If not, see xref:ai-gateway/builders/discover-gateways.adoc[].
 
-* You have a Redpanda Cloud API token with access to the gateway.
+* You have a service account with OIDC client credentials. See xref:security:cloud-authentication.adoc[].
 * You have a development environment with your chosen programming language.
 
 == Integration overview
@@ -30,21 +30,131 @@ If not, see xref:ai-gateway/builders/discover-gateways.adoc[].
 Connecting to AI Gateway requires two configuration changes:
 
 . *Change the base URL*: Point to the gateway endpoint instead of the provider's API. The gateway ID is embedded in the endpoint URL.
-. *Add authentication*: Use your Redpanda Cloud token instead of provider API keys
+. *Add authentication*: Use an OIDC access token from your service account instead of provider API keys.
 
-== Quickstart
+[[authenticate-with-oidc]]
+== Authenticate with OIDC
 
-=== Environment variables
+AI Gateway uses OIDC through service accounts that can be used as a `client_credentials` grant to authenticate and exchange for access and ID tokens.
+
+=== Create a service account
+
+. In the Redpanda Cloud UI, go to https://cloud.redpanda.com/organization-iam?tab=service-accounts[*Organization IAM* > *Service account*^].
+. Create a new service account and note the *Client ID* and *Client Secret*.
+
+For details, see xref:security:cloud-authentication.adoc#authenticate-to-the-cloud-api[Authenticate to the Cloud API].
+
+=== Configure your OIDC client
+
+Use the following OIDC configuration:
+
+[cols="1,2", options="header"]
+|===
+|Parameter |Value
+
+|Discovery URL
+|`\https://auth.prd.cloud.redpanda.com/.well-known/openid-configuration`
+
+|Token endpoint
+|`\https://auth.prd.cloud.redpanda.com/oauth/token`
+
+|Audience
+|`cloudv2-production.redpanda.cloud`
+
+|Grant type
+|`client_credentials`
+|===
+
+The discovery URL returns OIDC metadata, including the token endpoint and other configuration details. Use an OIDC client library that supports metadata discovery (such as `openid-client` for Node.js) so that endpoints are resolved automatically. If your library does not support discovery, you can fetch the discovery URL directly and extract the required endpoints from the JSON response.
+
+[tabs]
+====
+cURL::
++
+--
+[source,bash]
+----
+AUTH_TOKEN=$(curl -s --request POST \
+    --url 'https://auth.prd.cloud.redpanda.com/oauth/token' \
+    --header 'content-type: application/x-www-form-urlencoded' \
+    --data grant_type=client_credentials \
+    --data client_id=<client-id> \
+    --data client_secret=<client-secret> \
+    --data audience=cloudv2-production.redpanda.cloud | jq -r .access_token)
+----
+
+Replace `<client-id>` and `<client-secret>` with your service account credentials.
+--
+
+Python (authlib)::
++
+--
+[source,python]
+----
+from authlib.integrations.requests_client import OAuth2Session
+
+client = OAuth2Session(
+    client_id="<client-id>",
+    client_secret="<client-secret>",
+)
+
+# Discover token endpoint from OIDC metadata
+import requests
+metadata = requests.get(
+    "https://auth.prd.cloud.redpanda.com/.well-known/openid-configuration"
+).json()
+token_endpoint = metadata["token_endpoint"]
+
+token = client.fetch_token(
+    token_endpoint,
+    grant_type="client_credentials",
+    audience="cloudv2-production.redpanda.cloud",
+)
+
+access_token = token["access_token"]
+----
+
+This example performs a one-time token fetch. For automatic token renewal on subsequent requests, pass `token_endpoint` to the `OAuth2Session` constructor. Note that for `client_credentials` grants, `authlib` obtains a new token rather than using a refresh token.
+--
+
+Node.js (openid-client)::
++
+[source,javascript]
+----
+import { Issuer } from 'openid-client';
+
+const issuer = await Issuer.discover(
+  'https://auth.prd.cloud.redpanda.com'
+);
+
+const client = new issuer.Client({
+  client_id: '<client-id>',
+  client_secret: '<client-secret>',
+});
+
+const tokenSet = await client.grant({
+  grant_type: 'client_credentials',
+  audience: 'cloudv2-production.redpanda.cloud',
+});
+
+const accessToken = tokenSet.access_token;
+----
+====
+
+=== Make authenticated requests
+
+Requests require two headers:
+
+* `Authorization: Bearer <token>` - your OIDC access token
+* `rp-aigw-id: <gateway-id>` - your AI Gateway ID
 
 Set these environment variables for consistent configuration:
 
 [source,bash]
 ----
 export REDPANDA_GATEWAY_URL="<your-gateway-endpoint>"
-export REDPANDA_API_KEY="your-redpanda-cloud-token"
+export REDPANDA_GATEWAY_ID="<your-gateway-id>"
 ----
-
-Replace with your actual gateway endpoint and API token.
 
 [tabs]
 ====
@@ -55,13 +165,13 @@ Python (OpenAI SDK)::
 import os
 from openai import OpenAI
 
-# Configure client to use AI Gateway
+# Configure client to use AI Gateway with OIDC token
 client = OpenAI(
     base_url=os.getenv("REDPANDA_GATEWAY_URL"),
-    api_key=os.getenv("REDPANDA_API_KEY"),
+    api_key=access_token,  # OIDC access token from Step 2
 )
 
-# Make a request (same as before)
+# Make a request
 response = client.chat.completions.create(
     model="openai/gpt-5.2-mini",  # Note: vendor/model_id format
     messages=[{"role": "user", "content": "Hello, AI Gateway!"}],
@@ -82,7 +192,7 @@ from anthropic import Anthropic
 
 client = Anthropic(
     base_url=os.getenv("REDPANDA_GATEWAY_URL"),
-    api_key=os.getenv("REDPANDA_API_KEY"),
+    api_key=access_token,  # OIDC access token from Step 2
 )
 
 # Make a request
@@ -103,7 +213,7 @@ import OpenAI from 'openai';
 
 const openai = new OpenAI({
   baseURL: process.env.REDPANDA_GATEWAY_URL,
-  apiKey: process.env.REDPANDA_API_KEY,
+  apiKey: accessToken,  // OIDC access token from Step 2
 });
 
 // Make a request
@@ -118,13 +228,12 @@ console.log(response.choices[0].message.content);
 
 cURL::
 +
-For testing or shell scripts:
-+
 [source,bash]
 ----
 curl ${REDPANDA_GATEWAY_URL}/chat/completions \
-  -H "Authorization: Bearer ${REDPANDA_API_KEY}" \
+  -H "Authorization: Bearer ${AUTH_TOKEN}" \
   -H "Content-Type: application/json" \
+  -H "rp-aigw-id: ${REDPANDA_GATEWAY_ID}" \
   -d '{
     "model": "openai/gpt-5.2-mini",
     "messages": [{"role": "user", "content": "Hello, AI Gateway!"}],
@@ -132,6 +241,14 @@ curl ${REDPANDA_GATEWAY_URL}/chat/completions \
   }'
 ----
 ====
+
+=== Token lifecycle management
+
+IMPORTANT: Your agent is responsible for refreshing tokens before they expire. OIDC access tokens have a limited time-to-live (TTL), determined by the identity provider, and are not automatically renewed by the AI Gateway. Check the `expires_in` field in the token response for the exact duration.
+
+* Proactively refresh tokens at approximately 80% of the token's TTL to avoid failed requests.
+* `authlib` (Python) can handle token renewal automatically when you pass `token_endpoint` to the `OAuth2Session` constructor. For `client_credentials` grants, it obtains a new token rather than using a refresh token.
+* For other languages, cache the token and its expiry time, then request a new token before the current one expires.
 
 == Model naming convention
 
@@ -196,7 +313,7 @@ from openai import OpenAI, OpenAIError
 
 client = OpenAI(
     base_url=os.getenv("REDPANDA_GATEWAY_URL"),
-    api_key=os.getenv("REDPANDA_API_KEY"),
+    api_key=access_token,  # OIDC access token
 )
 
 try:
@@ -210,7 +327,7 @@ except OpenAIError as e:
     if e.status_code == 400:
         print("Bad request - check model name and parameters")
     elif e.status_code == 401:
-        print("Authentication failed - check API token")
+        print("Authentication failed - check OIDC token")
     elif e.status_code == 404:
         print("Model not found - check available models")
     elif e.status_code == 429:
@@ -224,7 +341,7 @@ except OpenAIError as e:
 Common error codes:
 
 * *400*: Bad request (invalid parameters, malformed JSON)
-* *401*: Authentication failed (invalid or missing API token)
+* *401*: Authentication failed (invalid or expired OIDC token)
 * *403*: Forbidden (no access to this gateway)
 * *404*: Model not found (model not enabled in gateway)
 * *429*: Rate limit exceeded (too many requests)
@@ -280,11 +397,11 @@ Compare responses, latency, and cost to determine the best model for your use ca
 import os
 from openai import OpenAI
 
-def test_gateway_connection():
+def test_gateway_connection(access_token):
     """Test basic connectivity to AI Gateway"""
     client = OpenAI(
         base_url=os.getenv("REDPANDA_GATEWAY_URL"),
-        api_key=os.getenv("REDPANDA_API_KEY"),
+        api_key=access_token,  # OIDC access token
     )
 
     try:
@@ -301,7 +418,8 @@ def test_gateway_connection():
         return False
 
 if __name__ == "__main__":
-    test_gateway_connection()
+    token = get_oidc_token()  # Your OIDC token retrieval
+    test_gateway_connection(token)
 ----
 
 === Test multiple models
@@ -348,7 +466,7 @@ Configure Claude Code to use AI Gateway:
 [source,bash]
 ----
 claude mcp add --transport http redpanda-aigateway ${REDPANDA_GATEWAY_URL}/mcp \
-  --header "Authorization: Bearer ${REDPANDA_API_KEY}"
+  --header "Authorization: Bearer ${AUTH_TOKEN}"
 ----
 +
 Or edit `~/.claude/config.json`:
@@ -361,7 +479,7 @@ Or edit `~/.claude/config.json`:
       "transport": "http",
       "url": "<your-gateway-endpoint>/mcp",
       "headers": {
-        "Authorization": "Bearer your-api-key"
+        "Authorization": "Bearer <oidc-access-token>"
       }
     }
   }
@@ -385,7 +503,7 @@ Edit `~/.continue/config.json`:
       "provider": "openai",
       "model": "openai/gpt-5.2",
       "apiBase": "<your-gateway-endpoint>",
-      "apiKey": "your-redpanda-api-key"
+      "apiKey": "<oidc-access-token>"
     }
   ]
 }
@@ -425,7 +543,7 @@ Store configuration in environment variables, not hardcoded in code:
 base_url = os.getenv("REDPANDA_GATEWAY_URL")
 
 # Bad
-base_url = "https://gw.ai.panda.com"  # Don't hardcode
+base_url = "https://gw.ai.panda.com"  # Don't hardcode URLs or credentials
 ----
 
 === Implement retry logic
@@ -498,8 +616,9 @@ Problem: 401 Unauthorized
 
 Solutions:
 
-* Verify your API token is correct and not expired
-* Check that the token has access to the specified gateway
+* Check that your OIDC token has not expired and refresh it if necessary
+* Verify the audience is set to `cloudv2-production.redpanda.cloud`
+* Check that the service account has access to the specified gateway
 * Ensure the `Authorization` header is formatted correctly: `Bearer <token>`
 
 === "Model not found"
