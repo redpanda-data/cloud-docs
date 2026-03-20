@@ -1,7 +1,9 @@
 = Redpanda Connect Quickstart
 :description: Learn how to quickly start building data pipelines with Redpanda Connect. 
 
-The *Connect* page lets you build data pipelines using a YAML editor. Add connectors from the left pane and configure them in the editor. Use slash commands (`/`) to insert variables, secrets, topics, and users.
+The *Connect* page lets you build data pipelines using a YAML editor. Add connectors and processors from the left pane and configure them in the editor. You can use slash commands (`/`) in the YAML editor to insert existing variables, secrets, topics, and users, or to create new ones.
+
+== Quickstart pipelines
 
 This quickstart shows how Redpanda Connect can generate, transform, and handle streaming data end-to-end. It creates the following pipelines: 
 
@@ -67,13 +69,13 @@ NOTE: Serverless clusters support up to 10 pipelines.
 
 == Build a producer pipeline
 
-Follow these steps to create the producer pipeline:
+To create the producer pipeline:
 
 . Go to the *Connect* page for your cluster and click *Create pipeline*.
 
 . Enter this name for the pipeline: `joke-generator-producer`.
 
-. In the left pane, click to add the `generate` input connector and the `redpanda` output connector. The YAML for this connectorappears in the editor.
+. In the left pane, click to add the `generate` input connector and the `redpanda` output connector. The YAML for this connector appears in the editor.
 
 . Replace the generated YAML with the following configuration, which includes the `log` and `catch` processors and the `mapping` for joke generation:
 +
@@ -146,14 +148,14 @@ output:
 . Click *Create*.
 
 +
-TIP: In the YAML editor, type `/` to open the slash command menu. Use it to insert variables, secrets, topics, and users. You can select existing items or create new ones.
-
-+
 [NOTE]
 ====
 * Notice the `$\{REDPANDA_BROKERS}` xref:develop:connect/configuration/contextual-variables.adoc[contextual variable] in the configuration. This automatically references your cluster's bootstrap server address, so you can use it in any pipeline without hardcoding connection details.
 * Notice `${secrets.KAFKA_USER_CONNECT}` and `${secrets.KAFKA_PASSWORD_CONNECT}`. These reference secrets that you can create using the slash command menu in the YAML editor or the *Security* page.
 * The Brave browser does not fully support code snippets.
+
++
+TIP: In the YAML editor, type `/` to open the slash command menu. Use it to insert variables, secrets, topics, and users. You can select existing items or create new ones.
 
 ====
 
