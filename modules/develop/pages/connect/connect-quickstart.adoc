@@ -3,6 +3,12 @@
 
 The *Connect* page lets you build data pipelines using a YAML editor. Add connectors and processors from the left pane and configure them in the editor. You can use slash commands (`/`) in the YAML editor to insert existing variables, secrets, topics, and users, or to create new ones.
 
+== Prerequisites
+
+You must have a Redpanda Cloud account with a Serverless, Dedicated, or standard BYOC cluster. If you don't already have an account, https://redpanda.com/try-redpanda/cloud-trial[sign up for a free trial^].
+
+NOTE: Serverless clusters support up to 10 pipelines. 
+
 == Quickstart pipelines
 
 This quickstart shows how Redpanda Connect can generate, transform, and handle streaming data end-to-end. It creates the following pipelines: 
@@ -61,12 +67,6 @@ The *consumer pipeline* uses the following Redpanda Connect components:
 |Catches errors 
 |===  
 
-== Prerequisites
-
-You must have a Redpanda Cloud account with a Serverless, Dedicated, or standard BYOC cluster. If you don't already have an account, https://redpanda.com/try-redpanda/cloud-trial[sign up for a free trial^].
-
-NOTE: Serverless clusters support up to 10 pipelines.
-
 == Build a producer pipeline
 
 To create the producer pipeline:
@@ -75,7 +75,7 @@ To create the producer pipeline:
 
 . Enter this name for the pipeline: `joke-generator-producer`.
 
-. In the left pane, click to add the `generate` input connector and the `redpanda` output connector. The YAML for this connector appears in the editor.
+. In the left pane, click to add the `generate` input connector and the `redpanda` output connector. The YAML for these connectors appears in the editor.
 
 . Replace the generated YAML with the following configuration, which includes the `log` and `catch` processors and the `mapping` for joke generation:
 +
@@ -203,7 +203,7 @@ After a minute, select the pipeline and click **Stop** so you can examine the re
 
 == Build a consumer pipeline
 
-This pipeline rates the jokes that you generated in the first pipeline. Follow these steps to create the consumer pipeline:
+This pipeline rates the jokes that you generated in the first pipeline. To create the consumer pipeline:
 
 . On the *Connect* page for your cluster, click *Create pipeline*.
 
@@ -340,7 +340,7 @@ When you've finished experimenting with your data pipeline, you can delete the p
 
 == Next steps
 
-* Try one of our xref:cookbooks:index.adoc[Redpanda Connect cookbooks]. 
+* Try one of the xref:cookbooks:index.adoc[Redpanda Connect cookbooks]. 
 * Choose xref:develop:connect/components/about.adoc[connectors for your use case].
 * Learn how to xref:develop:connect/configuration/secret-management.adoc[add secrets to your pipeline].
 * Learn how to xref:develop:connect/configuration/monitor-connect.adoc[monitor a data pipeline on a BYOC or Dedicated cluster].
