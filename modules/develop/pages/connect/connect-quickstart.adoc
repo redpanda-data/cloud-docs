@@ -1,7 +1,14 @@
 = Redpanda Connect Quickstart
 :description: Learn how to quickly start building data pipelines with Redpanda Connect. 
 
-The *Connect* page lets you build data pipelines using a YAML editor. Add connectors and processors from the left pane and configure them in the editor. You can use slash commands (`/`) in the YAML editor to insert existing variables, secrets, topics, and users, or to create new ones.
+The *Connect* page lets you build data pipelines using a YAML editor. Add connectors and processors from the left pane and configure them in the editor.
+
+[TIP]
+====
+* Click any connector to learn more about it in the documentation.
+* Use slash commands (`/`) in the YAML editor to insert existing variables, secrets, topics, and users, or to create new ones.
+
+====
 
 == Prerequisites
 
@@ -18,7 +25,7 @@ This quickstart shows how Redpanda Connect can generate, transform, and handle s
 
 The *producer pipeline* uses the following Redpanda Connect components:
 
-[cols="1,2,3"]
+[cols="1,2,3"]a
 |===
 |Component type |Component |Purpose
 
@@ -71,7 +78,7 @@ The *consumer pipeline* uses the following Redpanda Connect components:
 
 To create the producer pipeline:
 
-. Go to the *Connect* page for your cluster and click *Create pipeline*.
+. Go to the *Connect* page for your cluster and click *Create a pipeline*.
 
 . Enter this name for the pipeline: `joke-generator-producer`.
 
@@ -154,10 +161,10 @@ output:
 * Notice `${secrets.KAFKA_USER_CONNECT}` and `${secrets.KAFKA_PASSWORD_CONNECT}`. These reference secrets that you can create using the slash command menu in the YAML editor or the *Security* page.
 * The Brave browser does not fully support code snippets.
 
+====
+
 +
 TIP: In the YAML editor, type `/` to open the slash command menu. Use it to insert variables, secrets, topics, and users. You can select existing items or create new ones.
-
-====
 
 . Your pipeline details display, and after a few seconds, the status changes from **Starting** to **Running**. If you don't see this change, refresh the page. Once running, your pipeline generates a new joke every five seconds and writes the joke to your topic.
 
@@ -205,7 +212,7 @@ After a minute, select the pipeline and click **Stop** so you can examine the re
 
 This pipeline rates the jokes that you generated in the first pipeline. To create the consumer pipeline:
 
-. On the *Connect* page for your cluster, click *Create pipeline*.
+. On the *Connect* page for your cluster, click *Create a pipeline*.
 
 . Enter this name for the pipeline: `joke-generator-consumer`.
 
