@@ -4,6 +4,8 @@
 
 The `DROP` statement removes database objects. In Redpanda SQL, `DROP` supports removing catalog tables, Redpanda catalogs, and storage definitions.
 
+// TODO (follow-up PR): Add xref links to CREATE REDPANDA CATALOG and CREATE STORAGE pages once they exist.
+
 == DROP TABLE
 
 Removes a table that was mapped to a Redpanda topic through a catalog. This does not delete the underlying Redpanda topic.
@@ -33,7 +35,7 @@ DROP TABLE IF EXISTS my_catalog=>old_events;
 
 == DROP REDPANDA CATALOG
 
-Removes a Redpanda catalog connection.
+Removes a Redpanda catalog connection. You must drop all tables within a catalog before dropping the catalog itself.
 
 === Syntax
 
@@ -46,6 +48,16 @@ DROP REDPANDA CATALOG [IF EXISTS] catalog_name;
 * `IF EXISTS`: Optional. Prevents an error if the catalog does not exist.
 
 === Example
+
+First, drop all tables in the catalog:
+
+[source,sql]
+----
+DROP TABLE my_catalog=>user_events;
+DROP TABLE my_catalog=>transactions;
+----
+
+Then drop the catalog:
 
 [source,sql]
 ----

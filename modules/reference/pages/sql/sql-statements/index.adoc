@@ -1,7 +1,9 @@
 = SQL STATEMENTS
 :description: SQL statements are the commands used to interact with Redpanda SQL database.
 
-SQL statements are the commands used to interact with Redpanda SQL database. These statements enable you to create, modify, query and manage database objects and data efficiently.
+SQL statements are the commands used to interact with Redpanda SQL. These statements enable you to query data, manage catalog connections, and export results.
+
+NOTE: Redpanda SQL operates in read-only mode. Data mutation operations (`INSERT`, `UPDATE`, `DELETE`) and bulk import (`COPY FROM`) are not available. Data is ingested into Redpanda topics and made queryable through catalog mappings.
 
 The following table summarizes the statements supported by Redpanda SQL:
 
@@ -10,8 +12,8 @@ The following table summarizes the statements supported by Redpanda SQL:
 |Statement Name |Description
 |xref:reference:sql/sql-statements/create-table.adoc[CREATE TABLE] |Maps a Redpanda topic to a SQL table through a catalog
 |xref:reference:sql/sql-statements/drop.adoc[DROP] |Removes catalog tables, Redpanda catalogs, or storage definitions
-|xref:reference:sql/sql-statements/select.adoc[SELECT] |Retrieves data from table
-|xref:reference:sql/sql-statements/copy-to/copy-to.adoc[COPY TO] |Exports table data or specific columns to CSV files
+|xref:reference:sql/sql-statements/select.adoc[SELECT] |Retrieves data from a table
+|xref:reference:sql/sql-statements/copy-to/copy-to.adoc[COPY TO] |Exports query results or table data to CSV files
 |xref:reference:sql/sql-statements/set-show.adoc[SET/SHOW] |Configures or displays session-level settings such as path
 |xref:reference:sql/sql-statements/show-tables.adoc[SHOW TABLES] |Lists all tables within the current schema, database, or catalog
 |xref:reference:sql/sql-statements/show-nodes.adoc[SHOW NODES] |Displays the current state of nodes in a distributed cluster
