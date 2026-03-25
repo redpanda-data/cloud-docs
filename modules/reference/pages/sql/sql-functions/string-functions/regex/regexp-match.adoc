@@ -84,7 +84,7 @@ SELECT REGEXP_MATCH('User.Name@Example.COM', '@([a-z0-9.-]+)$', 'i');
 
 === Match with patterns stored in a table
 
-In this example we will show you how to take the source string and regex pattern directly from the table. For the needs of this section, let’s create two sample tables:
+This example shows how to take the source string and regex pattern directly from the table. First, create two sample tables:
 
 [source,sql]
 ----
@@ -98,7 +98,7 @@ CREATE TABLE patterns (
 );
 ----
 
-Once that is done, let’s insert values into those tables:
+Once that is done, insert values into those tables:
 
 [source,sql]
 ----
@@ -111,7 +111,7 @@ INSERT INTO patterns (id, regex_pattern) VALUES
     (0, '^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$');
 ----
 
-Now, we can validate if user emails in `users` table are valid. If the regex doesn’t match, a `NULL` value is returned.
+Now, validate whether user emails in the `users` table are valid. If the regex doesn’t match, a `NULL` value is returned.
 
 [source,sql]
 ----

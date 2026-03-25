@@ -9,7 +9,7 @@ Redpanda SQL is a column-oriented OLAP query engine integrated into Redpanda Clo
 
 == Read-only query engine
 
-Redpanda SQL operates as a read-only query engine. Regular DDL operations such as `CREATE TABLE`, `INSERT`, `UPDATE`, and `DELETE` are disabled. Instead, data is ingested into Redpanda topics and made available for SQL queries through *catalogs* -- named connections that map Redpanda topics to SQL tables. This architecture allows analytical queries over streaming data without duplicating or moving it.
+Redpanda SQL operates as a read-only query engine. Regular DDL operations such as `CREATE TABLE`, `INSERT`, `UPDATE`, and `DELETE` are disabled. Instead, data is ingested into Redpanda topics and made available for SQL queries through catalogs -- named connections that map Redpanda topics to SQL tables. This architecture allows analytical queries over streaming data without duplicating or moving it.
 
 == Key characteristics
 
@@ -46,11 +46,11 @@ Over the past decade, CPUs have scaled from 4–8 cores to over 100, but memory 
 
 Redpanda SQL introduces a set of low-level memory access and caching optimizations to address this issue and achieve high resource efficiency:
 
-* *Compressed data* reduces the volume transferred between storage, memory, and CPU
-* *User-space storage caches* minimize overhead from kernel-level memory operations
-* *A custom data format* enhances data locality
-* *Hybrid row/column formats* allow better alignment with CPU cache lines and vectorized execution
-* *Temporal access patterns* help retain frequently used data in memory longer, reducing cache misses
+* Compressed data reduces the volume transferred between storage, memory, and CPU
+* User-space storage caches minimize overhead from kernel-level memory operations
+* A custom data format enhances data locality
+* Hybrid row/column formats allow better alignment with CPU cache lines and vectorized execution
+* Temporal access patterns help retain frequently used data in memory longer, reducing cache misses
 
 == Why use Redpanda SQL
 

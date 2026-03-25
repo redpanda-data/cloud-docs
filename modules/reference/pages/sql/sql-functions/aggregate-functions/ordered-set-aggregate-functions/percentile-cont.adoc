@@ -2,7 +2,7 @@
 :description: PERCENTILE_CONT() is an ordered-set aggregate function used to compute continuous percentiles from a set of values.
 :page-topic-type: reference
 
-`PERCENTILE_CONT()` is an ordered-set aggregate function used to compute continuous percentiles from a set of values. The *continuous percentile* returns an interpolated value based on the distribution of the input data, while *multiple continuous percentiles* return an array of results matching the shape of the `fractions` parameter with each non-null element replaced by the value corresponding to that percentile.
+`PERCENTILE_CONT()` is an ordered-set aggregate function used to compute continuous percentiles from a set of values. The continuous percentile returns an interpolated value based on the distribution of the input data, while multiple continuous percentiles return an array of results matching the shape of the `fractions` parameter with each non-null element replaced by the value corresponding to that percentile.
 
 == Syntax
 
@@ -22,7 +22,7 @@ PERCENTILE_CONT(fraction) WITHIN GROUP (ORDER BY order_list)
 This function is often used in conjunction with the `WITHIN GROUP` clause to specify how to order the data before calculating the percentile.
 ====
 +
-*Parameters*
+Parameters
 
 * `fraction`: decimal value between 0 and 1 representing the desired percentile (e.g. 0.25 for the 25th percentile)
 
@@ -38,7 +38,7 @@ PERCENTILE_CONT(fractions) WITHIN GROUP (ORDER BY order_list)
 This function is often used in conjunction with the `WITHIN GROUP` clause to specify how to order the data before calculating the percentile.
 ====
 +
-*Parameters*
+Parameters
 
 * `fractions`: array of decimal values between 0 and 1 representing the desired percentiles (e.g. `ARRAY[0.25, 0.50, 0.75, 0.90]`)
 
@@ -46,7 +46,7 @@ This function is often used in conjunction with the `WITHIN GROUP` clause to spe
 
 == Example
 
-For the needs of this section we will use a simplified version of the `film` table from the link:https://www.postgresql.org/ftp/projects/pgFoundry/dbsamples/pagila/pagila/[Pagila database^], that will contain only the `title`, `length` and `rating` columns.
+The following example uses a simplified version of the `film` table from the link:https://www.postgresql.org/ftp/projects/pgFoundry/dbsamples/pagila/pagila/[Pagila database^], containing only the `title`, `length` and `rating` columns.
 
 [source,sql]
 ----
@@ -84,7 +84,7 @@ SELECT rating, PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY length) AS "50th per
 GROUP BY rating;
 ----
 
-By executing the code above we will get the following output:
+Executing the code above produces the following output:
 
 [source,sql]
 ----

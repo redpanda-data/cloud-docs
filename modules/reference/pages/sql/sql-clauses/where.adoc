@@ -15,20 +15,20 @@ FROM table_name
 WHERE [condition]
 ----
 
-Let’s explore the above syntax:
+The above syntax includes the following elements:
 
 * `SELECT column1, column2, ...` defines the columns where the records will be displayed.
 * `FROM table_name` sets the table name where the records will be taken from.
-* `WHERE [condition]`specifies the search condition using comparison or logical operators (e.g., `>`, `=`, `LIKE`)
+* `WHERE [condition]` specifies the search condition using comparison or logical operators (e.g., `>`, `=`, `LIKE`)
 
 [TIP]
 ====
-It starts with the `FROM` clause *->* then it executes the `WHERE` condition *->* after that, it will `SELECT` the specified columns.
+It starts with the `FROM` clause, then it executes the `WHERE` condition, after that, it will `SELECT` the specified columns.
 ====
 
 == Examples
 
-Let’s assume that we have a table salary with records as follows:
+Assume there is a table called salary with records as follows:
 
 [source,sql]
 ----
@@ -75,7 +75,7 @@ It will create a table as shown below:
 
 === WHERE clause with `=` operator
 
-Here we will be using the “equal” operator to look up the employee who works in the Marketing department:
+The following example uses the “equal” operator to look up the employee who works in the Marketing department:
 
 [source,sql]
 ----
@@ -99,12 +99,12 @@ The above command will create the following result:
 
 [WARNING]
 ====
-The value defined in the `WHERE` clause’s condition is *case-sensitive*, so ensure that you specify the correct and precise value.
+The value defined in the `WHERE` clause’s condition is case-sensitive, so ensure that you specify the correct and precise value.
 ====
 
 === WHERE clause with `!=` operator
 
-Here we will be using the “not equal” operator to look up the employee who doesn’t live in Texas:
+The following example uses the “not equal” operator to look up the employee who doesn’t live in Texas:
 
 [source,sql]
 ----
@@ -115,7 +115,7 @@ WHERE empaddress != 'Texas';
 
 [NOTE]
 ====
-We can use the `<>` operator for another “not equal” operator.
+You can use the `<>` operator for another “not equal” operator.
 ====
 The above query will give the following result:
 
@@ -133,12 +133,12 @@ The above query will give the following result:
 
 [WARNING]
 ====
-The value defined in the `WHERE` clause's condition is *case-sensitive*. If you set `texas` it will return all records from the salary table.
+The value defined in the `WHERE` clause's condition is case-sensitive. If you set `texas` it will return all records from the salary table.
 ====
 
 === WHERE clause with `>` operator
 
-Here we will be using the “greater than” operator to figure out who has a salary above 20000:
+The following example uses the “greater than” operator to figure out who has a salary above 20000:
 
 [source,sql]
 ----
@@ -149,9 +149,9 @@ WHERE empsalary > 20000;
 
 [NOTE]
 ====
-We can use the `<` operator for a “less than” condition.
+You can use the `<` operator for a “less than” condition.
 ====
-The output will let us know that Parker has a salary greater than 20000:
+The output shows that Parker has a salary greater than 20000:
 
 [source,sql]
 ----
@@ -164,7 +164,7 @@ The output will let us know that Parker has a salary greater than 20000:
 
 === WHERE clause with `<=` operator
 
-Here we will be using the “less than or equal to” operator to see who has a salary less than or equal to 15000:
+The following example uses the “less than or equal to” operator to see who has a salary less than or equal to 15000:
 
 [source,sql]
 ----
@@ -175,9 +175,9 @@ WHERE empsalary <= '15000';
 
 [NOTE]
 ====
-We can use the `>=` operator for a “greater than or equal to” condition.
+You can use the `>=` operator for a “greater than or equal to” condition.
 ====
-The output will let us know that Brandon has a salary equal to 15000 and Lisa has a salary of less than 15000:
+The output shows that Brandon has a salary equal to 15000 and Lisa has a salary of less than 15000:
 
 [source,sql]
 ----
@@ -191,7 +191,7 @@ The output will let us know that Brandon has a salary equal to 15000 and Lisa ha
 
 === WHERE clause with `LIKE` operator
 
-Here we will use the “like” operator to retrieve the employee whose first name starts with *Br*.
+The following example uses the “like” operator to retrieve the employee whose first name starts with `Br`.
 
 [source,sql]
 ----
@@ -203,7 +203,7 @@ WHERE empname LIKE 'Br%';
 ====
 Do the reverse to get the result based on the last string, `%string`.
 ====
-We will get an output where the above query fetches **Br**andon & **Br**adley.
+The above query fetches `Brandon` and `Bradley`.
 
 [source,sql]
 ----
@@ -217,7 +217,7 @@ We will get an output where the above query fetches **Br**andon & **Br**adley.
 
 === WHERE clause with `IS NULL` operator
 
-Here we will use the “is null” operator to search for the employee who doesn’t have a salary value. It will return `true` and display the result set if a value is `NULL`; otherwise, it will return `false` with no result set.
+The following example uses the “is null” operator to search for the employee who doesn’t have a salary value. It returns `true` and displays the result set if a value is `NULL`; otherwise, it returns `false` with no result set.
 
 [source,sql]
 ----

@@ -32,7 +32,7 @@ The `SUM()` window function works with numeric values and ignores NULL ones
 
 == Examples
 
-For the needs of this section, we will create the `winsales` table that stores details of some sales transactions:
+The following examples use the `winsales` table that stores details of some sales transactions:
 
 [source,sql]
 ----
@@ -59,7 +59,7 @@ INSERT INTO winsales VALUES
 
 === SUM() with ORDER BY
 
-In this example, we will focus on executing the `SUM()` window function with `ORDER BY` keyword:
+This example executes the `SUM()` window function with `ORDER BY` keyword:
 
 [source,sql]
 ----
@@ -91,7 +91,7 @@ The output from the above query includes the sales ID, date ID, seller ID, quant
 
 === SUM() with ORDER BY and ROWS frame
 
-In this example we will calculate the running total of `qty` ordered by dateid and salesid using a `ROWS UNBOUNDED PRECEDING` frame, which sums all rows from the start up to the current row:
+This example calculates the running total of `qty` ordered by dateid and salesid using a `ROWS UNBOUNDED PRECEDING` frame, which sums all rows from the start up to the current row:
 
 [source,sql]
 ----
@@ -101,7 +101,7 @@ FROM winsales
 ORDER BY dateid, salesid;
 ----
 
-After executing the query above, we get the following output:
+The query above produces the following output:
 
 [source,sql]
 ----
@@ -125,7 +125,7 @@ The `running_qty_sum` column shows the cumulative sum of `qty` ordered by `datei
 
 === SUM() with ORDER BY and PARTITION BY
 
-In this example we will focus on executing the `SUM()` function with `ORDER BY` keyword and `PARTITION BY` clause:
+This example executes the `SUM()` function with `ORDER BY` keyword and `PARTITION BY` clause:
 
 [source,sql]
 ----
@@ -135,7 +135,7 @@ FROM winsales
 ORDER BY 3,2,1;
 ----
 
-After executing the query above, we get the following output:
+The query above produces the following output:
 
 [source,sql]
 ----
@@ -157,7 +157,7 @@ After executing the query above, we get the following output:
 
 === Time series: SUM() with RANGE BETWEEN for last 30 days
 
-In this example, we will demonstrate a common time series use case. Calculating the rolling sum of sales quantity over the last 30 days for each row, using the RANGE BETWEEN INTERVAL '`30 days`' PRECEDING AND CURRENT ROW frame:
+This example demonstrates a common time series use case: calculating the rolling sum of sales quantity over the last 30 days for each row, using the RANGE BETWEEN INTERVAL '`30 days`' PRECEDING AND CURRENT ROW frame:
 
 [source,sql]
 ----

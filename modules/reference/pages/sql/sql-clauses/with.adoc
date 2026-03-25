@@ -13,8 +13,8 @@ The `WITH` clause precedes the primary statement it is attached to and contains 
 WITH [with_statement_alias AS (with_statement_body)]+ primary_statement;
 ----
 
-* *`primary_statement`*: has to be one of the following: `SELECT`, `INSERT`, `UPDATE`, `DELETE`
-* *`with_statement_body`*: has to be a `SELECT` statement (it can refer to aliases defined earlier in the query)
+* `primary_statement`: has to be one of the following: `SELECT`, `INSERT`, `UPDATE`, `DELETE`
+* `with_statement_body`: has to be a `SELECT` statement (it can refer to aliases defined earlier in the query)
 
 == Semantic
 
@@ -51,7 +51,7 @@ SELECT * FROM
 (SELECT AVG(grade) FROM math_grades WHERE g_date >= (CURRENT_TIMESTAMP() - INTERVAL '1 y')) AS avg_year_grades
 ----
 
-Both subqueries use the same auxiliary `math_grades` query, but each of them filters it using different keys. This way, both scans will only read a part of the table. If materialized CTE was used (which we don’t support yet), the query engine would need to scan the whole table first and then filter the result twice, for each subquery.
+Both subqueries use the same auxiliary `math_grades` query, but each of them filters it using different keys. This way, both scans will only read a part of the table. If materialized CTE was used (which is not yet supported), the query engine would need to scan the whole table first and then filter the result twice, for each subquery.
 
 == Alias context
 
@@ -74,7 +74,7 @@ SELECT * FROM (
 
 By executing the query above, you will receive `2, 1` as an output.
 
-When referencing an alias we use the context, which was defined at the nested query level. If it does not define the referenced alias, we move up one level and repeat searching for an alias definition.
+When referencing an alias, the context defined at the nested query level is used. If it does not define the referenced alias, the search moves up one level and repeats until an alias definition is found.
 
 [source,pgsql]
 ----
