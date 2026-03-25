@@ -35,7 +35,7 @@ The syntax requires three parameters, explained below:
 
 === Basic usage
 
-In this example we will focus on a basic usage of the `REPLACE()` function, so we can understand on real example how it works.
+This example demonstrates a basic usage of the `REPLACE()` function.
 
 [source,sql]
 ----
@@ -55,7 +55,7 @@ The `REPLACE()` function will find all occurrences of the '`New`' substring in t
 
 === Replace specified values in a table
 
-This example shows how to replace the values of a specific column in a table. For the needs of this example, we will create a new table named *extracurriculars* with *club* and *category* columns and insert the values into the respective columns.
+This example shows how to replace the values of a specific column in a table. First, create a new table named *extracurriculars* with *club* and *category* columns and insert the values into the respective columns.
 
 [source,sql]
 ----
@@ -72,7 +72,7 @@ VALUES
     ('Volleyball','group');
 ----
 
-Once that is done, we can retrieve all values from the table using the following query:
+Once that is done, retrieve all values from the table using the following query:
 
 [source,sql]
 ----
@@ -91,7 +91,7 @@ SELECT * FROM hobby;
 +--------------+-------------+
 ----
 
-What we would do here is to replace the *'`group`'* values in the *category* column with *'`sports`'*:
+The following query replaces the *'`group`'* values in the *category* column with *'`sports`'*:
 
 [source,sql]
 ----
@@ -112,7 +112,7 @@ SELECT REPLACE(category, 'group', 'sports') from hobby;
 
 === Remove a substring from a string
 
-In the following example, we will show how to remove a substring from a string using the `REPLACE()` function. In this case we want to find all occurences of '`Friends`' substring in '`Hello Friends`' string and get rid of it:
+The following example shows how to remove a substring from a string using the `REPLACE()` function. In this case, the goal is to find all occurrences of the '`Friends`' substring in the '`Hello Friends`' string and remove it:
 
 [source,sql]
 ----
@@ -137,7 +137,7 @@ The following example uses the `REPLACE()` function to replace multiple patterns
 SELECT REPLACE(REPLACE(REPLACE(REPLACE('2*[9-5]/{4+8}', '[', '('), ']', ')'), '{', '('), '}', ')');
 ----
 
-We can see that the `REPLACE()` function is called multiple times to replace the corresponding string as specified:
+The `REPLACE()` function is called multiple times to replace the corresponding string as specified:
 
 * *`[]`* into *`()`*
 * *`{}`* into *`()`*

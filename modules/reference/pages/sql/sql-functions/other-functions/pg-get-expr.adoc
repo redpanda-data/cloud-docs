@@ -31,7 +31,7 @@ The following parameters are required to execute this function:
 
 == Example
 
-For the needs of this section, first we will create a sample table named *employees*
+First, create a sample table named *employees*
 
 [source,sql]
 ----
@@ -42,7 +42,7 @@ CREATE TABLE employees (
 );
 ----
 
-Then we will get the OID of the table
+Then get the OID of the table
 
 [source,sql]
 ----
@@ -56,7 +56,7 @@ SELECT oid FROM pg_class WHERE relname = 'employees';
  1018
 ----
 
-As the last step, we will retrieve the internal form for the `salary` column using `pg_get_expr()` function
+As the last step, retrieve the internal form for the `salary` column using the `pg_get_expr()` function
 
 [source,sql]
 ----
@@ -67,7 +67,7 @@ SELECT pg_get_expr('salary', 1018);
 SELECT pg_get_expr('salary', 1018, TRUE);
 ----
 
-By executing any of the queries above, we will get the following output:
+Executing any of the queries above returns the following output:
 
 [source,sql]
 ----

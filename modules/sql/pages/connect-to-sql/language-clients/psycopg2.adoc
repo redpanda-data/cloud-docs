@@ -68,10 +68,10 @@ try:
 
 [WARNING]
 ====
-It is important to note that *Redpanda SQL* does not support multi-threaded transactions as provided by *Psycopg2*. This means that when using *Redpanda SQL*, you must be cautious when it comes to managing connections and transactions within a multi-threaded context.
+It is important to note that Redpanda SQL does not support multi-threaded transactions as provided by Psycopg2. This means that when using Redpanda SQL, you must be cautious when it comes to managing connections and transactions within a multi-threaded context.
 ====
 
-Now, let's define some table, insert data into it and query inserted data.
+Now, define a table, insert data into it, and query the inserted data.
 
 [source,python]
 ----
@@ -142,33 +142,33 @@ While Redpanda SQL supports many core SQL features, some limitations exist, in p
 
 === Supported features
 
-* *Basic Connection and Cursor Management*
+* Basic connection and cursor management
 +
 You can use `psycopg2.connect()` to establish connections and create cursors with `conn.cursor()`
 to execute SQL commands.
 
-* *SQL Execution*
+* SQL execution
 +
 Standard SQL commands such as `CREATE TABLE`, `INSERT`, `SELECT`, `UPDATE` and `DELETE`
 are supported and can be executed via `cursor.execute()`.
 
-* *Transaction Control*
+* Transaction control
 +
 Basic transaction commands like `conn.commit()` and `conn.rollback()` are available
 but Redpanda SQL currently has limited transaction support and does not support multi-threaded transactions.
 
-* *Error Handling*
+* Error handling
 +
 Psycopg2 exceptions such as `psycopg2.errors` can be caught and handled normally.
 
 === Limitations and unsupported features
 
-* *Multi-threaded Transactions*
+* Multi-threaded transactions
 +
 Redpanda SQL does not support multi-threaded transactions as Psycopg2 normally provides.
 Avoid sharing connections or cursors across threads when performing transactional operations.
 
-* *Advanced Psycopg2 Features*
+* Advanced Psycopg2 features
 +
 Features such as server-side cursors, asynchronous communication, notifications, prepared statements
 and pipeline mode may not be fully supported due to Redpanda SQL's current architecture.
