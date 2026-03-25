@@ -75,6 +75,8 @@ The *consumer pipeline* uses the following Redpanda Connect components:
 |Catches errors 
 |===  
 
+TIP: To learn more about a component, hover over its name in the left pane to link to documentation.
+
 == Build a producer pipeline
 
 Every pipeline requires an input and an output in a configuration file. You can select components in the left pane and customize the YAML in the editor. 
@@ -85,11 +87,13 @@ To create the producer pipeline:
 
 . Enter this name for the pipeline: `joke-generator-producer`.
 
-. In the left pane, click to add the `generate` input connector.
+. In the left pane, click *+* to *Add input*, and search for and select the `generate` input connector. The YAML for this connector appears in the editor. 
 
-. Click to add the `redpanda` output connector. The YAML for these connectors appears in the editor.
+. Click *+* to *Add output*, and search for and select the `redpanda` output connector. The YAML for this connector also appears in the editor. 
 
-. Replace the generated YAML with the following complete configuration, which includes the `log` and `catch` processors and the `mapping` for joke generation:
+. The "redpanda" connector requires a Redpanda topic and user, and a dialog prompts you to configure them. Select to create a new topic, and enter `dad-jokes` for the topic name. Then select to create a new user, and enter `connect` for the username. Click *Done* to create the topic and user and return to the pipeline editor.
+
+. Replace the generated YAML in the editor with the following. This configuration includes the Redpanda topic and user as well as the `log` and `catch` processors and the `mapping` for joke generation:
 +
 [source,yaml]
 ----
@@ -219,9 +223,9 @@ This next pipeline rates the jokes that you generated in the first pipeline. To 
 
 . Enter this name for the pipeline: `joke-generator-consumer`.
 
-. In the left pane, click to add the `redpanda` input connector. 
+. In the left pane, click *+* to *Add input*, and search for and select the `redpanda` input connector. 
 
-. Click to add the `drop` output connector. (For testing purposes, this output drops messages instead of forwarding them. In a real scenario you'd replace the `drop` connector with your real destination.)  
+. Click *+* to *Add output*, and search for and select the `drop` output connector. (For testing purposes, this output drops messages instead of forwarding them. In a real scenario you'd replace the `drop` connector with your real destination.)  
 
 . Replace the generated YAML in the editor with the following configuration, which includes the `bloblang`, `log`, and `catch` processors. Bloblang is Redpanda Connect's scripting language used to add logic (for example, random ratings).
 
