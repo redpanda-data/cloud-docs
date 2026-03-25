@@ -26,7 +26,7 @@ Where:
 
 === Basic usage
 
-Consider the following example where we compare two values:
+Consider the following example comparing two values:
 
 *Example 1*
 
@@ -78,7 +78,7 @@ The above query will return the following output:
 
 === Compare NULL values
 
-In this example, we’ll compare NULL values using the IS NOT DISTINCT FROM operator:
+In this example, NULL values are compared using the IS NOT DISTINCT FROM operator:
 
 *Example 1*
 
@@ -114,7 +114,7 @@ The above query will return the following output:
 
 === Analyze data completeness
 
-Suppose we have a table named customer_contacts that stores customer contact information.
+Suppose there is a table named customer_contacts that stores customer contact information.
 
 [source,sql]
 ----
@@ -132,7 +132,7 @@ INSERT INTO customer_contacts VALUES
 (105, 'alex@example.com', '+5555555555');
 ----
 
-Our objective is to retrieve records from this table where an email address or a phone number is available for contacting the customers.
+The objective is to retrieve records from this table where an email address or a phone number is available for contacting the customers.
 
 [source,sql]
 ----
@@ -141,7 +141,7 @@ FROM customer_contacts
 WHERE email IS NOT DISTINCT FROM phone;
 ----
 
-In this query, we retrieve all rows from the `customer_contacts table` where the email and phone are NULL. We can conclude that the customer with `customer_id 104` has no phone number or email address.
+This query retrieves all rows from the `customer_contacts table` where the email and phone are NULL. The result shows that the customer with `customer_id 104` has no phone number or email address.
 
 [source,sql]
 ----

@@ -2,7 +2,7 @@
 :description: The OUTER JOIN or FULL OUTER JOIN returns all the records from the selected fields between the two tables (left table & right table) whether the join 
 :page-topic-type: reference
 
-The `OUTER JOIN` *or* `FULL OUTER JOIN` returns all the records from the selected fields between the two tables (left table & right table) whether the join condition is met or not.
+The `OUTER JOIN` or `FULL OUTER JOIN` returns all the records from the selected fields between the two tables (left table & right table) whether the join condition is met or not.
 
 == Inner join vs. outer join
 
@@ -10,7 +10,7 @@ The most significant difference between an `INNER JOIN` and an `OUTER JOIN` is t
 
 [TIP]
 ====
-We support table aliasing used in the OUTER JOIN clause.
+Table aliasing is supported in the OUTER JOIN clause.
 ====
 
 == Syntax
@@ -25,10 +25,10 @@ ON table_1.matching_field = table2.matching_field;
 
 In the above syntax:
 
-. `SELECT column_1, column_2...` defines the *columns* from both tables where we want to display data.
-. `FROM table_1` represents the *left table* with table_1 in the FROM clause.
-. `FULL OUTER JOIN table_2` represents the *right table* with table_2 in the FULL OUTER JOIN condition.
-. `ON table_1.matching_field = table2.matching_field` sets the join condition after the *ON* keyword with the matching field between the two tables.
+. `SELECT column_1, column_2...` defines the columns from both tables to display data.
+. `FROM table_1` represents the left table with table_1 in the FROM clause.
+. `FULL OUTER JOIN table_2` represents the right table with table_2 in the FULL OUTER JOIN condition.
+. `ON table_1.matching_field = table2.matching_field` sets the join condition after the `ON` keyword with the matching field between the two tables.
 
 === Table alias
 
@@ -49,7 +49,7 @@ If there are no matched records from the joined tables, the `NULL` values will r
 
 == Example
 
-*departments table*
+`departments` table
 
 [source,sql]
 ----
@@ -71,7 +71,7 @@ VALUES
 SELECT * FROM departments;
 ----
 
-It will create a *departments* table as shown below:
+It will create a `departments` table as shown below:
 
 [source,sql]
 ----
@@ -86,7 +86,7 @@ It will create a *departments* table as shown below:
 +----------------+------------------+
 ----
 
-*employee table*
+`employee` table
 
 [source,sql]
 ----
@@ -115,7 +115,7 @@ VALUES
 SELECT * FROM employee;
 ----
 
-It will create an *employee* table as shown below:
+It will create an `employee` table as shown below:
 
 [source,sql]
 ----
@@ -136,7 +136,7 @@ It will create an *employee* table as shown below:
 
 === FULL OUTER JOIN
 
-{empty}1) Based on the above tables, we can write an `OUTER JOIN` query as follows:
+{empty}1) Based on the above tables, an `OUTER JOIN` query can be written as follows:
 
 [source,sql]
 ----
@@ -172,9 +172,9 @@ The following Venn diagram illustrates the FULL OUTER JOIN:
 
 === `FULL OUTER JOIN` with `WHERE` clause
 
-*a) Employee*
+a) Employee
 
-. We can look up the department that does not have any employees by adding a `WHERE` clause and `NULL` as the following query:
+. Look up the department that does not have any employees by adding a `WHERE` clause and `NULL` as the following query:
 +
 [source,sql]
 ----
@@ -185,7 +185,7 @@ ON departments.department_id = employee.dept_id
 WHERE employee_name IS NULL;
 ----
 
-. The result will indicate that the *Product* department doesn’t have any employees 👨🏻‍💼
+. The result will indicate that the `Product` department doesn’t have any employees 👨🏻‍💼
 +
 [source,sql]
 ----
@@ -196,9 +196,9 @@ WHERE employee_name IS NULL;
 +------------------+--------------------+
 ----
 +
-*b) Department*
+b) Department
 +
-{empty}1) Let’s find out the employee who doesn’t belong to any department by adding a WHERE clause and NULL as the following query:
+{empty}1) Find the employee who doesn’t belong to any department by adding a WHERE clause and NULL as the following query:
 +
 [source,sql]
 ----
@@ -209,7 +209,7 @@ ON employee.dept_id = departments.department_id
 WHERE department_name IS NULL;
 ----
 +
-{empty}2) The result will show that *Gilbert Tom* doesn’t belong to any department 👨🏻‍💼
+{empty}2) The result will show that Gilbert Tom doesn’t belong to any department 👨🏻‍💼
 +
 [source,sql]
 ----

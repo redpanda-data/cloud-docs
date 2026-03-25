@@ -2,11 +2,11 @@
 :description: The RIGHT JOIN returns all matching records from the right table combined with the left table.
 :page-topic-type: reference
 
-The `RIGHT JOIN` returns *all* matching records from the right table combined with the left table. Even if there are no match records in the left table, the `RIGHT JOIN` will still return a row in the result, but with `NULL` in each column from the left table.
+The `RIGHT JOIN` returns all matching records from the right table combined with the left table. Even if there are no match records in the left table, the `RIGHT JOIN` will still return a row in the result, but with `NULL` in each column from the left table.
 
 [TIP]
 ====
-We support table aliasing used in the `RIGHT JOIN` clause.
+Table aliasing is supported in the `RIGHT JOIN` clause.
 ====
 
 == Syntax
@@ -21,10 +21,10 @@ ON table_1.matching_field = table2.matching_field;
 
 In the above syntax:
 
-. `SELECT column_1, column_2...` defines the *columns* from both tables where we want to display data.
-. `FROM table_1`, defines the *left table* with table_1 in the FORM clause.
-. `RIGHT JOIN table_2` defines the *right table* with table_2 in the RIGHT JOIN condition.
-. `ON table_1.matching_field = table2.matching_field` sets the join condition after the *ON* keyword with the matching field between the two tables.
+. `SELECT column_1, column_2...` defines the columns from both tables to display.
+. `FROM table_1`, defines the left table with table_1 in the FORM clause.
+. `RIGHT JOIN table_2` defines the right table with table_2 in the RIGHT JOIN condition.
+. `ON table_1.matching_field = table2.matching_field` sets the join condition after the `ON` keyword with the matching field between the two tables.
 
 === Table alias
 
@@ -40,7 +40,7 @@ ON A.matching_field = B.matching_field;
 
 == Example
 
-*customer table*
+`customer` table
 
 [source,sql]
 ----
@@ -77,7 +77,7 @@ It will create a table as shown below:
 +-----------+----------------+
 ----
 
-*orders table*
+`orders` table
 
 [source,sql]
 ----
@@ -122,7 +122,7 @@ It will create a table as shown below:
 
 '''''
 
-. Based on the above tables, we can write a `RIGHT JOIN` query as follows:
+. Based on the above tables, a `RIGHT JOIN` query can be written as follows:
 +
 [source,sql]
 ----
@@ -132,10 +132,10 @@ RIGHT JOIN orders
 ON customer.id = orders.customer_id;
 ----
 +
-* The **customer**= left table and the *orders* = right table.
-* Then it combines the values from the *orders* table using the *customer_id* and matches the records using the *id* column from the *customer* table.
+* The `customer` = left table and the `orders` = right table.
+* Then it combines the values from the `orders` table using the `customer_id` and matches the records using the `id` column from the `customer` table.
 * If the records are equal, a new row will be created with `customer_name` and `order_amount` columns as defined in the `SELECT` clause.
-* *ELSE* will still create a new row with a `NULL` value from the left table (*customer*).
+* `ELSE` will still create a new row with a `NULL` value from the left table (`customer`).
 
 . The above query will give the following result:
 +
@@ -153,7 +153,7 @@ ON customer.id = orders.customer_id;
 +------------------+----------------+-----------------+
 ----
 +
-Based on the data from the *customer* and *orders* tables:
+Based on the data from the `customer` and `orders` tables:
 +
 * The order id: `181893` matches the customer: `Ellie.`
 * The order id: `181894` matches the customer: `Ellie`.
@@ -164,6 +164,6 @@ Based on the data from the *customer* and *orders* tables:
 
 [NOTE]
 ====
-A *customer* can have zero or many *orders*. An item from *orders* belongs to zero or one *customer*.
+A `customer` can have zero or many `orders`. An item from `orders` belongs to zero or one `customer`.
 ====
 The following Venn diagram illustrates the `RIGHT JOIN`:

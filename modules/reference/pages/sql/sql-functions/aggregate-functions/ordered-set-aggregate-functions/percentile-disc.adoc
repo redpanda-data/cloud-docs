@@ -2,7 +2,7 @@
 :description: PERCENTILE_DISC() is an ordered-set aggregate function used to compute discrete percentiles from a set of values.
 :page-topic-type: reference
 
-`PERCENTILE_DISC()` is an ordered-set aggregate function used to compute discrete percentiles from a set of values. The *discrete percentile* returns the first input value, which position in the ordering equals or exceeds the specified fraction, while *multiple discrete percentiles* return an array of results matching the shape of the fractions parameter, with each non-null element being replaced by the input value corresponding to that percentile.
+`PERCENTILE_DISC()` is an ordered-set aggregate function used to compute discrete percentiles from a set of values. The discrete percentile returns the first input value, which position in the ordering equals or exceeds the specified fraction, while multiple discrete percentiles return an array of results matching the shape of the fractions parameter, with each non-null element being replaced by the input value corresponding to that percentile.
 
 == Syntax
 
@@ -22,7 +22,7 @@ PERCENTILE_DISC(fraction) WITHIN GROUP (ORDER BY order_list)
 If multiple values share the same rank at the specified percentile, `PERCENTILE_DISC()` will return the first one encountered in the ordering.
 ====
 +
-*Parameters*
+Parameters
 
 * `fraction`: decimal value between 0 and 1 representing the desired percentile (e.g. 0.25 for the 25th percentile)
 
@@ -38,7 +38,7 @@ PERCENTILE_DISC(fractions) WITHIN GROUP (ORDER BY order_list)
 If multiple values share the same rank at the specified percentile, `PERCENTILE_DISC` will return the first one encountered in the ordering.
 ====
 +
-*Parameters*
+Parameters
 
 * `fractions`: array of decimal values between 0 and 1 representing the desired percentiles (e.g. `ARRAY[0.25, 0.50, 0.75, 0.90]`)
 
@@ -46,7 +46,7 @@ If multiple values share the same rank at the specified percentile, `PERCENTILE_
 
 == Example
 
-For the needs of this section we will use a simplified version of the `film` table from the link:https://www.postgresql.org/ftp/projects/pgFoundry/dbsamples/pagila/pagila/[Pagila database^], that will contain only the `title`, `length` and `rating` columns.
+The following example uses a simplified version of the `film` table from the link:https://www.postgresql.org/ftp/projects/pgFoundry/dbsamples/pagila/pagila/[Pagila database^], containing only the `title`, `length` and `rating` columns.
 
 [source,sql]
 ----
@@ -84,7 +84,7 @@ SELECT rating, percentile_disc(ARRAY[0.25, 0.5, 0.75]) WITHIN GROUP (ORDER BY le
 GROUP BY rating;
 ----
 
-By executing the code above, we will get the following output:
+Executing the code above produces the following output:
 
 [source,sql]
 ----
