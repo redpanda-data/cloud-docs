@@ -1,20 +1,18 @@
 = Redpanda Connect Quickstart
 :description: Learn how to quickly start building data pipelines with Redpanda Connect. 
 
-The *Connect* page lets you build data pipelines using a YAML editor. Add connectors and processors from the left pane and configure them in the editor.
+The *Connect* page lets you build data pipelines for real-time analytics and actionable business insights. Every pipeline requires an input and an output in a configuration file. You can select components in the left pane and customize the YAML in the editor. 
 
 [TIP]
 ====
 * Click any connector to learn more about it in the documentation.
-* Use slash commands (`/`) in the YAML editor to insert existing variables, secrets, topics, and users, or to create new ones.
+* Use slash commands (`/`) in the editor to insert existing variables, secrets, topics, and users, or to create new ones.
 
 ====
 
 == Prerequisites
 
 You must have a Redpanda Cloud account with a Serverless, Dedicated, or standard BYOC cluster. If you don't already have an account, https://redpanda.com/try-redpanda/cloud-trial[sign up for a free trial^].
-
-NOTE: Serverless clusters support up to 10 pipelines. 
 
 == Quickstart pipelines
 
@@ -82,9 +80,11 @@ To create the producer pipeline:
 
 . Enter this name for the pipeline: `joke-generator-producer`.
 
-. In the left pane, click to add the `generate` input connector and the `redpanda` output connector. The YAML for these connectors appears in the editor.
+. In the left pane, click to add the `generate` input connector.
 
-. Replace the generated YAML with the following configuration, which includes the `log` and `catch` processors and the `mapping` for joke generation:
+. Click to add the `redpanda` output connector. The YAML for these connectors appears in the editor.
+
+. Replace the generated YAML with the following complete configuration, which includes the `log` and `catch` processors and the `mapping` for joke generation:
 +
 [source,yaml]
 ----
@@ -164,16 +164,16 @@ output:
 ====
 
 +
-TIP: In the YAML editor, you can type `/` to open the slash command menu. Use it to insert variables, secrets, topics, and users. You can select existing items or create new ones.
+TIP: In the editor, you can type `/` to open the slash command menu. Use it to insert variables, secrets, topics, and users. You can select existing items or create new ones.
 
-. Your pipeline details display, and after a few seconds, the status changes from **Starting** to **Running**. If you don't see this change, refresh the page. Once running, your pipeline generates a new joke every five seconds and writes the joke to your topic.
+. Your pipeline details display, and after a few seconds, the pipeline starts running. If you don't see this change, refresh the page. Once running, your pipeline generates a new joke every five seconds and writes the joke to your topic.
 
 +
 After a minute, select the pipeline and click **Stop** so you can examine the results. 
 
 === Review the pipeline logs
 
-. On your pipeline page, switch to the **Live** mode to see the pipeline's activity log. The live mode loads new log messages as they come in. When Live mode is disabled, the log shows activity for from the past five hours. 
+. On your pipeline page, the **Live** mode displays the pipeline's activity log. This loads new log messages as they come in. When Live mode is disabled, the log shows activity for from the past five hours. 
 . Click through the log messages to see the startup sequence. For example, you'll see when the output becomes active:
 
 +
@@ -210,15 +210,17 @@ After a minute, select the pipeline and click **Stop** so you can examine the re
 
 == Build a consumer pipeline
 
-This pipeline rates the jokes that you generated in the first pipeline. To create the consumer pipeline:
+This next pipeline rates the jokes that you generated in the first pipeline. To create the consumer pipeline:
 
 . On the *Connect* page for your cluster, click *Create a pipeline*.
 
 . Enter this name for the pipeline: `joke-generator-consumer`.
 
-. In the left pane, click to add the `redpanda` input connector and the `drop` output connector. (Because this quickstart is just for testing, this output drops the message instead of sending it anywhere else. In a real scenario you'd replace the `drop` connector with your real destination.) Their YAML appears in the editor.
+. In the left pane, click to add the `redpanda` input connector 
 
-. Replace the generated YAML with the following configuration, which includes the `bloblang`, `log`, and `catch` processors. Bloblang is Redpanda Connect's scripting language used to add logic (for example, random ratings).
+. Click to add the `drop` output connector. (Because this quickstart is just for testing, this output drops the message instead of sending it anywhere else. In a real scenario you'd replace the `drop` connector with your real destination.) 
+
+. Replace the generated YAML in the editor with the following configuration, which includes the `bloblang`, `log`, and `catch` processors. Bloblang is Redpanda Connect's scripting language used to add logic (for example, random ratings).
 
 +
 [source,yaml]
@@ -320,7 +322,7 @@ NOTE: This example explicitly includes several optional configuration fields for
 
 . Your pipeline details display, and the status changes from **Starting** to **Running**. If you don't see this change, refresh the page.
 
-. Open the logs to see a rated joke. For example: 
+. Check the logs to see a rated joke. For example: 
 
 +
 [source,json]
