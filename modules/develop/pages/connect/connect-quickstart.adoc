@@ -1,14 +1,17 @@
 = Redpanda Connect Quickstart
-:description: Learn how to quickly start building data pipelines with Redpanda Connect. 
+:description: Learn how to quickly start building data pipelines with Redpanda Connect.
+:page-topic-type: tutorial
+:personas: streaming_developer
+:learning-objective-1: Build a producer pipeline that generates and publishes data to a topic.
+:learning-objective-2: Build a consumer pipeline that reads, transforms, and logs data from a topic.
 
-The *Connect* page lets you build data pipelines for real-time analytics and actionable business insights. Every pipeline requires an input and an output in a configuration file. You can select components in the left pane and customize the YAML in the editor. 
+In this quickstart, you build data pipelines to generate, transform, and handle streaming data end-to-end. You'll create two pipelines: one that generates dad jokes and writes them to a topic in your cluster, and another that reads those jokes and gives each one a random "cringe rating".
 
-[TIP]
-====
-* Click any connector to learn more about it in the documentation.
-* Use slash commands (`/`) in the editor to insert existing variables, secrets, topics, and users, or to create new ones.
+After completing this quick start, you will be able to:
 
-====
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2} 
+
 
 == Prerequisites
 
@@ -16,14 +19,14 @@ You must have a Redpanda Cloud account with a Serverless, Dedicated, or standard
 
 == Quickstart pipelines
 
-This quickstart shows how Redpanda Connect can generate, transform, and handle streaming data end-to-end. It creates the following pipelines: 
+This quickstart creates the following pipelines:
 
-* The first pipeline generates (produces) dad jokes and writes them to a topic in your cluster. 
-* The second pipeline reads (consumes) those dad jokes and gives each one a random "cringe rating" from 1-10. 
+* The first pipeline produces dad jokes and writes them to a topic in your cluster. 
+* The second pipeline consumes those dad jokes and gives each one a random "cringe rating" from 1-10. 
 
 The *producer pipeline* uses the following Redpanda Connect components:
 
-[cols="1,2,3"]a
+[cols="1,2,3"]
 |===
 |Component type |Component |Purpose
 
@@ -73,6 +76,8 @@ The *consumer pipeline* uses the following Redpanda Connect components:
 |===  
 
 == Build a producer pipeline
+
+Every pipeline requires an input and an output in a configuration file. You can select components in the left pane and customize the YAML in the editor. 
 
 To create the producer pipeline:
 
@@ -163,20 +168,18 @@ output:
 
 ====
 
-+
-TIP: In the editor, you can type `/` to open the slash command menu. Use it to insert variables, secrets, topics, and users. You can select existing items or create new ones.
 
-. Your pipeline details display, and after a few seconds, the pipeline starts running. If you don't see this change, refresh the page. Once running, your pipeline generates a new joke every five seconds and writes the joke to your topic.
+. Your pipeline details display, and after a few seconds, the pipeline starts running. If you don't see this change, refresh the page. The pipeline generates a new joke every five seconds and writes the joke to your topic.
 
 +
 After a minute, select the pipeline and click **Stop** so you can examine the results. 
 
 === Review the pipeline logs
 
-. On your pipeline page, the **Live** mode displays the pipeline's activity log. This loads new log messages as they come in. When Live mode is disabled, the log shows activity for from the past five hours. 
-. Click through the log messages to see the startup sequence. For example, you'll see when the output becomes active:
+The page loads new log messages as they come in. When Live mode is disabled, the log shows activity from the past five hours. 
 
-+
+Click through the log messages to see the startup sequence. For example, you'll see when the output becomes active:
+
 [source,json]
 ----
 {
@@ -216,11 +219,14 @@ This next pipeline rates the jokes that you generated in the first pipeline. To 
 
 . Enter this name for the pipeline: `joke-generator-consumer`.
 
-. In the left pane, click to add the `redpanda` input connector 
+. In the left pane, click to add the `redpanda` input connector. 
 
-. Click to add the `drop` output connector. (Because this quickstart is just for testing, this output drops the message instead of sending it anywhere else. In a real scenario you'd replace the `drop` connector with your real destination.) 
+. Click to add the `drop` output connector. (For testing purposes, this output drops messages instead of forwarding them. In a real scenario you'd replace the `drop` connector with your real destination.)  
 
 . Replace the generated YAML in the editor with the following configuration, which includes the `bloblang`, `log`, and `catch` processors. Bloblang is Redpanda Connect's scripting language used to add logic (for example, random ratings).
+
++
+NOTE: This example explicitly includes several optional configuration fields for the `redpanda` input. They're shown here for demonstration purposes, so you can see a range of available settings.
 
 +
 [source,yaml]
@@ -315,10 +321,6 @@ output:
 
 
 . Click *Create* to start your pipeline.
-
-+
-NOTE: This example explicitly includes several optional configuration fields for the `redpanda` input. They're shown here for demonstration purposes, so you can see a range of available settings.
-
 
 . Your pipeline details display, and the status changes from **Starting** to **Running**. If you don't see this change, refresh the page.
 
