@@ -1,0 +1,27 @@
+= ALTER STORAGE
+:description: The ALTER STORAGE statement modifies credentials or configuration of an existing storage connection.
+:page-topic-type: reference
+
+The `ALTER STORAGE` statement modifies the credentials or configuration of an existing storage connection.
+
+== Syntax
+
+[source,sql]
+----
+ALTER STORAGE [IF EXISTS] storage_name
+WITH (option = 'value' [, ...]);
+----
+
+* `storage_name`: Name of the storage connection to modify.
+* `IF EXISTS`: Optional. Prevents an error if the storage connection does not exist.
+* `option = 'value'`: One or more options to update. See xref:reference:sql/sql-statements/create-storage.adoc[CREATE STORAGE] for the full list of options.
+
+== Example
+
+Update the region for an existing storage connection:
+
+[source,sql]
+----
+ALTER STORAGE my_s3_storage
+WITH (region = 'eu-west-1');
+----

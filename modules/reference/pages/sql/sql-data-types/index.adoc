@@ -1,11 +1,11 @@
-= SQL DATA TYPES
+= SQL data types
 :description: Redpanda SQL supports a wide range of data types, each designed to handle specific types of data efficiently.
+:page-topic-type: reference
 
 Redpanda SQL supports a wide range of data types, each designed to handle specific types of data efficiently.
 
 The following table summarizes the data types supported by Redpanda SQL:
 
-// TODO (follow-up PR): Replace plain text ROW with xref once row.adoc page exists.
 [width="100%",cols="<48%,<29%,<23%",options="header",]
 |===
 |Data Type |Definition |Format
@@ -22,16 +22,15 @@ The following table summarizes the data types supported by Redpanda SQL:
 |xref:reference:sql/sql-data-types/text.adoc[TEXT] |UTF8 encoded string with Unicode support |'`text`'
 |xref:reference:sql/sql-data-types/json.adoc[JSON] |A value in JSON standard format |`variable_name JSON`
 |xref:reference:sql/sql-data-types/array.adoc[ARRAY] |An array of a specific data type |`'{value1, value2, value3}'::data_type[]`
-|ROW |A composite value containing fields of different types |`ROW(value1, value2, ...)`
+|xref:reference:sql/sql-data-types/row.adoc[ROW] |A composite value containing fields of different types |`ROW(value1, value2, ...)`
 |===
 
 [WARNING]
 ====
-*Overflow Risks*
-When performing operations on numeric or temporal types, please be aware that overflows can lead to undefined behavior, resulting in unexpected values or errors. Ensure input values are within the allowed range for each numeric type to prevent overflows. This can occur during arithmetic operations or function execution (e.g. `AVG()`), where the result does not fit the result type. Using larger data types such as `BIGINT` can help mitigate overflow risks.
+When performing operations on numeric or temporal types, overflows can lead to undefined behavior, resulting in unexpected values or errors. Ensure input values are within the allowed range for each numeric type to prevent overflows. This can occur during arithmetic operations or function execution (for example, `AVG()`), where the result does not fit the result type. Using larger data types such as `BIGINT` can help mitigate overflow risks.
 ====
+
 [NOTE]
 ====
-*Casting Considerations*
-Explicit casting between types can cause data loss due to altered precision or magnitude, such as truncating fractional seconds in `TIME` or silently clipping out-of-range values. Please verify input ranges to prevent unintended data loss.
+Explicit casting between types can cause data loss due to altered precision or magnitude, such as truncating fractional seconds in `TIME` or silently clipping out-of-range values. Verify input ranges to prevent unintended data loss.
 ====
