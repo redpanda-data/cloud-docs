@@ -1,0 +1,49 @@
+= System Virtual Tables
+:description: System virtual tables in Redpanda SQL expose cluster runtime information and provide SQL-queryable alternatives to SHOW statements.
+:page-topic-type: reference
+
+System virtual tables in the `system` schema expose cluster runtime information. They provide SQL-queryable alternatives to `SHOW` statements, with support for `WHERE`, `ORDER BY`, and `LIMIT` clauses.
+
+NOTE: System virtual tables are only available to the superuser.
+
+== Available tables
+
+[cols="<30%,<30%,<40%",options="header"]
+|===
+|Table |Equivalent statement |Description
+
+|`system.nodes`
+|xref:reference:sql/sql-statements/show-nodes.adoc[SHOW NODES]
+|Current state of all nodes in the cluster.
+
+|`system.queries`
+|SHOW QUERIES
+|Currently running queries.
+
+|`system.execs`
+|xref:reference:sql/sql-statements/show-execs.adoc[SHOW EXECS]
+|Currently running execution tasks.
+|===
+
+== Examples
+
+=== Query all nodes
+
+[source,sql]
+----
+SELECT * FROM system.nodes;
+----
+
+=== Query running queries
+
+[source,sql]
+----
+SELECT * FROM system.queries;
+----
+
+=== Query execution tasks
+
+[source,sql]
+----
+SELECT * FROM system.execs;
+----
