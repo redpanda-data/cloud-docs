@@ -10,6 +10,18 @@ If your clients need to connect from different GCP regions than where your clust
 
 == Prerequisites
 
+Before you deploy a BYOC cluster on GCP, check that the user creating the cluster has the following prerequisites:
+
+* A minimum version of Redpanda `rpk` v24.1. See xref:manage:rpk/rpk-install.adoc[].
+* The GCP user or service account running the bootstrap has the `roles/editor` role (or higher, such as `roles/owner`) on the target GCP project. This grants the permissions needed to create VPC networks, GKE clusters, service accounts, and other infrastructure during the initial bootstrap. These bootstrap permissions are separate from the xref:security:authorization/cloud-iam-policies-gcp.adoc[agent permissions] that Redpanda assigns after bootstrap.
+* The user has the https://cloud.google.com/sdk/docs/install[Google Cloud CLI^] installed and authenticated, with the target project selected. To verify, run:
++
+[,bash]
+----
+gcloud auth list
+gcloud config get-value project
+----
+
 include::partial$gpq-quotas.adoc[]
 
 == Create a BYOC cluster
@@ -36,7 +48,7 @@ NOTE: After the cluster is created, you can change the API Gateway access on the
 . Click *Next*.
 . On the Deploy page, follow the steps to log in to Redpanda Cloud and deploy the agent.
 +
-Note that `rpk` configures the permissions required by the agent to provision and actively maintain the cluster. For details about these permissions, see xref:security:authorization/cloud-iam-policies-gcp.adoc[GCP IAM permissions].
+As part of agent deployment, Redpanda assigns the permissions required to run the agent. For details about these permissions, see xref:security:authorization/cloud-iam-policies-gcp.adoc[GCP IAM permissions].
 
 include::get-started:partial$no-access.adoc[]
 
