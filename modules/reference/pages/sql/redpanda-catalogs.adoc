@@ -1,0 +1,75 @@
+= Redpanda Catalogs
+:description: Redpanda catalogs are named connections that map Redpanda topics to queryable SQL tables.
+:page-topic-type: reference
+
+Redpanda catalogs are named connections that enable you to query Redpanda topics using standard SQL. The catalog model consists of three core concepts:
+
+* Catalogs: Named connections to a Redpanda cluster, created with xref:reference:sql/sql-statements/create-redpanda-catalog.adoc[CREATE REDPANDA CATALOG].
+* Tables: Redpanda topics mapped as queryable SQL tables using the `catalog_name\=>table_name` syntax, created with xref:reference:sql/sql-statements/create-table.adoc[CREATE TABLE].
+* Storage connections: Named connections to external object storage such as Amazon S3, created with xref:reference:sql/sql-statements/create-storage.adoc[CREATE STORAGE].
+
+NOTE: Redpanda SQL operates in read-only mode. Data mutation operations such as `INSERT`, `UPDATE`, and `DELETE` are not available. Data is ingested into Redpanda topics and made queryable through catalog mappings.
+
+== Typical workflow
+
+To query Redpanda topic data with SQL:
+
+. Create a catalog connection:
++
+[source,sql]
+----
+CREATE REDPANDA CATALOG my_catalog
+WITH (
+  initial_brokers = 'broker1:9092',
+  schema_registry_url = 'http://schema-registry:8081'
+);
+----
+
+. Map a topic as a table:
++
+[source,sql]
+----
+CREATE TABLE my_catalog=>user_events
+WITH (topic = 'user-events');
+----
+
+. Query the data:
++
+[source,sql]
+----
+SELECT * FROM my_catalog=>user_events LIMIT 10;
+----
+
+== Related statements
+
+[cols="<40%,<60%",options="header"]
+|===
+|Statement |Description
+
+|xref:reference:sql/sql-statements/create-redpanda-catalog.adoc[CREATE REDPANDA CATALOG]
+|Create a catalog connection to a Redpanda cluster.
+
+|xref:reference:sql/sql-statements/alter-redpanda-catalog.adoc[ALTER REDPANDA CATALOG]
+|Modify connection properties of an existing catalog.
+
+|xref:reference:sql/sql-statements/create-table.adoc[CREATE TABLE]
+|Map a Redpanda topic to a SQL table through a catalog.
+
+|xref:reference:sql/sql-statements/alter-table.adoc[ALTER TABLE]
+|Modify options of an existing catalog table.
+
+|xref:reference:sql/sql-statements/drop.adoc[DROP]
+|Remove catalog tables, catalogs, or storage connections.
+
+|xref:reference:sql/sql-statements/show-tables.adoc[SHOW TABLES]
+|List tables within a catalog.
+
+|xref:reference:sql/sql-statements/describe.adoc[DESCRIBE]
+|Show details about a catalog or catalog table.
+
+|xref:reference:sql/sql-statements/create-storage.adoc[CREATE STORAGE]
+|Create a connection to external object storage.
+
+|xref:reference:sql/sql-statements/alter-storage.adoc[ALTER STORAGE]
+|Modify an existing storage connection.
+|===
