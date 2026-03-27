@@ -1,0 +1,35 @@
+= pg_shadow
+:description: The pg_shadow system catalog provides a superuser-only view of database users with unmasked passwords.
+:page-topic-type: reference
+
+The `pg_shadow` system catalog provides a superuser-only view of database users with unmasked passwords. It mimics the https://www.postgresql.org/docs/15/view-pg-shadow.html[pg_shadow^] PostgreSQL system view.
+
+[NOTE]
+====
+This table is only accessible to superusers. For a publicly readable view, use xref:reference:sql/system-catalogs/catalogs/pg_user.adoc[pg_user] or xref:reference:sql/system-catalogs/catalogs/pg_roles.adoc[pg_roles].
+====
+
+== Columns
+
+The following columns are available for querying in `pg_shadow`:
+
+[cols="15%,15%,70%",options="header"]
+|===
+|Column |Type |Description
+|`usename` |`text` |User name
+|`usesysid` |`bigint` |User system ID (role OID)
+|`usecreatedb` |`bool` |Whether the user can create databases
+|`usesuper` |`bool` |Whether the user has superuser privileges
+|`userepl` |`bool` |Whether the user has replication privileges
+|`usebypassrls` |`bool` |Whether the user bypasses row-level security policies
+|`passwd` |`text` |Encrypted password (visible to superusers)
+|`valuntil` |`timestamptz` |Password expiration time (NULL if no expiration)
+|`useconfig` |`text` |Session defaults for this user
+|===
+
+== Example
+
+[source,sql]
+----
+SELECT usename, usesuper FROM pg_shadow;
+----
