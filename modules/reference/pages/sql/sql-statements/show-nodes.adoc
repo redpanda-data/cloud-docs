@@ -1,0 +1,43 @@
+= SHOW NODES
+:description: The SHOW NODES statement returns the current state of the cluster and is only available to the superuser.
+:page-topic-type: reference
+
+The `SHOW NODES` statement returns the current state of the cluster and is only available to the superuser.
+
+[NOTE]
+====
+It is not case-sensitive, so `show nodes`, `Show Nodes`, and `SHOW NODES` do the same thing
+====
+
+== Example
+
+To view the current cluster state, you need to execute the following command:
+
+[source,sql]
+----
+SHOW NODES;
+----
+
+Once it’s done, you’ll see a table with the information about each node in the cluster, in a following way:
+
+[source,sql]
+----
+     name      | election_state  | followers_count | connected_nodes_count | degradation_error
+---------------+-----------------+-----------------+-----------------------+-------------------
+ n_oxla_node_1 | LEADER_FOLLOWER |               0 |                     3 |
+ n_oxla_node_3 | LEADER          |               3 |                     3 |
+ n_oxla_node_2 | LEADER_FOLLOWER |               0 |                     3 |
+(3 rows)
+----
+
+Each row represents the state of an individual node within the cluster, where:
+
+* `name`: name of the node
+* `election_state`: current state of the node (e.g. `LEADER`)
+* `followers_count`: number of nodes following the leader, which applies to the leader node
+* `connected_nodes_count`: total number of nodes connected, including itself
+* `degradation_error`: error message if the node is not working correctly, otherwise it shows `NULL`
+
+NOTE: `SHOW NODES` is equivalent to `SELECT * FROM system.nodes`. You can query the `system.nodes` table directly to filter or sort results using `WHERE` and `ORDER BY` clauses.
+
+NOTE: Related xref:reference:sql/system-virtual-tables.adoc[system virtual tables] include `system.queries` (running queries) and `system.execs` (execution tasks).

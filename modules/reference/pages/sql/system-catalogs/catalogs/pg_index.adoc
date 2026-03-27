@@ -1,0 +1,39 @@
+= pg_index
+:description: The pg_index stores information about indexes on tables.
+:page-topic-type: reference
+
+The `pg_index` stores information about indexes on tables. It mimics the https://www.postgresql.org/docs/current/catalog-pg-index.html[pg_index^] PostgreSQL system catalog.
+
+== Columns
+
+[NOTE]
+====
+This table is designed for compatibility with tools that require PostgreSQL system tables, so it mostly has dummy data. Please note that not all columns in `pg_index` are applicable to every type of relation.
+====
+The following columns are available for querying in `pg_index`:
+
+[width="100%",cols="19%,7%,74%",options="header",]
+|===
+|Column |Type |Description
+|`indexrelid` |`int` |This column represents OID of the index
+|`indrelid` |`int` |This column represents OID (Object ID) of the table on which the index is defined
+|`indnatts` |`int` |This column represents number of columns in the index
+|`indnkeyatts` |`int` |This column represents number of key columns in the index
+|`indisunique` |`bool` |The default value is `false`
+|`indnullsnotdistinct` |`bool` |_unused_
+|`indisprimary` |`bool` |_unused_
+|`indisexclusion` |`bool` |_unused_
+|`indimmediate` |`bool` |_unused_
+|`indisclustered` |`bool` |_unused_
+|`indisvalid` |`bool` |_unused_
+|`indcheckxmin` |`bool` |_unused_
+|`indisready` |`bool` |_unused_
+|`indislive` |`bool` |_unused_
+|`indisreplident` |`bool` |_unused_
+|`indkey` |`int` |_unused_
+|`indcollation` |`int` |_unused_
+|`indclass` |`int` |_unused_
+|`indoption` |`int` |_unused_
+|`indexprs` |`int` |_unused_
+|`indpred` |`int` |_unused_
+|===

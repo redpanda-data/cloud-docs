@@ -1,0 +1,58 @@
+= PHP (PDO)
+:description: PHP Data Objects (PDO) provides a consistent interface for accessing Redpanda SQL from PHP using the PostgreSQL protocol.
+:page-topic-type: how-to
+
+https://www.php.net/manual/en/book.pdo.php[The PHP Data Objects (PDO)^] is an extension, which supports PostgreSQL protocol implemented in Redpanda SQL and provides consistent interface for accessing databases in PHP. This page and its sections describe how to use PHP PDO with Redpanda SQL and also lists unsupported functions and structures.
+
+== Establishing connection
+
+[source,php]
+----
+conn = new PDO(
+    "pgsql:host={oxla_host};port={oxla_port};dbname=oxla",
+    {oxla_user},
+    {oxla_password},
+    [
+        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_EMULATE_PREPARES   => true,
+    ]);
+----
+
+Note that the `PDO::ATTR_EMULATE_PREPARES` attribute is set to `true`, which is required in Redpanda SQL to ensure stability of query execution. Without this attribute setup, you may encounter `prepared statement` errors during queries execution:
+
+[source]
+----
+    ERROR: prepared statement [...]
+----
+
+[NOTE]
+====
+If you are running Redpanda SQL Cloud, you can append `sslmode=verify-full;sslrootcert={path to ssl cert from SaaS}` to the first parameter of `PDO` to ensure full SSL endpoint verification and encryption.
+====
+
+== Example usage
+
+This example shows basic query execution, once the connection has been established:
+
+[source,php]
+----
+$stmt = $conn->prepare("SELECT :number as num;", [PDO::ATTR_CURSOR => PDO::CURSOR_FWDONLY]);
+$stmt->execute(['number' => 1234]);
+$res = $stmt->fetchAll();
+print_r($res)
+----
+
+== Unsupported functions and structures
+
+The following functions and potentially related structures are not currently supported when working with Redpanda SQL and PHP PDO:
+
+* `PDO::pgsqlLOBCreate`, `pgsqlLOBOpen` - https://www.postgresql.org/docs/current/largeobjects.html[Large Objects^]
+* `PDO::pgsqlGetPid` - https://www.php.net/manual/en/function.pg-get-pid.php[returning processes ID^]
+* `PDO::pgsqlCopytFromFile`, `PDO::pgsqlCopytFromArray` - https://www.postgresql.org/docs/current/sql-copy.html[copy from STDIN^]
+* `PDO::pgsqlCopytToFile` - https://www.postgresql.org/docs/current/sql-copy.html[copy to STDIN^]
+* `PDO::pgsqlCopytToArray` - https://www.postgresql.org/docs/current/sql-copy.html[copy to STDOUT^]
+* `PDO::pgsqlGetNotify` - https://www.postgresql.org/docs/current/sql-listen.html[`LISTEN`^] and https://www.postgresql.org/docs/current/sql-notify.html[`NOTIFY`^] channel commands
+* `PDO::lastInsertId` - https://www.postgresql.org/docs/current/sql-createsequence.html[SEQUENCES^]
+* `PDO::beginTransaction`, `PDO::inTransaction`, `PDO::commit`, `PDO::rollBack` - https://www.postgresql.org/docs/current/tutorial-transactions.html[Transactions^]
+* `PDOStatement::rowCount` - may return incorrect row counts for some operations

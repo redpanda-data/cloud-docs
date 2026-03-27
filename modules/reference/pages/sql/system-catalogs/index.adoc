@@ -1,0 +1,36 @@
+= System catalogs
+:description: System catalogs in Redpanda SQL store metadata about the database and its objects, including tables, columns, indexes, and schemas.
+:page-topic-type: reference
+
+System catalogs are PostgreSQL-compatible metadata tables that store information about the database and its objects, such as tables, columns, data types, functions, and roles. These tables reside in the `pg_catalog` schema and are queried like regular tables.
+
+[NOTE]
+====
+System catalogs (`pg_*` tables) are unrelated to xref:reference:sql/redpanda-catalogs.adoc[Redpanda catalogs]. System catalogs provide PostgreSQL-compatible database metadata. Redpanda catalogs are named connections that map Redpanda topics to SQL tables.
+====
+
+The following system catalog tables are available in Redpanda SQL:
+
+[cols="1,3",options="header"]
+|===
+|Table |Description
+
+|xref:reference:sql/system-catalogs/catalogs/pg_attrdef.adoc[pg_attrdef] |Default values for table columns
+|xref:reference:sql/system-catalogs/catalogs/pg_attribute.adoc[pg_attribute] |Information about table columns
+|xref:reference:sql/system-catalogs/catalogs/pg_authid.adoc[pg_authid] |Authorization identifiers (roles)
+|xref:reference:sql/system-catalogs/catalogs/pg_class.adoc[pg_class] |Tables, indexes, sequences, views, and other relations
+|xref:reference:sql/system-catalogs/catalogs/pg_constraint.adoc[pg_constraint] |Table constraints (check, unique, primary key, foreign key)
+|xref:reference:sql/system-catalogs/catalogs/pg_database.adoc[pg_database] |Databases in the cluster
+|xref:reference:sql/system-catalogs/catalogs/pg_depend.adoc[pg_depend] |Dependencies between database objects
+|xref:reference:sql/system-catalogs/catalogs/pg_description.adoc[pg_description] |Descriptions (comments) for database objects
+|xref:reference:sql/system-catalogs/catalogs/pg_index.adoc[pg_index] |Index information
+|xref:reference:sql/system-catalogs/catalogs/pg_language.adoc[pg_language] |Procedural languages
+|xref:reference:sql/system-catalogs/catalogs/pg_namespace.adoc[pg_namespace] |Schemas (namespaces)
+|xref:reference:sql/system-catalogs/catalogs/pg_proc.adoc[pg_proc] |Functions and procedures
+|xref:reference:sql/system-catalogs/catalogs/pg_roles.adoc[pg_roles] |Database roles (public view)
+|xref:reference:sql/system-catalogs/catalogs/pg_settings.adoc[pg_settings] |Runtime configuration parameters
+|xref:reference:sql/system-catalogs/catalogs/pg_shadow.adoc[pg_shadow] |Database users (superuser-only view with passwords)
+|xref:reference:sql/system-catalogs/catalogs/pg_statio_user_tables.adoc[pg_statio_user_tables] |I/O statistics for user tables
+|xref:reference:sql/system-catalogs/catalogs/pg_type.adoc[pg_type] |Data types
+|xref:reference:sql/system-catalogs/catalogs/pg_user.adoc[pg_user] |Database users (public view)
+|===

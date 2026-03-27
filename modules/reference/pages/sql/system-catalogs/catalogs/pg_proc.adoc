@@ -1,0 +1,51 @@
+= pg_proc
+:description: The pg_proc system catalog stores information about functions and procedures.
+:page-topic-type: reference
+
+The `pg_proc` system catalog stores information about functions and procedures. It mimics the https://www.postgresql.org/docs/15/catalog-pg-proc.html[pg_proc^] PostgreSQL system catalog.
+
+== Columns
+
+The following columns are available for querying in `pg_proc`:
+
+[cols="18%,10%,72%",options="header"]
+|===
+|Column |Type |Description
+|`oid` |`int` |Object identifier for the function
+|`proname` |`text` |Function name
+|`pronamespace` |`int` |OID of the namespace (schema) containing the function
+|`proowner` |`int` |OID of the role that owns the function
+|`prolang` |`int` |OID of the implementation language
+|`procost` |`float` |Estimated execution cost (in units of `cpu_operator_cost`)
+|`prorows` |`float` |Estimated number of result rows (0 for non-set-returning functions)
+|`provariadic` |`int` |OID of the data type of the variadic parameter (0 if none)
+|`prosupport` |`int` |OID of the planner support function (0 if none)
+|`prokind` |`text` |Function kind: `f` = normal function, `p` = procedure, `a` = aggregate, `w` = window function
+|`prosecdef` |`bool` |Whether the function is a security definer
+|`proleakproof` |`bool` |Whether the function is leak-proof
+|`proisstrict` |`bool` |Whether the function returns NULL if any argument is NULL
+|`proretset` |`bool` |Whether the function returns a set
+|`provolatile` |`text` |Volatility category: `i` = immutable, `s` = stable, `v` = volatile
+|`proparallel` |`text` |Parallel safety: `s` = safe, `r` = restricted, `u` = unsafe
+|`pronargs` |`int` |Number of input arguments
+|`pronargdefaults` |`int` |Number of arguments with default values
+|`prorettype` |`int` |OID of the return data type
+|`proargtypes` |`text` |OIDs of the input argument types (space-separated)
+|`proallargtypes` |`int[]` |OIDs of all argument types including OUT parameters
+|`proargmodes` |`text[]` |Modes of the arguments: `i` = IN, `o` = OUT, `b` = INOUT, `v` = VARIADIC
+|`proargnames` |`text[]` |Names of the arguments
+|`proargdefaults` |`text` |Expression trees for default argument values
+|`protrftypes` |`int[]` |OIDs of the types for which to apply transforms
+|`prosrc` |`text` |Function source code or filename
+|`probin` |`text` |Additional information about how to invoke the function
+|`prosqlbody` |`text` |Pre-parsed SQL function body
+|`proconfig` |`text[]` |Session configuration variables set when the function is called
+|`proacl` |`text[]` |Access privileges
+|===
+
+== Example
+
+[source,sql]
+----
+SELECT proname, prokind, pronargs FROM pg_proc LIMIT 5;
+----
