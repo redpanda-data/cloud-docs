@@ -30,44 +30,23 @@ FROM table_name;
 Each syntax element is defined as follows.
 
 * `SELECT` determines the data to retrieve from the database or a table.
-* `*` referred to as *_select star_* or *_asterisk_* or represents *_all_*. It defines that the query should return all columns of the queried tables.
+* `*` referred to as "select star" or "asterisk", represents all columns. It defines that the query should return all columns of the queried tables.
 * `FROM` clause indicates the table(s) to retrieve data from.
 * `table_name` represents the table(s) name.
 * `column1, column2, ...` these are used to specify the columns from which to retrieve the data.
 
 [NOTE]
 ====
-The `SELECT` statement is case insensitive, which means `select` *or* `SELECT` has the same result.
+The `SELECT` statement is case insensitive, which means `select` or `SELECT` has the same result.
 ====
 
 == Examples
 
-The following examples use a table named *student_data* that stores the id, name, and where the student lives.
-
-[source,sql]
-----
-CREATE TABLE student_data (
-  id int,
-  name text,
-  domicile text
-);
-INSERT INTO student_data
-    (id, name, domicile)
-VALUES
-    (119291,'Jordan','Los Angeles'),
-    (119292,'Mike','Melbourne'),
-    (119293,'Will','Sydney');
-----
-
-[TIP]
-====
-All the examples below are executed in the `public` schema. You can also display table from another specific schema.
-Click xref:reference:sql/schema.adoc[here] for more info.
-====
+The following examples query a table named `student_data` that contains student records with `id`, `name`, and `domicile` columns.
 
 === Query data from all columns
 
-. To display all the data from the *student_data* table, refer to the syntax below:
+. To display all the data from the `student_data` table, refer to the syntax below:
 +
 [source,sql]
 ----
@@ -81,7 +60,7 @@ SELECT * FROM table_name;
 SELECT * FROM student_data;
 ----
 
-. If you have successfully run the query, you will get all the data from the *student_data* table.
+. If you have successfully run the query, you will get all the data from the `student_data` table.
 +
 [source,sql]
 ----
@@ -110,7 +89,7 @@ SELECT column_1, column_2 FROM table_name;
 SELECT id, name FROM student_data;
 ----
 
-. If you have successfully run the query, you will get a list of students’ IDs & names from the *student_data* table.
+. If you have successfully run the query, you will get a list of students’ IDs & names from the `student_data` table.
 +
 [source,sql]
 ----
