@@ -12,7 +12,7 @@ The following illustrates the syntax of the `ORDER BY` clause:
 ----
 SELECT columns
 FROM table_name
-ORDER BY sort_expression1 [ASC | DESC];
+ORDER BY sort_expression1 [ASC | DESC] [NULLS FIRST | NULLS LAST];
 ----
 
 === Parameters
@@ -20,7 +20,8 @@ ORDER BY sort_expression1 [ASC | DESC];
 * `columns`: columns that you wish to retrieve
 * `table_name`: table that you want to retrieve records from.
 * `ORDER BY`: expression used to order the results
-* `ASC` or `DESC`: optional parameter to specify the order in which the results should be returned, either ascending or descending. Default is set to `ASC`
+* `ASC` or `DESC`: optional parameter to specify the order in which the results should be returned, either ascending or descending. Default is set to `ASC`.
+* `NULLS FIRST` or `NULLS LAST`: optional parameter to specify where `NULL` values appear in the sort order. `NULLS FIRST` places `NULL` values before non-null values. `NULLS LAST` places `NULL` values after non-null values. The default is `NULLS LAST` for `ASC` order and `NULLS FIRST` for `DESC` order.
 
 == Examples
 
@@ -225,7 +226,7 @@ VALUES
     (INTERVAL '2 months 1 hours');
 ----
 
-`ORDER BY` on `INTERVAL` column will sort the values by their leading most significant time unit. In this case `months`. First are all `1 month` values, then all `2 months` values.
+`ORDER BY` on an `INTERVAL` column sorts values by their total duration. For example, `1 month 30 days 20 hours` is greater than `2 months 1 hour` because `1 month` equals `30 days`, making the first interval equivalent to `60 days 20 hours` versus `60 days 1 hour`.
 
 [source,sql]
 ----
@@ -236,13 +237,13 @@ SELECT * FROM interval_data ORDER BY duration;
 ----
         duration
 ------------------------
+ 2 mons 01:00:00
  1 mon 30 days 19:00:00
  1 mon 30 days 20:00:00
- 2 mons 01:00:00
  2 mons 20:00:00
 ----
 
-It works the same for other time units, such as `hours` and `days`.
+This total-duration sorting also applies when mixing `hours` and `days`. For example, `24 hours 5 minutes` and `1 day 5 minutes` represent the same total duration:
 
 [source,sql]
 ----
@@ -262,11 +263,11 @@ SELECT * FROM interval_data ORDER BY duration;
 ----
         duration
 ------------------------
- 24:05:00
  1 day 00:02:00
+ 24:05:00
  1 day 00:05:00
+ 2 mons 01:00:00
  1 mon 30 days 19:00:00
  1 mon 30 days 20:00:00
- 2 mons 01:00:00
  2 mons 20:00:00
 ----
