@@ -168,26 +168,26 @@ The above query will give the following result:
 
 === `HAVING` clause with `COUNT` function
 
-The following query lists the number of score statuses that have more than 2 `PASSED` values:
+The following query lists subjects that have more than 2 `PASSED` scores:
 
 [source,sql]
 ----
-SELECT COUNT(score_id), subject
+SELECT SUM(CASE WHEN score_stat = 'PASSED' THEN 1 ELSE 0 END) AS passed_count, subject
 FROM score
 GROUP BY subject
-HAVING COUNT(score_stat = 'PASSED') > 2;
+HAVING SUM(CASE WHEN score_stat = 'PASSED' THEN 1 ELSE 0 END) > 2;
 ----
 
-The above query will show that `Math` and `Biology` have more than 2 `PASSED` values:
+The above query shows that `Math` and `Biology` have more than 2 `PASSED` values:
 
 [source,sql]
 ----
-+--------+--------------+
-| count  | subject      |
-+--------+--------------+
-| 4      | Math         |
-| 3      | Biology      |
-+--------+--------------+
++--------------+--------------+
+| passed_count | subject      |
++--------------+--------------+
+| 4            | Math         |
+| 3            | Biology      |
++--------------+--------------+
 ----
 
 === `HAVING` clause with `MAX` function
