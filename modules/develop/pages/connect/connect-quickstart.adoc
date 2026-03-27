@@ -87,13 +87,15 @@ To create the producer pipeline:
 
 . Enter this name for the pipeline: `joke-generator-producer`.
 
-. In the left pane, click *+* to *Add input*, and search for and select the `generate` input connector. The YAML for this connector appears in the editor. 
+. In the left pane, click *Add input +* and search for and select the `generate` input connector. The YAML for this connector appears in the editor. 
 
-. Click *+* to *Add output*, and search for and select the `redpanda` output connector. The YAML for this connector also appears in the editor. 
+. Click *Add output +* and search for and select the `redpanda` output connector. The YAML for this connector also appears in the editor. 
 
-. The "redpanda" connector requires a Redpanda topic and user, and a dialog prompts you to configure them. Select to create a new topic, and enter `dad-jokes` for the topic name. Then select to create a new user, and enter `connect` for the username. Click *Done* to create the topic and user and return to the pipeline editor.
+. The `redpanda` connector requires a Redpanda topic and user, and a dialog prompts you to configure them. 
+.. Click *Topic +* to create a new topic. Toggle to *New* and enter `dad-jokes` for the topic name. Click *Add*.
+.. Click *User +* to create a new user. Toggle to *New* and enter `connect` for the username. Click *Add*.
 
-. Replace the generated YAML in the editor with the following. This configuration includes the Redpanda topic and user as well as the `log` and `catch` processors and the `mapping` for joke generation:
+. Replace the generated YAML in the editor with the following. This configuration includes the `log` and `catch` processors and the `mapping` for joke generation. Bloblang is Redpanda Connect's scripting language used to add logic.
 +
 [source,yaml]
 ----
@@ -161,7 +163,7 @@ output:
 
 ----
 
-. Click *Create*.
+. Click *Save*.
 
 +
 [NOTE]
@@ -200,7 +202,7 @@ Click through the log messages to see the startup sequence. For example, you'll 
 
 === View the processed messages
 
-. Go to the **Topics** page and select the `dad-jokes` topic.
+. Go to the **Topics** page for your cluster and select the `dad-jokes` topic.
 . Click any message to see the structure. For example:
 +
 [source,json]
@@ -219,15 +221,15 @@ Click through the log messages to see the startup sequence. For example, you'll 
 
 This next pipeline rates the jokes that you generated in the first pipeline. To create the consumer pipeline:
 
-. On the *Connect* page for your cluster, click *Create a pipeline*.
+. Go back to the the *Connect* page for your cluster, and click *Create a pipeline*.
 
 . Enter this name for the pipeline: `joke-generator-consumer`.
 
-. In the left pane, click *+* to *Add input*, and search for and select the `redpanda` input connector. 
+. In the left pane, click *Add input +*, and search for and select the `redpanda` input connector. 
 
-. Click *+* to *Add output*, and search for and select the `drop` output connector. (For testing purposes, this output drops messages instead of forwarding them. In a real scenario you'd replace the `drop` connector with your real destination.)  
+. Click *Add output +*, and search for and select the `drop` output connector. (For testing purposes, this output drops messages instead of forwarding them. In a real scenario you'd replace the `drop` connector with your real destination.)  
 
-. Replace the generated YAML in the editor with the following configuration, which includes the `bloblang`, `log`, and `catch` processors. Bloblang is Redpanda Connect's scripting language used to add logic (for example, random ratings).
+. Replace the generated YAML in the editor with the following configuration, which includes the `bloblang`, `log`, and `catch` processors. 
 
 +
 NOTE: This example explicitly includes several optional configuration fields for the `redpanda` input. They're shown here for demonstration purposes, so you can see a range of available settings.
@@ -349,7 +351,7 @@ output:
 
 When you've finished experimenting with your data pipeline, you can delete the pipelines and the topic you created for this quickstart.
 
-. On the **Connect** page, select the delete icon next to the `joke-generator-producer` pipeline and the `joke-generator-consumer` pipeline.
+. On the **Connect** page, click the *...* icon next to the `joke-generator-producer` pipeline and select *Delete*. Repeat for the `joke-generator-consumer` pipeline.
 . Confirm your deletion to remove the pipelines and associated logs.
 . On the **Topics** page, delete the `dad-jokes` topic.
 
