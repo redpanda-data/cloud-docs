@@ -19,15 +19,11 @@ Redpanda SQL uses a massively parallel processing (MPP) architecture at the core
 
 === Columnar storage optimization
 
-Transactional (OLTP) databases like PostgreSQL or MS SQL Server use a row-oriented design, optimized for high-frequency writes. Columnar storage, by contrast, is designed for analytical workloads, allowing for faster scans, better compression, and more efficient aggregations.
+Transactional (OLTP) databases like PostgreSQL or MS SQL Server use a row-oriented design, optimized for high-frequency writes. Columnar storage, by contrast, is designed for analytical workloads, allowing for faster scans and more efficient aggregations.
 
 === Decoupled storage and compute
 
 Redpanda SQL benefits from a decoupled storage and compute architecture. This means compute resources can be scaled independently of storage, allowing for more efficient resource allocation, easier deployment, and better cost control.
-
-=== Efficient data compression
-
-Depending on the structure and contents of the data, Redpanda SQL achieves up to 95% compression. This enables cost-effective long-term storage, and the ultra-efficient query engine supports fast historical analytics over large datasets.
 
 === Distributed, multi-node architecture
 
@@ -46,7 +42,6 @@ Over the past decade, CPUs have scaled from 4–8 cores to over 100, but memory 
 
 Redpanda SQL introduces a set of low-level memory access and caching optimizations to address this issue and achieve high resource efficiency:
 
-* Compressed data reduces the volume transferred between storage, memory, and CPU
 * User-space storage caches minimize overhead from kernel-level memory operations
 * A custom data format enhances data locality
 * Hybrid row/column formats allow better alignment with CPU cache lines and vectorized execution
