@@ -75,7 +75,9 @@ The *consumer pipeline* uses the following Redpanda Connect components:
 |Catches errors 
 |===  
 
-TIP: To learn more about a component, hover over its name in the left pane to link to documentation.
+TIP: To learn more about a component, hover over its name in the left pane to link to documentation. The following screenshot shows helpful features in the user interface.
+
+image::shared:connect_ui.png[Redpanda Connect user interface]
 
 == Build a producer pipeline
 
@@ -175,10 +177,10 @@ output:
 ====
 
 
-. Your pipeline details display, and after a few seconds, the pipeline starts running. If you don't see this change, refresh the page. The pipeline generates a new joke every five seconds and writes the joke to your topic.
+. Your pipeline details display, and after a few seconds, the pipeline starts running. The pipeline generates jokes and writes the jokes to your Redpanda topic. 
 
 +
-After a minute, select the pipeline and click **Stop** so you can examine the results. 
+After a minute, click **Stop** so you can examine the results. 
 
 === Review the pipeline logs
 
@@ -189,13 +191,13 @@ Click through the log messages to see the startup sequence. For example, you'll 
 [source,json]
 ----
 {
-    "instance_id": "d4548gl54smc73b65t0g",
-    "label": "",
-    "level": "INFO",
-    "message": "Output type redpanda is now active",
-    "path": "root.output",
-    "pipeline_id": "d4548fihlips73dmcl80",
-    "time": "2025-11-04T18:21:55.223350785Z"
+  "instance_id": "d73c39bp7l8c73d7lll0",
+  "label": "",
+  "level": "INFO",
+  "message": "Output type redpanda is now active",
+  "path": "root.output",
+  "pipeline_id": "d73a55ptub9s73agpthg",
+  "time": "2026-03-27T17:43:02.36416142Z"
 }
 ----
 
@@ -208,11 +210,9 @@ Click through the log messages to see the startup sequence. For example, you'll 
 [source,json]
 ----
 {
-    "id": "cf653b9e-ce96-4790-888f-6a867bed56a5",
-    "joke": "I used to play piano by ear, but now I use my hands.",
-    "joke_length": 52,
-    "source": "dad-joke-generator",
-    "timestamp": "2025-11-04T18:21:55.020574506Z"
+    "generated_at": "2026-03-27T15:30:38.963227997Z",
+    "id": "d242c355-4cee-4382-817a-190c7a115a19",
+    "joke": "I used to play piano by ear, but now I use my hands."
 }
 ----
 
@@ -226,6 +226,9 @@ This next pipeline rates the jokes that you generated in the first pipeline. To 
 . Enter this name for the pipeline: `joke-generator-consumer`.
 
 . In the left pane, click *Add input +*, and search for and select the `redpanda` input connector. 
+.. Click *Topic +* and select the existing topic `dad-jokes`. Click *Add*.
+.. Click *User +* and select the existing user `connect`. 
+.. For consumer group, enter `dad-joke-raters`. This allows the user `connect` to be granted READ and DESCRIBE permissions for the `dad-joke-raters` consumer group. Click *Add*.
 
 . Click *Add output +*, and search for and select the `drop` output connector. (For testing purposes, this output drops messages instead of forwarding them. In a real scenario you'd replace the `drop` connector with your real destination.)  
 
@@ -326,9 +329,9 @@ output:
 ----
 
 
-. Click *Create* to start your pipeline.
+. Click *Save* to start your pipeline.
 
-. Your pipeline details display, and the status changes from **Starting** to **Running**. If you don't see this change, refresh the page.
+. Your pipeline details display, and after a few seconds, the pipeline starts running.
 
 . Check the logs to see a rated joke. For example: 
 
