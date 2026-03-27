@@ -2,26 +2,22 @@
 :description: Redpanda SQL provides you with two data types for handling timestamps:
 :page-topic-type: reference
 
-Redpanda SQL provides you with two data types for handling timestamps:
+Redpanda SQL provides two data types for handling timestamps:
 
-. xref:reference:sql/sql-data-types/timestamp-without-time-zone.adoc[Timestamp without Time Zone]: It allows you to store both date and time.
-. Timestamp with Time Zone: It stores date and time values but does not store time zone information within the database. Instead, it processes the time zone information during operations.
-.. During `INSERT` operation, the time zone is ignored. The date and time are stored without considering the time zone.
-.. During the `SELECT` operation, the time zone information from the user’s session is also ignored. The data is returned exactly as it is stored without adjusting the time zone.
+* xref:reference:sql/sql-data-types/timestamp-without-time-zone.adoc[Timestamp without time zone]: Stores both date and time values.
+* Timestamp with time zone: Stores date and time values and processes time zone information during operations.
+** During an `INSERT` operation, the time zone is ignored. The date and time are stored without considering the time zone.
+** During a `SELECT` operation, the time zone information from the user’s session is also ignored. The data is returned exactly as it is stored without adjusting the time zone.
 
-[WARNING]
+[NOTE]
 ====
-*Important Note:*
- Keep in mind that all user sessions have a local timezone associated with them, affecting how timestamps `with time zone` values are displayed.
+All user sessions have a local timezone associated with them, affecting how `timestamp with time zone` values are displayed. The timezone information is not stored in the database. Every time a user requests a value of this type, Redpanda SQL converts from UTC to the user’s local timezone before displaying it.
+====
 
- The timezone information is not stored in the database. Consequently, every time a user requests a value of this type, Redpanda SQL converts from UTC to the user's local timezone before displaying it.
+[NOTE]
 ====
-[WARNING]
+Redpanda SQL relies on timezone information served by the host machine’s operating system. It must be up-to-date to ensure correct timestamp conversions, date calculations, and compliance with regional time changes such as daylight saving adjustments.
 ====
-*Important Note:*
- Redpanda SQL relies on timezone information served by host machine operating system. It must be up-to-date in order to ensure correct timestamp conversions, date calculations, and compliance with regional time changes such as daylight saving adjustments.
-====
-On this page, you will learn about the timestamp with the time zone.
 
 == Format
 
@@ -33,13 +29,13 @@ YYYY-MM-DD HH:MM:SS.SSSSSS+TZ
 ----
 
 * `YYYY`: Four-digit year
-* `MM`: One / two-digit month
-* `DD`: One / two-digit day
-* `HH`: One / two-digit hour (valid values from 00 to 23)
-* `MM`: One / two-digit minutes (valid values from 00 to 59)
-* `SS`: One / two-digit seconds (valid values from 00 to 59)
-* `[.SSSSSS]`: Up to six fractional digits (microsecond precision)
-* `{plus}TZ`: Time zone offset in the format {plus}/-HH:MM (e.g., {plus}05:30, -08:00)
+* `MM`: One or two-digit month
+* `DD`: One or two-digit day
+* `HH`: One or two-digit hour (valid values from 00 to 23)
+* `MM`: One or two-digit minutes (valid values from 00 to 59)
+* `SS`: One or two-digit seconds (valid values from 00 to 59)
+* `.SSSSSS`: Optional fractional digits, up to six (microsecond precision)
+* `+TZ`: Time zone offset in the format +/-HH:MM (for example, +05:30, -08:00)
 
 == Examples
 
@@ -148,7 +144,7 @@ The result will be a timestamp without a time zone.
 
 [source,sql]
 ----
-             f
+           timezone
 ----------------------------
  2023-03-04 15:30:30.000000
 (1 row)
