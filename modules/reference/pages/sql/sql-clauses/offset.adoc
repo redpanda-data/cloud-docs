@@ -24,80 +24,54 @@ The parameters and arguments from the syntax are:
 * `OFFSET`: a clause that will skip a subset of records.
 ** `num`: the number of records to be skipped.
 
-== Examples
+== Example
 
-The following example creates a new table called `oxlafunctions` using the `CREATE TABLE` command and inserts some values into the table using the `INSERT` command:
-
-[source,sql]
-----
-CREATE TABLE oxlafunctions
-(
-    func_name text,
-    func_sub text
-);
-
-INSERT INTO oxlafunctions
-VALUES
-('Numeric', 'ABS'),
-('Numeric', 'CEIL'),
-('Text', 'LENGTH'),
-('Numeric', 'SQRT'),
-('Boolean', 'IF'),
-('Text', 'STRPOS'),
-('Numeric', 'FLOOR'),
-('Text', 'CONCAT'),
-('Text', 'LOWER');
-----
-
-To verify that the values have been inserted successfully, retrieve the result set using the command below:
+The following example uses a table called `salaryemp`:
 
 [source,sql]
 ----
-SELECT * FROM oxlafunctions;
+SELECT * FROM salaryemp ORDER BY emp_sal;
 ----
 
 [source,sql]
 ----
-+------------+------------+
-| func_name  | func_sub   |
-+------------+------------+
-| Numeric    | ABS        |
-| Numeric    | CEIL       |
-| Text       | LENGTH     |
-| Numeric    | SQRT       |
-| Boolean    | IF         |
-| Text      | STRPOS     |
-| Numeric    | FLOOR      |
-| Text      | CONCAT     |
-| Text      | LOWER      |
-+------------+------------+
++-----------+------------+----------------+-------------+
+| emp_id    | emp_name   | emp_div        | emp_sal     |
++-----------+------------+----------------+-------------+
+| 1008      | Harry      | Operations     | 4500        |
+| 1005      | Lewis      | Sales          | 5500        |
+| 1002      | Mike       | Marketing      | 6000        |
+| 1003      | Sean       | Marketing      | 6500        |
+| 1009      | Steve      | Marketing      | 6800        |
+| 1004      | Victor     | Finance        | 7000        |
+| 1007      | Meghan     | Finance        | 7500        |
+| 1006      | David      | Marketing      | 8000        |
+| 1010      | Omar       | Finance        | 8000        |
+| 1011      | David      | Sales          | 8200        |
++-----------+------------+----------------+-------------+
 ----
 
-Use the `LIMIT` clause in conjunction with the `OFFSET` clause to skip a subset of records:
+The following query skips the first 3 rows and returns the next 5, ordered by salary:
 
 [source,sql]
 ----
-SELECT * FROM oxlafunctions
-ORDER BY func_name
-LIMIT 5 OFFSET 2;
+SELECT * FROM salaryemp
+ORDER BY emp_sal
+LIMIT 5 OFFSET 3;
 ----
 
-In the above query:
-
-* The `LIMIT 5` clause is used to fetch only five records.
-* The `OFFSET 2` clause is used to skip the first two records before retrieving the result set of the limit clause.
-
-You will get the following output:
+* `OFFSET 3` skips the first three rows (`Harry`, `Lewis`, `Mike`).
+* `LIMIT 5` returns the next five rows.
 
 [source,sql]
 ----
-+------------+------------+
-| func_name  | func_sub   |
-+------------+------------+
-| Boolean    | IF         |
-| Numeric    | SQRT       |
-| Numeric    | CEIL       |
-| Numeric    | ABS        |
-| Numeric    | FLOOR      |
-+------------+------------+
++-----------+------------+----------------+-------------+
+| emp_id    | emp_name   | emp_div        | emp_sal     |
++-----------+------------+----------------+-------------+
+| 1003      | Sean       | Marketing      | 6500        |
+| 1009      | Steve      | Marketing      | 6800        |
+| 1004      | Victor     | Finance        | 7000        |
+| 1007      | Meghan     | Finance        | 7500        |
+| 1006      | David      | Marketing      | 8000        |
++-----------+------------+----------------+-------------+
 ----
