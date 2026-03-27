@@ -1,0 +1,113 @@
+= Operators
+:description: Operators in Redpanda SQL are special symbols used in expressions to compare, combine, or manipulate values.
+:page-topic-type: reference
+
+Operators in Redpanda SQL are special symbols used in expressions to compare, combine, or manipulate values.
+
+== Comparison operators
+
+[cols="1,1,3,2",options="header"]
+|===
+|Operator |Name |Description |Example
+|`=` |Equal to |The value of one item is equal to another item's value. |`cust_name = 'Mike'`
+|`<>` or `!=` |Not equal to |The value of one item is not equal to the other item's value. |`subj_score != 'FAILED'`
+|`>` |Greater than |The value of one item is greater than another item's value. |`stock_value > 10`
+|`<` |Less than |The value of one item is less than another item's value. |`stock_value < 20`
+|`>=` |Greater than or equal to |The value of one item is greater than or equal to the other item's value. |`prod_price >= 3000`
+|`+<=+` |Less than or equal to |The value of one item is less than or equal to the other item's value. |`prod_price +<=+ 9000`
+|===
+
+== Logical operators
+
+[cols="1,1,3,2",options="header"]
+|===
+|Operator |Name |Description |Example
+|`AND` |Logical AND |Returns true if both conditions are true. |`a > 1 AND b < 10`
+|`OR` |Logical OR |Returns true if at least one condition is true. |`a = 1 OR a = 2`
+|`NOT` |Logical NOT |Reverses the result of a condition. |`NOT true = false`
+|===
+
+== Null and boolean test operators
+
+[cols="1,3,2",options="header"]
+|===
+|Operator |Description |Example
+|`IS NULL` |Returns true if the value is NULL. |`WHERE salary IS NULL`
+|`IS NOT NULL` |Returns true if the value is not NULL. |`WHERE salary IS NOT NULL`
+|`IS DISTINCT FROM` |Returns true if the two values are not equal, treating NULL as a comparable value. |`a IS DISTINCT FROM b`
+|`IS NOT DISTINCT FROM` |Returns true if the two values are equal, treating NULL as a comparable value. |`a IS NOT DISTINCT FROM b`
+|`IS TRUE` |Returns true if the boolean value is true. |`WHERE active IS TRUE`
+|`IS NOT TRUE` |Returns true if the boolean value is not true (false or NULL). |`WHERE active IS NOT TRUE`
+|`IS FALSE` |Returns true if the boolean value is false. |`WHERE active IS FALSE`
+|`IS NOT FALSE` |Returns true if the boolean value is not false (true or NULL). |`WHERE active IS NOT FALSE`
+|===
+
+== Arithmetic operators
+
+[cols="1,1,3,2",options="header"]
+|===
+|Operator |Name |Description |Example
+|`+` |Addition |Adds two values, or acts as unary positive. |`salary + bonus`
+|`-` |Subtraction |Subtracts one value from another, or negates a value. |`price - discount`
+|`*` |Multiplication |Multiplies two values. |`quantity * price`
+|`/` |Division |Divides one value by another. |`total / count`
+|`%` |Modulus |Returns the remainder of a division. |`10 % 3`
+|===
+
+== Mathematical operators
+
+[cols="1,1,3,2",options="header"]
+|===
+|Operator |Name |Description |Example
+|`@` |Absolute value |Returns the absolute value of a number. |`@ -5`
+|`^` |Exponentiation |Raises a number to a power. |`2 ^ 3`
+|`\|/` |Square root |Returns the square root of a number. |`\|/ 25`
+|`\|\|/` |Cube root |Returns the cube root of a number. |`\|\|/ 27`
+|===
+
+== Bitwise operators
+
+[cols="1,1,3,2",options="header"]
+|===
+|Operator |Name |Description |Example
+|`&` |Bitwise AND |Performs a bitwise AND on two integers. |`5 & 3`
+|`\|` |Bitwise OR |Performs a bitwise OR on two integers. |`5 \| 3`
+|`#` |Bitwise XOR |Performs a bitwise exclusive OR on two integers. |`5 # 3`
+|`~` |Bitwise NOT |Performs a bitwise NOT (complement) on an integer. |`~ 5`
+|xref:reference:sql/sql-operators/bitwise-shift-left.adoc[`<<`] |Bitwise shift left |Shifts the bits of an integer to the left. |`1 << 4`
+|xref:reference:sql/sql-operators/bitwise-shift-right.adoc[`>>`] |Bitwise shift right |Shifts the bits of an integer to the right. |`16 >> 2`
+|===
+
+== String and pattern matching operators
+
+[cols="1,1,3,2",options="header"]
+|===
+|Operator |Name |Description |Example
+|`\|\|` |Concatenation |Concatenates two strings, or appends elements to an array. |`'foo' \|\| 'bar'`
+|`~~` |LIKE |Returns true if the string matches the pattern. |`name ~~ 'J%'`
+|`!~~` |NOT LIKE |Returns true if the string does not match the pattern. |`name !~~ 'J%'`
+|`~~*` |ILIKE |Case-insensitive LIKE pattern matching. |`name ~~* 'j%'`
+|`!~~*` |NOT ILIKE |Case-insensitive NOT LIKE pattern matching. |`name !~~* 'j%'`
+|`~` |Regex match |Returns true if the string matches the regular expression. |`name ~ '^J'`
+|`~*` |Regex match (case-insensitive) |Case-insensitive regular expression match. |`name ~* '^j'`
+|`!~` |Regex not match |Returns true if the string does not match the regular expression. |`name !~ '^J'`
+|`!~*` |Regex not match (case-insensitive) |Case-insensitive regular expression non-match. |`name !~* '^j'`
+|===
+
+== JSON operators
+
+[cols="1,1,3,2",options="header"]
+|===
+|Operator |Name |Description |Example
+|`->` |JSON extract |Extracts a JSON object field or array element, returning JSON. |`data -> 'key'`
+|`->>` |JSON extract text |Extracts a JSON object field or array element as text. |`data ->> 'key'`
+|===
+
+== Array operators
+
+[cols="1,1,3,2",options="header"]
+|===
+|Operator |Name |Description |Example
+|`= ANY` |Any element equals |Returns true if any element in the array matches the value. |`3 = ANY(ARRAY[1,2,3])`
+|`= ALL` |All elements equal |Returns true if all elements in the array match the value. |`1 = ALL(ARRAY[1,1,1])`
+|===
