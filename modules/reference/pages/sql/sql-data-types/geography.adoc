@@ -1,0 +1,75 @@
+= Geography
+:description: The GEOGRAPHY data type stores geodetic (spherical) spatial point values using the WGS84 coordinate system (SRID 4326).
+:page-topic-type: reference
+
+The `GEOGRAPHY` data type stores geodetic (spherical) spatial point values using the WGS84 coordinate system (SRID 4326). Unlike xref:reference:sql/sql-data-types/geometry.adoc[GEOMETRY], which uses planar coordinates, `GEOGRAPHY` interprets coordinates as longitude and latitude on the Earth's surface, and distance calculations return results in meters.
+
+[NOTE]
+====
+Redpanda SQL supports only `POINT` geographies. Multi-part geometries such as `POLYGON`, `LINESTRING`, and `MULTIPOINT` are not supported.
+====
+
+== Format
+
+`GEOGRAPHY` values can be specified in the following formats:
+
+* WKT: `POINT(longitude latitude)` (SRID defaults to 4326)
+* EWKT: `SRID=4326;POINT(longitude latitude)`
+* EWKB: A hex-encoded binary string (50 hex characters, includes SRID)
+
+[source,sql]
+----
+SELECT GEOGRAPHY 'POINT(-73.9857 40.7484)';
+----
+
+== SRID handling
+
+`GEOGRAPHY` always uses SRID 4326 (WGS84). If you specify a different SRID, an error is returned.
+
+== Casting
+
+`GEOGRAPHY` supports the following casts:
+
+* `GEOGRAPHY` -> `TEXT`: Returns EWKB hex string
+* `TEXT` -> `GEOGRAPHY`: Parses WKT or EWKB string
+* `GEOGRAPHY` -> `GEOMETRY`: Removes SRID
+* `GEOMETRY` -> `GEOGRAPHY`: Adds SRID=4326
+
+[NOTE]
+====
+Casting between `GEOGRAPHY` and `POINT` is not supported.
+====
+
+== Functions
+
+The following functions work with `GEOGRAPHY` values:
+
+[cols="2,3,1",options="header"]
+|===
+|Function |Description |Return type
+|`ST_ASTEXT(geography)` |Returns the WKT representation |`text`
+|`ST_ASTEXT(geography, max_digits)` |Returns the WKT representation with limited decimal digits |`text`
+|`ST_ASEWKT(geography)` |Returns the Extended WKT representation (includes SRID) |`text`
+|`ST_ASEWKT(geography, max_digits)` |Returns the Extended WKT representation with limited decimal digits |`text`
+|`ST_DISTANCE(geography, geography)` |Returns the geodetic distance in meters using the WGS84 ellipsoid |`double precision`
+|`ST_DISTANCE(geography, geography, use_spheroid)` |Returns the geodetic distance in meters. Set `use_spheroid` to `false` for a faster spherical approximation. |`double precision`
+|===
+
+== Example
+
+Calculate the distance in meters between two geographic points (New York City and London):
+
+[source,sql]
+----
+SELECT ST_DISTANCE(
+  GEOGRAPHY 'POINT(-73.9857 40.7484)',
+  GEOGRAPHY 'POINT(-0.1278 51.5074)'
+) AS distance_meters;
+----
+
+[source,sql]
+----
+  distance_meters
+-------------------
+ 5570222.179854498
+----
