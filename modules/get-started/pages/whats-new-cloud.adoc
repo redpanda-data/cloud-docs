@@ -6,20 +6,27 @@
 
 This page lists new features added to Redpanda Cloud.
 
-== April 2026
+== March 2026
 
-=== User-based throughput quotas
+=== Cloud Topics
 
-You can now configure throughput quotas based on authenticated user principals (SASL, mTLS, or OIDC) in addition to client IDs. User-based quotas provide more precise control over resource allocation, especially in multi-tenant environments where multiple applications share the same cluster.
+xref:develop:topics/cloud-topics.adoc[Cloud Topics] are now available, making it possible to use durable cloud storage (S3, ADLS, GCS) as the primary backing store instead of local disk, eliminating over 90% of cross-AZ replication costs. This makes them ideal for latency-tolerant, high-throughput workloads such as observability streams, analytics pipelines, and AI/ML training data feeds, where cross-AZ networking charges are the dominant cost driver.
 
-* xref:manage:cluster-maintenance/about-throughput-quotas.adoc[About client throughput quotas]
-* xref:manage:cluster-maintenance/manage-throughput.adoc[Manage throughput]
+You can use Cloud Topics exclusively in Redpanda Streaming clusters, or in combination with standard topics on a shared cluster supporting low-latency workloads.
 
+ifdef::gbac-available[]
 === Group-based access control (GBAC)
 
 xref:security:authorization/gbac.adoc[Group-based access control (GBAC)] lets you manage Redpanda permissions at the group level using OIDC. Assign OIDC groups to RBAC roles or create ACLs with `Group:<name>` principals. Because group membership is managed by your identity provider, onboarding and offboarding require no changes in Redpanda. GBAC is available for BYOC and Dedicated clusters.
+endif::[]
 
-== March 2026
+=== User-based throughput quotas
+
+Redpanda now supports throughput quotas based on authenticated user principals. Unlike client-based quotas (which rely on self-declared `client-id` values), xref:manage:cluster-maintenance/manage-throughput.adoc#set-user-based-quotas[user-based quotas] enforce limits using verified identities from SASL, mTLS, or OIDC authentication. You can set quotas for individual users, default users, or fine-grained user/client combinations.
+
+=== Ordered rack preference for leader pinning
+
+xref:develop:produce-data/leader-pinning.adoc[Leader pinning] now supports the `ordered_racks` configuration value, which lets you specify preferred racks in priority order. Unlike `racks`, which distributes leaders uniformly across all listed racks, `ordered_racks` places leaders in the highest-priority available rack and fails over to subsequent racks only when higher-priority racks become unavailable.
 
 === BYOVPC on AWS: GA
 
