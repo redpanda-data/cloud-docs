@@ -1,14 +1,28 @@
 = Redpanda Connect Quickstart
-:description: Learn how to quickly start building data pipelines with Redpanda Connect. 
+:description: Learn how to quickly start building data pipelines with Redpanda Connect.
+:page-topic-type: tutorial
+:personas: streaming_developer
+:learning-objective-1: Build a producer pipeline that generates and publishes data to a topic.
+:learning-objective-2: Build a consumer pipeline that reads, transforms, and logs data from a topic.
 
-The *Connect* page provides a wizard to create pipelines for streaming data into and out of Redpanda. The wizard populates the YAML configuration automatically, so you can get started quickly.
+In this quickstart, you build data pipelines to generate, transform, and handle streaming data end-to-end. You'll create two pipelines: one that generates dad jokes and writes them to a topic in your cluster, and another that reads those jokes and gives each one a random "cringe rating".
 
-TIP: Advanced users can skip directly to the *Edit pipeline* step in the wizard to configure the YAML file themselves. 
+After completing this quickstart, you will be able to:
 
-This quickstart shows how Redpanda Connect can generate, transform, and handle streaming data end-to-end. It creates the following pipelines: 
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2} 
 
-* The first pipeline generates (produces) dad jokes and writes them to a topic in your cluster. 
-* The second pipeline reads (consumes) those dad jokes and gives each one a random "cringe rating" from 1-10. 
+
+== Prerequisites
+
+You must have a Redpanda Cloud account with a Serverless, Dedicated, or standard BYOC cluster. If you don't already have an account, https://redpanda.com/try-redpanda/cloud-trial[sign up for a free trial^].
+
+== Quickstart pipelines
+
+This quickstart creates the following pipelines:
+
+* The first pipeline produces dad jokes and writes them to a topic in your cluster. 
+* The second pipeline consumes those dad jokes and gives each one a random "cringe rating" from 1-10. 
 
 The *producer pipeline* uses the following Redpanda Connect components:
 
@@ -17,7 +31,7 @@ The *producer pipeline* uses the following Redpanda Connect components:
 |Component type |Component |Purpose
 
 |Input
-|xref:develop:connect/components/inputs/generate.adoc[`generate`]
+|xref:components:inputs/generate.adoc[`generate`]
 |Creates jokes
 
 |Output
@@ -61,29 +75,31 @@ The *consumer pipeline* uses the following Redpanda Connect components:
 |Catches errors 
 |===  
 
-== Prerequisites
+TIP: To learn more about a component, hover over its name in the left pane to link to documentation. The following screenshot shows helpful features in the user interface.
 
-You must have a Redpanda Cloud account with a Serverless, Dedicated, or standard BYOC cluster. If you don't already have an account, https://redpanda.com/try-redpanda/cloud-trial[sign up for a free trial^].
-
-NOTE: Serverless clusters support up to 10 pipelines.
+image::shared:connect_ui.png[Redpanda Connect user interface]
 
 == Build a producer pipeline
 
-Follow these steps to create the producer pipeline:
+Every pipeline requires an input and an output in a configuration file. You can select components in the left pane and customize the YAML in the editor. 
 
-. Go to the **Connect** page for your cluster to create a pipeline.
+To create the producer pipeline:
 
-. **Add an input**: Search for and select `generate` from the list of connectors. Click **Next**.
+. Go to the *Connect* page for your cluster and click *Create a pipeline*.
 
-. **Add an output**: Search for and select `redpanda` from the list of connectors. Click **Next**.
+. Enter this name for the pipeline: `joke-generator-producer`.
 
-. **Add a topic**: Create a new topic called `dad-jokes`. This is where Redpanda will store the generated messages. Click **Next**.
+. In the left pane, click *Add input +* and search for and select the `generate` input connector. The YAML for this connector appears in the editor. 
 
-. **Add permissions**: Create a new user called `connect`. Leave the rest of the default settings. The user will be created with the necessary permissions. Click **Next**.
+. Click *Add output +* and search for and select the `redpanda` output connector. The YAML for this connector also appears in the editor.
 
-. **Edit pipeline**:
-.. Enter this name for the pipeline: `joke-generator-producer`.
-.. The **Configuration** section automatically populates the YAML with your selected components. Under *Connectors*, you can add the processors `log` and `catch` to log generated jokes and monitor for errors. However, for simplicity in this quickstart, replace the entire configuration with the following YAML, which includes the processors and the `mapping` for joke generation:
+. The `redpanda` connector requires a Redpanda topic and user:
+
+.. In the `redpanda` output connector, click *Topic +* to create a new topic. Toggle to *New* and enter `dad-jokes` for the topic name. Click *Add*.
+
+.. In the `redpanda` output connector, click *User +* to create a new user. Toggle to *New* and enter `connect` for the username. Click *Add*.
+
+. Replace the generated YAML in the editor with the following. This configuration includes the `log` and `catch` processors and the `mapping` for joke generation. Bloblang is Redpanda Connect's scripting language used to add logic.
 +
 [source,yaml]
 ----
@@ -151,79 +167,76 @@ output:
 
 ----
 
-.. Click **Create**.
-
 +
 [NOTE]
 ====
-* Notice the `$\{REDPANDA_BROKERS}` xref:develop:connect/configuration/contextual-variables.adoc[contextual variable] in the configuration. This automatically references your cluster's bootstrap server address, so you can use it in any pipeline without hardcoding connection details. 
-* Notice `${secrets.KAFKA_USER_CONNECT}` and `${secrets.KAFKA_PASSWORD_CONNECT}`. These were generated when you created the `connect` user.
+* Notice the `$\{REDPANDA_BROKERS}` xref:develop:connect/configuration/contextual-variables.adoc[contextual variable] in the configuration. This references your cluster's bootstrap server address, so you can use it in any pipeline without hardcoding connection details. Use the slash command menu in the YAML editor or use the command palette to insert the Redpanda broker's contextual variable.
+* Notice `${secrets.KAFKA_USER_CONNECT}` and `${secrets.KAFKA_PASSWORD_CONNECT}`. These reference secrets that you can create using the slash command menu in the YAML editor or on the *Security* page.
 * The Brave browser does not fully support code snippets.
 
 ====
 
-. Your pipeline details display, and after a few seconds, the status changes from **Starting** to **Running**. If you don't see this change, refresh the page. Once running, your pipeline generates a new joke every five seconds and writes the joke to your topic.
-
+. Click *Save*.
 +
-After a minute, select the pipeline and click **Stop** so you can examine the results. 
+Your pipeline details display, and after a few seconds, the pipeline starts running. The pipeline generates jokes and writes the jokes to your Redpanda topic. 
+
 
 === Review the pipeline logs
 
-. Click the **Logs** tab to see the pipeline's activity log. 
-. Click through the log messages to see the startup sequence. For example, you'll see when the output becomes active:
+The page loads new log messages as they come in. When Live mode is disabled, you can filter logs, for example, by level, message content, or path. The log shows activity from the past five hours. 
 
-+
+Click through the log messages to see the startup sequence. For example, you'll see when the output becomes active:
+
 [source,json]
 ----
 {
-    "instance_id": "d4548gl54smc73b65t0g",
-    "label": "",
-    "level": "INFO",
-    "message": "Output type redpanda is now active",
-    "path": "root.output",
-    "pipeline_id": "d4548fihlips73dmcl80",
-    "time": "2025-11-04T18:21:55.223350785Z"
+  "instance_id": "d73c39bp7l8c73d7lll0",
+  "label": "",
+  "level": "INFO",
+  "message": "Output type redpanda is now active",
+  "path": "root.output",
+  "pipeline_id": "d73a55ptub9s73agpthg",
+  "time": "2026-03-27T17:43:02.36416142Z"
 }
 ----
 
 
 === View the processed messages
 
-. Go to the **Topics** page and select the `dad-jokes` topic.
+. Go to the *Topics* page for your cluster and select the `dad-jokes` topic.
 . Click any message to see the structure. For example:
 +
 [source,json]
 ----
 {
-    "id": "cf653b9e-ce96-4790-888f-6a867bed56a5",
-    "joke": "I used to play piano by ear, but now I use my hands.",
-    "joke_length": 52,
-    "source": "dad-joke-generator",
-    "timestamp": "2025-11-04T18:21:55.020574506Z"
+    "generated_at": "2026-03-27T15:30:38.963227997Z",
+    "id": "d242c355-4cee-4382-817a-190c7a115a19",
+    "joke": "I used to play piano by ear, but now I use my hands."
 }
 ----
 
 
 == Build a consumer pipeline
 
-This pipeline rates the jokes that you generated in the first pipeline. Follow these steps to create the consumer pipeline:
+This next pipeline rates the jokes that you generated in the first pipeline. To create the consumer pipeline:
 
-. On the **Connect** page for your cluster, click **Create pipeline**.
+. Go back to the *Connect* page for your cluster, and click *Create a pipeline*.
 
-. **Add an input**: Search for and select `redpanda` from the list of connectors. Click **Next**.
+. Enter this name for the pipeline: `joke-generator-consumer`.
 
-. **Add an output**: Search for and select `drop` from the list of connectors. (Because this quickstart is just for testing, this output drops the message instead of sending it anywhere else. In a real scenario you'd replace the `drop` connector with your real destination.) Click **Next**.
+. In the left pane, click *Add input +*, and search for and select the `redpanda` input connector.
+. The `redpanda` connector requires a Redpanda topic and user:
 
-. **Add a topic**: Select the existing topic called `dad-jokes`. Click **Next**.
+.. In the `redpanda` input connector, click *Topic +* and select the existing topic `dad-jokes`. Click *Add*.
 
-. **Add permissions**: 
-.. Select the existing user called `connect`.
-.. Add a consumer group: Enter `dad-joke-raters` as the name for the consumer group. 
-.. Click **Next**.
+.. In the `redpanda` input connector, click *User +* and select the existing user `connect`. For consumer group, enter `dad-joke-raters`. This allows the user `connect` to be granted READ and DESCRIBE permissions for the `dad-joke-raters` consumer group. Click *Add*.
 
-. **Edit pipeline**:
-.. Enter this name for the pipeline: `joke-generator-consumer`.
-.. The **Configuration** section automatically populates the YAML with your selected components. To add the `bloblang`, `log`, and `catch` processors, replace the entire configuration with the following YAML. Bloblang is Redpanda Connect's scripting language used to add logic (for example, random ratings).
+. Click *Add output +*, and search for and select the `drop` output connector. (For testing purposes, this output drops messages instead of forwarding them. In a real scenario you'd replace the `drop` connector with your real destination.)  
+
+. Replace the generated YAML in the editor with the following configuration, which includes the `bloblang`, `log`, and `catch` processors. 
+
++
+NOTE: This example explicitly includes several optional configuration fields for the `redpanda` input. They're shown here for demonstration purposes, so you can see a range of available settings.
 
 +
 [source,yaml]
@@ -243,9 +256,9 @@ input:
     metadata_max_age: 5m # Optional (default: "5m")
     request_timeout_overhead: 10s # Optional (default: "10s")
     conn_idle_timeout: 20s # Optional (default: "20s")
-    topics: # Optional
+    topics: # Required (mutually exclusive with regexp_topics)
       - dad-jokes
-    regexp_topics: false # Optional (default: false)
+    regexp_topics: false # Optional (default: false). Mutually exclusive with topics.
     rebalance_timeout: 45s # Optional (default: "45s")
     session_timeout: 1m # Optional (default: "1m")
     heartbeat_interval: 3s # Optional (default: "3s")
@@ -317,15 +330,9 @@ output:
 ----
 
 
-.. Click **Create** to start your pipeline.
+. Click *Save* to start your pipeline.
 
-+
-NOTE: This example explicitly includes several optional configuration fields for the `redpanda` input. They're shown here for demonstration purposes, so you can see a range of available settings.
-
-
-. Your pipeline details display, and the status changes from **Starting** to **Running**. If you don't see this change, refresh the page.
-
-. Open the logs to see a rated joke. For example: 
+. Your pipeline details display, and after a few seconds, the pipeline starts running. Check the logs to see a rated joke. For example: 
 
 +
 [source,json]
@@ -346,15 +353,15 @@ NOTE: This example explicitly includes several optional configuration fields for
 
 When you've finished experimenting with your data pipeline, you can delete the pipelines and the topic you created for this quickstart.
 
-. On the **Connect** page, select the delete icon next to the `joke-generator-producer` pipeline and the `joke-generator-consumer` pipeline.
+. On the *Connect* page, click the *...* icon next to the `joke-generator-producer` pipeline and select *Delete*. Repeat for the `joke-generator-consumer` pipeline.
 . Confirm your deletion to remove the pipelines and associated logs.
 . On the **Topics** page, delete the `dad-jokes` topic.
 
 == Next steps
 
-* Try one of our xref:cookbooks:index.adoc[Redpanda Connect cookbooks]. 
+* Try one of the xref:cookbooks:index.adoc[Redpanda Connect cookbooks]. 
 * Choose xref:develop:connect/components/about.adoc[connectors for your use case].
-* Learn how to xref:develop:connect/configuration/secret-management.adoc[add secrets to your pipeline].
-* Learn how to xref:develop:connect/configuration/monitor-connect.adoc[monitor a data pipeline on a BYOC or Dedicated cluster].
-* Learn how to xref:develop:connect/configuration/scale-pipelines.adoc[manually scale resources for a pipeline].
-* Learn how to xref:redpanda-connect:guides:getting_started.adoc[configure, test, and run a data pipeline locally].
+* xref:develop:connect/configuration/secret-management.adoc[Add secrets to your pipeline].
+* xref:develop:connect/configuration/monitor-connect.adoc[Monitor a data pipeline on a BYOC or Dedicated cluster].
+* xref:develop:connect/configuration/scale-pipelines.adoc[Manually scale resources for a pipeline].
+* xref:redpanda-connect:guides:getting_started.adoc[Configure, test, and run a data pipeline locally].
