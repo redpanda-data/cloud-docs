@@ -8,6 +8,20 @@ This page lists new features added to Redpanda Cloud.
 
 == March 2026
 
+=== Cloud Topics
+
+xref:develop:topics/cloud-topics.adoc[Cloud Topics] are now available, making it possible to use durable cloud storage (S3, ADLS, GCS) as the primary backing store instead of local disk, eliminating over 90% of cross-AZ replication costs. This makes them ideal for latency-tolerant, high-throughput workloads such as observability streams, analytics pipelines, and AI/ML training data feeds, where cross-AZ networking charges are the dominant cost driver.
+
+You can use Cloud Topics exclusively in Redpanda Streaming clusters, or in combination with standard topics on a shared cluster supporting low-latency workloads.
+
+=== User-based throughput quotas
+
+Redpanda now supports throughput quotas based on authenticated user principals. Unlike client-based quotas (which rely on self-declared `client-id` values), xref:manage:cluster-maintenance/manage-throughput.adoc#set-user-based-quotas[user-based quotas] enforce limits using verified identities from SASL, mTLS, or OIDC authentication. You can set quotas for individual users, default users, or fine-grained user/client combinations.
+
+=== Ordered rack preference for leader pinning
+
+xref:develop:produce-data/leader-pinning.adoc[Leader pinning] now supports the `ordered_racks` configuration value, which lets you specify preferred racks in priority order. Unlike `racks`, which distributes leaders uniformly across all listed racks, `ordered_racks` places leaders in the highest-priority available rack and fails over to subsequent racks only when higher-priority racks become unavailable.
+
 === BYOVPC on AWS: GA
 
 xref:get-started:cluster-types/byoc/aws/vpc-byo-aws.adoc[BYOVPC on AWS] is now generally available (GA). With Bring Your Own VPC (BYOVPC), you deploy the Redpanda data plane into your own VPC and manage security policies and resources yourself, including subnets, IAM roles, firewall rules, and storage buckets. The Redpanda BYOVPC Terraform Module contains Terraform code that deploys the resources required for a BYOVPC cluster on AWS. Secrets management is enabled by default with the Terraform module. 
@@ -108,7 +122,7 @@ You can view details about Kafka client connections using `rpk` or the Data Plan
 
 === Increased message size limit
 
-Redpanda Cloud increased the xref:get-started:create-topic.adoc[message size limit] on newly-created topics. BYOC and Dedicated clusters have a default message size limit of 20 MiB with a maximum of 32 MiB. Serverless clusters have a default message size limit of 8 MiB with a maximum of 20 MiB. Configure the message size limit with the `max_message_bytes` topic property.
+Redpanda Cloud increased the xref:develop:topics/create-topic.adoc[message size limit] on newly-created topics. BYOC and Dedicated clusters have a default message size limit of 20 MiB with a maximum of 32 MiB. Serverless clusters have a default message size limit of 8 MiB with a maximum of 20 MiB. Configure the message size limit with the `max_message_bytes` topic property.
 
 The message size setting on existing topics is not changed, but the message size limit on existing topics can only be updated to the new maximum.
 
