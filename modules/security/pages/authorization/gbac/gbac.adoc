@@ -1,0 +1,101 @@
+= Configure GBAC in the Control Plane
+:description: Configure GBAC to manage access to organization-level resources, like clusters, resource groups, and networks, using OIDC groups from your identity provider.
+:page-topic-type: how-to
+:learning-objective-1: Register an OIDC group in Redpanda Cloud
+:learning-objective-2: Assign a predefined or custom role to a group
+:learning-objective-3: Manage group-based access at the organization level
+
+NOTE: This feature is available for BYOC and Dedicated clusters.
+
+Use Redpanda Cloud group-based access control (GBAC) in the glossterm:control plane[] to manage and restrict access to resources in your organization using OIDC groups from your identity provider. For example, you could grant everyone in a group access to clusters in a development resource group while limiting access to clusters in a production resource group. Or, you could limit access to geographically-dispersed clusters in accordance with data residency laws.
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
+
+The following resources can be assigned as the scope of a role: 
+
+- Organization 	
+- Resource groups
+- Networks
+- Network peerings
+- Clusters (Serverless clusters have a different set of permissions from BYOC and Dedicated clusters.) 
+- Topics
+- MCP servers
+- AI agents
+- AI gateway
+- AI Gateway models
+- AI Gateway model providers
+- AI Gateway config
+
+You can manage these GBAC configurations with the https://cloud.redpanda.com[Redpanda Cloud Console^] or with the link:/api/doc/cloud-controlplane/[Control Plane API].
+
+== GBAC terminology
+
+**Group**: A group is a collection of users defined in your identity provider. With GBAC, you can assign groups to roles or ACLs in Redpanda Cloud, so that users inherit permissions based on their group membership in your identity provider.
+
+**Role**: A role is a list of permissions. Permissions are attached to roles. Users assigned multiple roles receive the union of all permissions defined in those roles. Redpanda Cloud has three predefined roles: Reader, Writer, and Admin, but you can also create custom roles.
+
+**Role binding**: Role binding assigns a role to an account. 
+
+== Manage access for organization
+
+In the Redpanda Cloud Console, the *Organization IAM* page lets you create groups, edit a user's access, invite new users, and create service accounts. 
+
+== Register groups in Redpanda Cloud
+
+To assign an IdP group to a role or ACL, you must first register the group:
+
+[tabs]
+====
+Cloud UI::
++
+--
+. In the left navigation menu, select *Organization IAM*, then select the *Groups* tab.
+. Click *Create group*.
+. Enter a *Name* that matches the group in your IdP exactly (for example, `engineering`).
+. Optionally, enter a *Description*, and configure a *Role binding* to assign the group to a role with a specific scope and resource.
+. Click *Create*.
+--
+
+Control Plane API::
++
+--
+Make a link:/api/doc/cloud-controlplane/operation/operation-groupservice_creategroup[`POST /v1/groups`] request to the xref:redpanda-cloud:manage:api/cloud-byoc-controlplane-api.adoc[Control Plane API]:
+
+[,bash]
+----
+curl -X POST 'https://api.redpanda.com/v1/groups' \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer <token>' \
+  -d '{
+    "group": {
+      "name": "<group-name>",
+      "description": "<group-description>"
+    }
+  }'
+----
+
+Replace `<group-name>` with the name that matches the group in your IdP (for example, `engineering`). The name must match exactly for GBAC to map the group correctly.
+--
+====
+
+== Predefined roles
+
+include::security:partial$predefined-roles.adoc[]
+
+== Custom roles
+
+In addition to the predefined roles, administrators can create custom roles to mix and match permissions for specific use cases. Custom roles let you grant only the permissions a group needs, without the broad access of the predefined Reader, Writer, or Admin roles.
+
+Custom roles are created on the *Roles* tab in *Organization IAM*. For steps to create a custom role, see xref:security:authorization/rbac/rbac.adoc#custom-roles[Custom roles in RBAC].
+
+When you register a group or edit a group's role binding, you can assign any predefined or custom role to the group.
+
+== Suggested reading
+
+* xref:security:authorization/gbac/gbac_dp.adoc[]
+* xref:security:authorization/rbac/rbac.adoc[]
+* xref:security:authorization/rbac/rbac_dp.adoc[]
