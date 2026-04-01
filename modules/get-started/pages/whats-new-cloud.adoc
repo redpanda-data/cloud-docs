@@ -14,18 +14,59 @@ xref:security:authorization/gbac.adoc[Group-based access control (GBAC)] lets yo
 
 == March 2026
 
-=== BYOVPC on AWS: GA
-
-xref:get-started:cluster-types/byoc/aws/vpc-byo-aws.adoc[BYOVPC on AWS] is now generally available (GA). With Bring Your Own VPC (BYOVPC), you deploy the Redpanda data plane into your own VPC and manage security policies and resources yourself, including subnets, IAM roles, firewall rules, and storage buckets. The Redpanda BYOVPC Terraform Module contains Terraform code that deploys the resources required for a BYOVPC cluster on AWS. Secrets management is enabled by default with the Terraform module. 
-
 === Redpanda Connect updates
+
+* Inputs:
+** xref:develop:connect/components/inputs/oracledb_cdc.adoc[oracledb_cdc] (experimental): Stream changes from an Oracle database for Change Data Capture (CDC).
+** xref:develop:connect/components/inputs/aws_cloudwatch_logs.adoc[aws_cloudwatch_logs]: Consume log events from AWS CloudWatch Logs. Supports filtering by log streams, CloudWatch filter patterns, and configurable start times.
+** xref:develop:connect/components/inputs/aws_dynamodb_cdc.adoc[aws_dynamodb_cdc] (beta): Consume item-level changes from DynamoDB Streams with automatic checkpointing and shard management.
 
 * Outputs:
 ** xref:develop:connect/components/outputs/iceberg.adoc[iceberg]: Write data to Apache Iceberg tables using the REST catalog.
 
-* Inputs:
-** xref:develop:connect/components/inputs/aws_cloudwatch_logs.adoc[aws_cloudwatch_logs]: Consume log events from AWS CloudWatch Logs. Supports filtering by log streams, CloudWatch filter patterns, and configurable start times.
-** xref:develop:connect/components/inputs/aws_dynamodb_cdc.adoc[aws_dynamodb_cdc] (beta): Consume item-level changes from DynamoDB Streams with automatic checkpointing and shard management.
+* Bloblang methods:
+** xref:develop:connect/guides/bloblang/methods.adoc#escape_url_path[`escape_url_path`]: Escapes a string for safe use in URL path segments using percent-encoding.
+** xref:develop:connect/guides/bloblang/methods.adoc#parse_logfmt[`parse_logfmt`]: Parses a logfmt-encoded string into an object of key-value pairs.
+** xref:develop:connect/guides/bloblang/methods.adoc#unescape_url_path[`unescape_url_path`]: Unescapes a URL path segment, converting percent-encoded sequences back to their original characters.
+
+* Removed components:
+** `legacy_redpanda_migrator` input and output
+** `legacy_redpanda_migrator_offsets` input and output
+** `redpanda_migrator_bundle` input and output
++
+Use the unified xref:develop:connect/components/inputs/redpanda_migrator.adoc[`redpanda_migrator`] input and xref:develop:connect/components/outputs/redpanda_migrator.adoc[`redpanda_migrator`] output instead.
+
+=== Cloud Topics
+
+xref:develop:topics/cloud-topics.adoc[Cloud Topics] are now available, making it possible to use durable cloud storage (S3, ADLS, GCS) as the primary backing store instead of local disk, eliminating over 90% of cross-AZ replication costs. This makes them ideal for latency-tolerant, high-throughput workloads such as observability streams, analytics pipelines, and AI/ML training data feeds, where cross-AZ networking charges are the dominant cost driver.
+
+You can use Cloud Topics exclusively or in combination with standard topics on a cluster supporting low-latency workloads.
+
+=== User-based throughput quotas
+
+Redpanda now supports throughput quotas based on authenticated user principals. Unlike client-based quotas (which rely on self-declared `client-id` values), xref:manage:cluster-maintenance/manage-throughput.adoc#set-user-based-quotas[user-based quotas] enforce limits using verified identities from SASL, mTLS, or OIDC authentication. You can set quotas for individual users, default users, or fine-grained user/client combinations.
+
+=== Iceberg: Expanded JSON Schema support
+
+Redpanda now supports additional JSON Schema patterns when translating to Iceberg tables:
+
+* `$ref` support: Internal references using `$ref` (for example, `"$ref": "#/definitions/myType"`) are resolved from schema resources declared in the same document. External references are not yet supported.
+* Map type from `additionalProperties`: `additionalProperties` objects that contain subschemas now translate to Iceberg `map<string, T>`.
+* `oneOf` nullable pattern: The `oneOf` keyword is now supported for the standard nullable pattern if exactly one branch is `{"type":"null"}` and the other is a non-null schema.
+
+See xref:manage:iceberg/specify-iceberg-schema.adoc#how-iceberg-modes-translate-to-table-format[Specify Iceberg Schema] for JSON types mapping and updated requirements.
+
+=== Ordered rack preference for leader pinning
+
+xref:develop:produce-data/leader-pinning.adoc[Leader pinning] now supports the `ordered_racks` configuration value, which lets you specify preferred racks in priority order. Unlike `racks`, which distributes leaders uniformly across all listed racks, `ordered_racks` places leaders in the highest-priority available rack and fails over to subsequent racks only when higher-priority racks become unavailable.
+
+=== Cross-region Remote Read Replicas on AWS
+
+xref:get-started:cluster-types/byoc/remote-read-replicas.adoc[Remote read replica] topics on AWS can now be deployed in a different region from the origin cluster's S3 bucket. This enables cross-region disaster recovery and data locality scenarios while maintaining the read-only replication model. 
+
+=== BYOVPC on AWS: GA
+
+xref:get-started:cluster-types/byoc/aws/vpc-byo-aws.adoc[BYOVPC on AWS] is now generally available (GA). With Bring Your Own VPC (BYOVPC), you deploy the Redpanda data plane into your own VPC and manage security policies and resources yourself, including subnets, IAM roles, firewall rules, and storage buckets. The Redpanda BYOVPC Terraform Module contains Terraform code that deploys the resources required for a BYOVPC cluster on AWS. Secrets management is enabled by default with the Terraform module. 
 
 === Iceberg topics with Snowflake Open Catalog: GA
 
@@ -114,7 +155,7 @@ You can view details about Kafka client connections using `rpk` or the Data Plan
 
 === Increased message size limit
 
-Redpanda Cloud increased the xref:get-started:create-topic.adoc[message size limit] on newly-created topics. BYOC and Dedicated clusters have a default message size limit of 20 MiB with a maximum of 32 MiB. Serverless clusters have a default message size limit of 8 MiB with a maximum of 20 MiB. Configure the message size limit with the `max_message_bytes` topic property.
+Redpanda Cloud increased the xref:develop:topics/create-topic.adoc[message size limit] on newly-created topics. BYOC and Dedicated clusters have a default message size limit of 20 MiB with a maximum of 32 MiB. Serverless clusters have a default message size limit of 8 MiB with a maximum of 20 MiB. Configure the message size limit with the `max_message_bytes` topic property.
 
 The message size setting on existing topics is not changed, but the message size limit on existing topics can only be updated to the new maximum.
 
