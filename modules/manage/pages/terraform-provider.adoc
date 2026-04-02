@@ -1,7 +1,7 @@
 = Redpanda Terraform Provider
 :description: Use the Redpanda Terraform provider to create and manage Redpanda Cloud resources.
 
-The https://registry.terraform.io/providers/redpanda-data/redpanda/latest[Redpanda Terraform provider^] allows you to manage your Redpanda Cloud infrastructure as code using https://www.terraform.io/[Terraform^]. Terraform is an infrastructure-as-code tool that enables you to define, automate, and version-control your infrastructure configurations.
+Use the https://registry.terraform.io/providers/redpanda-data/redpanda/latest[Redpanda Terraform provider^] to define, automate, and track changes to your Redpanda Cloud infrastructure as code.
 
 With the Redpanda Terraform provider, you can manage:
 
@@ -23,7 +23,7 @@ With the Redpanda Terraform provider, you can manage:
 
 * **Simplicity**: Manage all your Redpanda Cloud resources in one place.
 * **Automation**: Create and modify resources without manual intervention.
-* **Version Control**: Track and roll back changes using version control systems, such as GitHub.
+* **Version control**: Track and roll back changes using version control systems, such as GitHub.
 * **Scalability**: Scale your infrastructure as your needs grow with minimal effort.
 
 == Understand Terraform configurations
@@ -37,8 +37,8 @@ Providers tell Terraform how to communicate with the services you want to manage
 [source,hcl]
 ----
 provider "redpanda" {
-  client_id     = "<your_client_id>"
-  client_secret = "<your_client_secret>"
+  client_id     = "<client_id>"
+  client_secret = "<client_secret>"
 }
 ----
 
@@ -56,10 +56,10 @@ resource "redpanda_network" "example" { <1>
 }
 ----
 
-<1> The resource type and internal name. The first part of this resource block specifies the type of resource being created. In this case, it is a `redpanda_network`, which defines a network for Redpanda Cloud. Different resource types include `redpanda_cluster`, `redpanda_topic`, and others. The second part is the internal name Terraform uses to identify this specific resource within your configuration. In this case, the internal name is `example`. This internal name allows you to reference the resource in other parts of your configuration. For example, redpanda_network.example.id can be used to access the unique ID of the network after it is created. The name does not affect the resource in Redpanda Cloud. It is for Terraform's internal use.
-<2> A user-defined name for the resource as it will appear in Redpanda Cloud. This is the user-facing name visible in the Redpanda UI and API.
+<1> The resource type (`redpanda_network`) and internal name (`example`). Terraform uses the internal name to reference the resource elsewhere in your configuration; for example, `redpanda_network.example.id` returns the network's unique ID. The internal name does not appear in Redpanda Cloud.
+<2> A user-defined name for the resource as it appears in Redpanda Cloud. This is the user-facing name visible in the Redpanda UI and API.
 <3> The cloud provider where the network is deployed, such as AWS or GCP.
-<4> The region where the resource will be provisioned.
+<4> The region where the resource is provisioned.
 <5> The IP address range for the network.
 
 === Variables
@@ -84,7 +84,7 @@ resource "redpanda_network" "example" {
 
 Outputs let you extract information about your infrastructure, such as cluster URLs, to use in other configurations or scripts.
 
-This example will display the cluster's API URL after Terraform provisions the resources:
+This example displays the cluster's API URL after Terraform provisions the resources:
 
 [source,hcl]
 ----
@@ -103,7 +103,23 @@ The following functionality is supported in the Cloud API but not in the Redpand
 
 [WARNING]
 ====
-Do not modify `throughput_tier` after it is set. When `allow_deletion` is set to `true`, modifying `throughput_tier` forces replacement of the cluster: Terraform will destroy the existing cluster and create a new one, causing data loss. 
+If `allow_deletion` is set to `true`, modifying `throughput_tier` allows Terraform to destroy the existing cluster and replace it, causing data loss.
+
+To prevent this, apply one or both of the following:
+
+* Set `allow_deletion` to `false`.
+* Add a `lifecycle` block instructing Terraform to ignore changes to `throughput_tier`:
++
+[source,terraform]
+----
+lifecycle {
+  ignore_changes = [
+    throughput_tier
+  ]
+}
+----
++
+This setting protects your cluster in the event Redpanda Support upgrades your cluster's throughput tier. Without it, the next `terraform apply` command triggers replacement.
 ====
 
 == Prerequisites
@@ -112,7 +128,7 @@ Do not modify `throughput_tier` after it is set. When `allow_deletion` is set to
 ====
 *Redpanda Terraform Provider - Windows Support Notice*
 
-The Redpanda Terraform provider is not supported on Windows systems. If you're using Windows, you must use Windows Subsystem for Linux 2 (WSL2) to run the Redpanda Terraform provider.
+The Redpanda Terraform provider does not support Windows. To use it on Windows, install Windows Subsystem for Linux 2 (WSL2).
 
 To use WSL2 with the Redpanda Terraform provider:
 
@@ -124,7 +140,7 @@ wsl --install
 +
 Then restart your computer.
 
-. Open your WSL2 Linux distribution (e.g., Ubuntu) from the Start menu or by running `wsl` in PowerShell.
+. Open your WSL2 Linux distribution (such as Ubuntu) from the Start menu or by running `wsl` in PowerShell.
 . Navigate to your project directory within WSL2.
 . Run all Terraform commands from within your WSL2 environment:
 +
@@ -144,15 +160,13 @@ terraform show
 
 ====
 
-. Install at least version 1.0.0 of Terraform using the https://learn.hashicorp.com/tutorials/terraform/install-cli[official guide^].
+. Install Terraform 1.0.0 or later using the https://learn.hashicorp.com/tutorials/terraform/install-cli[official guide^].
 . Create a service account in Redpanda Cloud:
 .. Log in to https://cloud.redpanda.com[Redpanda Cloud^].
 .. Navigate to the *Organization IAM* page and select the *Service account* tab. Click *Create service account* and provide a name for the new service account.
 .. Save the client ID and client secret for authentication.
 
 == Set up the provider
-
-To set up the provider, you need to download the provider and authenticate to the Redpanda Cloud API. You can authenticate to the Redpanda Cloud API using environment variables or static credentials in your configuration file.
 
 . Add the Redpanda provider to your Terraform configuration:
 +
@@ -175,7 +189,7 @@ terraform {
 terraform init
 ----
 
-. Add the credentials for the Redpanda Cloud service account you set in <<Prerequisites>>. In the Redpanda Cloud UI, find the client ID and client secret under *Organization IAM → Service accounts*. Set them as environment variables, or enter them in your Terraform configuration file:
+. Add the service account credentials you saved in <<Prerequisites>> as environment variables or in your Terraform configuration file:
 +
 [tabs]
 ======
@@ -201,7 +215,7 @@ provider "redpanda" {
 
 == Examples
 
-This section provides examples of using the Redpanda Terraform provider to create and manage clusters. For descriptions of resources and data sources, see the https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs[Redpanda Terraform Provider documentation^].
+The following examples use the Redpanda Terraform provider to create and manage clusters. For descriptions of resources and data sources, see the https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs[Redpanda Terraform Provider documentation^].
 
 For more information on the different cluster types mentioned in these examples, see xref:redpanda-cloud:get-started:cloud-overview.adoc#redpanda-cloud-cluster-types[Redpanda Cloud cluster types].
 
@@ -209,7 +223,7 @@ TIP: See the full list of zones and tiers available with each cloud provider in 
 
 === Create a BYOC cluster
 
-A BYOC (Bring Your Own Cloud) cluster allows you to provision a cluster in your own cloud account. This example creates a BYOC cluster on AWS with a custom network, resource group, and cluster configuration.
+A BYOC (Bring Your Own Cloud) cluster runs in your own cloud account. This example creates one on AWS with a custom network, resource group, and cluster.
 
 [source,hcl]
 ----
@@ -302,7 +316,7 @@ resource "redpanda_cluster" "test" {
 
 === Create a Dedicated cluster
 
-A Dedicated cluster is fully managed by Redpanda and ensures consistent performance. This example provisions a cluster on AWS with specific zones and usage tiers.
+Redpanda fully manages Dedicated clusters for consistent performance. This example creates one on AWS with specific zones and a usage tier.
 
 [source,hcl]
 ----
@@ -448,7 +462,7 @@ variable "region" {
 
 === Manage an existing cluster
 
-To manage resources in existing Redpanda Cloud clusters, you must reference the cluster using the cluster ID (Redpanda ID). The following example creates a topic in a cluster with ID `byoc-cluster-id`. The `redpanda_topic` resource contains a field `cluster_api_url` that references the `data.redpanda_cluster.byoc.cluster_api_url` data resource.
+To manage resources in an existing cluster, reference it by cluster ID using a `data` source.
 
 [source,hcl]
 ----
@@ -468,7 +482,7 @@ resource "redpanda_topic" "example" {
 
 You can also use Terraform to manage data plane resources, such as schemas and access controls, through the Redpanda Schema Registry.
 
-The Redpanda Schema Registry provides centralized management of schemas for producers and consumers, ensuring compatibility and consistency of data serialized with formats such as Avro, Protobuf, or JSON Schema. Using the Redpanda Terraform provider, you can create, update, and delete schemas as well as manage fine-grained access control for Schema Registry resources.
+Use the Redpanda Terraform provider to create, update, and delete schemas and manage fine-grained access control for Schema Registry resources.
 
 You can use the following Terraform resources:
 
@@ -477,7 +491,7 @@ You can use the following Terraform resources:
 
 ==== Create a schema
 
-The `redpanda_schema` resource registers a schema in the Redpanda Schema Registry. Each schema is associated with a subject, which serves as the logical namespace for schema versioning. When you create or update a schema, Redpanda validates its compatibility level.
+Each schema belongs to a subject, a logical name used for schema versioning. When you create or update a schema, Redpanda validates its compatibility level.
 
 [source,hcl]
 ----
@@ -530,7 +544,7 @@ For short-lived credentials or CI/CD usage, use provider-level environment varia
 [source,bash]
 ----
 export REDPANDA_SR_USERNAME=schema-user
-export REDPANDA_SR_PASSWORD="your-secret-password"
+export REDPANDA_SR_PASSWORD="schema-registry-password"
 ----
 
 Or, declare a sensitive Terraform variable and inject it at runtime:
@@ -547,14 +561,14 @@ Then, set the value securely using an environment variable before running Terraf
 
 [source,bash]
 ----
-export TF_VAR_schema_password="your-secret-password"
+export TF_VAR_schema_password="schema-registry-password"
 ----
 
 This avoids committing secrets to source control.
 
 ==== Manage Schema Registry ACLs
 
-The `redpanda_schema_registry_acl` resource configures fine-grained access control for Schema Registry subjects or registry-wide operations. Each ACL specifies which principal can perform specific operations on a subject or the registry.
+Each ACL specifies which principal can perform which operations on a subject or the registry.
 
 [source,hcl]
 ----
@@ -579,7 +593,7 @@ In this example:
 * `resource_type` determines whether the ACL applies to a specific `SUBJECT` or the entire `REGISTRY`.
 * `resource_name` defines the subject name (use `*` for wildcard).
 * `pattern_type` controls how the resource name is matched (`LITERAL` or `PREFIXED`).
-* `operation` defines the permitted action (`READ`, `WRITE`, `DELETE`, etc.).
+* `operation` defines the permitted action (`READ`, `WRITE`, `DELETE`, and others).
 * `permission` defines whether the operation is allowed or denied.
 * `host` specifies the host filter (typically `"*"` for all hosts).
 * `username` and `password` authenticate the principal to the Schema Registry.
@@ -641,9 +655,9 @@ This configuration registers an Avro schema for the `user_events` subject and gr
 
 == Delete resources
 
-Terraform provides a way to clean up your infrastructure when resources are no longer needed. The `terraform destroy` command deletes all the resources defined in your configuration.
+The `terraform destroy` command deletes all resources defined in your configuration.
 
-NOTE: Terraform ensures that dependent resources are deleted in the correct order. For example, a cluster dependent on a network will be removed after the network.
+NOTE: Terraform deletes dependent resources in the correct order. For example, Terraform removes a cluster that depends on a network after it deletes the network.
 
 === Delete all resources
 
@@ -654,9 +668,9 @@ NOTE: Terraform ensures that dependent resources are deleted in the correct orde
 ----
 terraform destroy
 ----
-. Review the destruction plan Terraform generates. It will list all the resources to be deleted.
+. Review the destruction plan Terraform generates. It lists all the resources to be deleted.
 . Confirm by typing `yes` when prompted.
-. Wait for the process to complete. Terraform will delete the resources and display a summary.
+. Wait for the process to complete. Terraform deletes the resources and displays a summary.
 
 === Delete specific resources
 
@@ -667,7 +681,7 @@ If you only want to delete a specific resource rather than everything in your co
 terraform destroy -target=redpanda_network.example
 ----
 
-This will delete only the `redpanda_network.example` resource.
+This deletes only the `redpanda_network.example` resource.
 
 == Suggested reading
 
