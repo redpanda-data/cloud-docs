@@ -103,11 +103,11 @@ VALUES
     (12222, 'Biology', 90, 992811191, 'PASSED'),
     (12223, 'Art', 80, 992831192, 'PASSED'),
     (12224, 'History', 70, 928311197, 'FAILED'),
-    (12225, 'Pyshics', 75, 928311190, 'FAILED'),
+    (12225, 'Physics', 75, 928311190, 'FAILED'),
     (12226, 'Art', 85, 928311197, 'PASSED'),
     (12227, 'Biology', 90, 998311196, 'PASSED'),
     (12228, 'Biology', 70, 928311199, 'FAILED'),
-    (12229, 'Pyshics', 80, 998311194, 'PASSED'),
+    (12229, 'Physics', 80, 998311194, 'PASSED'),
     (12231, 'Math', 80, 998311193, 'PASSED'),
     (12232, 'History', 90, 992811191, 'PASSED'),
     (12233, 'Math', 70, 998311194, 'FAILED'),
@@ -130,11 +130,11 @@ It will create a table as shown below:
 | 12222     | Biology  | 90         | 992811191  | PASSED      |
 | 12223     | Art      | 80         | 992831192  | PASSED      |
 | 12224     | History  | 70         | 928311197  | FAILED      |
-| 12225     | Pyshics  | 75         | 928311190  | FAILED      |
+| 12225     | Physics  | 75         | 928311190  | FAILED      |
 | 12226     | Art      | 85         | 928311197  | PASSED      |
 | 12227     | Biology  | 90         | 998311196  | PASSED      |
 | 12228     | Biology  | 70         | 928311199  | FAILED      |
-| 12229     | Pyshics  | 80         | 998311194  | PASSED      |
+| 12229     | Physics  | 80         | 998311194  | PASSED      |
 | 12231     | Math     | 80         | 998311193  | PASSED      |
 | 12232     | History  | 90         | 992811191  | PASSED      |
 | 12233     | Math     | 70         | 998311194  | FAILED      |
@@ -168,7 +168,7 @@ The above query will give the following result:
 
 === `HAVING` clause with `COUNT` function
 
-The following query lists subjects that have more than 2 `PASSED` scores:
+The following query lists subjects that have more than two `PASSED` scores:
 
 [source,sql]
 ----
@@ -178,16 +178,15 @@ GROUP BY subject
 HAVING SUM(CASE WHEN score_stat = 'PASSED' THEN 1 ELSE 0 END) > 2;
 ----
 
-The above query shows that `Math` and `Biology` have more than 2 `PASSED` values:
+The above query shows that `Math` has more than two `PASSED` values:
 
 [source,sql]
 ----
-+--------------+--------------+
-| passed_count | subject      |
-+--------------+--------------+
-| 4            | Math         |
-| 3            | Biology      |
-+--------------+--------------+
++--------------+---------+
+| passed_count | subject |
++--------------+---------+
+| 3            | Math    |
++--------------+---------+
 ----
 
 === `HAVING` clause with `MAX` function
