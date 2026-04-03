@@ -1,0 +1,92 @@
+= CREATE REDPANDA CATALOG
+:description: The CREATE REDPANDA CATALOG statement creates a named connection to a Redpanda cluster, enabling you to map topics as SQL tables.
+:page-topic-type: reference
+
+The `CREATE REDPANDA CATALOG` statement creates a named connection to a Redpanda cluster. After creating a catalog, you can map Redpanda topics as queryable SQL tables using xref:reference:sql/sql-statements/create-table.adoc[CREATE TABLE].
+
+== Syntax
+
+[source,sql]
+----
+CREATE REDPANDA CATALOG [IF NOT EXISTS] catalog_name
+WITH (option = 'value' [, ...]);
+----
+
+* `catalog_name`: Name for the new catalog connection.
+* `IF NOT EXISTS`: Optional. Prevents an error if a catalog with the same name already exists.
+
+== Required options
+
+[cols="<30%,<15%,<55%",options="header"]
+|===
+|Option |Type |Description
+
+|`initial_brokers`
+|STRING
+|Bootstrap broker address(es) for the Redpanda cluster.
+
+|`schema_registry_url`
+|STRING
+|URL of the Schema Registry endpoint.
+|===
+
+== Optional options
+
+[cols="<30%,<15%,<55%",options="header"]
+|===
+|Option |Type |Description
+
+|`sasl_mechanism`
+|STRING
+|SASL authentication mechanism (for example, `SCRAM-SHA-256`).
+
+|`sasl_username`
+|STRING
+|SASL username.
+
+|`sasl_password`
+|STRING
+|SASL password.
+
+|`tls_enabled`
+|STRING
+|Enable TLS for broker connections (`true` or `false`).
+
+|`schema_registry_username`
+|STRING
+|Schema Registry authentication username.
+
+|`schema_registry_password`
+|STRING
+|Schema Registry authentication password.
+|===
+
+== Examples
+
+=== Create a basic catalog
+
+[source,sql]
+----
+CREATE REDPANDA CATALOG my_catalog
+WITH (
+  initial_brokers = 'broker1:9092',
+  schema_registry_url = 'http://schema-registry:8081'
+);
+----
+
+=== Create a catalog with authentication
+
+[source,sql]
+----
+CREATE REDPANDA CATALOG my_secure_catalog
+WITH (
+  initial_brokers = 'broker1:9092',
+  schema_registry_url = 'https://schema-registry:8081',
+  sasl_mechanism = 'SCRAM-SHA-256',
+  sasl_username = 'admin',
+  sasl_password = 'secret',
+  tls_enabled = 'true',
+  schema_registry_username = 'sr_user',
+  schema_registry_password = 'sr_pass'
+);
+----

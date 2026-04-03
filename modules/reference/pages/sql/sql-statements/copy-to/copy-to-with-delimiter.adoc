@@ -1,0 +1,59 @@
+= COPY TO with delimiter
+:description: A delimiter is a character that separates text strings in exported CSV data.
+:page-topic-type: reference
+
+A delimiter is a character that separates text strings. Common delimiters include:
+
+* Commas (,)
+* Semicolons (;)
+* Quotes ( ", ' )
+* Dashes (-)
+* Pipes (|)
+* Slashes ( / )
+
+== Syntax
+
+[source,sql]
+----
+COPY table_name TO 'file_path' (DELIMITER 'delimiter');
+----
+
+Parameters in the syntax include:
+
+* `table_name`: The table containing the data to export.
+* `file_path`: The CSV file location where the data is saved.
+* `DELIMITER 'delimiter'`: The delimiter used in the exported CSV file.
+
+NOTE: The default delimiter is a comma (`,`).
+
+== Example
+
+The following examples use a table mapped to a Redpanda topic through a catalog. For information on setting up catalogs and tables, see xref:reference:sql/sql-statements/create-table.adoc[CREATE TABLE].
+
+Export the `customer` table using a comma delimiter:
+
+[source,sql]
+----
+COPY my_catalog=>customer TO '/path/to/customerexport.csv' (DELIMITER ',');
+----
+
+[source,sql]
+----
+--
+(0 rows)
+----
+
+Using the comma (`,`) as the delimiter, the expected output would be:
+
+[source,text]
+----
+cust_id,cust_name
+11001,Maya
+11003,Ricky
+11009,Sean
+11008,Chris
+11002,Emily
+11005,Rue
+11007,Tom
+11006,Casey
+----

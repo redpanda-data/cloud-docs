@@ -1,0 +1,52 @@
+= SHOW TABLES
+:description: The SHOW TABLES statement allows you to obtain information about existing tables.
+:page-topic-type: reference
+
+The `SHOW TABLES` statement allows you to obtain information about existing tables.
+
+[NOTE]
+====
+It only shows tables in schemas, on which a user has the `USAGE` grant
+====
+
+== Syntax
+
+[source,sql]
+----
+SHOW TABLES;
+SHOW TABLES FROM catalog_name;
+----
+
+* `catalog_name`: Optional. The name of a Redpanda catalog. When specified, lists tables mapped to Redpanda topics through that catalog.
+
+== Examples
+
+=== List all tables
+
+To list all available tables in the current schema:
+
+[source,sql]
+----
+SHOW TABLES;
+----
+
+[source,sql]
+----
++------------+
+| name       |
++------------+
+| lineorder  |
+| part       |
+| customer   |
+| supplier   |
++------------+
+----
+
+=== List tables from a catalog
+
+To list tables mapped through a specific Redpanda catalog:
+
+[source,sql]
+----
+SHOW TABLES FROM my_catalog;
+----

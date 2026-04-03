@@ -1,0 +1,77 @@
+= OFFSET
+:description: The OFFSET is a clause that skips some records from the result set.
+:page-topic-type: reference
+
+== Overview
+
+The `OFFSET` is a clause that skips some records from the result set.
+
+== Syntax
+
+The basic syntax of the `OFFSET` clause is shown below:
+
+[source,sql]
+----
+SELECT columns
+FROM table_name
+OFFSET num;
+----
+
+The parameters and arguments from the syntax are:
+
+* `columns`: the columns to be fetched.
+* `table_name`: a table from which the records will be fetched.
+* `OFFSET`: a clause that will skip a subset of records.
+** `num`: the number of records to be skipped.
+
+== Example
+
+The following example uses a table called `salaryemp`:
+
+[source,sql]
+----
+SELECT * FROM salaryemp ORDER BY emp_sal;
+----
+
+[source,sql]
+----
++-----------+------------+----------------+-------------+
+| emp_id    | emp_name   | emp_div        | emp_sal     |
++-----------+------------+----------------+-------------+
+| 1008      | Harry      | Operations     | 4500        |
+| 1005      | Lewis      | Sales          | 5500        |
+| 1002      | Mike       | Marketing      | 6000        |
+| 1003      | Sean       | Marketing      | 6500        |
+| 1009      | Steve      | Marketing      | 6800        |
+| 1004      | Victor     | Finance        | 7000        |
+| 1007      | Meghan     | Finance        | 7500        |
+| 1006      | David      | Marketing      | 8000        |
+| 1010      | Omar       | Finance        | 8000        |
+| 1011      | David      | Sales          | 8200        |
++-----------+------------+----------------+-------------+
+----
+
+The following query skips the first 3 rows and returns the next 5, ordered by salary:
+
+[source,sql]
+----
+SELECT * FROM salaryemp
+ORDER BY emp_sal
+LIMIT 5 OFFSET 3;
+----
+
+* `OFFSET 3` skips the first three rows (`Harry`, `Lewis`, `Mike`).
+* `LIMIT 5` returns the next five rows.
+
+[source,sql]
+----
++-----------+------------+----------------+-------------+
+| emp_id    | emp_name   | emp_div        | emp_sal     |
++-----------+------------+----------------+-------------+
+| 1003      | Sean       | Marketing      | 6500        |
+| 1009      | Steve      | Marketing      | 6800        |
+| 1004      | Victor     | Finance        | 7000        |
+| 1007      | Meghan     | Finance        | 7500        |
+| 1006      | David      | Marketing      | 8000        |
++-----------+------------+----------------+-------------+
+----

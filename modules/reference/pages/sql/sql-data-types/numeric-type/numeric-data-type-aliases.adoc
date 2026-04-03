@@ -1,0 +1,91 @@
+= Numeric Data Type - Aliases
+:description: Redpanda SQL allows aliases that can be used interchangeably with the primary data types.
+:page-topic-type: reference
+
+Redpanda SQL allows aliases that can be used interchangeably with the primary data types. However, while these aliases can be used, they will be mapped to their corresponding primary data types during data processing.
+
+The following sections describe the numeric data type aliases:
+
+== INTEGER alias
+
+The `INTEGER` alias is an alternative name for the `INT` data type. For example, the following two queries are functionally the same:
+
+[source,sql]
+----
+CREATE TABLE ExampleTable (
+    id INTEGER,
+);
+
+-- Functionally the same as the previous table
+CREATE TABLE AnotherTable (
+    id INT,
+);
+----
+
+[WARNING]
+====
+It's important to note that even though `INTEGER` is used, the data is stored and treated as `INT`.
+====
+
+== LONG alias
+
+The `LONG` alias is often used to represent larger integer values. For example:
+
+[source,sql]
+----
+CREATE TABLE LargeValues (
+    value LONG,
+);
+
+-- Functionally the same as the previous table
+CREATE TABLE LargeValuesEquivalent (
+    value BIGINT,
+);
+----
+
+[WARNING]
+====
+Any usage of `LONG` is stored and treated as `BIGINT`.
+====
+
+== FLOAT alias
+
+The `FLOAT` alias corresponds to the `REAL` data type. For example:
+
+[source,sql]
+----
+CREATE TABLE FloatExample (
+    price FLOAT,
+);
+
+-- Functionally the same as the previous table
+CREATE TABLE FloatEquivalent (
+    price REAL,
+);
+----
+
+[WARNING]
+====
+When you use `FLOAT`, it's stored and treated as `REAL`.
+====
+
+== DOUBLE alias
+
+The `DOUBLE` alias is used to define `DOUBLE PRECISION` floating-point numbers. For example:
+
+[source,sql]
+----
+CREATE TABLE DoubleExample (
+    measurement DOUBLE,
+);
+
+-- Functionally the same as the previous table
+CREATE TABLE DoubleEquivalent (
+    measurement DOUBLE PRECISION,
+);
+----
+
+[WARNING]
+====
+When you use `DOUBLE`, it's stored and treated as `DOUBLE PRECISION`.
+====

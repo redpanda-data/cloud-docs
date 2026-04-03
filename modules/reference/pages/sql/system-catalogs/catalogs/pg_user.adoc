@@ -1,0 +1,35 @@
+= pg_user
+:description: The pg_user system catalog provides a publicly readable view of database users.
+:page-topic-type: reference
+
+The `pg_user` system catalog provides a publicly readable view of database users. It mimics the https://www.postgresql.org/docs/15/view-pg-user.html[pg_user^] PostgreSQL system view.
+
+[NOTE]
+====
+For a view that includes unmasked passwords (superuser only), use xref:reference:sql/system-catalogs/catalogs/pg_shadow.adoc[pg_shadow].
+====
+
+== Columns
+
+The following columns are available for querying in `pg_user`:
+
+[cols="15%,15%,70%",options="header"]
+|===
+|Column |Type |Description
+|`usename` |`text` |User name
+|`usesysid` |`bigint` |User system ID (role OID)
+|`usecreatedb` |`bool` |Whether the user can create databases
+|`usesuper` |`bool` |Whether the user has superuser privileges
+|`userepl` |`bool` |Whether the user has replication privileges
+|`usebypassrls` |`bool` |Whether the user bypasses row-level security policies
+|`passwd` |`text` |Password (masked as `********`)
+|`valuntil` |`timestamptz` |Password expiration time (NULL if no expiration)
+|`useconfig` |`text` |Session defaults for this user
+|===
+
+== Example
+
+[source,sql]
+----
+SELECT usename, usesuper, usecreatedb FROM pg_user;
+----
