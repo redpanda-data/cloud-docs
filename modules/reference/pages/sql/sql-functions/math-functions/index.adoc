@@ -1,8 +1,10 @@
 = Overview
-:description: Mathematical functions and Operators in Redpanda SQL are designed to perform mathematical calculations and manipulate integer or floating-point numbers.
+:description: Mathematical, trigonometric, and hyperbolic functions in Redpanda SQL are designed to perform mathematical calculations and manipulate numeric values.
 :page-topic-type: reference
 
-Mathematical functions and Operators in Redpanda SQL are designed to perform mathematical calculations and manipulate integer or floating-point numbers. Redpanda SQL supports the following math functions:
+Mathematical, trigonometric, and hyperbolic functions in Redpanda SQL are designed to perform mathematical calculations and manipulate numeric values.
+
+== Mathematical functions
 
 [width="100%",cols="47%,53%",options="header",]
 |===
@@ -20,9 +22,40 @@ Mathematical functions and Operators in Redpanda SQL are designed to perform mat
 |xref:reference:sql/sql-functions/math-functions/random.adoc[RANDOM()] |This function returns a random number between 0 (inclusive) and 1 (exclusive)
 |xref:reference:sql/sql-functions/math-functions/round.adoc[ROUND()] |This function rounds numbers to the nearest integer or to a specified number of decimal places
 |xref:reference:sql/sql-functions/math-functions/sign.adoc[SIGN()] |This function returns -1 for negative arguments, 1 for positive arguments or 0 if the argument is 0
-|xref:reference:sql/sql-functions/math-functions/sin.adoc[SIN()] |This function returns the trigonometric sine value of a specified angle in radians
-|xref:reference:sql/sql-functions/math-functions/sinh.adoc[SINH()] |This function returns the hyperbolic sine of a numeric argument
-|xref:reference:sql/sql-functions/math-functions/cosh.adoc[COSH()] |This function returns the hyperbolic cosine of a numeric argument
 |xref:reference:sql/sql-functions/math-functions/sqrt.adoc[SQRT()] |This function returns the square root of its argument
 |xref:reference:sql/sql-functions/math-functions/to-char-from-number.adoc[TO_CHAR() from Number] |Formats a number into a string using a given format
+|===
+
+== Trigonometric functions
+
+These trigonometric functions take arguments and return values of type `double precision` and `real`.
+
+[width="100%",cols="6%,32%,26%,36%",options="header",]
+|===
+|*Function* |*Description* |*Syntax* |*Example*
+|`acos` |Calculates the inverse cosine of a given argument, where the output is expressed in radians. |`acos(argument)` |`select acos(1);` Returns: `0`
+|`acosd` |Calculates the inverse cosine of a given argument, where the output is expressed in degrees. |`acosd(argument)` |`select acosd(0.5);` Returns: `60`
+|`asin` |Calculates the inverse sine of a given argument, where the output is expressed in radians. |`asin(argument)` |`select asin(1);` Returns: `1.5707963267948966`
+|`asind` |Calculates the inverse sine of a given argument, where the output is expressed in degrees. |`asind(argument)` |`select asind(0.5);` Returns: `30`
+|`atan` |Calculates the inverse tangent of a given argument, where the output is expressed in radians. |`atan(argument)` |`select atan(1);` Returns: `0.7853965`
+|`atand` |Calculates the inverse tangent of a given argument, where the output is expressed in degrees. |`atand(argument)` |`select atand(1);` Returns: `44.99990469434657`
+|`atan2` |Calculates the inverse tangent of y/x, where the output is expressed in radians. |`atan2(y_value, x_value)` `y_value` and `x_value` are in double precision type. |`select atan2(1, 0);` Returns: `1.5707963267948966`
+|`atan2d` |Calculates the inverse tangent of y/x, where the output is expressed in degrees. |`atan2d(y_value, x_value)` `y_value` and `x_value` are in double precision type. |`select atan2d(1, 0);` Returns: `90`
+|`cos` |Calculates the cosine of a given argument, where the argument is in radians. |`cos(argument)` |`select cos(0);` Returns: `1`
+|`cosd` |Calculates the cosine of a given argument, where the argument is in degrees. |`cosd(argument)` |`select cosd(60);` Returns: `0.5000000000000001`
+|`cot` |Calculates the cotangent of a given argument, where the argument is in radians. |`cot(argument)` |`select cot(0.5);` Returns: `1.8304877`
+|`cotd` |Calculates the cotangent of a given argument, where the argument is in degrees. |`cotd(argument)` |`select cotd(45);` Returns: `1.0000000000000002`
+|xref:reference:sql/sql-functions/math-functions/sin.adoc[sin] |Calculates the sine of a given argument, where the argument is in radians. |`sin(argument)` |`select sin(1);` Returns: `0.8414709848078965`
+|`sind` |Calculates the sine of a given argument, where the argument is in degrees. |`sind(argument)` |`select sind(30);` Returns: `0.49999999999999994`
+|`tan` |Calculates the tangent of a given argument, where the argument is in radians. |`tan(argument)` |`select tan(1);` Returns: `1.5574077246549023`
+|`tand` |Calculates the tangent of a given argument, where the argument is in degrees. |`tand(argument)` |`select tand(45);` Returns: `0.9999999999999999`
+|===
+
+== Hyperbolic functions
+
+[width="100%",cols="6%,32%,26%,36%",options="header",]
+|===
+|*Function* |*Description* |*Syntax* |*Example*
+|xref:reference:sql/sql-functions/math-functions/cosh.adoc[cosh] |Calculates the hyperbolic cosine of a given argument. |`cosh(argument)` |`select cosh(1);` Returns: `1.5430806348152437`
+|xref:reference:sql/sql-functions/math-functions/sinh.adoc[sinh] |Calculates the hyperbolic sine of a given argument. |`sinh(argument)` |`select sinh(1);` Returns: `1.1752011936438014`
 |===
