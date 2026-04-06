@@ -7,7 +7,7 @@
 
 NOTE: This feature is available for BYOC and Dedicated clusters.
 
-Use Redpanda Cloud group-based access control (GBAC) in the glossterm:control plane[] to manage and restrict access to resources in your organization using OIDC groups from your identity provider. For example, you could grant everyone in a group access to clusters in a development resource group while limiting access to clusters in a production resource group. Or, you could limit access to geographically-dispersed clusters in accordance with data residency laws.
+Use Redpanda Cloud group-based access control (GBAC) in the glossterm:control plane[] to manage access to organization resources based on OIDC groups from your identity provider (IdP). For example, you can grant one group access to development clusters while restricting production access to another group. You can also restrict access to geographically dispersed clusters to support data residency requirements. When a user's group membership changes in the IdP, their Redpanda access updates automatically.
 
 After reading this page, you will be able to:
 
@@ -18,23 +18,23 @@ After reading this page, you will be able to:
 The following resources can be assigned as the scope of a role: 
 
 - Organization 	
-- Resource groups
-- Networks
-- Network peerings
-- Clusters (Serverless clusters have a different set of permissions from BYOC and Dedicated clusters.) 
-- Topics
-- MCP servers
-- AI agents
-- AI gateway
-- AI Gateway models
-- AI Gateway model providers
+- Resource group
+- Network
+- Network peering
+- Cluster (Serverless clusters have a different set of permissions from BYOC and Dedicated clusters.) 
+- Topic
+- MCP server
+- AI agent
+- AI Gateway
+- AI Gateway model
+- AI Gateway model provider
 - AI Gateway config
 
 You can manage these GBAC configurations with the https://cloud.redpanda.com[Redpanda Cloud Console^] or with the link:/api/doc/cloud-controlplane/[Control Plane API].
 
 == GBAC terminology
 
-**Group**: A group is a collection of users defined in your identity provider. With GBAC, you can assign groups to roles or ACLs in Redpanda Cloud, so that users inherit permissions based on their group membership in your identity provider.
+**Group**: A group is a collection of users defined in your IdP. With GBAC, you can assign groups to roles or ACLs in Redpanda Cloud, so that users inherit permissions based on their group membership in your IdP.
 
 **Role**: A role is a list of permissions. Permissions are attached to roles. Users assigned multiple roles receive the union of all permissions defined in those roles. Redpanda Cloud has three predefined roles: Reader, Writer, and Admin, but you can also create custom roles.
 
@@ -42,7 +42,7 @@ You can manage these GBAC configurations with the https://cloud.redpanda.com[Red
 
 == Manage access for organization
 
-In the Redpanda Cloud Console, the *Organization IAM* page lets you create groups, edit a user's access, invite new users, and create service accounts. 
+In the Redpanda Cloud Console, the *Organization IAM* page lets you create groups. When you create a group, you define its permissions with role binding. When you edit a group, you can change its role bindings to update the group's permissions. When you change the permissions for a given role, all groups with that role automatically get the modified permissions.
 
 == Register groups in Redpanda Cloud
 
