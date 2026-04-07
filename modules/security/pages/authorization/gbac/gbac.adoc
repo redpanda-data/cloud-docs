@@ -15,34 +15,28 @@ After reading this page, you will be able to:
 * [ ] {learning-objective-2}
 * [ ] {learning-objective-3}
 
-The following resources can be assigned as the scope of a role: 
+== GBAC terminology
+
+**Group**: A group is a collection of users defined in your IdP. With GBAC, you can assign groups to roles or ACLs in Redpanda Cloud, so that users inherit permissions based on their group membership in your IdP.
+
+**Role**: A role is a list of permissions. Permissions are attached to roles. Users assigned multiple roles receive the union of all permissions defined in those roles. Redpanda Cloud has several predefined roles that you cannot modify or delete, including Reader, Writer, and Admin. You can also create custom roles.
+
+**Role binding**: Role binding assigns a role to an account. Administrators can add, edit, or remove role bindings for a user. When you change the permissions for a given role, all users and service accounts with that role automatically get the modified permissions. 
+
+== Manage access for organization
+
+In the Redpanda Cloud Console, the *Organization IAM* page lets you create groups. When you create a group, you define its permissions with role binding. When you edit a group, you can change its role bindings to update the group's permissions. When you change the permissions for a given role, all groups with that role automatically get the modified permissions.
+
+Various resources can be assigned as the scope of a role, including the following: 
 
 - Organization 	
 - Resource group
 - Network
 - Network peering
 - Cluster (Serverless clusters have a different set of permissions from BYOC and Dedicated clusters.) 
-- Topic
 - MCP server
-- AI agent
-- AI Gateway
-- AI Gateway model
-- AI Gateway model provider
-- AI Gateway config
 
-You can manage these GBAC configurations with the https://cloud.redpanda.com[Redpanda Cloud Console^] or with the link:/api/doc/cloud-controlplane/[Control Plane API].
-
-== GBAC terminology
-
-**Group**: A group is a collection of users defined in your IdP. With GBAC, you can assign groups to roles or ACLs in Redpanda Cloud, so that users inherit permissions based on their group membership in your IdP.
-
-**Role**: A role is a list of permissions. Permissions are attached to roles. Users assigned multiple roles receive the union of all permissions defined in those roles. Redpanda Cloud has three predefined roles: Reader, Writer, and Admin, but you can also create custom roles.
-
-**Role binding**: Role binding assigns a role to an account. 
-
-== Manage access for organization
-
-In the Redpanda Cloud Console, the *Organization IAM* page lets you create groups. When you create a group, you define its permissions with role binding. When you edit a group, you can change its role bindings to update the group's permissions. When you change the permissions for a given role, all groups with that role automatically get the modified permissions.
+You can manage GBAC configurations with the https://cloud.redpanda.com[Redpanda Cloud Console^] or with the link:/api/doc/cloud-controlplane/[Control Plane API].
 
 == Register groups in Redpanda Cloud
 
@@ -88,7 +82,7 @@ include::security:partial$predefined-roles.adoc[]
 
 == Custom roles
 
-In addition to the predefined roles, administrators can create custom roles to mix and match permissions for specific use cases. Custom roles let you grant only the permissions a group needs, without the broad access of the predefined Reader, Writer, or Admin roles.
+In addition to the predefined roles, administrators can create custom roles to mix and match permissions for specific use cases. Custom roles let you grant only the permissions a group needs, without the broad access of predefined roles.
 
 Custom roles are created on the *Roles* tab in *Organization IAM*. For steps to create a custom role, see xref:security:authorization/rbac/rbac.adoc#custom-roles[Custom roles in RBAC].
 
