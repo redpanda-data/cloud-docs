@@ -2,10 +2,10 @@
 :description: Learn how to quickly start building data pipelines with Redpanda Connect.
 :page-topic-type: tutorial
 :personas: streaming_developer
-:learning-objective-1: Build a producer pipeline that generates and publishes data to a topic.
-:learning-objective-2: Build a consumer pipeline that reads, transforms, and logs data from a topic.
+:learning-objective-1: Build a producer pipeline that generates and publishes data to a topic
+:learning-objective-2: Build a consumer pipeline that reads, transforms, and logs data from a topic
 
-In this quickstart, you build data pipelines to generate, transform, and handle streaming data end-to-end. You'll create two pipelines: one that generates dad jokes and writes them to a topic in your cluster, and another that reads those jokes and gives each one a random "cringe rating".
+In this quickstart, you build data pipelines to generate, transform, and handle streaming data end-to-end. You create two pipelines: one that generates dad jokes and writes them to a topic in your cluster, and another that reads those jokes and gives each one a random "cringe rating".
 
 After completing this quickstart, you will be able to:
 
@@ -77,7 +77,7 @@ The *consumer pipeline* uses the following Redpanda Connect components:
 |Catches errors 
 |===  
 
-TIP: The following screenshot shows helpful features in the user interface. The editor provides an IDE-like experience for creating pipelines. After a component has been added, you can click the leaf in the left sidebar to learn more about it in the documentation. 
+TIP: The pipeline editor provides an IDE-like experience for creating pipelines. After a component has been added, you can click the leaf icon in the left sidebar to open its documentation.
 
 image::shared:connect_ui.png[Redpanda Connect user interface]
 
@@ -212,9 +212,11 @@ Click through the log messages to see the startup sequence. For example, you'll 
 [source,json]
 ----
 {
-    "generated_at": "2026-03-27T15:30:38.963227997Z",
     "id": "d242c355-4cee-4382-817a-190c7a115a19",
-    "joke": "I used to play piano by ear, but now I use my hands."
+    "joke": "I used to play piano by ear, but now I use my hands.",
+    "joke_length": 52,
+    "source": "dad-joke-generator",
+    "timestamp": "2026-03-27T15:30:38.963227997Z"
 }
 ----
 
@@ -234,7 +236,7 @@ This next pipeline rates the jokes that you generated in the first pipeline. To 
 
 .. In the `redpanda` input connector, click *User +* and select the existing user `connect`. For consumer group, enter `dad-joke-raters`. This allows the user `connect` to be granted READ and DESCRIBE permissions for the `dad-joke-raters` consumer group. Click *Add*.
 
-. Click *Add output +*, and search for and select the `drop` output connector. (For testing purposes, this output drops messages instead of forwarding them. In a real scenario you'd replace the `drop` connector with your real destination.)  
+. Click *Add output +*, and search for and select the `drop` output connector. (For testing purposes, this output drops messages instead of forwarding them. In a real scenario you would replace the `drop` connector with your real destination.)  
 
 . Replace the generated YAML in the editor with the following configuration, which includes the `bloblang`, `log`, and `catch` processors. 
 
@@ -345,10 +347,10 @@ output:
     "instance_id": "d454dkn4u2is73ava480",
     "label": "",
     "level": "INFO",
-    "message": "🎭 JOKE RATED! 💀\nJoke: \"I used to play piano by ear, but now I use my hands.\"\nCringe Rating: 9/10 - EXTREME - Peak dad joke achievement\nAge: 659 seconds old\nProcessed at: 2025-11-04T18:32:54.340229297Z\n",
+    "message": "🎭 JOKE RATED! 💀\nJoke: \"I used to play piano by ear, but now I use my hands.\"\nCringe Rating: 9/10 - EXTREME - Peak dad joke achievement\nAge: 659 seconds old\nProcessed at: 2026-03-27T17:54:13.340229297Z\n",
     "path": "root.pipeline.processors.1",
     "pipeline_id": "d454djahlips73dmcll0",
-    "time": "2025-11-04T18:32:54.341137527Z"
+    "time": "2026-03-27T17:54:13.341137527Z"
 }
 ----
 
@@ -358,7 +360,7 @@ When you've finished experimenting with your data pipeline, you can delete the p
 
 . On the *Connect* page, click the *...* icon next to the `joke-generator-producer` pipeline and select *Delete*. Repeat for the `joke-generator-consumer` pipeline.
 . Confirm your deletion to remove the pipelines and associated logs.
-. On the **Topics** page, delete the `dad-jokes` topic.
+. On the *Topics* page, delete the `dad-jokes` topic.
 
 == Next steps
 
