@@ -22,7 +22,9 @@ Redpanda integrates with any OIDC-compliant IdP that supports discovery, includi
 
 You must integrate your IdP with Redpanda Cloud to use SSO. On the *Users* page, users with the admin permissions see a *Single sign-on* tab and can add connections for up to two different IdPs. Enter the client ID, client secret, and discovery URI for the IdP. (See your IdP documentation for these values. The discovery URI may be called something different, like the well known URL or the `issuer_url`.) 
 
-By default, the connection is added in a disabled state. Edit the connection to enable it. You can choose to enable auto-enroll in the connection, which provides new users signing in from that IdP access to your Redpanda organization. When you enable auto-enroll, you select to assign a Reader, Writer, or Admin role to users who log in with that IdP. Set up is different across IdPs. 
+By default, the connection is added in a disabled state. Edit the connection to enable it. You can choose to enable auto-enroll in the connection, which provides new users signing in from that IdP access to your Redpanda organization. When you enable auto-enroll, you select to assign a Reader, Writer, or Admin role to users who log in with that IdP. Set up is different across IdPs.
+
+If your IdP provides OIDC group information, you can also use xref:security:authorization/gbac/index.adoc[group-based access control (GBAC)] to manage permissions at the group level. Register your IdP groups in Redpanda Cloud and assign roles to those groups, so that users automatically inherit permissions based on their group membership.
 
 NOTE: Before you can delete an SSO connection, an admin must manually delete all users associated with that connection.
 
@@ -67,7 +69,8 @@ Users with an email address with that realm (domain) can now access your Redpand
 [NOTE]
 ====
 
-* No additional claims required: Redpanda Cloud only relies on standard OIDC claims provided by your IdP. You do not need to configure optional claims or group claims in ID/Access tokens.
+* No additional claims required for SSO: Redpanda Cloud SSO relies on the standard OIDC claims (`openid`, `profile`, `email`) provided by your IdP. You do not need to configure optional claims or group claims in ID/Access tokens.
+* Group claims required for xref:security:authorization/gbac/index.adoc[group-based access control (GBAC)]: If you plan to use GBAC, you must configure your IdP to include group claims in OIDC tokens. 
 * No API permissions required: You do not need Microsoft Graph or any other API permissions. Microsoft Graph `User.Read` may be listed (some tenants add it during app creation), but Redpanda Cloud performs OIDC sign-in only and does not call Microsoft Graph.
 * First-login consent only: On first sign-in, users are prompted to consent to the standard OIDC scopes `openid`, `profile`, and `email`. After the first consent, users should not be prompted again unless consent is revoked or the app configuration changes.
 ====

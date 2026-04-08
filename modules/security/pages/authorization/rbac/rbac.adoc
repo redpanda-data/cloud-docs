@@ -1,35 +1,44 @@
 = Configure RBAC in the Control Plane
 :description: Configure RBAC to manage access to organization-level resources like clusters, resource groups, and networks.
+:page-topic-type: how-to
+:learning-objective-1: Assign predefined or custom roles to users and service accounts
+:learning-objective-2: Manage role bindings at the organization level
+:learning-objective-3: Create custom roles with granular permissions
 
-Use Redpanda Cloud role-based access control (RBAC) in the glossterm:control plane[] to manage and restrict access to resources in your organization. For example, you could grant everyone in your organization access to clusters in a development resource group while limiting access to clusters in a production resource group. Or, you could limit access to geographically-dispersed clusters in accordance with data residency laws.
+NOTE: This feature is available for BYOC and Dedicated clusters.
 
-The following resources can be assigned as the scope of a role: 
+Use Redpanda Cloud role-based access control (RBAC) in the glossterm:control plane[] to manage access to resources in your organization. For example, you can grant everyone in a team access to clusters in a development resource group while limiting access to clusters in a production resource group. You can also restrict access to geographically dispersed clusters to support data residency requirements.
 
-- Organization 	
-- Resource groups
-- Networks
-- Network peerings
-- Clusters (Serverless clusters have a different set of permissions from BYOC and Dedicated clusters.) 
+After reading this page, you will be able to:
 
-NOTE: Topics are not included. For topic-level access control, see xref:security:authorization/rbac/rbac_dp[Configure RBAC in the Data Plane].
-
-You can manage these RBAC configurations with the https://cloud.redpanda.com[Redpanda Cloud UI^] or with the link:/api/doc/cloud-controlplane/[Control Plane API].
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3} 
 
 == RBAC terminology
 
-**Role**: A role is a list of permissions. With RBAC, permissions are attached to roles. Users assigned multiple roles receive the union of all permissions defined in those roles. Redpanda Cloud has three predefined roles: Reader, Writer, and Admin.
+**Role**: A role is a list of permissions. With RBAC, permissions are attached to roles. Users assigned multiple roles receive the union of all permissions defined in those roles. Redpanda Cloud has several predefined roles that you cannot modify or delete, including Reader, Writer, and Admin. You can also create custom roles.
 
 **Account**: An RBAC account is either a user account (human user) or a service account (machine or programmatic user).
 
-**Role binding**: Role binding assigns a role to an account. 
+**Role binding**: Role binding assigns a role to an account. Administrators can add, edit, or remove role bindings for a user. When you change the permissions for a given role, all users and service accounts with that role automatically get the modified permissions. 
 
-== Manage access for organization
+== Manage organization access
 
-In the Redpanda Cloud UI, the *Organization IAM* page lists your organization's existing users and service accounts and their associated roles. You can edit a user's access, invite new users, and create service accounts. When you add a user, you define their permissions with role binding. Service accounts are assigned the Admin role for all resources in the organization. 
+In the Redpanda Cloud Console, the *Organization IAM* page lists your organization's existing users and service accounts and their associated roles. You can edit a user's access, invite new users, and create service accounts. When you add a user, you define their permissions with role binding. Service accounts are assigned the Admin role for all resources in the organization. 
 
 On the *Organization IAM - Users* page, select a user to see their assigned roles. For example, for a user with Admin access on the organization, the user's _Resource_ is the organization name, the _Scope_ is organization, and the _Role_ is Admin.
 
-Administrators can add, edit, or remove role bindings for a user. When you change the permissions for a given role, all users and service accounts with that role automatically get the modified permissions. 
+Various resources can be assigned as the scope of a role. For example: 
+
+- Organization 	
+- Resource group
+- Network
+- Network peering
+- Cluster (Serverless clusters have a different set of permissions from BYOC and Dedicated clusters.)
+- MCP server
+
+NOTE: Redpanda topics are not included. For topic-level access control, see xref:security:authorization/rbac/rbac_dp.adoc[Configure RBAC in the Data Plane].
 
 Users can have multiple roles, as long as they are each for a different resource and scope. For example, you could assign a user the Reader role on the organization, the Admin role on a specific resource group, and the Writer role on a specific cluster.
 
@@ -37,32 +46,26 @@ When you delete a role, Redpanda removes it from any user or service account it 
 
 == Predefined roles 
 
-Redpanda Cloud provides the following predefined roles: <<Reader,Reader>>, <<Writer,Writer>>, and <<Admin,Admin>>.
+include::security:partial$predefined-roles.adoc[]
 
-=== Reader
+== Custom roles
 
-The Reader role grants permission to view all resources. This includes:
+In addition to the predefined roles, administrators can create custom roles to mix and match permissions for specific use cases. Custom roles let you grant only the permissions a user needs, without the broad access of predefined roles.
 
-* View all networks and clusters (Serverless, BYOC, and Dedicated).
-* View all cluster aspects (ACLs, service accounts, quotas).
-* View all topic aspects (messages, configs, partitions, using search filters).
-* View all consumer group aspects (consumer groups, group offsets, and lags).
-* View all schema registry aspects (registered schemas with their contents).
-* View all Kafka Connect aspects (list configured clusters and their connectors, including the status and connector configurations).
-* This does not include permission to view the list of users.
+To create a custom role, use the https://cloud.redpanda.com[Redpanda Cloud Console^] or the link:/api/doc/cloud-controlplane/[Control Plane API].
 
-=== Writer
+In the Redpanda Cloud Console:
 
-The Writer role grants all permissions that come with the Reader role and additionally includes:
+. In the left navigation menu, select *Organization IAM*, then select the *Roles* tab.
+. Click *Create role*.
+. Enter a *Name* and optional *Description* for the role.
+. Select permissions from the available categories: *Control Plane*, *Data Plane*, *IAM*, and *Billing*. Each category contains multiple permission groups (for example, Cluster, Network, or Topic), and each group contains individual operations such as Create, Read, Update, and Delete. You can select operations individually or select all operations for a group.
+. Click *Create*.
 
-* Manage all topic aspects, such as create topics, edit topic configurations, delete topics, and publish and delete topic records.
-* Manage all consumer group aspects, such as edit group offsets and delete group offsets.
-* Manage all Kafka Connect aspects, such as create/update/delete and start/pause/stop Kafka Connect.
-* This does not include permission to create/remove ACLs and service accounts.
+After creating a custom role, you can assign it to users through role bindings on the *Users* tab.
 
-=== Admin
+== Suggested reading
 
-The Admin role grants all permissions that come with the Writer role and additionally includes:
-
-* Manage all service account aspects (create/remove service accounts).
-* Manage all ACL aspects (create/remove ACLs).
+* xref:security:authorization/rbac/rbac_dp.adoc[]
+* xref:security:authorization/gbac/gbac.adoc[]
+* xref:security:authorization/gbac/gbac_dp.adoc[]
