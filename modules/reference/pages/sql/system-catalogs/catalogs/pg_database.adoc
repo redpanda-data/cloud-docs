@@ -1,0 +1,38 @@
+= pg_database
+:description: The pg_database system catalog stores information about the databases available in the cluster.
+:page-topic-type: reference
+
+The `pg_database` system catalog stores information about the databases available in the cluster. It mimics the https://www.postgresql.org/docs/15/catalog-pg-database.html[pg_database^] PostgreSQL system catalog.
+
+== Columns
+
+The following columns are available for querying in `pg_database`:
+
+[cols="15%,10%,75%",options="header"]
+|===
+|Column |Type |Description
+|`oid` |`int` |Object identifier for the database
+|`datname` |`text` |Database name
+|`datdba` |`int` |OID of the role that owns the database
+|`encoding` |`int` |Character encoding ID for the database (6 = UTF-8)
+|`datlocprovider` |`text` |Locale provider
+|`datistemplate` |`bool` |Whether this is a template database
+|`datallowconn` |`bool` |Whether connections to this database are allowed
+|`datconnlimit` |`int` |Connection limit (`-1` means no limit)
+|`datfrozenxid` |`int` |Frozen transaction ID
+|`datminmxid` |`int` |Minimum multixact ID
+|`dattablespace` |`int` |OID of the default tablespace for the database
+|`datcollate` |`text` |LC_COLLATE setting for the database
+|`datctype` |`text` |LC_CTYPE setting for the database
+|`daticulocale` |`text` |ICU locale for the database
+|`daticurules` |`text` |ICU rules for the database
+|`datcollversion` |`text` |Collation version string
+|`datacl` |`text` |Access privileges
+|===
+
+== Example
+
+[source,sql]
+----
+SELECT datname, encoding, datallowconn FROM pg_database;
+----

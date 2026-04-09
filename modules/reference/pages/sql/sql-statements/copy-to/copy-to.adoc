@@ -1,0 +1,74 @@
+= COPY TO
+:description: The COPY TO statement exports tables, specific columns, or results of select queries into .csv files.
+:page-topic-type: reference
+
+The `COPY TO` statement exports tables, specific columns, or results of select queries into .csv files. It copies data from a table or query result and saves it to a specified file.
+
+== Syntax
+
+[source,sql]
+----
+COPY { table_name [ ( column_name [, ...] ) ] | ( query ) } TO 'filename' [( option [, ...] ) ];
+----
+
+Parameters in the syntax include:
+
+* `table_name`: Table with the data to export.
+* `column_name`: Optional. Specify columns for export.
+* `query`: A `SELECT` statement for exporting specific results.
+* `filename`: File name for saving the exported data.
+* `option`: Optional parameters for customization.
+
+== Examples
+
+The following examples use a table mapped to a Redpanda topic through a catalog. For information on setting up catalogs and tables, see xref:reference:sql/sql-statements/create-table.adoc[CREATE TABLE].
+
+[WARNING]
+====
+By default, the `COPY TO` command overwrites the CSV file if it already exists. Ensure that the directory where you save the file has the necessary write permissions.
+====
+
+=== Export all columns from a table
+
+Copy all columns in the table to the specified CSV file:
+
+[source,sql]
+----
+COPY my_catalog=>employee_salary TO '/path/to/exportsalary.csv';
+----
+
+[source,sql]
+----
+--
+(0 rows)
+----
+
+=== Export specific columns from a table
+
+Copy only specific columns by specifying the column names in the query:
+
+[source,sql]
+----
+COPY my_catalog=>employee_salary (empid, empname, empsalary) TO '/path/to/exportsalary.csv';
+----
+
+[source,sql]
+----
+--
+(0 rows)
+----
+
+=== Export results of a SELECT statement
+
+Copy data only from the Marketing department using the `SELECT` statement and `WHERE` clause:
+
+[source,sql]
+----
+COPY (SELECT * FROM my_catalog=>employee_salary WHERE empdept = 'Marketing') TO '/path/to/exportsalary.csv';
+----
+
+[source,sql]
+----
+--
+(0 rows)
+----
