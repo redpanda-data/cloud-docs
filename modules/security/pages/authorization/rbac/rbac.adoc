@@ -25,13 +25,13 @@ After reading this page, you will be able to:
 
 == Manage organization access
 
-In the Redpanda Cloud Console, the *Organization IAM* page lists your organization's existing users and service accounts and their associated roles. You can edit a user's access, invite new users, and create service accounts. When you add a user, you define their permissions with role binding. Service accounts are assigned the Admin role for all resources in the organization. 
+In the Redpanda Cloud Console, the *Organization IAM* page lists your organization's existing users and service accounts and their associated roles. You can edit a user's access, invite new users, and create service accounts. When you add a user, you define their permissions with role binding.
 
 On the *Organization IAM - Users* page, select a user to see their assigned roles. For example, for a user with Admin access on the organization, the user's _Resource_ is the organization name, the _Scope_ is organization, and the _Role_ is Admin.
 
-Various resources can be assigned as the scope of a role. For example: 
+Various resources can be assigned as the scope of a role. For example:
 
-- Organization 	
+- Organization
 - Resource group
 - Network
 - Network peering
@@ -43,6 +43,19 @@ NOTE: Redpanda topics are not included. For topic-level access control, see xref
 Users can have multiple roles, as long as they are each for a different resource and scope. For example, you could assign a user the Reader role on the organization, the Admin role on a specific resource group, and the Writer role on a specific cluster.
 
 When you delete a role, Redpanda removes it from any user or service account it is attached to, and permissions are revoked.
+
+=== Service account roles
+
+By default, new service accounts are assigned the Admin role at organization scope. You can edit a service account to assign a different role or restrict the scope to a specific resource group or cluster.
+
+To change a service account's role:
+
+. In the left navigation menu, select *Organization IAM*.
+. Select the *Service account* tab.
+. Click the edit icon for the service account you want to modify.
+. Assign the appropriate role and scope.
+
+You can only assign a service account to scopes that you have permissions for. For example, if you have the Admin role for a specific resource group, you can create a service account scoped to that resource group.
 
 == Predefined roles 
 
