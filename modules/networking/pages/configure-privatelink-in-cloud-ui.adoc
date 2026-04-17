@@ -29,12 +29,12 @@ include::networking:partial$dns_resolution.adoc[]
 
 == Enable endpoint service for existing clusters
 
-. In the Redpanda Cloud Console, select your https://cloud.redpanda.com/clusters[cluster^], and go to the *Cluster settings* page.
+. In the Redpanda Cloud Console, select your https://cloud.redpanda.com/clusters[cluster^], and go to the *Dataplane settings* page.
 . For AWS PrivateLink, click *Enable*.
 . On the Enable PrivateLink page, for Allowed principal ARNs, click *Add*, and enter the Amazon Resource Names (ARNs) for each AWS principal allowed to access the endpoint service. For example, for all principals in a specific account, use `arn:aws:iam::<account-id>:root`. See the AWS documentation on https://docs.aws.amazon.com/vpc/latest/privatelink/configure-endpoint-service.html#add-remove-permission[configuring an endpoint service^] for details.
 . Click *Add* after entering each ARN, and when finished, click *Enable*.
 . (Optional) To enable cross-region PrivateLink, add supported regions. See <<cross-region-privatelink>>.
-. It may take several minutes for your cluster to update. When the update is complete, the AWS PrivateLink status on the Cluster settings page changes from *In progress* to *Enabled*.
+. It may take several minutes for your cluster to update. When the update is complete, the AWS PrivateLink status on the Dataplane settings page changes from *In progress* to *Enabled*.
 
 NOTE: For help with issues when enabling PrivateLink, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda support^].
 
@@ -57,7 +57,7 @@ NOTE: Use `<cluster_domain>` as the domain you target with your DNS conditional 
 
 === Get name of PrivateLink endpoint service
 
-You need the service name to <<create-vpc-endpoint,create a VPC endpoint>>. You can find the service name on the *Cluster settings* page after PrivateLink is enabled, or in the *How to Connect* section of the cluster overview.
+You need the service name to <<create-vpc-endpoint,create a VPC endpoint>>. You can find the service name on the *Dataplane settings* page after PrivateLink is enabled, or in the *How to Connect* section of the cluster overview.
 
 [,bash]
 ----
@@ -94,20 +94,20 @@ For more information about AWS cross-region PrivateLink support, see the https:/
 
 NOTE: The *Supported regions* option only appears in the UI for multi-AZ clusters.
 
-. In the Redpanda Cloud Console, select your https://cloud.redpanda.com/clusters[cluster^], and go to the cluster settings page.
+. In the Redpanda Cloud Console, select your https://cloud.redpanda.com/clusters[cluster^], and go to the Dataplane settings page.
 . In the AWS PrivateLink section, click *Edit* (or *Enable* if PrivateLink is not yet enabled).
 . In the *Supported regions* section, click *Add* to add a region from which PrivateLink endpoints can connect to your cluster.
 . Select an AWS region from the dropdown. The cluster's home region is automatically included and not shown in the list.
 . Repeat to add additional regions as needed.
 . Click *Save* (or *Enable*) to apply the changes.
 
-After saving, the *Supported regions* row on the cluster settings page displays your configured regions.
+After saving, the *Supported regions* row on the Dataplane settings page displays your configured regions.
 
 Clients in VPCs located in the supported regions can now create PrivateLink endpoints that connect to your Redpanda cluster.
 
 == Disable endpoint service
 
-On the Cluster settings page for the cluster, click *Disable* for PrivateLink. Existing connections are closed after the AWS PrivateLink service is disabled. To connect using PrivateLink again, you must re-enable the service.
+On the Dataplane settings page for the cluster, click *Disable* for PrivateLink. Existing connections are closed after the AWS PrivateLink service is disabled. To connect using PrivateLink again, you must re-enable the service.
 
 include::shared:partial$suggested-reading.adoc[]
 
