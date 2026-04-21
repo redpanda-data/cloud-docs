@@ -1,0 +1,255 @@
+= Configure an LLM Provider
+:description: Create an LLM provider in AI Gateway to proxy requests to OpenAI, Anthropic, Google Gemini, AWS Bedrock, or any OpenAI-compatible endpoint through a managed Redpanda URL.
+:page-topic-type: how-to
+:personas: platform_admin, app_developer
+:page-aliases: ai-gateway/admin/setup-guide.adoc, ai-gateway/gateway-quickstart.adoc
+:learning-objective-1: Create an LLM provider for OpenAI, Anthropic, Google Gemini, AWS Bedrock, or an OpenAI-compatible endpoint
+:learning-objective-2: Select the models you want to expose through the provider
+:learning-objective-3: Verify the provider is reachable by sending a test request through its proxy URL
+
+include::ai-agents:partial$adp-la.adoc[]
+
+An LLM provider is the primary resource in AI Gateway. When you create one, Redpanda gives you a managed proxy URL that your applications can point at: Redpanda handles the upstream API keys, forwards requests to the provider, and records usage for you. This guide walks you through creating a provider for each supported upstream.
+
+After completing this guide, you will be able to:
+
+* [ ] Create an LLM provider for OpenAI, Anthropic, Google Gemini, AWS Bedrock, or an OpenAI-compatible endpoint
+* [ ] Select the models you want to expose through the provider
+* [ ] Verify the provider is reachable by sending a test request through its proxy URL
+
+== Prerequisites
+
+* Access to the Redpanda Agentic Data Plane.
++
+// TODO: confirm how users obtain access to ADP once the standalone UI launches (sign-up flow, tenancy model, role requirements).
+* An API key (or AWS credentials for Bedrock) for the upstream provider you want to configure.
+* One or more secrets already created in the ADP secret store for the provider's credentials. Secret references must use `UPPER_SNAKE_CASE`. For example: `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `AWS_ACCESS_KEY_ID`.
++
+// TODO: xref the secrets-management page for ADP once confirmed.
+
+== Open the LLM Providers page
+
+// TODO: confirm the exact sign-in URL for the standalone ADP UI.
+
+. Sign in to the ADP UI and open *LLM Providers*.
++
+// TODO: screenshot: LLM Providers list, empty state vs. populated list.
+. Click *Create provider*.
+
+== Choose a provider type
+
+AI Gateway supports five provider types:
+
+[cols="1,3"]
+|===
+|Type |Use when
+
+|OpenAI
+|You have an OpenAI API account. Default endpoint is the public OpenAI API; override `Base URL` for Azure OpenAI or another OpenAI-hosted region.
+
+|Anthropic
+|You have an Anthropic API account. Supports forwarding client `Authorization` headers to Anthropic for enterprise and Max-plan subscription passthrough (see <<anthropic-authorization-passthrough>>).
+
+|Google (Gemini)
+|You have a Google AI API key. Uses the standard Generative Language API.
+
+|AWS Bedrock
+|You want to use foundation models hosted in AWS Bedrock. Requires an AWS region and credentials (static, STS-assumed role, or the default credential chain).
+
+|OpenAI-compatible
+|You have a self-hosted endpoint that implements the OpenAI API surface (for example, vLLM, Ollama, LM Studio, or LocalAI). Requires a `Base URL`; authentication is optional.
+|===
+
+== Fill in the provider form
+
+Every provider has the same identity fields plus a type-specific configuration block.
+
+=== Identity fields (all types)
+
+[cols="1,1,3"]
+|===
+|Field |Required |Notes
+
+|Name
+|Yes
+|Machine identifier. Lowercase letters, numbers, and hyphens only (`^[a-z][a-z0-9-]*$`), up to 63 characters. Immutable after creation. Appears in the proxy URL (`/llm/v1/providers/<name>/...`).
+
+|Display name
+|No
+|Human-readable label shown in the UI. Up to 253 characters.
+
+|Description
+|No
+|Operator-visible description. Shown next to the provider name in the admin UI.
+
+|Models
+|No
+|Model identifiers you want to expose through this provider. Leave empty to allow all models. See <<select-models>>.
+
+|Enabled
+|Yes (toggle)
+|Disabled providers reject all API requests.
+|===
+
+=== Type-specific configuration
+
+[tabs]
+======
+OpenAI::
++
+[cols="1,3"]
+|===
+|Field |Notes
+
+|Base URL
+|Optional. Leave empty for the standard OpenAI API (`https://api.openai.com/v1`). Override for Azure OpenAI or other OpenAI-hosted endpoints.
+
+|API key reference
+|Required. Secret-store key for the OpenAI API key. Must be `UPPER_SNAKE_CASE`, for example `OPENAI_API_KEY`.
+|===
+
+Anthropic::
++
+[cols="1,3"]
+|===
+|Field |Notes
+
+|Base URL
+|Optional. Leave empty for the standard Anthropic API.
+
+|API key reference
+|Required unless *Authorization passthrough* is enabled. `UPPER_SNAKE_CASE`, for example `ANTHROPIC_API_KEY`.
+
+|Authorization passthrough
+|Optional toggle. When on, the client's `Authorization` header is forwarded to Anthropic instead of using a server-side API key. Used for enterprise and Max-plan OAuth passthrough: each client authenticates with its own Anthropic subscription. Leave the API key reference empty when using passthrough.
+|===
+
+Google (Gemini)::
++
+[cols="1,3"]
+|===
+|Field |Notes
+
+|Base URL
+|Optional. Leave empty for the standard Google AI API (`https://generativelanguage.googleapis.com`).
+
+|API key reference
+|Required. Secret-store key for the Google AI API key. `UPPER_SNAKE_CASE`, for example `GOOGLE_AI_API_KEY`.
+|===
++
+[IMPORTANT]
+====
+Gemini uses the `x-goog-api-key` header for authentication, not `Authorization: Bearer`. This matters when you wire up clients. See xref:ai-agents:ai-gateway/connect-agent.adoc[].
+====
+
+AWS Bedrock::
++
+[cols="1,3"]
+|===
+|Field |Notes
+
+|Region
+|Required. AWS region where the Bedrock endpoint is deployed, for example `us-east-1`.
+
+|Base URL
+|Optional. Override the default regional Bedrock endpoint.
+
+|Credential type
+|Choose one of:
+
+* *Default credential chain* (leave unset). Uses environment variables, IRSA, EKS Pod Identity, or instance profile.
+* *Static credentials*. Secret references for `access_key_id_ref` and `secret_access_key_ref`, both `UPPER_SNAKE_CASE`.
+* *Assume role*. Uses `role_arn`, `external_id` (optional, required when the role's trust policy mandates it), and `session_name` (for CloudTrail audit).
+|===
+
+OpenAI-compatible::
++
+[cols="1,3"]
+|===
+|Field |Notes
+
+|Base URL
+|Required. URL of your self-hosted endpoint, for example `http://vllm.internal:8000/v1` or `http://ollama.local:11434/v1`.
+
+|API key reference
+|Optional. Leave empty for no-auth endpoints (common for local runtimes). `UPPER_SNAKE_CASE` if set.
+|===
++
+TIP: Unlike 1P catalogs, OpenAI-compatible endpoints can serve any model. Enter the exact model identifiers your upstream server exposes (for example, `meta-llama/Llama-3.3-70B-Instruct` or `qwen3:8b`).
+======
+
+[[select-models]]
+== Select models
+
+Leave the *Models* field empty to allow every model the upstream exposes, or enter explicit identifiers to restrict the provider to a subset.
+
+// TODO: confirm whether the UI offers a picker (backed by the provider's model catalog) or a freeform text list, and how this interacts with the model catalog two-way split once that design lands.
+
+Model IDs are provider-native. Examples: `gpt-4o`, `claude-sonnet-4-5`, `gemini-2.0-flash`, `anthropic.claude-3-5-sonnet-20241022-v2:0`. Check the upstream provider's documentation for the exact identifiers it supports.
+
+== Save and verify
+
+. Click *Create* (or *Save*).
++
+// TODO: confirm exact button label.
+. On the provider's detail page, open the *Overview* tab. Copy the *Proxy URL*. This is where your applications point.
+. Open the *API Examples* tab. The UI generates working curl, Python, Node, and Claude Code snippets tailored to this provider. Copy one and run it from your terminal to confirm the provider is reachable.
++
+// TODO: screenshot: API Examples tab with a curl snippet.
+
+A successful test request confirms that the provider's credentials, region (Bedrock), and network path are all correct. If the call fails, see <<troubleshooting>>.
+
+[[anthropic-authorization-passthrough]]
+== Anthropic: authorization passthrough
+
+If you want each client to authenticate against Anthropic with its own subscription (Claude Pro, Max, Team, or enterprise), enable *Authorization passthrough* instead of configuring a server-side API key. In this mode:
+
+* Leave the *API key reference* empty.
+* Clients must send their own Anthropic `Authorization` header with every request. AI Gateway forwards it unchanged.
+* Use this when you want to aggregate individual client subscriptions rather than share a single API account.
+
+== Edit, disable, or delete a provider
+
+* *Edit*: you can change any field *except* `Name` and `Type`, which are immutable. Model lists, credential references, and the `Enabled` toggle can all change.
+* *Disable*: toggle *Enabled* off. The provider remains in the list, but requests to its proxy URL are rejected until you enable it again. Use this when you want to pause traffic without losing configuration.
+* *Delete*: removes the provider permanently. In-flight requests fail; downstream clients receive errors until reconfigured.
+
+[[troubleshooting]]
+== Troubleshooting
+
+[cols="1,2"]
+|===
+|Symptom |What to check
+
+|`Secret <NAME> not found`
+|Confirm the secret exists in the Redpanda Cloud secret store and the reference in the provider configuration is spelled identically (`UPPER_SNAKE_CASE`, no typos).
+
+|Bedrock returns `AccessDenied` or region errors
+|Verify the AWS region field matches the region where your Bedrock models are enabled. Bedrock model availability varies by region.
+
+|Anthropic returns 401 when passthrough is enabled
+|Confirm the client is sending its own `Authorization` header and the API key reference on the provider is empty.
+
+|Gemini returns 401
+|Gemini uses the `x-goog-api-key` header, not `Authorization`. If you're seeing 401s on Gemini, check that the client is sending the correct header. See xref:ai-agents:ai-gateway/connect-agent.adoc[].
+
+|Provider list empty or 403
+|Confirm your account has the `dataplane_adp_llmprovider_*` permissions in ADP.
++
+// TODO: confirm the exact role/permission model once the standalone ADP UI launches.
+|===
+
+// TODO: add screenshots of common error toasts once captured from the live environment.
+
+== Out of scope
+
+AI Gateway does not provide these capabilities. For current status, consult the Redpanda Cloud release notes.
+
+* *Multi-provider routing, failover, and retries across providers.* A synthetic provider that fans requests to multiple upstreams is not part of AI Gateway.
+* *Spend limits.* Per-user, per-org, and global cost caps are not available.
+* *Rate limits.* Requests-per-second, per-minute, or per-day limits are not available.
+* *Managed MCP aggregation at the gateway.* Register MCP tool servers separately under *ADP* → *MCP Servers*.
+
+== Next steps
+
+* xref:ai-agents:ai-gateway/connect-agent.adoc[Connect your agent]. Point your application's SDK at the proxy URL and make requests.

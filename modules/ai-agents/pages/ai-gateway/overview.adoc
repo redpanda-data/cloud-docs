@@ -1,0 +1,118 @@
+= AI Gateway Overview
+:description: AI Gateway is Redpanda's managed proxy for LLM APIs. Create a provider for OpenAI, Anthropic, Google Gemini, AWS Bedrock, or an OpenAI-compatible endpoint, and point your applications at a Redpanda-hosted URL with managed secrets, authentication, and observability.
+:page-topic-type: overview
+:personas: platform_admin, app_developer, evaluator
+:page-aliases: ai-gateway/what-is-ai-gateway.adoc, ai-gateway/gateway-architecture.adoc, ai-gateway/cel-routing-cookbook.adoc, ai-gateway/mcp-aggregation-guide.adoc, ai-gateway/builders/discover-gateways.adoc
+:learning-objective-1: Describe what AI Gateway is and how a managed proxy differs from direct upstream calls
+:learning-objective-2: Explain how LLM providers, secrets, and OIDC authentication fit together in AI Gateway
+:learning-objective-3: Identify use cases where AI Gateway fits, and use cases where it does not
+
+include::ai-agents:partial$adp-la.adoc[]
+
+AI Gateway is Redpanda's managed proxy for LLM APIs. Instead of giving every application a provider API key and letting it call the upstream directly, you create an *LLM provider* in Redpanda Cloud and point your applications at a Redpanda-hosted proxy URL. Redpanda handles the upstream credentials, forwards the request, and records usage. Your code continues to use the provider's native SDK.
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
+
+== The problem AI Gateway solves
+
+Teams adopting LLMs can quickly hit operational problems:
+
+* *Credential sprawl:* Every team that touches an LLM gets its own API key. Rotation is manual, offboarding is manual, and it's hard to know who's using what.
+* *SDK lock-in and switching cost:* Each provider has its own SDK, auth scheme, and model catalog. Swapping OpenAI for Anthropic means a code change, not a configuration change.
+* *No shared view of usage:* Provider dashboards tell you what a single API key spent. They don't tell you what your organization spent, broken down by team or application.
+
+== What AI Gateway gives you
+
+AI Gateway consolidates provider access behind the following capabilities.
+
+=== Centralized secrets
+
+The upstream API key (or AWS credentials for Bedrock) lives in the Redpanda secret store and is attached to the provider at configuration time. Your application never sees it; rotation happens in one place.
+
+=== A managed proxy URL per provider
+
+Every provider you create has its own URL of the form `<gateway-base>/llm/v1/providers/<provider-name>/<upstream-path>`. Your application points its SDK at this URL instead of the upstream, continues to use the provider's native API, and authenticates to Redpanda with a short-lived OIDC access token.
+
+=== Native SDK compatibility
+
+Use the provider's own SDK: OpenAI, Anthropic, Google Gemini, AWS Bedrock, or any OpenAI-compatible client (vLLM, Ollama, LM Studio, LocalAI). AI Gateway does not require a single unified SDK; it forwards native requests to the native upstream.
+
+=== Managed authentication
+
+Applications authenticate to Redpanda with OIDC service accounts instead of long-lived provider API keys. Service accounts live in Redpanda Cloud IAM, follow the same role and audit model as every other resource, and mint short-lived tokens that are easy to revoke.
+
+=== Per-provider observability
+
+The provider's *Overview* tab in the Cloud UI records request and token counts so you can see what each provider is being used for.
+
+== What's in the UI
+
+// TODO: confirm the standalone ADP UI entry point (URL and sign-in flow) once it's published.
+
+The ADP UI has four top-level areas:
+
+* *LLM Providers*: Create, edit, enable, and delete providers. This is the home of AI Gateway configuration.
+* *MCP Servers*: Register glossterm:MCP[] tool servers for agents. Separate from the AI Gateway proxy URL.
+* *OAuth Providers*: Register OAuth providers for user-delegated flows (for example, GitHub or Google).
+* *My Connections*: Per-user OAuth token management.
+
+The LLM Providers list is where you spend most of your time. The other three sit alongside and are covered by their own docs.
+
+== Supported providers
+
+AI Gateway supports the following provider types:
+
+[cols="1,3"]
+|===
+|Type |Typical upstream
+
+|OpenAI
+|OpenAI's API, including Azure OpenAI and other OpenAI-hosted endpoints through a custom base URL.
+
+|Anthropic
+|Anthropic's API. Optionally forwards the client's `Authorization` header for enterprise and Max-plan subscription passthrough.
+
+|Google (Gemini)
+|Google Generative Language API.
+
+|AWS Bedrock
+|Foundation models hosted in AWS Bedrock, signed with SigV4 server-side.
+
+|OpenAI-compatible
+|Any self-hosted endpoint that implements the OpenAI API surface (vLLM, Ollama, LM Studio, LocalAI, or similar).
+|===
+
+See xref:ai-agents:ai-gateway/configure-provider.adoc[] for the full form reference for each type.
+
+== When to use AI Gateway
+
+AI Gateway is a good fit when you want to:
+
+* Pull provider API keys out of application code and manage them centrally.
+* Authenticate applications to LLMs using the same OIDC identity you use for other Redpanda Cloud resources.
+* Run a self-hosted OpenAI-compatible endpoint (vLLM, Ollama, LM Studio) alongside 1P providers behind a single management plane.
+* Separate operator and developer roles. Operators configure providers and credentials; developers point at proxy URLs.
+
+It is not the right fit when you:
+
+* Only ever call a single provider with a single API key and are happy managing that key inline.
+* Need routing, failover, or cross-provider load balancing across providers. AI Gateway does not provide these capabilities.
+
+[[out-of-scope]]
+== Out of scope
+
+AI Gateway does not provide these capabilities. For current status, consult the Redpanda Cloud release notes.
+
+* *Multi-provider routing, failover, and retries.* A synthetic provider that fans requests to multiple upstreams is not part of AI Gateway.
+* *Spend limits.* Per-user, per-org, and global cost caps are not available.
+* *Rate limits.* Requests-per-second, per-minute, or per-day caps are not available.
+* *Managed MCP aggregation at the gateway.* Register MCP tool servers separately under *ADP* → *MCP Servers*.
+
+== Next steps
+
+. xref:ai-agents:ai-gateway/configure-provider.adoc[Configure an LLM provider]. Create your first provider and copy its proxy URL.
+. xref:ai-agents:ai-gateway/connect-agent.adoc[Connect your agent]. Point your application's SDK at the proxy URL.
