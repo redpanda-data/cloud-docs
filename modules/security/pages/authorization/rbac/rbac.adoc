@@ -17,7 +17,7 @@ After reading this page, you will be able to:
 
 == RBAC terminology
 
-**Role**: A role is a list of permissions. With RBAC, permissions are attached to roles. Users assigned multiple roles receive the union of all permissions defined in those roles. Redpanda Cloud has several predefined roles that you cannot modify or delete, including Reader, Writer, and Admin. You can also create custom roles.
+**Role**: A role is a list of permissions. With RBAC, permissions are attached to roles. Users assigned multiple roles receive the union of all permissions defined in those roles. 
 
 **Account**: An RBAC account is either a user account (human user) or a service account (machine or programmatic user).
 
@@ -25,24 +25,28 @@ After reading this page, you will be able to:
 
 == Manage organization access
 
-In the Redpanda Cloud Console, the *Organization IAM* page lists your organization's existing users and service accounts and their associated roles. You can edit a user's access, invite new users, and create service accounts. When you add a user, you define their permissions with role binding. Service accounts are assigned the Admin role for all resources in the organization. 
+In the Redpanda Cloud Console, the *Organization IAM* page lists your organization's users and service accounts and their assigned roles. You can invite users, create service accounts, and edit access for existing accounts. When you add a user or service account, you assign permissions through role bindings.
 
-On the *Organization IAM - Users* page, select a user to see their assigned roles. For example, for a user with Admin access on the organization, the user's _Resource_ is the organization name, the _Scope_ is organization, and the _Role_ is Admin.
+On the *Organization IAM* page, select a user or service account to view its assigned roles. For example, if a user has the Admin role at the organization level, the _Resource_ is the organization name, the _Scope_ is Organization, and the _Role_ is Admin. You can edit a user or service account to assign a different role or limit access to a specific resource.
 
-Various resources can be assigned as the scope of a role. For example: 
+Role bindings can be scoped to different resource types, including:
 
-- Organization 	
+- Organization
 - Resource group
 - Network
 - Network peering
 - Cluster (Serverless clusters have a different set of permissions from BYOC and Dedicated clusters.)
-- MCP server
 
-NOTE: Redpanda topics are not included. For topic-level access control, see xref:security:authorization/rbac/rbac_dp.adoc[Configure RBAC in the Data Plane].
+[NOTE]
+====
+* Redpanda topics are not included as a scope. For topic-level access control, see xref:security:authorization/rbac/rbac_dp.adoc[Configure RBAC in the Data Plane].
 
-Users can have multiple roles, as long as they are each for a different resource and scope. For example, you could assign a user the Reader role on the organization, the Admin role on a specific resource group, and the Writer role on a specific cluster.
+* You can assign a service account only to resources for which you already have permission. For example, if you have the Admin role for a specific resource group, you can create a service account scoped to that resource group.
+====
 
-When you delete a role, Redpanda removes it from any user or service account it is attached to, and permissions are revoked.
+Users can have multiple roles if each role binding applies to a different resource or scope. For example, a user could have the Reader role for the organization, the Admin role for a specific resource group, and the Writer role for a specific cluster.
+
+When you delete a custom role, Redpanda removes it from any users or service accounts assigned to it, and the associated permissions are revoked.
 
 == Predefined roles 
 
@@ -50,13 +54,13 @@ include::security:partial$predefined-roles.adoc[]
 
 == Custom roles
 
-In addition to the predefined roles, administrators can create custom roles to mix and match permissions for specific use cases. Custom roles let you grant only the permissions a user needs, without the broad access of predefined roles.
+In addition to the predefined roles, administrators can create custom roles to grant only the permissions an account needs, without the broad access of predefined roles.
 
 To create a custom role, use the https://cloud.redpanda.com[Redpanda Cloud Console^] or the link:/api/doc/cloud-controlplane/[Control Plane API].
 
 In the Redpanda Cloud Console:
 
-. In the left navigation menu, select *Organization IAM*, then select the *Roles* tab.
+. In the left navigation menu, select the *Organization IAM* - *Roles* tab
 . Click *Create role*.
 . Enter a *Name* and optional *Description* for the role.
 . Select permissions from the available categories: *Control Plane*, *Data Plane*, *IAM*, and *Billing*. Each category contains multiple permission groups (for example, Cluster, Network, or Topic), and each group contains individual operations such as Create, Read, Update, and Delete. You can select operations individually or select all operations for a group.

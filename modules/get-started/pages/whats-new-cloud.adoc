@@ -22,6 +22,8 @@ Serverless clusters now support up to 100 Redpanda Connect pipelines and 100 MCP
 === Redpanda Connect updates
 
 * The Redpanda Connect pipeline creation and editing workflow has been simplified. The new UI replaces the previous multi-page wizard with a visual pipeline diagram, an IDE-like configuration editor, slash commands for inserting variables, and inline links to component documentation. See the xref:develop:connect/connect-quickstart.adoc[Redpanda Connect quickstart] to try it out.
+* Outputs:
+** xref:develop:connect/components/outputs/arc.adoc[arc]: Send data to an Arc columnar analytical database using its high-performance MessagePack ingestion endpoint.
 * Processors:
 ** xref:develop:connect/components/processors/string_split.adoc[string_split]: Splits strings into multiple parts using a delimiter, creating new messages or fields for each part.
 
@@ -147,11 +149,11 @@ Shadowing is supported on BYOC and Dedicated clusters running Redpanda version 2
 
 You can now view and export metrics from Serverless clusters to third-party monitoring systems like Prometheus and Grafana. See xref:manage:monitor-cloud.adoc[Monitor Redpanda Cloud] for details on configuring monitoring for your Serverless cluster and xref:reference:public-metrics-reference.adoc[Metrics Reference] for a list of metrics available in Serverless.
 
-=== User impersonation
+=== Account impersonation
 
-BYOC and Dedicated clusters now support unified authentication and authorization between the Redpanda Cloud UI and Redpanda with xref:security:cloud-authentication.adoc#user-impersonation[user impersonation]. This means you can authenticate to fine-grained access within Redpanda using the same credentials you use to authenticate to Redpanda Cloud. 
+BYOC and Dedicated clusters now support unified authentication and authorization between the Redpanda Cloud UI and Redpanda with xref:security:cloud-authentication.adoc#account-impersonation[account impersonation]. This means you can authenticate to fine-grained access within Redpanda using the same credentials you use to authenticate to Redpanda Cloud. 
 
-With user impersonation, the topics users see in the UI are identical to what they can access with the Cloud API or `rpk`, ensuring consistent permissions across all interfaces and clear auditing of data plane user actions.
+With account impersonation (originally called user impersonation), the topics users see in the UI are identical to what they can access with the Cloud API or `rpk`, ensuring consistent permissions across all interfaces and clear auditing of data plane user actions.
 
 === Redpanda Connect updates
 
@@ -211,7 +213,7 @@ BYOC and Dedicated clusters with private networking now allow control of API Gat
 * Public access exposes Redpanda Console, Data Plane API, and MCP Server API endpoints over the internet, although they remain protected by your authentication and authorization controls.
 * Private access restricts endpoint access to your private network (VPC or VNet) only.
 
-After the cluster is created, you can change the API Gateway access on the cluster settings page. If you change from public to private access, users without VPN access to the Redpanda VPC will lose access to these services.
+After the cluster is created, you can change the API Gateway access on the Dataplane settings page. If you change from public to private access, users without VPN access to the Redpanda VPC will lose access to these services.
 
 === Redpanda Connect updates
 
@@ -607,7 +609,7 @@ mTLS authentication is now available for Kafka API clients. You can xref:securit
 
 === Manage private connectivity in the UI
 
-You can now manage GCP Private Service Connect and AWS PrivateLink connections to your BYOC or Dedicated cluster on the *Cluster settings* page in Redpanda Cloud. See the steps for xref:networking:configure-privatelink-in-cloud-ui.adoc[PrivateLink] and xref:networking:configure-private-service-connect-in-cloud-ui.adoc[Private Service Connect].
+You can now manage GCP Private Service Connect and AWS PrivateLink connections to your BYOC or Dedicated cluster on the *Dataplane settings* page in Redpanda Cloud. See the steps for xref:networking:configure-privatelink-in-cloud-ui.adoc[PrivateLink] and xref:networking:configure-private-service-connect-in-cloud-ui.adoc[Private Service Connect].
 
 === Single message transforms
 
@@ -677,4 +679,4 @@ In the Redpanda Console UI, you can xref:manage:schema-reg/schema-reg-ui.adoc[pe
 
 === Maintenance windows
 
-With maintenance windows, you have greater flexibility to plan upgrades to your cluster. By default, Redpanda Cloud upgrades take place on Tuesdays. Optionally, on the **Cluster settings** page, you can select a window of specific off-hours for your business for Redpanda to apply updates. All times are in Coordinated Universal Time (UTC). Updates may start at any time during that window. 
+With maintenance windows, you have greater flexibility to plan upgrades to your cluster. By default, Redpanda Cloud upgrades take place on Tuesdays. Optionally, on the **Dataplane settings** page, you can select a window of specific off-hours for your business for Redpanda to apply updates. All times are in Coordinated Universal Time (UTC). Updates may start at any time during that window. 
