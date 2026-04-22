@@ -170,13 +170,14 @@ A transcript stays in `RUNNING` until the root span closes. Common causes:
 
 === USD cost shows 0
 
-Cost is derived from the `gen_ai.usage.*` attributes on each LLM-call span and a per-model pricing table.
+`TranscriptUsage.usd_cost` is populated by the cost-reporting pipeline from the `gen_ai.usage.*` attributes on each LLM-call span combined with a per-model pricing table. For the full list of cost-bearing attributes (including the explicit USD-cost fields), see xref:ai-agents:observability/concepts.adoc#key-attributes-by-layer[Key attributes by layer].
 // TODO: Document which providers/models are priced at GA.
+
 If cost is `0` for a transcript that clearly used tokens, check:
 
 * The model is in the pricing table.
-* The `gen_ai.usage.input_tokens` and `gen_ai.usage.output_tokens` attributes are present on the ASSISTANT-turn spans.
 * The cost-reporting pipeline is enabled on your ADP environment.
+* The LLM-call spans carry the `gen_ai.usage.*` attributes the pipeline reads — either the token-count inputs (`gen_ai.usage.input_tokens`, `gen_ai.usage.output_tokens`) or the explicit USD-cost fields listed on the concepts page.
 
 === All turns marked reconstructed
 

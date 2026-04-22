@@ -343,7 +343,7 @@ Transcripts are optimized for execution-level observability and governance. For 
 [[history-reconstruction]]
 == Reconstructed transcript history
 
-Trace data on `redpanda.otel_traces` is subject to a retention policy. When a transcript covers a long-running conversation whose earliest spans have already been evicted, Redpanda reconstructs the missing turns from the LLM message context carried on later spans (`gen_ai.input.messages`) and marks those turns as _reconstructed_. Reconstructed turns preserve the high-level intent and role ordering of the conversation, but do not preserve byte-level fidelity: token counts, per-turn latency, and tool-call arguments are unavailable for the reconstructed range. Use the `is_reconstructed` marker in the UI to tell which turns came from live spans and which came from reconstruction.
+Trace data on `redpanda.otel_traces` is subject to a retention policy. When a transcript covers a long-running conversation whose earliest spans have already been evicted, Redpanda reconstructs the missing turns from the LLM message context carried on later spans (`gen_ai.input.messages`) and sets the boolean field `is_reconstructed` to `true` on each affected turn. The UI surfaces this as a **Reconstructed** badge on those turns — `is_reconstructed` is the backing data field; "Reconstructed" is the visible label. Reconstructed turns preserve the high-level intent and role ordering of the conversation, but do not preserve byte-level fidelity: token counts, per-turn latency, and tool-call arguments are unavailable for the reconstructed range.
 
 // TODO: Verify model names on this page against the GA build (gpt-5.2, claude-sonnet-4-5, gpt-5-nano, gemini-3-flash-preview) — replace any that ship with a different GA identifier.
 
