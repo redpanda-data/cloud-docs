@@ -7,6 +7,8 @@
 
 include::ai-agents:partial$adp-la.adoc[]
 
+// TODO (standalone-ADP rewrite): This page was written when ADP lived inside a Redpanda Cloud cluster, so the setup flow deploys a Redpanda Connect pipeline on the user's own cluster and references cluster-id-shaped URLs (`<pipeline-id>.pipelines.<cluster-id>.clusters.rdpa.co`). Post-2026-04-21, ADP ships as its own product surface and users won't necessarily have a Redpanda Cloud cluster. The whole ingestion flow (prereqs, pipeline deployment, endpoint URL format, auth) needs a rewrite once the standalone-ADP ingestion path is defined. Tracking under ADP Docs Plan Workflow #11 (BYOA telemetry). Until then, the content below is accurate for the federated-in-cloud-ui preview but will mislead standalone-ADP users.
+
 You can extend Redpanda's transcript observability to custom agents built with frameworks like LangChain or instrumented with OpenTelemetry SDKs. By ingesting traces from external applications into the `redpanda.otel_traces` topic, you gain unified visibility across all agent executions, from Redpanda's declarative agents, Remote MCP servers, to your own custom implementations.
 
 After reading this page, you will be able to:
@@ -17,8 +19,8 @@ After reading this page, you will be able to:
 
 == Prerequisites
 
-* A BYOC cluster
-* Ability to manage secrets in Redpanda Cloud
+* A Redpanda Connect pipeline host (today: a BYOC Redpanda Cloud cluster with Connect enabled). Ability to manage secrets on that host.
+// TODO: Replace with the standalone-ADP ingestion target once defined (may no longer require a Redpanda Cloud cluster).
 * The latest version of xref:manage:rpk/rpk-install.adoc[`rpk`] installed
 * Custom agent or application instrumented with OpenTelemetry SDK
 * Basic understanding of the https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-agent-spans/[OpenTelemetry span format^] and https://opentelemetry.io/docs/specs/otlp/[OpenTelemetry Protocol (OTLP)^]
@@ -29,7 +31,8 @@ If you're using LangChain with OpenTelemetry tracing, you can send traces to Red
 
 . Configure LangChain's OpenTelemetry integration by following the https://docs.langchain.com/langsmith/trace-with-opentelemetry[LangChain documentation^]. 
 
-. Deploy a Redpanda Connect pipeline using the `otlp_http` input to receive OTLP traces over HTTP. Create the pipeline in the **Connect** page of your cluster, or see the <<configure-the-ingestion-pipeline,Configure the ingestion pipeline>> section below for a sample configuration.
+. Deploy a Redpanda Connect pipeline using the `otlp_http` input to receive OTLP traces over HTTP. Today, create the pipeline in the **Connect** page of your Redpanda Cloud cluster. See the <<configure-the-ingestion-pipeline,Configure the ingestion pipeline>> section below for a sample configuration.
+// TODO: Update the deployment entry point once the standalone-ADP ingestion flow is defined.
 
 . Configure your OTEL exporter to send traces to your Redpanda Connect pipeline using environment variables:
 +
@@ -51,7 +54,7 @@ By default, traces are sent to both LangSmith and your Redpanda Connect pipeline
 export LANGSMITH_OTEL_ONLY="true"
 ----
 
-Your LangChain application will send traces to the `redpanda.otel_traces` topic, making them visible in the Transcripts view in your cluster  alongside Remote MCP server and declarative agent traces.
+Your LangChain application will send traces to the `redpanda.otel_traces` topic, making them visible in the Transcripts view alongside Remote MCP server and declarative agent traces.
 
 For non-LangChain applications or custom instrumentation, continue with the sections below.
 
@@ -168,17 +171,20 @@ NOTE: Clients must include the authentication token in gRPC metadata as `authori
 
 The OTLP input automatically handles format conversion, so no processors are needed for basic trace ingestion. Each span becomes a separate message in the `redpanda.otel_traces` topic.
 
-=== Deploy the pipeline in Redpanda Cloud
+=== Deploy the ingestion pipeline
+
+// TODO (standalone-ADP): Steps below assume a Redpanda Cloud cluster with Connect enabled. The standalone ADP product surface may expose a different deployment entry point. Revisit the whole subsection under Workflow #11.
 
 . In the *Connect* page of your Redpanda Cloud cluster, click *Create Pipeline*.
 . For the input, select the *otlp_http* (or *otlp_grpc*) component.
 . Skip to *Add a topic* and select `redpanda.otel_traces` from the list of existing topics. Leave the default advanced settings.
 . In the *Add permissions* step, create a service account with write access to the `redpanda.otel_traces` topic.
-. In the *Create pipeline* step, enter a name for your pipeline and paste the configuration. Redpanda Cloud automatically handles authentication for incoming requests.
+. In the *Create pipeline* step, enter a name for your pipeline and paste the configuration. Authentication for incoming requests is handled automatically.
 
 == Send traces from your custom agent
 
-Configure your custom agent to send OpenTelemetry traces to the pipeline endpoint. After deploying the pipeline, you can find its URL in the Redpanda Cloud UI on the pipeline details page.
+Configure your custom agent to send OpenTelemetry traces to the pipeline endpoint. After deploying the pipeline, you can find its URL on the pipeline details page in the host UI.
+// TODO (standalone-ADP): Confirm where users find the pipeline URL once the ingestion path moves out of the Redpanda Cloud UI.
 
 [cols="1,3", options="header"]
 |===
@@ -193,7 +199,8 @@ Configure your custom agent to send OpenTelemetry traces to the pipeline endpoin
 
 === Authenticate to the pipeline
 
-The OTLP pipeline uses the same authentication mechanism as the Redpanda Cloud API. Obtain an access token using your service account credentials as described in xref:redpanda-cloud:security:cloud-authentication.adoc#authenticate-to-the-cloud-api[Authenticate to the Cloud API].
+The OTLP pipeline uses the same authentication mechanism as the Redpanda Cloud API (today, while ingestion runs on a Redpanda Cloud cluster). Obtain an access token using your service account credentials as described in xref:redpanda-cloud:security:cloud-authentication.adoc#authenticate-to-the-cloud-api[Authenticate to the Cloud API].
+// TODO (standalone-ADP): Update the auth model when the standalone ADP ingestion path is defined.
 
 Include the token in your requests:
 
@@ -558,13 +565,13 @@ Check that traces are being published to the `redpanda.otel_traces` topic:
 rpk topic consume redpanda.otel_traces --offset end -n 10
 ----
 
-You can also view the `redpanda.otel_traces` topic in the *Topics* page of Redpanda Cloud UI.
+You can also view the `redpanda.otel_traces` topic in the *Topics* page of the host UI (today, the Redpanda Cloud UI).
 
 Look for spans with your custom `instrumentationScope.name` to identify traces from your agent.
 
 === View traces in Transcripts 
 
-After your custom agent sends traces through the pipeline, they appear in your cluster's *Agentic AI > Transcripts* view alongside traces from Remote MCP servers, declarative agents, and AI Gateway.
+After your custom agent sends traces through the pipeline, they appear in the *Transcripts* view of the ADP UI alongside traces from Remote MCP servers, declarative agents, and AI Gateway.
 
 ==== Identify custom agent transcripts
 

@@ -225,6 +225,8 @@ AI SDK layer (following https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-a
 - `gen_ai.agent.name`: Sub-agent name for multi-agent systems
 - `gen_ai.provider.name`, `gen_ai.request.model`: LLM provider and model
 - `gen_ai.usage.input_tokens`, `gen_ai.usage.output_tokens`: Token consumption
+- `gen_ai.usage.input_tokens_cost_usd`, `gen_ai.usage.output_tokens_cost_usd`: USD cost per call, derived from token counts and a per-model pricing table
+// TODO: Confirm exact USD-cost attribute names + pricing-table coverage with team-ai before GA.
 - `gen_ai.tool.name`, `gen_ai.tool.call.arguments`: Tool execution details
 - `gen_ai.input.messages`, `gen_ai.output.messages`: Full LLM conversation context
 
@@ -320,9 +322,10 @@ Redpanda manages both the `redpanda.otel_traces` topic and its schema automatica
 
 The `redpanda.otel_traces` topic has a predefined retention policy. Configuration changes to this topic are not supported. If you modify settings, Redpanda reverts them to the default values.
 
-The topic persists in your cluster even after all agents and MCP servers are deleted, allowing you to retain historical trace data for analysis.
+The topic persists even after all agents and MCP servers are deleted, allowing you to retain historical trace data for analysis.
 
-Transcripts may contain sensitive information from your tool inputs and outputs. Consider implementing appropriate glossterm:ACL[access control lists (ACLs)] for the `redpanda.otel_traces` topic, and review the data in transcripts before sharing or exporting to external systems.
+Transcripts may contain sensitive information from your tool inputs and outputs. Review the data in transcripts before sharing or exporting to external systems.
+// TODO: Re-add guidance on ACL scoping for `redpanda.otel_traces` once the standalone-ADP permission model lands. Today's wording assumed users manage topic ACLs on their own Redpanda Cloud cluster, which won't apply when ADP is a separate product surface.
 
 == Transcripts compared to audit logs
 
@@ -336,6 +339,13 @@ Transcripts provide:
 * Ability to reconstruct execution paths and identify bottlenecks
 
 Transcripts are optimized for execution-level observability and governance. For user-level accountability tracking ("who initiated what"), use the session and task topics for agents, which provide records of agent conversations and task execution.
+
+[[history-reconstruction]]
+== Reconstructed transcript history
+
+Trace data on `redpanda.otel_traces` is subject to a retention policy. When a transcript covers a long-running conversation whose earliest spans have already been evicted, Redpanda reconstructs the missing turns from the LLM message context carried on later spans (`gen_ai.input.messages`) and marks those turns as _reconstructed_. Reconstructed turns preserve the high-level intent and role ordering of the conversation, but do not preserve byte-level fidelity: token counts, per-turn latency, and tool-call arguments are unavailable for the reconstructed range. Use the `is_reconstructed` marker in the UI to tell which turns came from live spans and which came from reconstruction.
+
+// TODO: Verify model names on this page against the GA build (gpt-5.2, claude-sonnet-4-5, gpt-5-nano, gemini-3-flash-preview) — replace any that ship with a different GA identifier.
 
 == Next steps
 

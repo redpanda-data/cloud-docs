@@ -77,13 +77,20 @@ endif::[]
 When you select a transcript, the summary panel shows:
 
 * Duration: Total execution time for this request
-* Total Spans: Number of operations in the trace
+* Status: `RUNNING`, `COMPLETED`, or `ERROR`
+* Turn count: Number of conversation turns (SYSTEM, USER, ASSISTANT, TOOL)
 ifeval::["{context}" == "agent"]
-* Token Usage: Input tokens, output tokens, and total (critical for cost tracking)
+* Token Usage: Input tokens, output tokens, and total
+* USD cost: Total cost for the execution, derived from per-model pricing
 * LLM Calls: How many times the agent called the language model
+* Tool Calls: How many tools the agent invoked
 * Service: The agent identifier
-* Conversation ID: Links to session data topics
+* Conversation ID: The `gen_ai.conversation.id` shared by related invocations in the same user session
 endif::[]
 ifeval::["{context}" == "mcp"]
 * Service: The MCP server identifier
 endif::[]
+
+If any turns were rebuilt from LLM message context after their original spans were evicted, the panel shows a _reconstructed_ marker on those turns. For the mechanics, see xref:ai-agents:observability/concepts.adoc#history-reconstruction[Reconstructed transcript history].
+
+// TODO: Re-verify this field list against the GA Console UI on adp-production. Beta labels may shift; update wording before GA.

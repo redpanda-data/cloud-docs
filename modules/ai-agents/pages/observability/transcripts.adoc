@@ -1,16 +1,16 @@
-= View Transcripts
-:description: Filter and navigate the Transcripts interface to investigate end-to-end agent execution records stored on Redpanda's immutable log.
+= Read a Transcript
+:description: Open a transcript in the ADP UI, read the conversation turn by turn, and investigate errors, costs, and performance.
 :page-topic-type: how-to
 :personas: agent_developer, platform_admin
-:learning-objective-1: Filter transcripts to find specific execution traces
-:learning-objective-2: Use the timeline interactively to navigate to specific time periods
-:learning-objective-3: Navigate between detail views to inspect span information at different levels
+:learning-objective-1: Filter and open a transcript for a specific agent or MCP server execution
+:learning-objective-2: Read a transcript as a turn-by-turn conversation, including tool calls and token usage
+:learning-objective-3: Investigate errors, slow turns, and cost anomalies from the transcript detail view
 
 include::ai-agents:partial$adp-la.adoc[]
 
-Use the Transcripts view to filter, inspect, and debug agent execution records. Filter by operation type, time range, or service to isolate specific executions, then drill into span hierarchies to trace request flow and identify where failures or performance bottlenecks occur.
+Use the Transcripts view to read a complete record of an agent or MCP server execution, turn by turn. Each transcript captures the conversation between the user, the agent, any LLM calls, and any tools it invoked, along with token usage, USD cost, latency, and any errors.
 
-For conceptual background on spans and trace structure, see xref:ai-agents:observability/concepts.adoc[].
+For conceptual background on the underlying OpenTelemetry data model, see xref:ai-agents:observability/concepts.adoc[].
 
 After reading this page, you will be able to:
 
@@ -20,110 +20,179 @@ After reading this page, you will be able to:
 
 == Prerequisites
 
-* xref:ai-agents:agents/create-agent.adoc[Running agent] or xref:ai-agents:mcp/remote/quickstart.adoc[MCP server] with at least one execution
-* Access to the Transcripts view (requires appropriate permissions to read the `redpanda.otel_traces` glossterm:topic[])
+* A running xref:ai-agents:agents/create-agent.adoc[agent] or xref:ai-agents:mcp/remote/quickstart.adoc[MCP server] with at least one execution
+* Access to the ADP UI
+// TODO: Replace with the exact standalone-ADP sign-in URL and IAM/role requirement once the standalone product surface ships. Today: flag `enableTranscriptsInConsole` must be on for the user's cluster.
+* Read access to the `redpanda.otel_traces` glossterm:topic[]
+// TODO: Confirm whether this ACL is user-managed or auto-granted on the standalone ADP UI.
 
-== Navigate the Transcripts interface
+== Open the Transcripts view
 
-=== Filter transcripts
+. Sign in to the ADP UI.
+// TODO: Replace with the standalone ADP URL + sign-in flow once available.
+. Open *Transcripts* from the primary navigation.
 
-Use filters to narrow down transcripts and quickly locate specific executions. When you use any of the filters, the transcript table updates to show only matching results.
+The transcripts list shows every recent execution across the agents and MCP servers you can read.
 
-The Transcripts view provides several quick-filter buttons:
+== Read the transcripts list
 
-* *Service*: Isolate operations from a particular component in your agentic data plane (agents, MCP servers, or AI Gateway)
-* *LLM Calls*: Inspect large language model (LLM) invocations, including chat completions and embeddings
-* *Tool Calls*: View tool executions by agents
-* *Agent Spans*: Inspect agent invocation and reasoning
-* *Errors Only*: Filter for failed operations or errors
-* *Slow (>5s)*: Isolate operations that exceeded five seconds in duration, useful for performance investigation
+Each row in the list represents one execution (one trace). Columns include:
 
-You can combine multiple filters to narrow results further. For example, use *Tool Calls* and *Errors Only* together to investigate failed tool executions.
+* *Start time* — when the execution began (sortable).
+* *Agent* / *Service* — the agent or MCP server name from the span's `service.name` resource attribute.
+* *Status* — `RUNNING`, `COMPLETED`, or `ERROR`.
+* *Turn count* — number of turns in the conversation.
+* *Total tokens* — sum of input + output tokens across the conversation.
+* *USD cost* — total cost for the execution, derived from per-model pricing. See <<troubleshooting>> if this column shows `0`.
+* *Duration* — wall-clock time between the first and last span.
 
-Toggle *Full traces* on to see the complete execution context, in grayed-out text, for the filtered transcripts in the table.
+A transcript marked _reconstructed_ is one in which some turns were rebuilt from LLM message context after the original spans were evicted from `redpanda.otel_traces`. See xref:ai-agents:observability/concepts.adoc#history-reconstruction[Reconstructed transcript history] for what that means.
 
-==== Filter by attribute
+// TODO: Confirm final column list on the GA Console UI. Today's labels likely shift. Verify against adp-production before merge.
 
-Click the *Attribute* button to query exact matches on specific span metadata such as the following:
+=== Filter the list
 
-* Agent names
-* LLM model names, for example, `gemini-3-flash-preview`
-* Tool names
-* Span and trace IDs
+Use filters to narrow the list to the executions you care about.
 
-You can add multiple attribute filters to refine results.
+// TODO: Re-verify every filter chip against the GA UI on adp-production. The list below reflects the beta Console MFE and may have moved.
+
+* *Service* — isolate operations from a single agent, MCP server, or AI Gateway.
+* *LLM Calls* — executions that invoked a language model.
+* *Tool Calls* — executions that invoked one or more tools.
+* *Errors Only* — executions with `TranscriptStatus.ERROR` or a per-turn error.
+* *Slow (>5s)* — executions exceeding five seconds end-to-end.
+* *Attribute* — exact-match filter on a specific span attribute. Supported keys include agent names, LLM model names, tool names, span/trace IDs, and `gen_ai.conversation.id`.
+
+Combine filters to narrow further (for example, *Tool Calls* + *Errors Only* to find failed tool executions).
+
+Toggle *Full traces* on to include the complete execution context (grayed-out) alongside the filtered rows.
 
 === Use the interactive timeline
 
-Use the timeline visualization to quickly identify when errors began or patterns changed, and navigate directly to transcripts from specific time windows when investigating issues that occurred at known times.
-
-Click on any bar in the timeline to zoom into transcripts from that specific time period. The transcript table automatically scrolls to show operations from the time bucket in view.
+The timeline shows execution volume over time, with color indicators for successful vs. failed executions. Click a bar to zoom into that time window; the table scrolls to match.
 
 [NOTE]
 ====
-When viewing time ranges with many transcripts (hundreds or thousands), the table displays a subset of the data to maintain performance and usability. The timeline bar indicates the actual time range of data currently loaded into view, which may be narrower than your selected time range. 
-
-Refer to the timeline header to check the exact range and count of visible transcripts, for example, "Showing 100 of 299 transcripts from 13:17 to 15:16".
+When the selected range holds many transcripts, the list shows a subset to keep the UI responsive. The header reports the actual loaded range, for example "Showing 100 of 299 transcripts from 13:17 to 15:16".
 ====
 
-== Inspect span details
+// TODO: Confirm the sampling threshold and header wording against the GA UI.
 
-The transcript table shows:
+== Open a transcript
 
-* **Time**: When the glossterm:span[] started (sortable)
-* **Span**: Span type and name with hierarchical tree structure
-* **Duration**: Total time or relative duration shown as visual bars
+Click any row to open the transcript detail view. The view has two parts: a summary header and the conversation.
 
-To view nested operations, expand any parent span. To learn more about span hierarchies and cross-service traces, see xref:ai-agents:observability/concepts.adoc[].
+=== Summary header
 
-Click any span to view details in the panel:
+The summary header reports:
 
-* **Summary tab**: High-level overview with token usage, operation counts, and conversation history.
-* **Attributes tab**: Structured metadata for debugging (see xref:ai-agents:observability/concepts.adoc#key-attributes-by-layer[standard attributes by layer]).
-* **Raw data tab**: Complete glossterm:OpenTelemetry[] span in JSON format. You can also view raw transcript data in the `redpanda.otel_traces` topic.
+* *Duration* — end-to-end wall-clock time.
+* *Status* — `RUNNING`, `COMPLETED`, or `ERROR`.
+* *Turn count* — number of turns (SYSTEM, USER, ASSISTANT, TOOL).
+* *Tokens* — input, output, and total.
+* *USD cost* — total cost, with a breakdown by turn on hover.
+* *LLM calls* — number of assistant turns that invoked a model.
+* *Tool calls* — number of tool invocations across the conversation.
+* *Conversation ID* — the `gen_ai.conversation.id` shared by related invocations. Follow it to find earlier or later executions in the same user session.
+* *Service* — the agent or MCP server that produced the transcript.
 
-[NOTE]
-====
-Rows labeled "awaiting root — waiting for parent span" indicate incomplete glossterm:trace[,traces]. This occurs when child spans arrive before parent spans due to network latency or service failures. Consistent "awaiting root" entries suggest instrumentation issues.
-====
+// TODO: Verify the exact field set and labels on the GA UI. The list above reflects the proto (`TranscriptSummary`, `TranscriptUsage`) plus the beta UI; the Console MFE may add or rename fields.
+
+=== Read the conversation
+
+Turns are listed in order by role:
+
+* *SYSTEM* — the system prompt and any priming instructions.
+* *USER* — a user message that started or continued the conversation.
+* *ASSISTANT* — a response from the LLM. Shows the model, input/output token counts, USD cost for that turn, and latency. If the assistant turn called a tool, its tool calls are nested underneath.
+* *TOOL* — a tool invocation. Shows the tool name, the arguments passed, the result, and the latency of the call.
+
+Any turn may carry the `is_reconstructed` marker. Reconstructed turns preserve role order and the high-level content of the conversation but do not carry per-turn token counts, latency, or tool-call arguments. See xref:ai-agents:observability/concepts.adoc#history-reconstruction[Reconstructed transcript history] for the mechanics.
+
+=== Errors
+
+An errored transcript shows `TranscriptStatus.ERROR` in the summary header. The specific failure appears on the turn that raised it, with:
+
+* *Code* — `TranscriptError.code` (for example, a provider error code or `INVALID_ARGUMENT`).
+* *Message* — a short description from the LLM provider, the tool, or the agent runtime.
+
+If the failure happened during a tool call, the error is attached to the TOOL turn; if it was an LLM call, it's on the ASSISTANT turn; if neither, it's on the trace root.
 
 == Common investigation tasks
 
-The following patterns demonstrate how to use the Transcripts view for understanding and troubleshooting your agentic systems.
-
 === Debug errors
 
-. Use *Errors Only* to filter for failed operations, or review the timeline to identify and zoom in to when errors began occurring.
-. Expand error spans to examine the failure context.
-. Check preceding tool call arguments and LLM responses for root cause.
+. Filter the list by *Errors Only*, or use the timeline to find a window where error volume spiked.
+. Open the failing transcript and scroll to the turn carrying the error code.
+. Read the immediately preceding turns (tool arguments, assistant output) for root cause.
 
 === Investigate performance issues
 
-. Use the *Slow (>5s)* filter to identify operations with high latency.
-. Expand slow spans to identify bottlenecks in the execution tree.
-. Compare duration bars across similar operations to spot anomalies.
+. Apply the *Slow (>5s)* filter.
+. Open a slow transcript and scan the per-turn latency column to find the bottleneck turn.
+. For tool-bound bottlenecks, expand the tool call to see arguments and result size — a large result often correlates with slow tool execution.
 
 === Analyze tool usage
 
-. Apply the *Tool Calls* filter and optionally use the *Attribute* filter to focus on a specific tool.
-. Review tool execution frequency in the timeline.
-. Click individual tool call spans to inspect arguments and responses.
-.. Check the Description field to understand tool invocation context.
-.. Use the Arguments field to verify correct parameter passing.
+. Filter the list by *Tool Calls*.
+. Optionally narrow to a specific tool with the *Attribute* filter on `gen_ai.tool.name`.
+. Open individual transcripts to read the tool calls: arguments in, results out, latency.
 
-=== Monitor LLM interactions
+=== Monitor LLM interactions and cost
 
-. Click *LLM Calls* to focus on model invocations and optionally filter by model name and provider using the *Attribute* filter.
-. Review token usage patterns across different time periods.
-. Examine conversation history to understand model behavior.
-. Spot unexpected model calls or token consumption spikes.
+. Filter by *LLM Calls*.
+. Optionally narrow to a specific model with the *Attribute* filter on `gen_ai.request.model`.
+. Compare token usage and USD cost across assistant turns to spot runaway prompts or unexpected model calls.
 
 === Trace multi-service operations
 
-. Locate the parent agent or gateway span in the transcript table.
-. Use the *Attribute* filter to follow the trace ID through agent and MCP server boundaries.
-. Expand the transcript tree to reveal child spans across services.
-. Review durations to understand where latency occurs in distributed calls.
+. Find the agent-level transcript for the request you want to trace.
+. Copy the *Conversation ID* from the summary header.
+. Filter the list by that `gen_ai.conversation.id` to see every transcript in the same conversation (for example, a root agent plus its sub-agent invocations, or an agent plus its MCP tool calls on a remote service).
+
+== Limitations
+
+* Large time windows sample the list to keep the UI responsive. The exact transcript you need may not be in the current page; narrow the time range or add filters.
+* Reconstructed turns do not carry token counts, latency, or tool-call arguments for the reconstructed range. For byte-level fidelity, lower the ingestion lag or extend `redpanda.otel_traces` retention (see xref:ai-agents:observability/concepts.adoc#opentelemetry-traces-topic[How Redpanda stores trace data]).
+* USD cost is only populated for models covered by the pricing table.
+// TODO: List which providers/models are priced at GA and what users see for un-priced ones (`0`, `null`, or an explicit "unknown" marker).
+// TODO: If the GA Console UI ships transcript export, document the entry point and output format here; otherwise omit.
+
+[[troubleshooting]]
+== Troubleshooting
+
+=== Transcript stuck in RUNNING
+
+A transcript stays in `RUNNING` until the root span closes. Common causes:
+
+* The agent or MCP server is still executing (this is normal — wait, or open a newer transcript).
+* The root span never flushed because the process was killed mid-execution. Expect this to resolve once the OTLP ingestion lag clears; if it doesn't after several minutes, the trace is likely orphaned.
+
+=== USD cost shows 0
+
+Cost is derived from the `gen_ai.usage.*` attributes on each LLM-call span and a per-model pricing table.
+// TODO: Document which providers/models are priced at GA.
+If cost is `0` for a transcript that clearly used tokens, check:
+
+* The model is in the pricing table.
+* The `gen_ai.usage.input_tokens` and `gen_ai.usage.output_tokens` attributes are present on the ASSISTANT-turn spans.
+* The cost-reporting pipeline is enabled on your ADP environment.
+
+=== All turns marked reconstructed
+
+Reconstruction happens when the original spans have been evicted from `redpanda.otel_traces`. Causes:
+
+* Retention on `redpanda.otel_traces` is aggressive relative to how long the conversation has been running.
+* OTLP ingestion fell behind and the span was dropped before it reached the topic.
+
+For long-running conversations, accept some reconstruction; for short conversations whose turns are all reconstructed, investigate ingestion and retention.
+
+=== Transcript missing entirely
+
+* Confirm the agent or MCP server actually ran — check its logs and the corresponding session or task topic.
+* Confirm your user has read access to `redpanda.otel_traces`.
+// TODO: Replace with the standalone-ADP permission model once available.
+* Confirm the feature flag enabling Transcripts is on for your environment.
 
 == Next steps
 
