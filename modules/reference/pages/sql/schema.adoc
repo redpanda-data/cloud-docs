@@ -86,20 +86,20 @@ DROP SCHEMA schema_name CASCADE;
 +
 [source,sql]
 ----
-CREATE SCHEMA oxlarefs;
+CREATE SCHEMA app_data;
 ----
 
 . Next, create a table in the above schema with the following details:
 +
 [source,sql]
 ----
-CREATE TABLE oxlarefs.functions(
+CREATE TABLE app_data.functions(
   id int,
   function_name text,
   active bool
 );
 
-INSERT INTO oxlarefs.functions(id, function_name, active)
+INSERT INTO app_data.functions(id, function_name, active)
 VALUES
 ('1111', 'Numeric', 'TRUE'),
 ('2222', 'Text', 'TRUE'),
@@ -112,7 +112,7 @@ VALUES
 +
 [source,sql]
 ----
-SELECT * FROM oxlarefs.functions;
+SELECT * FROM app_data.functions;
 ----
 
 . You will get the following result:
@@ -140,7 +140,7 @@ To avoid errors when the schema already exists, use the `IF NOT EXISTS` option. 
 +
 [source,sql]
 ----
-CREATE SCHEMA oxladb;
+CREATE SCHEMA analytics;
 ----
 +
 Output:
@@ -154,14 +154,14 @@ CREATE SCHEMA
 +
 [source,sql]
 ----
-CREATE SCHEMA oxladb;
+CREATE SCHEMA analytics;
 ----
 +
 Output:
 +
 [source,sql]
 ----
-ERROR:  Schema: oxladb already exists
+ERROR:  Schema: analytics already exists
 ----
 
 ==== Example with IF NOT EXISTS
@@ -170,7 +170,7 @@ Now, create the schema using the `IF NOT EXISTS` option to avoid the error.
 
 [source,sql]
 ----
-CREATE SCHEMA IF NOT EXISTS oxladb;
+CREATE SCHEMA IF NOT EXISTS analytics;
 ----
 
 Using `IF NOT EXISTS` allows the query to create a schema even if it already exists.
@@ -186,14 +186,14 @@ Use the command below to delete the schema and also the tables in it.
 
 [source,sql]
 ----
-DROP SCHEMA oxlarefs CASCADE;
+DROP SCHEMA app_data CASCADE;
 ----
 
 Another case is if there is no table or object created inside the schema, you can use the following command to drop the schema.
 
 [source,sql]
 ----
-DROP SCHEMA oxlarefs;
+DROP SCHEMA app_data;
 ----
 
 === Drop schema using IF EXISTS
@@ -204,7 +204,7 @@ DROP SCHEMA oxlarefs;
 +
 [source,sql]
 ----
-DROP SCHEMA oxladb;
+DROP SCHEMA analytics;
 ----
 +
 Output:
@@ -218,14 +218,14 @@ DROP
 +
 [source,sql]
 ----
-DROP SCHEMA oxladb;
+DROP SCHEMA analytics;
 ----
 +
 Output:
 +
 [source,sql]
 ----
-ERROR:  schema "oxladb" does not exist
+ERROR:  schema "analytics" does not exist
 ----
 
 ==== Example with IF EXISTS
@@ -234,7 +234,7 @@ Now, drop the schema using the `IF EXISTS` option.
 
 [source,sql]
 ----
-DROP SCHEMA IF EXISTS oxladb;
+DROP SCHEMA IF EXISTS analytics;
 ----
 
 Using `IF` EXISTS allows the query to succeed even if the schema does not exist.
