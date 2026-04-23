@@ -8,6 +8,10 @@ This page lists new features added to Redpanda Cloud.
 
 == April 2026
 
+=== Iceberg: Configurable table namespace
+
+You can now set a custom namespace for Iceberg tables instead of the default `redpanda` namespace, using the `iceberg_default_catalog_namespace` cluster property. A custom namespace is useful when multiple clusters write to the same catalog provider (such as AWS Glue), because each cluster must use a distinct namespace to avoid table name collisions. This property must be set when you first enable Iceberg and cannot be changed afterward. See xref:manage:iceberg/about-iceberg-topics.adoc#enable-iceberg-integration[Enable Iceberg integration].
+
 === Group-based access control (GBAC)
 
 * With xref:security:authorization/gbac/gbac.adoc[GBAC in the control plane], you can manage access to organization-level resources using OIDC groups from your identity provider. Assign OIDC groups to roles so that users inherit access based on their group membership. 
