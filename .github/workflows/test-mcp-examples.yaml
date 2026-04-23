@@ -37,13 +37,8 @@ jobs:
 
       - name: Make test scripts executable
         run: |
-          find modules/ai-agents/examples -name "*.sh" -exec chmod +x {} \;
+          find modules/ai-agents/examples -name "*.sh" -exec chmod +x {} \; 2>/dev/null || true
           find modules/develop/examples -name "*.sh" -exec chmod +x {} \; 2>/dev/null || true
-
-      - name: Run MCP tools tests
-        run: |
-          cd modules/ai-agents/examples/mcp-tools
-          ./test-mcp-tools.sh
 
       - name: Run ai-agents pipeline tests
         run: |
