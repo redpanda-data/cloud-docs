@@ -24,7 +24,7 @@ LEFT JOIN table_2
 ON table_1.matching_field = table2.matching_field;
 ----
 
-In the above syntax:
+In this syntax:
 
 . `SELECT column_1, column_2...` defines the columns from both tables where the data is to be selected.
 . `FROM table_1` defines the left table as the main table in the FROM clause.
@@ -68,7 +68,7 @@ VALUES
 SELECT * FROM item;
 ----
 
-It will create a table as shown below:
+This creates the following table:
 
 [source,sql]
 ----
@@ -109,7 +109,7 @@ VALUES
 SELECT * FROM invoice;
 ----
 
-It will create a table as shown below:
+This creates the following table:
 
 [source,sql]
 ----
@@ -127,7 +127,7 @@ It will create a table as shown below:
 
 '''''
 
-{empty}1) Based on the above tables, a `LEFT JOIN` query can be written as follows:
+{empty}1) Based on these tables, a `LEFT JOIN` query can be written as follows:
 
 [source,sql]
 ----
@@ -139,10 +139,10 @@ ON item.item_no = invoice.item;
 
 * The `item` = left table, and the `invoice` = right table.
 * Then it combines the values from the `item` table using the `item_no` and matches the records using the `item` column of each row from the `invoice` table.
-* If the records are equal, a new row will be created with `item_no`, `item_name`, and `sold_qty`, `sold_price` columns as defined in the `SELECT` clause.
-* `ELSE` it will create a new row with a `NULL` value from the right table (`invoice`).
+* If the records are equal, a new row is created with `item_no`, `item_name`, and `sold_qty`, `sold_price` columns as defined in the `SELECT` clause.
+* `ELSE` it creates a new row with a `NULL` value from the right table (`invoice`).
 
-{empty}2) The above query will give the following result:
+{empty}2) This query returns the following result:
 
 [source,sql]
 ----
@@ -162,7 +162,7 @@ ON item.item_no = invoice.item;
 Based on the data from the `item` and `invoice` tables:
 
 * The result matches the total item stored in the `item` table: 4 items.
-* The result will display all the item’s data from the left table (`item` table), even if there is 1 item that hasn’t been sold.
+* The result displays all the item’s data from the left table (`item` table), even if there is 1 item that hasn’t been sold.
 * The item id: `111` matches the item `butter` and has been sold for 3pcs/9000.
 * The item id: `113` matches the item `tea` but has never been sold. Thus the sold_qty & sold_price columns are filled with: null.
 * The item id: `116` matches the item `Bread` and has been sold three times, for 6pcs/30000, 2pcs/10000, and 1pc/5000.

@@ -6,7 +6,7 @@
 
 == Syntax
 
-The syntax of the `JSON_EXTRACT_PATH()` function can be seen below.
+The syntax of the `JSON_EXTRACT_PATH()` function is as follows.
 
 [source,sql]
 ----
@@ -18,7 +18,7 @@ JSON_EXTRACT_PATH(from_json JSON, path TEXT[])
 
 === Another option
 
-Besides the syntax above, Redpanda SQL provides and supports the use of operators in queries. See the syntax below:
+Redpanda SQL also provides and supports the use of operators in queries. See the following syntax:
 
 [source,sql]
 ----
@@ -33,7 +33,7 @@ SELECT 'from_json'::JSON -> 'path';
 
 These examples display how `JSON_EXTRACT_PATH()` extracts the "`oxla`" JSON sub-object from the specified path.
 
-. Use the below query:
+. Use the following query:
 +
 [source,sql]
 ----
@@ -47,7 +47,7 @@ SELECT JSON_EXTRACT_PATH('{"f2":{"f3":1},"f4":{"f5":99,"f6":"oxla"}}', 'f4', 'f6
 SELECT '{"f2":{"f3":1},"f4":{"f5":99,"f6":"oxla"}}'::JSON -> 'f4' -> 'f6';
 ----
 +
-The query above will return the following result.
+This query returns the following result.
 +
 [source,sql]
 ----
@@ -58,7 +58,7 @@ The query above will return the following result.
 +---------+
 ----
 
-. Run the query below:
+. Run the following query:
 +
 [source,sql]
 ----
@@ -67,7 +67,7 @@ SELECT
     JSON_EXTRACT_PATH('{"a": 1, "b": {"x": "multiply", "y": "divide"}}', 'b', 'y') AS "by";
 ----
 +
-You will get the following output:
+Output:
 +
 [source,sql]
 ----

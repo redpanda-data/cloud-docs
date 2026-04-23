@@ -8,7 +8,7 @@ Have you ever wondered how to work with your fellows in one database without int
 
 A schema addresses these needs:
 
-A schema is a collection of tables. A schema also contains views, indexes, sequences, data types, operators, and functions. Redpanda SQL supports multiple schemas. For example, you can have a database named `oxla` and have multiple schemas based on your needs, like `auth`, `model`, `business`, etc.
+A schema is a collection of tables. A schema also contains views, indexes, sequences, data types, operators, and functions. Redpanda SQL supports multiple schemas. For example, you can have a database named `oxla` and have multiple schemas based on your needs, such as `auth`, `model`, and `business`.
 
 == Default schema in Redpanda SQL
 
@@ -49,7 +49,7 @@ CREATE TABLE schema_name.table_name(
 
 === Select a table in schema
 
-After creating the table and inserting some data, display all rows with the syntax below:
+After creating the table and inserting some data, display all rows with the following syntax:
 
 [source,sql]
 ----
@@ -61,7 +61,7 @@ SELECT * FROM schema_name.table_name;
 
 === Drop the schema
 
-Option 1: To drop an empty schema where no objects remain in it, use the command below:
+Option 1: To drop an empty schema where no objects remain in it, use the following command:
 
 [source,sql]
 ----
@@ -71,7 +71,7 @@ DROP SCHEMA [IF EXISTS] schema_name;
 * `schema_name` is the schema name you are going to create.
 * `IF EXISTS` is an optional parameter to avoid errors if the schema does not exist.
 
-Option 2: Tables reside in a schema, so it is impossible to drop a schema without also dropping the tables. With the command below, you will also drop the schema with the tables.
+Option 2: Tables reside in a schema, so it is impossible to drop a schema without also dropping the tables. The following command drops the schema along with the tables.
 
 [source,sql]
 ----
@@ -82,14 +82,14 @@ DROP SCHEMA schema_name CASCADE;
 
 === Create schema
 
-. First, connect to Redpanda SQL and create a schema as shown below:
+. First, connect to Redpanda SQL and create a schema:
 +
 [source,sql]
 ----
 CREATE SCHEMA app_data;
 ----
 
-. Next, create a table in the above schema with the following details:
+. Next, create a table in the `app_data` schema with the following details:
 +
 [source,sql]
 ----
@@ -108,7 +108,7 @@ VALUES
 ('5555', 'Boolean', 'TRUE');
 ----
 
-. You can verify and show the table made with the command below:
+. You can verify and show the table with the following command:
 +
 [source,sql]
 ----
@@ -182,7 +182,7 @@ CREATE
 
 === Drop schema
 
-Use the command below to delete the schema and also the tables in it.
+Use the following command to delete the schema and also the tables in it.
 
 [source,sql]
 ----

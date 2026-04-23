@@ -1,12 +1,12 @@
 = Array
-:description: In Redpanda SQL, an array allows you to represent a collection of elements that have the same data type (any built-in data type can be used).
+:description: In Redpanda SQL, an array stores a collection of elements that have the same data type (any built-in data type can be used).
 :page-topic-type: reference
 
-In Redpanda SQL, an array allows you to represent a collection of elements that have the same data type (any built-in data type can be used).
+In Redpanda SQL, an array stores a collection of elements that have the same data type (any built-in data type can be used).
 
 [NOTE]
 ====
-Currently, the implementation is limited only to single-dimensional arrays
+Currently, the implementation is limited only to single-dimensional arrays.
 ====
 
 == Array type declaration
@@ -21,7 +21,7 @@ CREATE TABLE movie_night (
 );
 ----
 
-The syntax above allows you to specify the size of the array. However, it does not enforce any limits and the behavior will be the same for arrays of unspecified length. There is also another way to declare an array, by prepending the `ARRAY` keyword after the data type of the elements:
+This syntax specifies the size of the array. However, it does not enforce any limits and the behavior will be the same for arrays of unspecified length. There is also another way to declare an array, by prepending the `ARRAY` keyword after the data type of the elements:
 
 [source,sql]
 ----
@@ -96,7 +96,7 @@ SELECT '{"{\"key1\": 1, \"key2\": \"value\"}", NULL, true}'::json[];
 
 [NOTE]
 ====
-In the example above, the double quotes which are a part of the JSON value are required to be escaped with a backslash, so that they are not mistaken with the double quote, which marks the end of the element
+In this example, the double quotes which are a part of the JSON value are required to be escaped with a backslash, so that they are not mistaken with the double quote, which marks the end of the element.
 ====
 
 == Access arrays
@@ -118,7 +118,7 @@ FROM   movie_night;
 
 [NOTE]
 ====
-If the index exceeds the length of an array, the returned value will be `NULL`
+If the index exceeds the length of an array, the returned value will be `NULL`.
 ====
 Arrays can also be accessed by using array slices. An array slice is denoted by writing `lower_bound:upper_bound`. The bounds can be omitted, in which case the slice is unbounded from a given side:
 

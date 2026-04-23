@@ -13,7 +13,7 @@ There must be at least one table listed in the `FROM` clause. See the following 
 query FROM table_name;
 ----
 
-If two or more tables are listed in the `FROM` clause, these tables are joined using xref:reference:sql/sql-clauses/from/join.adoc[JOIN], xref:reference:sql/sql-clauses/from/right-join.adoc[RIGHT JOIN], xref:reference:sql/sql-clauses/from/left-join.adoc[LEFT JOIN], or xref:reference:sql/sql-clauses/from/outer-join.adoc[OUTER JOIN], depending on the operations to be queried as seen in the syntax below:
+If two or more tables are listed in the `FROM` clause, these tables are joined using xref:reference:sql/sql-clauses/from/join.adoc[JOIN], xref:reference:sql/sql-clauses/from/right-join.adoc[RIGHT JOIN], xref:reference:sql/sql-clauses/from/left-join.adoc[LEFT JOIN], or xref:reference:sql/sql-clauses/from/outer-join.adoc[OUTER JOIN], depending on the operations to be queried as seen in the following syntax:
 
 [source,sql]
 ----
@@ -28,7 +28,7 @@ ON table1_name.column1 = table2_name.column1 ]
 [NOTE]
 ====
 The examples below are executed in the `public` schema, the default schema in Redpanda SQL. You can also create, insert, and display a table from other schemas -
-click xref:reference:sql/schema.adoc[here] for more info.
+for details, see xref:reference:sql/schema.adoc[Schema].
 ====
 
 == Example
@@ -57,7 +57,7 @@ VALUES
 SELECT * FROM client;
 ----
 
-It will create a table as shown below:
+This creates the following table:
 
 [source,sql]
 ----
@@ -77,7 +77,7 @@ It will create a table as shown below:
 SELECT client_name, client_origin FROM client;
 ----
 
-. You will get a list of the client’s data for a successful result:
+. The following result lists the client’s data:
 +
 [source,sql]
 ----
@@ -92,7 +92,7 @@ SELECT client_name, client_origin FROM client;
 
 [TIP]
 ====
-If two or more tables are listed in the FROM clause, please refer to these sections for more examples related to this:
+If two or more tables are listed in the FROM clause, see these sections for more examples:
 xref:reference:sql/sql-clauses/from/join.adoc[JOIN],
 xref:reference:sql/sql-clauses/from/right-join.adoc[RIGHT JOIN],
 xref:reference:sql/sql-clauses/from/left-join.adoc[LEFT JOIN], or
@@ -119,7 +119,7 @@ FROM table_2 as X, table_1 as Y
 WHERE conditions (X.column, Y.column);
 ----
 
-. The sub-query in the first `FROM` clause will select the columns from the specific table using a new temporary relation (`SELECT X.column1, X.column2, X.column3 FROM` ).
+. The sub-query in the first `FROM` clause selects the columns from the specific table using a new temporary relation (`SELECT X.column1, X.column2, X.column3 FROM` ).
 . Set the tables into a new temporary relation (`table_2 as X, table_1 as Y`).
 . Next, the query is evaluated, selecting only those rows from the temporary relation that fulfill the conditions stated in the `WHERE` clause.
 
@@ -151,7 +151,7 @@ VALUES
 SELECT * FROM product;
 ----
 
-It will create a table as shown below:
+This creates the following table:
 
 [source,sql]
 ----
@@ -192,7 +192,7 @@ VALUES
 SELECT * FROM category;
 ----
 
-It will create a table as shown below:
+This creates the following table:
 
 [source,sql]
 ----
@@ -240,7 +240,7 @@ select P.product, P.category, P.price from
 where P.price > C.avgBudget;
 ----
 +
-➡️ The output will display “court vision women’s shoes nike” and “Defacto adidas” as the products with a price of more than 7700.
+The output displays “court vision women’s shoes nike” and “Defacto adidas” as the products with a price of more than 7700.
 +
 [source,sql]
 ----

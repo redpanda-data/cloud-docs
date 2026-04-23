@@ -8,7 +8,7 @@ The result of the `GROUP BY` clause returns a single row for each value of the c
 
 [NOTE]
 ====
-You can use xref:reference:sql/sql-functions/aggregate-functions/index.adoc[aggregate functions] such as `COUNT()`, `MAX()`, `MIN()`, `SUM()`, etc., to perform the operations on the grouped values in the `SELECT` statement.
+You can use xref:reference:sql/sql-functions/aggregate-functions/index.adoc[aggregate functions] such as `COUNT()`, `MAX()`, `MIN()`, and `SUM()` to perform the operations on the grouped values in the `SELECT` statement.
 ====
 
 == Syntax
@@ -30,7 +30,7 @@ GROUP BY
 column_1, column_2,...;
 ----
 
-The above syntax includes the following elements:
+This syntax includes the following elements:
 
 * `SELECT column_1, column_2, aggregate_function(column_3)` defines the columns you want to group (`column_1, column_2`) and the column that you want to apply an aggregate function to (`column_3`).
 * `FROM table_name` defines the table where the data comes from.
@@ -43,7 +43,7 @@ The column specified in the `SELECT` command must also appear in the `GROUP BY` 
 
 === Syntax with `WHERE` clause
 
-Please take note that the `GROUP BY` clause must precisely appear after the `WHERE` clause, as shown below:
+The `GROUP BY` clause must appear after the `WHERE` clause, as follows:
 
 [source,sql]
 ----
@@ -87,7 +87,7 @@ VALUES
 SELECT * FROM customer;
 ----
 
-It will create a table as shown below:
+This creates the following table:
 
 [source,sql]
 ----
@@ -138,7 +138,7 @@ VALUES
 SELECT * FROM orders;
 ----
 
-It will create a table as shown below:
+This creates the following table:
 
 [source,sql]
 ----
@@ -167,7 +167,7 @@ FROM orders
 GROUP BY order_prod;
 ----
 
-The query above will return the output as below:
+This query returns the following output:
 
 [source,sql]
 ----
@@ -191,7 +191,7 @@ FROM orders
 GROUP BY order_id, order_prod;
 ----
 
-The above query will create the following result:
+This query returns the following result:
 
 [source,sql]
 ----
@@ -220,7 +220,7 @@ FROM orders
 GROUP BY cust_id;
 ----
 
-The query above will return the output as shown below:
+This query returns the following output:
 
 [source,sql]
 ----
@@ -248,7 +248,7 @@ JOIN customer C ON O.cust_id = C.cust_id
 GROUP BY C.cust_name;
 ----
 
-The above command will create the following result:
+This command returns the following result:
 
 [source,sql]
 ----
@@ -275,7 +275,7 @@ FROM orders
 GROUP BY order_qty, DATE(order_date);
 ----
 
-The above query will generate the following result:
+This query returns the following result:
 
 [source,sql]
 ----

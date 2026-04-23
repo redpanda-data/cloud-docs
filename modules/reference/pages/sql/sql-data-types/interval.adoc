@@ -23,7 +23,7 @@ SELECT INTERVAL 'quantity unit [quantity unit...] [direction]' [OPTION]
 |The value representing the number of units.
 
 |`unit`
-a|Year, month, day, hour, minute, etc. Abbreviations, short forms, and dash format are supported. Plural forms are also acceptable (e.g. months, days, weeks).
+a|Year, month, day, hour, and minute. Abbreviations, short forms, and dash format are supported. Plural forms are also acceptable (e.g. months, days, weeks).
 
 |`direction`
 |An optional parameter: `ago` or empty string.
@@ -116,7 +116,7 @@ SELECT INTERVAL '1-2 3 DAYS 04:05:06.070809' as "Interval";
 
 === Parse intervals using specific units
 
-By running the code below, the output will show everything up to minutes and ignore seconds and miliseconds.
+By running the following code, the output shows everything up to minutes and ignores seconds and milliseconds.
 
 [source,sql]
 ----
@@ -133,7 +133,7 @@ SELECT INTERVAL '1-2 5 DAYS 07:08:06.040809' MINUTE as "Interval";
 
 === Display specific range only
 
-Executing the query below will result only years and months being displayed excluding days, hours, minutes, and seconds from the input.
+Executing the following query results in only years and months being displayed, excluding days, hours, minutes, and seconds from the input.
 
 [source,sql]
 ----
@@ -157,7 +157,7 @@ In order to extract the interval numbers from the timestamp, you can use the `EX
 SELECT EXTRACT (field FROM interval)
 ----
 
-* `field`: supports time units, such as `YEAR`, `MONTH`, `DAY`, `HOUR`, etc.
+* `field`: supports time units, such as `YEAR`, `MONTH`, `DAY`, and `HOUR`.
 * `interval`: specified timestamp.
 
 [source,sql]
@@ -166,7 +166,7 @@ SELECT EXTRACT (MINUTE
 FROM INTERVAL '2 hours 30 minutes');
 ----
 
-As the output of the above query, only the minutes part will be returned.
+In the output, only the minutes part is returned.
 
 [source,sql]
 ----

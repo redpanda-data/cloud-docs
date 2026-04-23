@@ -47,7 +47,7 @@ where `window_name` is a name that can be referenced from the `OVER` clauses or 
 
 [NOTE]
 ====
-The `window_definition` without arguments defines a window with all rows without partition and ordering
+The `window_definition` without arguments defines a window with all rows without partition and ordering.
 ====
 The `frame` clause referenced above defines the window frame for window functions that depend on the frame (not all do). The window frame is a set of related rows for each row of the query (called the current row).
 
@@ -70,7 +70,7 @@ In `ROWS` mode, `CURRENT ROW` means that the frame starts or ends with the curre
 
 [NOTE]
 ====
-Beware that the `ROWS` mode can produce unpredictable results if the `ORDER BY` ordering does not order the rows uniquely
+Beware that the `ROWS` mode can produce unpredictable results if the `ORDER BY` ordering does not order the rows uniquely.
 ====
 
 == Examples
@@ -112,7 +112,7 @@ FROM winsales
 ORDER BY sellerid, salesid;
 ----
 
-Here’s the output for the above code:
+This returns the following output:
 
 [source,sql]
 ----
@@ -144,7 +144,7 @@ FROM winsales WINDOW seller AS (PARTITION BY sellerid)
 ORDER BY sellerid, salesid;
 ----
 
-Executing the code above returns the following output:
+This returns the following output:
 
 [source,sql]
 ----

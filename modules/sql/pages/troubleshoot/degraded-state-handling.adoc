@@ -6,7 +6,7 @@ Node degradation refers to the condition in which a node cannot perform most que
 
 == Cluster state
 
-In Redpanda SQL, most errors that would crash a server should instead put it into a degraded state. Below are the key terms related to the node or cluster state:
+In Redpanda SQL, most errors that would crash a server should instead put it into a degraded state. The following are key terms related to the node or cluster state:
 
 * Liveness: The node serves incoming client connections, for example via psql. It does not have to allow the user to connect to the database. Returning an error on a connection attempt still meets the liveness condition.
 * Readiness: The cluster can execute queries. It requires the leader node to be in a proper state. If the leader node is degraded, the cluster is not ready to execute queries.
@@ -28,7 +28,7 @@ Permanent degradation occurs when a node encounters an error from which it canno
 
 === Temporary degradation
 
-Temporary degradation occurs when a node cannot perform queries because it waits for specific conditions. Below are errors related to a temporary degraded state:
+Temporary degradation occurs when a node cannot perform queries because it waits for specific conditions. The following errors are related to a temporary degraded state:
 
 * The node has not been initialized yet
 
@@ -51,5 +51,5 @@ a| * Permanent degradation: Nodes that are permanently degraded are excluded fro
 * Temporary degradation: Nodes that are temporarily degraded are assumed to recover and are not considered in query planning.
 
 | Query execution
-| The `SHOW NODES` query requires the cluster to be ready and the scheduling node to not be degraded. It allows you to check the degradation status of each node in the cluster. A non-degraded leader collects data on every connected node, including degraded ones.
+| The `SHOW NODES` query requires the cluster to be ready and the scheduling node to not be degraded. Use it to check the degradation status of each node in the cluster. A non-degraded leader collects data on every connected node, including degraded ones.
 |===
