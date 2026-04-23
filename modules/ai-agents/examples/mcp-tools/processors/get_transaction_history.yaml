@@ -1,0 +1,108 @@
+label: get_transaction_history
+mapping: |
+  root = match {
+    this.customer_id == "CUST-1001" => {
+      "customer_id": "CUST-1001",
+      "analysis_period": "last_90_days",
+      "spending_patterns": {
+        "average_transaction": 127.45,
+        "median_transaction": 65.20,
+        "total_transactions": 87,
+        "total_amount": 11088.15
+      },
+      "category_breakdown": [
+        {"category": "online_retail", "count": 42, "avg_amount": 78.50},
+        {"category": "groceries", "count": 28, "avg_amount": 95.30},
+        {"category": "restaurants", "count": 12, "avg_amount": 45.80},
+        {"category": "gas_stations", "count": 5, "avg_amount": 62.00}
+      ],
+      "location_patterns": {
+        "primary_region": "US_West_Coast",
+        "international_transactions": 0,
+        "cities": ["Seattle", "Bellevue", "Tacoma"]
+      },
+      "merchant_patterns": {
+        "recurring_merchants": ["EXAMPLE MKTPLACE", "EXAMPLE WHOLESALE", "EXAMPLE COFFEE"],
+        "first_time_merchants_this_period": 3
+      },
+      "risk_indicators": {
+        "unusual_activity": false,
+        "velocity_flags": 0,
+        "declined_transactions": 1
+      }
+    },
+    this.customer_id == "CUST-1002" => {
+      "customer_id": "CUST-1002",
+      "analysis_period": "last_90_days",
+      "spending_patterns": {
+        "average_transaction": 95.33,
+        "median_transaction": 52.10,
+        "total_transactions": 64,
+        "total_amount": 6101.12
+      },
+      "category_breakdown": [
+        {"category": "subscription_service", "count": 15, "avg_amount": 29.99},
+        {"category": "restaurants", "count": 25, "avg_amount": 68.40},
+        {"category": "online_retail", "count": 18, "avg_amount": 110.20},
+        {"category": "entertainment", "count": 6, "avg_amount": 45.00}
+      ],
+      "location_patterns": {
+        "primary_region": "US_West_Coast",
+        "international_transactions": 0,
+        "cities": ["San Francisco", "Oakland", "San Jose"]
+      },
+      "merchant_patterns": {
+        "recurring_merchants": ["EXAMPLE STREAMING", "EXAMPLE MEDIA", "EXAMPLE AUDIO"],
+        "first_time_merchants_this_period": 7
+      },
+      "risk_indicators": {
+        "unusual_activity": false,
+        "velocity_flags": 0,
+        "declined_transactions": 0
+      }
+    },
+    this.customer_id == "CUST-1003" => {
+      "customer_id": "CUST-1003",
+      "analysis_period": "last_90_days",
+      "spending_patterns": {
+        "average_transaction": 215.67,
+        "median_transaction": 145.00,
+        "total_transactions": 52,
+        "total_amount": 11214.84
+      },
+      "category_breakdown": [
+        {"category": "travel", "count": 8, "avg_amount": 650.00},
+        {"category": "lodging", "count": 6, "avg_amount": 380.50},
+        {"category": "restaurants", "count": 22, "avg_amount": 85.20},
+        {"category": "online_retail", "count": 16, "avg_amount": 95.75}
+      ],
+      "location_patterns": {
+        "primary_region": "US_South",
+        "international_transactions": 3,
+        "cities": ["Austin", "Houston", "Dallas", "Paris", "London"]
+      },
+      "merchant_patterns": {
+        "recurring_merchants": ["EXAMPLE AIRLINES", "EXAMPLE HOTEL", "EXAMPLE TRAVEL"],
+        "first_time_merchants_this_period": 12
+      },
+      "risk_indicators": {
+        "unusual_activity": false,
+        "velocity_flags": 0,
+        "declined_transactions": 0
+      }
+    },
+    _ => {
+      "error": "customer_not_found",
+      "message": "No transaction history found for customer ID: " + this.customer_id
+    }
+  }
+
+meta:
+  mcp:
+    enabled: true
+    description: "Retrieve customer transaction history with spending patterns, category breakdown, and risk indicators. Use CUST-1001, CUST-1002, or CUST-1003 for testing."
+    properties:
+      - name: customer_id
+        type: string
+        description: "Customer identifier (format CUST-XXXX)"
+        required: true

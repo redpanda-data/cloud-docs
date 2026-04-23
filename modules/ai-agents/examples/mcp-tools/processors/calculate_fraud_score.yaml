@@ -1,0 +1,108 @@
+label: calculate_fraud_score
+mapping: |
+  root = match {
+    this.transaction_id == "TXN-89012" && this.customer_id == "CUST-1001" => {
+      "transaction_id": "TXN-89012",
+      "customer_id": "CUST-1001",
+      "fraud_score": 95,
+      "risk_level": "critical",
+      "score_breakdown": {
+        "location_risk": 35,
+        "merchant_risk": 30,
+        "amount_risk": 25,
+        "velocity_risk": 0,
+        "category_risk": 20
+      },
+      "factors_detected": [
+        "unusual_location",
+        "questionable_merchant",
+        "unusual_amount",
+        "unusual_category"
+      ],
+      "reasoning": "International transaction from Singapore with no customer history of international purchases. High-value jewelry purchase (14.5x customer average). Merchant has significant fraud indicators.",
+      "recommendation": "block_and_investigate"
+    },
+    this.transaction_id == "TXN-89013" && this.customer_id == "CUST-1001" => {
+      "transaction_id": "TXN-89013",
+      "customer_id": "CUST-1001",
+      "fraud_score": 8,
+      "risk_level": "minimal",
+      "score_breakdown": {
+        "location_risk": 0,
+        "merchant_risk": 0,
+        "amount_risk": 0,
+        "velocity_risk": 0,
+        "category_risk": 0
+      },
+      "factors_detected": [],
+      "reasoning": "Local transaction from trusted merchant in customer's typical spending category and amount range.",
+      "recommendation": "approve"
+    },
+    this.transaction_id == "TXN-89014" && this.customer_id == "CUST-1002" => {
+      "transaction_id": "TXN-89014",
+      "customer_id": "CUST-1002",
+      "fraud_score": 52,
+      "risk_level": "medium",
+      "score_breakdown": {
+        "location_risk": 0,
+        "merchant_risk": 15,
+        "amount_risk": 0,
+        "velocity_risk": 8,
+        "category_risk": 0
+      },
+      "factors_detected": [
+        "questionable_merchant",
+        "high_velocity"
+      ],
+      "reasoning": "Recurring subscription service with known billing issues. Multiple charges detected from same merchant. Moderate merchant reputation score.",
+      "recommendation": "monitor_closely"
+    },
+    this.transaction_id == "TXN-89015" && this.customer_id == "CUST-1003" => {
+      "transaction_id": "TXN-89015",
+      "customer_id": "CUST-1003",
+      "fraud_score": 12,
+      "risk_level": "minimal",
+      "score_breakdown": {
+        "location_risk": 0,
+        "merchant_risk": 0,
+        "amount_risk": 5,
+        "velocity_risk": 0,
+        "category_risk": 0
+      },
+      "factors_detected": [
+        "slightly_elevated_amount"
+      ],
+      "reasoning": "International hotel charge consistent with customer's frequent travel patterns. Amount within expected range for lodging category.",
+      "recommendation": "approve"
+    },
+    _ => {
+      "transaction_id": this.transaction_id,
+      "customer_id": this.customer_id,
+      "fraud_score": 50,
+      "risk_level": "medium",
+      "score_breakdown": {
+        "location_risk": 0,
+        "merchant_risk": 0,
+        "amount_risk": 0,
+        "velocity_risk": 0,
+        "category_risk": 0
+      },
+      "factors_detected": [],
+      "reasoning": "Insufficient data to calculate accurate fraud score for this transaction/customer combination.",
+      "recommendation": "monitor_closely"
+    }
+  }
+
+meta:
+  mcp:
+    enabled: true
+    description: "Calculate fraud risk score based on transaction patterns and risk indicators. Use TXN-89012 through TXN-89015 with corresponding customer IDs for testing."
+    properties:
+      - name: transaction_id
+        type: string
+        description: "Transaction identifier to analyze (format TXN-XXXXX)"
+        required: true
+      - name: customer_id
+        type: string
+        description: "Customer identifier for historical analysis (format CUST-XXXX)"
+        required: true
