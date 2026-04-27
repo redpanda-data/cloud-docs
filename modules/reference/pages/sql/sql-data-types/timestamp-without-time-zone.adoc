@@ -85,7 +85,7 @@ This returns the following result:
 
 === Look for a specific timestamp
 
-In the following example, the statement is used to get records with a specified timestamp:
+The following example retrieves records with a specified timestamp:
 
 [source,sql]
 ----
@@ -106,7 +106,7 @@ The query returns the following results:
 
 === Insert a value that exceeds the standard format
 
-The time in timestamp has a standard format, i.e., for minutes only valid for values from 00 to 59.
+The time in timestamp has a standard format; that is, for minutes only valid for values from 00 to 59.
 
 The following example inserts a new record into the visitors table with a value of `60`, which exceeds the standard seconds format.
 
@@ -149,7 +149,7 @@ The `AT TIME ZONE` operator converts the input timestamp to the target time zone
 
 [WARNING]
 ====
-It's important to note that the result type of this operator is different. It produces a timestamp with a time zone.
+The result type of this operator differs from the input: it produces a timestamp with a time zone.
 ====
 
 === Syntax
@@ -164,7 +164,7 @@ SELECT TIMESTAMP 'input_timestamp' AT TIME ZONE 'TIME_ZONE';
 Here’s what each element means:
 
 * `input_timestamp`: This represents the date and time value you want to convert. The user’s time zone is fixed to UTC.
-* `TIME_ZONE`: The target time zone to which the timestamp will be converted.
+* `TIME_ZONE`: The target time zone to which Redpanda SQL converts the timestamp.
 
 === Example 1
 
@@ -175,7 +175,7 @@ Suppose you have a timestamp and want to convert it into the MST time zone:
 SELECT TIMESTAMP '2001-02-16 10:28:30' AT TIME ZONE 'MST';
 ----
 
-The result will be a timestamp with the time zone adjusted to MST:
+The result is a timestamp with the time zone adjusted to MST:
 
 [source,sql]
 ----

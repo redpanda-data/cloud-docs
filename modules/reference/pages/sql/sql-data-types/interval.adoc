@@ -23,7 +23,7 @@ SELECT INTERVAL 'quantity unit [quantity unit...] [direction]' [OPTION]
 |The value representing the number of units.
 
 |`unit`
-a|Year, month, day, hour, and minute. Abbreviations, short forms, and dash format are supported. Plural forms are also acceptable (e.g. months, days, weeks).
+a|Year, month, day, hour, and minute. Abbreviations, short forms, and dash format are supported. Plural forms are also acceptable (for example, months, days, weeks).
 
 |`direction`
 |An optional parameter: `ago` or empty string.
@@ -65,7 +65,7 @@ For arithmetic and comparison operations, Redpanda SQL assumes `1 month = 30 day
 
 === Select interval with multiple units
 
-In this example, we’ll calculate the interval by combining multiple units of time.
+This example calculates an interval by combining multiple units of time.
 
 [source,sql]
 ----
@@ -150,7 +150,7 @@ SELECT INTERVAL '2-4 5 DAYS 04:05:06.070809' YEAR TO MONTH as "Interval";
 
 === Extract data from interval
 
-In order to extract the interval numbers from the timestamp, you can use the `EXTRACT()` function the following way:
+To extract interval numbers from a timestamp, use the `EXTRACT()` function:
 
 [source,sql]
 ----
@@ -166,7 +166,7 @@ SELECT EXTRACT (MINUTE
 FROM INTERVAL '2 hours 30 minutes');
 ----
 
-In the output, only the minutes part is returned.
+The output returns only the minutes part:
 
 [source,sql]
 ----
@@ -178,5 +178,5 @@ In the output, only the minutes part is returned.
 
 [NOTE]
 ====
-If you query a field that is not specified in the timestamp, you will get `0` as an output.
+If you query a field that is not specified in the timestamp, the output is `0`.
 ====

@@ -21,7 +21,7 @@ CREATE TABLE movie_night (
 );
 ----
 
-This syntax specifies the size of the array. However, it does not enforce any limits and the behavior will be the same for arrays of unspecified length. There is also another way to declare an array, by prepending the `ARRAY` keyword after the data type of the elements:
+This syntax specifies the size of the array. However, it does not enforce any limits, and the behavior is the same as for arrays of unspecified length. There is also another way to declare an array, by prepending the `ARRAY` keyword after the data type of the elements:
 
 [source,sql]
 ----
@@ -40,7 +40,7 @@ You can create array literals by using the `ARRAY` keyword and combining it with
 ARRAY[ value1 , value2 , ... ]
 ----
 
-Such a literal can be used with, e.g. `SELECT` or `INSERT INTO` statements:
+You can use such a literal with, for example, `SELECT` or `INSERT INTO` statements:
 
 [source,sql]
 ----
@@ -68,7 +68,7 @@ You can also use a string representation of an array as another available option
 '{ value1 , value2 , ... }'
 ----
 
-Such an array value representation can be used in e.g. `INSERT INTO` statements with the `VALUES` clause:
+You can use such an array value representation in, for example, `INSERT INTO` statements with the `VALUES` clause:
 
 [source,sql]
 ----
@@ -118,7 +118,7 @@ FROM   movie_night;
 
 [NOTE]
 ====
-If the index exceeds the length of an array, the returned value will be `NULL`.
+If the index exceeds the length of an array, the returned value is `NULL`.
 ====
 Arrays can also be accessed by using array slices. An array slice is denoted by writing `lower_bound:upper_bound`. The bounds can be omitted, in which case the slice is unbounded from a given side:
 
@@ -152,7 +152,7 @@ ERROR:  Error in row 1, column array_column value exceeds size of 33554432
 
 === Unsupported SQL clauses
 
-Array columns cannot be used as the key columns in `ORDER BY`, `GROUP BY` or `JOIN` operations. It is also impossible to use the array columns as a part of the index of a table. For all the operations mentioned above, an appropriate error message will be returned:
+Array columns cannot be used as the key columns in `ORDER BY`, `GROUP BY`, or `JOIN` operations. You also cannot use array columns as part of the index of a table. For these operations, Redpanda SQL returns an error message:
 
 [source,sql]
 ----

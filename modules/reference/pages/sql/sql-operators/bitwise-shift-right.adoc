@@ -24,11 +24,11 @@ value >> shift_amount
 
 Bitwise shift operators in Redpanda SQL require the shift amount to be a *non-negative* integer. Redpanda SQL treats negative shift counts as valid by applying modulo arithmetic based on the bit width, so shifting `1 >> -3` in a 32-bit integer is equivalent to shifting `1 >> 29`, producing predictable results without errors or undefined behavior.
 
-When performing bitwise right shift operations (>>) on 32-bit integer values in Redpanda SQL, the shift count is taken *modulo* 32, just as with left shifts. This means: * Shifting by a number of bits greater than or equal to 32 will wrap around * For example `1 >> 35` is equivalent to `1 >> 3` because `35`latexmath:[modulo]`32 = 3`
+When performing bitwise right shift operations (>>) on 32-bit integer values in Redpanda SQL, the shift count is taken *modulo* 32, just as with left shifts. This means: * Shifting by a number of bits greater than or equal to 32 wraps around * For example, `1 >> 35` is equivalent to `1 >> 3` because `35`latexmath:[modulo]`32 = 3`
 
 [WARNING]
 ====
-If you shift by a value larger than or equal to 32, the actual shift will be the remainder after dividing by 32,
+If you shift by a value larger than or equal to 32, the actual shift is the remainder after dividing by 32,
 which may lead to unexpected results if not carefully considered.
 ====
 
