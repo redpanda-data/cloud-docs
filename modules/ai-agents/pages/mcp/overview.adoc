@@ -1,85 +1,58 @@
 = MCP Servers for Redpanda Cloud Overview
-:description: Connect AI agents to your databases, queues, CRMs, and other business systems without writing glue code, using Redpanda's proven connectors.
+:description: Connect AI agents to Redpanda Cloud without writing glue code, using the Redpanda Cloud Management MCP Server.
 :page-topic-type: overview
 :personas: evaluator, ai_agent_developer
 // Reader journey: "I'm new" - understanding the landscape
 // Learning objectives - what readers should understand after reading this page:
 :learning-objective-1: Describe what MCP enables for AI agents
-:learning-objective-2: Distinguish between Redpanda Cloud Management MCP Server and Remote MCP
-:learning-objective-3: Choose the right MCP option for your use case
+:learning-objective-2: Identify use cases for the Redpanda Cloud Management MCP Server
 
-This page introduces MCP in Redpanda Cloud and helps you choose the right option for your use case.
+This page introduces MCP in Redpanda Cloud and helps you understand how to use it.
 
 After reading this page, you will be able to:
 
 * [ ] {learning-objective-1}
 * [ ] {learning-objective-2}
-* [ ] {learning-objective-3}
 
 == What is MCP?
 
 MCP (Model Context Protocol) is an open standard that translates AI agent intent into real connections to databases, queues, CRMs, HRIS, accounting software, and other business systems. Instead of writing custom glue code for every integration, you define your tools once using MCP, and any MCP-compatible AI client can discover and use them.
 
-Without MCP, connecting AI to your business systems requires custom API code, authentication handling, and response formatting for each AI platform. With MCP, you describe what a tool does and what inputs it needs, and the protocol handles the rest. Redpanda's MCP servers are built on the same proven connectors that power the world's largest e-commerce, electric vehicle, energy, and AI companies today.
+Without MCP, connecting AI to your business systems requires custom API code, authentication handling, and response formatting for each AI platform. With MCP, you describe what a tool does and what inputs it needs, and the protocol handles the rest.
 
-== MCP options in Redpanda Cloud
+== Redpanda Cloud Management MCP Server
 
-Redpanda Cloud offers two complementary MCP options:
+The Redpanda Cloud Management MCP Server is a pre-built server that gives AI agents access to Redpanda Cloud APIs. It runs on your computer and lets you manage clusters, topics, and other resources through natural language.
 
-* *Redpanda Cloud Management MCP Server*: A pre-built server that gives AI agents access to Redpanda Cloud APIs. It runs on your computer and lets you manage clusters, topics, and other resources through natural language.
-+
 Example: "Create a cluster called `dev-analytics` with 3 brokers."
 
-* *Remote MCP*: Your own MCP server built with Redpanda Connect and hosted inside your Redpanda Cloud cluster. You define custom tools that access your data, call external APIs, or trigger workflows.
-+
-Example: "Analyze the last 100 orders and show me the top product categories."
+=== Capabilities
 
-=== Comparison
-
-[cols="1h,2,2"]
+[cols="1,2"]
 |===
-| | Redpanda Cloud Management MCP Server | Remote MCP
+| Feature | Description
 
 | Purpose
 | Operate your Redpanda Cloud account
-| Build custom tools for your data and workflows
 
 | Where it runs
 | Your computer
-| Redpanda Cloud (managed)
-
-| Who builds it
-| Redpanda
-| You, using Redpanda Connect
 
 | Access to
 | Redpanda Cloud APIs (clusters, topics, users, ACLs)
-| Anything you configure (databases, APIs, Redpanda topics, LLMs)
 
 | Best for
 | Platform operations, quick admin tasks, incident response
-| Data analysis, workflow automation, team-shared tools
 |===
 
-== Which should I use?
+=== Use cases
 
-Choose based on what you want to accomplish:
-
-**Use the Redpanda Cloud Management MCP Server** when you want to:
+Use the Redpanda Cloud Management MCP Server when you want to:
 
 * Manage Redpanda Cloud resources without memorizing CLI commands
 * Quickly create test clusters, topics, or users
 * Inspect cluster health during incidents
 * Onboard team members who prefer natural language over APIs
-
-**Use Remote MCP** when you want to:
-
-* Build tools that access your business data in Redpanda topics
-* Create reusable tools shared across your team
-* Connect AI agents to external systems (databases, APIs, LLMs)
-* Run tools close to your data with managed infrastructure
-
-You can use both options together. For example, use the Redpanda Cloud Management MCP Server to create a cluster, then deploy Remote MCP tools to analyze data in that cluster.
 
 == Get started
 
