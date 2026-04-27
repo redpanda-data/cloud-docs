@@ -1,10 +1,8 @@
 = Psycopg2
-:description: This doc details how to connect a Python application to Redpanda SQL running inside a Docker container using the Psycopg2 library.
+:description: Connect a Python application to Redpanda SQL using the Psycopg2 PostgreSQL adapter.
 :page-topic-type: how-to
 
-This doc details how to connect a Python application to Redpanda SQL running inside a Docker container using the Psycopg2 library.
-
-Psycopg2 is a https://www.psycopg.org/docs/[PostgreSQL adapter for Python^] programming language. It lets you execute SQL queries and interact with your Redpanda SQL instance using Python and is designed for multi-threaded applications that create and destroy lots of https://www.psycopg.org/docs/cursor.html[cursors^] and make a large number of concurrent `INSERT`s or `UPDATE`s.
+Psycopg2 is a https://www.psycopg.org/docs/[PostgreSQL adapter for Python^]. You can use it to execute SQL queries against Redpanda SQL from Python. Psycopg2 is designed for multi-threaded applications that create and destroy many https://www.psycopg.org/docs/cursor.html[cursors^] or run a high number of concurrent `INSERT` or `UPDATE` operations.
 
 == Prerequisites
 
@@ -68,7 +66,7 @@ try:
 
 [WARNING]
 ====
-It is important to note that Redpanda SQL does not support multi-threaded transactions as provided by Psycopg2. This means that when using Redpanda SQL, you must be cautious when it comes to managing connections and transactions within a multi-threaded context.
+Redpanda SQL does not support multi-threaded transactions as provided by Psycopg2. Avoid sharing connections and transactions across threads.
 ====
 
 Now, define a table, insert data into it, and query the inserted data.

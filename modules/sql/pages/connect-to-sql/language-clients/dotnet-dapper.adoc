@@ -1,8 +1,8 @@
 = C# (Dapper - Npgsql)
-:description: Dapper is a simple object-relational mapper (ORM) for .NET.
+:description: Connect to Redpanda SQL from C# using the Dapper ORM and the Npgsql PostgreSQL provider.
 :page-topic-type: how-to
 
-https://dappertutorial.net/[Dapper^] is a simple object-relational mapper (ORM) for .NET. It provides an efficient way to query databases with minimal setup and overhead, leveraging SQL directly while mapping results to C# objects. This page describes how to use Dapper with https://www.npgsql.org/[Npgsql^] (a PostgreSQL data provider for .NET) to connect to Redpanda SQL.
+https://dappertutorial.net/[Dapper^] is an object-relational mapper (ORM) for .NET that runs SQL directly and maps results to C# objects with minimal setup. This page describes how to use Dapper with https://www.npgsql.org/[Npgsql^], a PostgreSQL data provider for .NET, to connect to Redpanda SQL.
 
 == Establishing connection
 
@@ -58,7 +58,7 @@ foreach(var c in customers)
 
 [WARNING]
 ====
-`INSERT INTO Customer VALUES (@ClientId, @Height, @FirstName)` syntax uses prepared statements under the hood, which are not supported by Redpanda SQL. Redpanda SQL translates incoming binary input back into string, thus no benefits of such statements apply (no security or performance improvements)
+The `INSERT INTO Customer VALUES (@ClientId, @Height, @FirstName)` syntax uses prepared statements internally. Redpanda SQL does not support prepared statements. It translates incoming binary input back into a string, so prepared statements provide no security or performance benefits.
 ====
 
 == Unsupported functions and structures
