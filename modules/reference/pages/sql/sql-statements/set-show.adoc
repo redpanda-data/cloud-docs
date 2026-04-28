@@ -1,54 +1,48 @@
-= SET/SHOW
-:description: The SET statement lets you set specific options while the SHOW statement helps you see the current values in Redpanda SQL.
+= SET and SHOW
+:description: The SET statement configures session options. The SHOW statement displays their current values.
 :page-topic-type: reference
 
-The `SET` statement lets you set specific options while the `SHOW` statement helps you see the current values in Redpanda SQL.
+The `SET` statement configures session options. The `SHOW` statement displays their current values.
 
 == Syntax
 
-The syntax for these functions is as follows:
+`SET` statement:
 
-[tabs]
-====
-SET::
-+
 [source,sql]
 ----
 SET <option> TO <value>;
 ----
-+
+
 [NOTE]
 ====
-For options that accept boolean values, `<value>` can be either `ON` or `OFF`, which correspond to `TRUE` or `FALSE` respectively.
+The `SET` statement accepts both `TO` and `=` as the assignment operator.
+
+For options that accept boolean values, `<value>` can be `ON` (true) or `OFF` (false).
 ====
 
-SHOW::
-+
+`SHOW` statement:
+
 [source,sql]
 ----
 SHOW <option>;
 ----
 
-====
+Available options:
 
-The available options that can be set and shown are:
-
-* `extra_float_digits`: by default, Redpanda SQL displays a limited number of digits, but you can set how many extra digits are displayed after the decimal point in floating-point numbers by using this option
-* `application_name`: sets a custom name for the application
-* `timezone`: determines the time zone used for date and time functions
-* `client_min_messages`: sets the message levels sent to the client (valid values are `DEBUG5`, `DEBUG4`, `DEBUG3`, `DEBUG2`, `DEBUG1`, `LOG`, `NOTICE`, `WARNING` and `ERROR`)
-* `search_path`: defines namespaces at which Redpanda SQL looks for tables
-* `enable_fast_math`: enables mathematical optimizations that trade precision for speed by utilizing faster, less accurate mathematical functions
+* `extra_float_digits`: Number of extra digits displayed after the decimal point in floating-point numbers.
+* `application_name`: Custom name for the application.
+* `timezone`: Time zone used for date and time functions.
+* `client_min_messages`: Minimum message level sent to the client. Valid values: `DEBUG5`, `DEBUG4`, `DEBUG3`, `DEBUG2`, `DEBUG1`, `LOG`, `NOTICE`, `WARNING`, and `ERROR`.
+* `search_path`: Namespaces in which Redpanda SQL looks for tables.
+* `oxla.enable_fast_math`: Enables math optimizations that trade precision for speed using faster, less accurate functions.
 
 == Examples
 
 === SET statement
 
-[tabs]
-====
-Extra_float_digits::
-+
-To change the number of displayed digits for floating-point values, use the `SET` statement in a following way:
+==== extra_float_digits
+
+To change the number of displayed digits for floating-point values, run the following query:
 
 [source,sql]
 ----
@@ -67,9 +61,9 @@ SHOW extra_float_digits;
  2
 ----
 
-Client_min_messages::
-+
-To change the client message, use the `SET` statement as follows:
+==== client_min_messages
+
+To change the minimum client message level:
 
 [source,sql]
 ----
@@ -88,9 +82,9 @@ SHOW client_min_messages;
  warning
 ----
 
-Enable_fast_math::
-+
-To change the mode of the fast math option, use the `SET` statement like this:
+==== oxla.enable_fast_math
+
+To enable fast math optimizations:
 
 [source,sql]
 ----
@@ -110,15 +104,11 @@ SHOW oxla.enable_fast_math;
 (1 row)
 ----
 
-====
-
 === SHOW statement
 
-[tabs]
-====
-Timezone::
-+
-To display the current timezone setting, use the following query:
+==== timezone
+
+To display the current timezone setting, run:
 
 [source,sql]
 ----
@@ -132,9 +122,9 @@ SHOW timezone;
  Etc/UTC
 ----
 
-Search_path::
-+
-To display the current search path, run the following query:
+==== search_path
+
+To display the current search path, run:
 
 [source,sql]
 ----
@@ -148,9 +138,9 @@ SHOW search_path;
  public
 ----
 
-Enable_fast_math::
-+
-To check the status of the fast math option, use the following method:
+==== oxla.enable_fast_math
+
+To check the status of fast math optimizations, run:
 
 [source,sql]
 ----
@@ -164,5 +154,3 @@ SHOW oxla.enable_fast_math;
  0
 (1 row)
 ----
-
-====
