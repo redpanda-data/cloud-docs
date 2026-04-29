@@ -2,23 +2,23 @@
 :description: The SHOW NODES statement returns the current state of the cluster and is only available to the superuser.
 :page-topic-type: reference
 
-The `SHOW NODES` statement returns the current state of the cluster and is only available to the superuser.
+The `SHOW NODES` statement returns the current state of the cluster. Only the superuser can run this statement.
 
 [NOTE]
 ====
-It is not case-sensitive, so `show nodes`, `Show Nodes`, and `SHOW NODES` do the same thing.
+`SHOW NODES` is not case-sensitive. `show nodes`, `Show Nodes`, and `SHOW NODES` produce the same result.
 ====
 
 == Example
 
-To view the current cluster state, execute the following command:
+To view the current cluster state, run:
 
 [source,sql]
 ----
 SHOW NODES;
 ----
 
-This returns a table with the information about each node in the cluster:
+This returns a table with information about each node in the cluster:
 
 [source,sql]
 ----
@@ -30,14 +30,17 @@ This returns a table with the information about each node in the cluster:
 (3 rows)
 ----
 
-Each row represents the state of an individual node within the cluster, where:
+Each row represents the state of an individual node, where:
 
-* `name`: name of the node
-* `election_state`: current state of the node (e.g. `LEADER`)
-* `followers_count`: number of nodes following the leader, which applies to the leader node
-* `connected_nodes_count`: total number of nodes connected, including itself
-* `degradation_error`: error message if the node is not working correctly, otherwise it shows `NULL`
+* `name`: Name of the node.
+* `election_state`: Current state of the node (for example, `LEADER`).
+* `followers_count`: Number of nodes following the leader. Only meaningful for the leader node.
+* `connected_nodes_count`: Total number of connected nodes, including itself.
+* `degradation_error`: Error message if the node is not working correctly. Otherwise `NULL`.
 
-NOTE: `SHOW NODES` is equivalent to `SELECT * FROM system.nodes`. You can query the `system.nodes` table directly to filter or sort results using `WHERE` and `ORDER BY` clauses.
+[NOTE]
+====
+`SHOW NODES` is equivalent to `SELECT * FROM system.nodes`. You can query the `system.nodes` table directly to filter or sort results using `WHERE` and `ORDER BY` clauses.
 
-NOTE: Related xref:reference:sql/system-virtual-tables.adoc[system virtual tables] include `system.queries` (running queries) and `system.execs` (execution tasks).
+Related xref:reference:sql/system-virtual-tables.adoc[system virtual tables] include `system.queries` (running queries) and `system.execs` (execution tasks).
+====
