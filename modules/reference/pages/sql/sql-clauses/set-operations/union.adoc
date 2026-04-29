@@ -1,14 +1,10 @@
 = UNION
-:description: The UNION combines the result sets of 2 or more select statements, removing duplicate rows between the tables.
+:description: The UNION combines the result sets of two or more SELECT statements, removing duplicate rows between the tables.
 :page-topic-type: reference
 
-== UNION
+`UNION` combines the result sets of two or more `SELECT` statements, removing duplicate rows between the tables.
 
-The `UNION` combines the result sets of 2 or more select statements, removing duplicate rows between the tables.
-
-=== Syntax
-
-The syntax of the `UNION` is as follows:
+== Syntax
 
 [source,sql]
 ----
@@ -19,14 +15,14 @@ SELECT value1, value2, ... value_n
 FROM table2;
 ----
 
-The parameters from this syntax are:
+Where:
 
-* `value1, value2, ... value_n`: The columns you wish to retrieve. You can also retrieve all the values using the `SELECT * FROM` query.
-* `table1, table2`: The tables that you wish to retrieve records from.
+* `value1, value2, ... value_n`: The columns to retrieve. You can also retrieve all columns using `SELECT * FROM`.
+* `table1, table2`: The tables to retrieve records from.
 
-=== Example
+== Example
 
-Consider an example of the `UNION`. Assume there is a table called `employees` and another table called `contractors`. The goal is to retrieve a combined list of names from both tables, excluding duplicates:
+Suppose there is a table called `employees` and another table called `contractors`. The goal is to retrieve a combined list of names from both tables, excluding duplicates:
 
 [source,sql]
 ----
@@ -51,7 +47,7 @@ INSERT INTO contractors VALUES
 (103, 'Tom');
 ----
 
-Verifying inserted values by using the `SELECT` statement:
+Verify the inserted values:
 
 [source,sql]
 ----
@@ -83,7 +79,7 @@ UNION
 SELECT contractor_name FROM contractors;
 ----
 
-The result includes the values of both tables without any duplicate values.
+The query returns the values from both tables without duplicates:
 
 [source,sql]
 ----
@@ -96,35 +92,31 @@ emp_name
  Tom
 ----
 
-The following diagram shows that the duplicate name "`Alice`" is represented only once in the output, fulfilling the requirement to avoid duplicate entries.
+The duplicate name `Alice` appears only once in the output.
 
 == UNION ALL
 
-=== Overview
-
-The `UNION ALL` combines the result sets of 2 or more select statements, returning all rows from the query and not removing duplicate rows between the tables.
+`UNION ALL` combines the result sets of two or more `SELECT` statements, returning all rows from the queries without removing duplicates.
 
 === Syntax
-
-The syntax of the `UNION ALL` is as follows:
 
 [source,sql]
 ----
 SELECT value1, value2, ... value_n
-FROM tables
+FROM table1
 UNION ALL
 SELECT value1, value2, ... value_n
-FROM tables;
+FROM table2;
 ----
 
-The parameters from this syntax are:
+Where:
 
-* `value1, value2, ... value_n`: The columns you wish to retrieve. You can also retrieve all the values using the `SELECT * FROM` query.
-* `table1, table2`: The tables that you wish to retrieve records from.
+* `value1, value2, ... value_n`: The columns to retrieve. You can also retrieve all columns using `SELECT * FROM`.
+* `table1, table2`: The tables to retrieve records from.
 
 === Example
 
-Suppose you have two separate tables, `sales_2022` and `sales_2023`, containing sales data for different years. You want to combine the sales data from both tables to get a complete list of sales transactions without removing duplicates.
+Suppose you have two separate tables, `sales_2022` and `sales_2023`, containing sales data for different years. To combine the sales data from both tables without removing duplicates:
 
 [source,sql]
 ----
@@ -151,7 +143,7 @@ INSERT INTO sales_2023 VALUES
 (6, 'Product E', 950);
 ----
 
-Verifying inserted values by using the `SELECT` statement:
+Verify the inserted values:
 
 [source,sql]
 ----
@@ -174,14 +166,14 @@ transaction_id | product_name | sale_amount
               6 | Product E    |         950
 ----
 
-Combine all values from the tables by using `UNION ALL`:
+Combine all values from the tables using `UNION ALL`:
 
 [source,sql]
 ----
 SELECT product_name, sale_amount FROM sales_2022 UNION ALL SELECT product_name, sale_amount FROM sales_2023;
 ----
 
-In this case, it displays all the values of the first table followed by all the contents of the second table.
+The query returns all rows from the first table followed by all rows from the second table, including duplicates:
 
 [source,sql]
 ----
@@ -194,5 +186,3 @@ product_name | sale_amount
  Product D    |         800
  Product E    |         950
 ----
-
-This diagram illustrates that with the `UNION ALL`, all values are displayed, including the duplicate ones.

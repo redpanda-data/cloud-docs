@@ -2,13 +2,9 @@
 :description: The INTERSECT combines the result sets of two or more SELECT statements, retrieving only the common rows between them.
 :page-topic-type: reference
 
-== INTERSECT
+`INTERSECT` combines the result sets of two or more `SELECT` statements, retrieving only the common rows between them. Unlike `UNION`, which combines all rows and removes duplicates, `INTERSECT` returns rows that appear in all `SELECT` statements.
 
-The `INTERSECT` combines the result sets of two or more `SELECT` statements, retrieving only the common rows between them. Unlike `UNION`, which combines all rows and removes duplicates, `INTERSECT` focuses on returning rows that appear in all `SELECT` statements.
-
-=== Syntax
-
-The syntax for the `INTERSECT` is as follows:
+== Syntax
 
 [source,sql]
 ----
@@ -19,14 +15,14 @@ SELECT value1, value2, ... value_n
 FROM table2;
 ----
 
-The parameters from this syntax are:
+Where:
 
-* `value1, value2, ... value_n`: The columns you want to retrieve. You can also use `SELECT * FROM` to retrieve all columns.
-* `table1, table2`: The tables from which you wish to retrieve records.
+* `value1, value2, ... value_n`: The columns to retrieve. You can also use `SELECT * FROM` to retrieve all columns.
+* `table1, table2`: The tables to retrieve records from.
 
-=== Example
+== Example
 
-Suppose you have two tables: `customers_old` and `customers_new`, containing customer data for different periods. You want to find the customers who are present in both tables:
+Suppose you have two tables: `customers_old` and `customers_new`, containing customer data for different periods. To find the customers who are present in both tables:
 
 [source,sql]
 ----
@@ -51,7 +47,7 @@ INSERT INTO customers_new VALUES
 (4, 'David');
 ----
 
-Viewing the inserted values:
+View the inserted values:
 
 [source,sql]
 ----
@@ -74,7 +70,7 @@ customer_id | customer_name
            4 | David
 ----
 
-Now, let’s combine common customers using the `INTERSECT`:
+Combine common customers using `INTERSECT`:
 
 [source,sql]
 ----
@@ -83,7 +79,7 @@ INTERSECT
 SELECT customer_name FROM customers_new;
 ----
 
-The result includes only the names that appear in both tables:
+The query returns only the names that appear in both tables:
 
 [source,sql]
 ----
@@ -93,37 +89,31 @@ customer_name
  Charlie
 ----
 
-The picture displays a list of customer names that appear in both tables. Only "`Bob`" and "`Charlie`" are found in both tables and shown as INTERSECT’s final result.
+Only `Bob` and `Charlie` appear in both tables.
 
 == INTERSECT ALL
 
-=== Overview
-
-The `INTERSECT ALL` retrieves all common rows between two or more tables, including duplicates.
-
-This means that if a row appears multiple times in any of the `SELECT` statements, it is included in the final result set multiple times.
+`INTERSECT ALL` retrieves all common rows between two or more tables, including duplicates. If a row appears in any of the `SELECT` statements multiple times, it is included in the final result set the same number of times.
 
 === Syntax
-
-The syntax for `INTERSECT ALL` is similar to `INTERSECT`:
 
 [source,sql]
 ----
 SELECT value1, value2, ... value_n
-FROM tables
+FROM table1
 INTERSECT ALL
 SELECT value1, value2, ... value_n
-FROM tables;
+FROM table2;
 ----
 
-The parameters from this syntax are:
+Where:
 
-* `value1, value2, ... value_n`: The columns you wish to retrieve. You can also retrieve all the values using the `SELECT * FROM` query.
-* `table1, table2`: The tables from which you want to retrieve records.
+* `value1, value2, ... value_n`: The columns to retrieve. You can also retrieve all columns using `SELECT * FROM`.
+* `table1, table2`: The tables to retrieve records from.
 
 === Example
 
-Create three tables of products from different years. You want to find the common products among all three categories, including duplicates.
+Create three tables of products from different years. To find the common products among all three tables, including duplicates:
 
 [source,sql]
 ----
@@ -161,7 +151,7 @@ INSERT INTO products_electronics2023 VALUES
 (6, 'AC');
 ----
 
-Display the tables using the following query:
+View the tables:
 
 [source,sql]
 ----
@@ -194,7 +184,7 @@ product_id | product_name
           6 | AC
 ----
 
-Then, combine common products from all three categories using the `INTERSECT ALL`:
+Combine common products from all three tables using `INTERSECT ALL`:
 
 [source,sql]
 ----
@@ -205,7 +195,7 @@ INTERSECT ALL
 SELECT product_name FROM products_electronics2023;
 ----
 
-The result includes the products that are common among all three categories, including duplicates:
+The query returns the products common to all three tables, including duplicates:
 
 [source,sql]
 ----
@@ -214,4 +204,4 @@ product_name
  Phone
 ----
 
-The illustration shows a list of product names common to all three years, including duplicates. In this case, the result is the product name "`Phone,`" which appears across all three tables.
+Only `Phone` appears across all three tables.

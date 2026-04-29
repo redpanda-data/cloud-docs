@@ -1,14 +1,10 @@
 = EXCEPT
-:description: The EXCEPT combines the result sets of two or more tables and retrieves rows specific to the first SELECT statement but not present in the subsequent 
+:description: The EXCEPT combines the result sets of two or more tables and retrieves rows specific to the first SELECT statement but not present in the subsequent ones.
 :page-topic-type: reference
 
-== EXCEPT
+`EXCEPT` combines the result sets of two or more tables and retrieves rows specific to the first `SELECT` statement but not present in the subsequent ones.
 
-The `EXCEPT` combines the result sets of two or more tables and retrieves rows specific to the first `SELECT` statement but not present in the subsequent ones.
-
-=== Syntax
-
-The syntax for the `EXCEPT` is as follows:
+== Syntax
 
 [source,sql]
 ----
@@ -19,44 +15,44 @@ SELECT value1, value2, ... value_n
 FROM table2;
 ----
 
-The parameters from this syntax are:
+Where:
 
-* `value1, value2, ... value_n`: The columns you want to retrieve.
-* `table1, table2`: The tables from which you wish to retrieve records.
+* `value1, value2, ... value_n`: The columns to retrieve.
+* `table1, table2`: The tables to retrieve records from.
 
-=== Example
+== Example
 
-Assume you have two tables: `vehicles` and `vehicles1`. The goal is to find the vehicle which was present in 2021 but is not present in 2022:
+Suppose you have two tables: `vehicles_2021` and `vehicles_2022`. The goal is to find the vehicle that was present in 2021 but is not present in 2022:
 
 [source,sql]
 ----
-CREATE TABLE vehicles (
+CREATE TABLE vehicles_2021 (
     vhc_id INT,
     vhc_name TEXT
 );
 
-CREATE TABLE vehicles1 (
+CREATE TABLE vehicles_2022 (
     vhc_id INT,
     vhc_name TEXT
 );
 
-INSERT INTO vehicles VALUES
+INSERT INTO vehicles_2021 VALUES
 (1, 'Truck'),
 (2, 'Car'),
 (3, 'Motorcycle');
 
-INSERT INTO vehicles1 VALUES
+INSERT INTO vehicles_2022 VALUES
 (2, 'Car'),
 (3, 'Bus'),
 (4, 'Motorcycle');
 ----
 
-Display the tables with the following query:
+View the tables:
 
 [source,sql]
 ----
-SELECT * FROM vehicles;
-SELECT * FROM vehicles1;
+SELECT * FROM vehicles_2021;
+SELECT * FROM vehicles_2022;
 ----
 
 [source,sql]
@@ -74,16 +70,16 @@ vhc_id |  vhc_name
       4 | Motorcycle
 ----
 
-Using `EXCEPT` to find vehicle names present in the first table but not in the second:
+Use `EXCEPT` to find vehicle names present in the first table but not in the second:
 
 [source,sql]
 ----
-SELECT vhc_name FROM vehicles
+SELECT vhc_name FROM vehicles_2021
 EXCEPT
-SELECT vhc_name FROM vehicles1;
+SELECT vhc_name FROM vehicles_2022;
 ----
 
-The result includes vehicle names that exist in `vehicles` but not in `vehicles1`:
+The query returns vehicle names that exist in `vehicles_2021` but not in `vehicles_2022`:
 
 [source,sql]
 ----
@@ -92,17 +88,13 @@ vhc_name
  Truck
 ----
 
-The following diagram shows that the result is a list of vehicle names present in the first table (`vehicles`) but not found in the second table (`vehicles1`). In this case, the result is the vehicle name "`Truck.`"
+Only `Truck` is present in the first table but not the second.
 
 == EXCEPT ALL
 
-=== Overview
-
-The `EXCEPT ALL` finds rows specific to the first `SELECT` statement while preserving duplicate entries.
+`EXCEPT ALL` finds rows specific to the first `SELECT` statement while preserving duplicate entries.
 
 === Syntax
-
-The syntax for the `EXCEPT ALL` is similar to `EXCEPT`:
 
 [source,sql]
 ----
@@ -113,14 +105,14 @@ SELECT value1, value2, ... value_n
 FROM table2;
 ----
 
-The parameters from this syntax are:
+Where:
 
-* `value1, value2, ... value_n`: The columns you want to retrieve.
-* `table1, table2`: The tables from which you wish to retrieve records.
+* `value1, value2, ... value_n`: The columns to retrieve.
+* `table1, table2`: The tables to retrieve records from.
 
-=== Example #1
+=== Customers in only one marketplace
 
-You aim to identify customers who have bought products from one marketplace but have not purchased from another. Start by creating the tables and populating them with relevant data.
+To identify customers who have purchased products from one marketplace but not from another, create the tables and populate them with relevant data:
 
 [source,sql]
 ----
@@ -149,7 +141,7 @@ INSERT INTO marketplace2_transactions VALUES
 (106, 1, 110.00);
 ----
 
-Display the tables using the following query:
+View the tables:
 
 [source,sql]
 ----
@@ -174,7 +166,7 @@ customer_id | product_id | amount
          106 |          1 |    110
 ----
 
-Using the `EXCEPT ALL` to find customers who have purchased products from one marketplace but not from the other:
+Use `EXCEPT ALL` to find customers who have purchased products from one marketplace but not from the other:
 
 [source,sql]
 ----
@@ -183,7 +175,7 @@ EXCEPT ALL
 SELECT customer_id FROM marketplace2_transactions;
 ----
 
-This result shows a `customer_id` who has only transacted in the first marketplace and has not engaged in any corresponding transactions in the second marketplace.
+The query returns the `customer_id` values that appear in the first marketplace but not in the second:
 
 [source,sql]
 ----
@@ -193,11 +185,9 @@ customer_id
          101
 ----
 
-The following diagram shows a list of customer-product pairs found in the first marketplace (`marketplace1_transactions`) but missing in the second marketplace (`marketplace2_transactions`).
+=== Compare arrays with duplicates
 
-=== Example #2
-
-Create two tables, `left_array_values` and `right_array_values`, to hold sets of values.
+Create two tables, `left_array_values` and `right_array_values`, to hold sets of values:
 
 [source,sql]
 ----
@@ -213,7 +203,7 @@ INSERT INTO left_array_values VALUES (1), (1), (3);
 INSERT INTO right_array_values VALUES (1), (2);
 ----
 
-View the contents of the two arrays before performing the comparison.
+View the contents of the two tables before performing the comparison:
 
 [source,sql]
 ----
@@ -221,7 +211,7 @@ SELECT * FROM left_array_values;
 SELECT * FROM right_array_values;
 ----
 
-Upon execution, the tables appear as follows:
+The tables contain:
 
 [source,sql]
 ----
@@ -237,7 +227,7 @@ value
      2
 ----
 
-Now use the `EXCEPT ALL` operation to compare the values within the arrays, focusing on unique elements while retaining duplicate entries.
+Use `EXCEPT ALL` to compare the values, focusing on unique elements while retaining duplicate entries:
 
 [source,sql]
 ----
@@ -248,7 +238,7 @@ SELECT value
 FROM right_array_values;
 ----
 
-The `EXCEPT ALL` operation processes each element individually from both inputs at a time. The comparison occurs element-wise, leading to the inclusion of both 1 and 3 in the final result.
+`EXCEPT ALL` compares elements pairwise, so both `1` and `3` appear in the final result:
 
 [source,sql]
 ----
