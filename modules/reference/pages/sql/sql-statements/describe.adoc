@@ -1,8 +1,8 @@
 = DESCRIBE
-:description: The DESCRIBE statement is used to show columns within a table as well as tables within a database.
+:description: The DESCRIBE statement displays columns of a table or lists tables in a database.
 :page-topic-type: reference
 
-The `DESCRIBE` statement is used to show columns within a table as well as tables within a database.
+The `DESCRIBE` statement displays columns of a table or lists tables in a database.
 
 == Syntax
 
@@ -25,18 +25,16 @@ This statement is available to all users with the `USAGE` privilege on the schem
 
 == Examples
 
-To get a better understanding of the `DESCRIBE` statement, take a look at the following examples:
-
 === Describe a table
 
-This example shows the columns of the *part* table. Run the following query:
+To show the columns of the `part` table, run the following query:
 
 [source,sql]
 ----
 DESCRIBE TABLE part;
 ----
 
-As a result, you get a list of column names, column types, and nullable options from the *part* table:
+The query returns:
 
 [source,sql]
 ----
@@ -57,58 +55,19 @@ As a result, you get a list of column names, column types, and nullable options 
 
 [TIP]
 ====
-The example above shows that the tables reside in the `public` schema (the default schema in Redpanda SQL). You can also display tables from other schemas. See xref:reference:sql/schema.adoc[Schema] for details.
+Tables in this example use the `public` schema, the default in Redpanda SQL. For information on displaying tables from other schemas, see xref:reference:sql/schema.adoc[Schema].
 ====
-
-=== Describe a catalog table
-
-To view column details for a table mapped through a Redpanda catalog:
-
-[source,sql]
-----
-DESCRIBE TABLE my_catalog=>transactions;
-----
-
-[source,sql]
-----
-+----------------+--------------+-------------+-------+----------+
-| database_name  | table_name   |    name     | type  | nullable |
-+----------------+--------------+-------------+-------+----------+
-| my_catalog     | transactions | tx_id       | INT   | f        |
-| my_catalog     | transactions | amount      | REAL  | f        |
-| my_catalog     | transactions | created_at  | TEXT  | f        |
-+----------------+--------------+-------------+-------+----------+
-----
-
-=== Describe a Redpanda catalog
-
-To list the tables and topic mappings in a Redpanda catalog:
-
-[source,sql]
-----
-DESCRIBE REDPANDA CATALOG my_catalog;
-----
-
-[source,sql]
-----
-+----------------+--------------+
-| table_name     | topic_name   |
-+----------------+--------------+
-| transactions   | transactions |
-| user_events    | user-events  |
-+----------------+--------------+
-----
 
 === Describe a database
 
-To describe the database, execute the following query:
+To list all tables in the database, run:
 
 [source,sql]
 ----
 DESCRIBE DATABASE;
 ----
 
-The output consists of all existing tables from the specified database:
+The query returns:
 
 [source,sql]
 ----
@@ -123,4 +82,47 @@ The output consists of all existing tables from the specified database:
 | featurestable1              |
 | featurestable10             |
 +-----------------------------+
+----
+
+=== Describe a catalog table
+
+To view column details for a table mapped through a Redpanda catalog, run:
+
+[source,sql]
+----
+DESCRIBE TABLE my_catalog=>transactions;
+----
+
+The query returns:
+
+[source,sql]
+----
++----------------+--------------+-------------+-------+----------+
+| database_name  | table_name   |    name     | type  | nullable |
++----------------+--------------+-------------+-------+----------+
+| my_catalog     | transactions | tx_id       | INT   | f        |
+| my_catalog     | transactions | amount      | REAL  | f        |
+| my_catalog     | transactions | created_at  | TEXT  | f        |
++----------------+--------------+-------------+-------+----------+
+----
+
+=== Describe a Redpanda catalog
+
+To list the tables and topic mappings in a Redpanda catalog, run:
+
+[source,sql]
+----
+DESCRIBE REDPANDA CATALOG my_catalog;
+----
+
+The query returns:
+
+[source,sql]
+----
++----------------+--------------+
+| table_name     | topic_name   |
++----------------+--------------+
+| transactions   | transactions |
+| user_events    | user-events  |
++----------------+--------------+
 ----
