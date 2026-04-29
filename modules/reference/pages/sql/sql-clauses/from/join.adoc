@@ -1,10 +1,8 @@
 = JOIN
-:description: JOIN clause is used to create a new table by combining records and using common fields between two tables in a database.
+:description: The JOIN clause combines records from two tables based on common fields.
 :page-topic-type: reference
 
-`JOIN` clause is used to create a new table by combining records and using common fields between two tables in a database.
-
-TIP: Table aliasing is supported in the `JOIN` clause.
+The `JOIN` clause combines records from two tables based on common fields.
 
 == Syntax
 
@@ -20,8 +18,8 @@ ON table_1.common_field = table_2.common_field
 
 . `SELECT table_1.column_1, table_2.column_2...` selects the columns to display from both tables.
 . `FROM table_1 JOIN table_2` represents the joined tables.
-. `ON table_1.common_field = table_2.common_field` compares each row of table_1 with each row of table_2 to find all pairs of rows that meet the join condition.
-. When the condition is met, column values for each matched pair of rows from table_1 and table_2 are combined into a result row.
+. `ON table_1.common_field = table_2.common_field` compares each row of `table_1` with each row of `table_2` to find all pairs of rows that meet the join condition.
+. When the condition is met, Redpanda SQL combines column values for each matched pair of rows from `table_1` and `table_2` into a result row.
 
 === JOIN ... USING
 
@@ -37,23 +35,21 @@ The `USING` clause is a shorthand for joining tables when both tables share colu
 
 === Table alias
 
-You can use table aliasing to refer to the table’s name. An alias is a temporary name given to a table, column, or expression in a query.
-
-The results will stay the same, but it can help you to write the query easier.
+A table alias is a temporary name given to a table, column, or expression in a query. Aliases don't change the result; they make queries easier to read.
 
 [source,sql]
 ----
 SELECT left.column_1, right.column_2...
 FROM table_1 as left
 JOIN table_2 as right
-ON left.common_filed = right.common_field
+ON left.common_field = right.common_field
 ----
 
 == Examples
 
-The following examples use two tables:
+The following examples use two tables: `movies` and `categories`.
 
-*movies table*
+Create the `movies` table:
 
 [source,sql]
 ----
@@ -90,7 +86,7 @@ This creates the following table:
 +------------+-----------------------+--------------+
 ----
 
-*categories table*
+Create the `categories` table:
 
 [source,sql]
 ----
@@ -117,7 +113,7 @@ This creates the following table:
 
 [source,sql]
 ----
-+--------------+-----------------------+
++-----------+--------------------------+
 | id        | category_name            |
 +-----------+--------------------------+
 | 181891    | Psychological Thriller   |
@@ -128,10 +124,8 @@ This creates the following table:
 +-----------+--------------------------+
 ----
 
-'''''
+A `JOIN` query against these tables:
 
-. Based on these tables, a `JOIN` query can be written as follows:
-+
 [source,sql]
 ----
 SELECT a.movie_name, c.category_name
@@ -140,8 +134,8 @@ JOIN categories AS c
 ON a.category_id = c.id;
 ----
 
-. This query returns the following result:
-+
+The query returns:
+
 [source,sql]
 ----
 +-----------------------+---------------------------+
@@ -153,11 +147,9 @@ ON a.category_id = c.id;
 | Avatar                | Science Fiction           |
 +-----------------------+---------------------------+
 ----
-+
-The JOIN checks each row of the `category_id` column in the first table (`movies`) with the value in the `id` column of each row in the second table (`categories`).
-+
-If the values are equal, it creates a new row that contains columns from both tables (`category_name`) and adds the new row (`movie_name`) to the result set.
-+
+
+The `JOIN` checks each row of the `category_id` column in the `movies` table against the `id` column of each row in the `categories` table. When the values match, Redpanda SQL creates a new result row that combines columns from both tables.
+
 The following Venn diagram illustrates this example:
 
 image::sql/join-venn.png[Venn diagram showing an inner join between the Movies and Categories tables]

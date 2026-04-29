@@ -1,8 +1,8 @@
 = LEFT JOIN
-:description: The LEFT JOINreturns all matching records from the left table combined with the right table.
+:description: The LEFT JOIN returns all matching records from the left table combined with the right table.
 :page-topic-type: reference
 
-The `LEFT JOIN`returns all matching records from the left table combined with the right table. Even if there are no matching records in the right table, the `LEFT JOIN` will still return a row in the result, but with NULL in each column from the right table.
+The `LEFT JOIN` returns all matching records from the left table combined with the right table. Even if there are no matching records in the right table, the `LEFT JOIN` still returns a row in the result, with `NULL` in each column from the right table.
 
 [NOTE]
 ====
@@ -11,41 +11,36 @@ The `LEFT JOIN`returns all matching records from the left table combined with th
 
 == Syntax
 
-[TIP]
-====
-Table aliasing is supported in the `LEFT JOIN` clause.
-====
-
 [source,sql]
 ----
 SELECT column_1, column_2...
 FROM table_1
 LEFT JOIN table_2
-ON table_1.matching_field = table2.matching_field;
+ON table_1.matching_field = table_2.matching_field;
 ----
 
 In this syntax:
 
 . `SELECT column_1, column_2...` defines the columns from both tables where the data is to be selected.
-. `FROM table_1` defines the left table as the main table in the FROM clause.
+. `FROM table_1` defines the left table as the main table in the `FROM` clause.
 . `LEFT JOIN table_2` defines the right table as the table the main table joins.
-. `ON table_1.matching_field = table2.matching_field` sets the join condition after the `ON` keyword with the matching field between the two tables.
+. `ON table_1.matching_field = table_2.matching_field` sets the join condition after the `ON` keyword with the matching field between the two tables.
 
 === Table alias
 
-You can use an alias to refer to the table’s name. The results will stay the same. It only helps to write the query easier.
+A table alias is a temporary name given to a table in a query. Aliases don't change the result; they make queries easier to read.
 
 [source,sql]
 ----
 SELECT A.column_1, B.column_2...
-FROM table_1 A //table_1 as A
-LEFT JOIN table_2 B //table_2 as B
+FROM table_1 A
+LEFT JOIN table_2 B
 ON A.matching_field = B.matching_field;
 ----
 
 == Example
 
-`item` table
+Create the `item` table:
 
 [source,sql]
 ----
@@ -82,7 +77,7 @@ This creates the following table:
 +-----------+----------------+
 ----
 
-`invoice` table
+Create the `invoice` table:
 
 [source,sql]
 ----
@@ -125,9 +120,7 @@ This creates the following table:
 +----------+---------+-----------+-------------+
 ----
 
-'''''
-
-{empty}1) Based on these tables, a `LEFT JOIN` query can be written as follows:
+A `LEFT JOIN` query against these tables:
 
 [source,sql]
 ----
@@ -137,12 +130,12 @@ LEFT JOIN invoice
 ON item.item_no = invoice.item;
 ----
 
-* The `item` = left table, and the `invoice` = right table.
-* Then it combines the values from the `item` table using the `item_no` and matches the records using the `item` column of each row from the `invoice` table.
-* If the records are equal, a new row is created with `item_no`, `item_name`, and `sold_qty`, `sold_price` columns as defined in the `SELECT` clause.
-* `ELSE` it creates a new row with a `NULL` value from the right table (`invoice`).
+* The `item` table is the left table, and the `invoice` table is the right table.
+* The query combines values from the `item` table using `item_no` and matches records using the `item` column from the `invoice` table.
+* When records match, Redpanda SQL creates a new row with `item_no`, `item_name`, `sold_qty`, and `sold_price` columns as defined in the `SELECT` clause.
+* Otherwise, a new row is created with `NULL` values from the right table (`invoice`).
 
-{empty}2) This query returns the following result:
+The query returns:
 
 [source,sql]
 ----
@@ -161,17 +154,18 @@ ON item.item_no = invoice.item;
 
 Based on the data from the `item` and `invoice` tables:
 
-* The result matches the total item stored in the `item` table: 4 items.
-* The result displays all the item’s data from the left table (`item` table), even if there is 1 item that hasn’t been sold.
-* The item id: `111` matches the item `butter` and has been sold for 3pcs/9000.
-* The item id: `113` matches the item `tea` but has never been sold. Thus the sold_qty & sold_price columns are filled with: null.
-* The item id: `116` matches the item `Bread` and has been sold three times, for 6pcs/30000, 2pcs/10000, and 1pc/5000.
-* The item id: `119` matches the item `Coffee` and has been sold two times, for 5pcs/20000 and 4pcs/16000.
+* The result matches the total items in the `item` table: four items.
+* The result displays all items from the left table (`item`), even if one item has not been sold.
+* Item id `111` (`Butter`) has been sold once for 3 pieces at 9000.
+* Item id `113` (`Tea`) has never been sold, so the `sold_qty` and `sold_price` columns are `NULL`.
+* Item id `116` (`Bread`) has been sold three times: 6 pieces at 30000, 2 pieces at 10000, and 1 piece at 5000.
+* Item id `119` (`Coffee`) has been sold twice: 5 pieces at 20000 and 4 pieces at 16000.
 
 [TIP]
 ====
 An `item` can have zero or many invoices. An `invoice` belongs to zero or one `item`.
 ====
+
 The following Venn diagram illustrates the `LEFT JOIN`:
 
 image::sql/left-join-venn.png[Venn diagram showing a left join between the Item and Invoice tables]

@@ -1,19 +1,19 @@
 = FROM
-:description: The FROM clause is used to specify which table or joins are required for the query or statement (for example, SELECT statement) to return or obtain data.
+:description: The FROM clause specifies the tables that a query reads data from.
 :page-topic-type: reference
 
-The `FROM` clause is used to specify which table or joins are required for the query or statement (for example, `SELECT` statement) to return or obtain data.
+The `FROM` clause specifies the tables that a query reads data from.
 
 == Syntax
 
-There must be at least one table listed in the `FROM` clause. See the following syntax:
+A `FROM` clause must list at least one table:
 
 [source,sql]
 ----
 query FROM table_name;
 ----
 
-If two or more tables are listed in the `FROM` clause, these tables are joined using xref:reference:sql/sql-clauses/from/join.adoc[JOIN], xref:reference:sql/sql-clauses/from/right-join.adoc[RIGHT JOIN], xref:reference:sql/sql-clauses/from/left-join.adoc[LEFT JOIN], or xref:reference:sql/sql-clauses/from/outer-join.adoc[OUTER JOIN], depending on the operations to be queried as seen in the following syntax:
+If two or more tables are listed, they are joined with one of: xref:reference:sql/sql-clauses/from/join.adoc[JOIN], xref:reference:sql/sql-clauses/from/right-join.adoc[RIGHT JOIN], xref:reference:sql/sql-clauses/from/left-join.adoc[LEFT JOIN], or xref:reference:sql/sql-clauses/from/outer-join.adoc[OUTER JOIN].
 
 [source,sql]
 ----
@@ -27,15 +27,12 @@ ON table1_name.column1 = table2_name.column1 ]
 
 [NOTE]
 ====
-The examples below are executed in the `public` schema, the default schema in Redpanda SQL. You can also create, insert, and display a table from other schemas -
-for details, see xref:reference:sql/schema.adoc[Schema].
+These examples use the `public` schema, the default in Redpanda SQL. For information on creating or displaying tables in other schemas, see xref:reference:sql/schema.adoc[Schema].
 ====
 
 == Example
 
-Start by looking at how to use the `FROM` clause with only a single table.
-
-Given a `client` table, the goal is to retrieve the client’s name and the city where the company is based.
+This example uses the `FROM` clause with a single table. Given a `client` table, the goal is to retrieve the client's name and the city where the company is based.
 
 [source,sql]
 ----
@@ -77,7 +74,7 @@ This creates the following table:
 SELECT client_name, client_origin FROM client;
 ----
 
-. The following result lists the client’s data:
+. The query returns:
 +
 [source,sql]
 ----
@@ -92,25 +89,19 @@ SELECT client_name, client_origin FROM client;
 
 [TIP]
 ====
-If two or more tables are listed in the FROM clause, see these sections for more examples:
-xref:reference:sql/sql-clauses/from/join.adoc[JOIN],
-xref:reference:sql/sql-clauses/from/right-join.adoc[RIGHT JOIN],
-xref:reference:sql/sql-clauses/from/left-join.adoc[LEFT JOIN], or
-xref:reference:sql/sql-clauses/from/outer-join.adoc[OUTER JOIN].
+For multi-table queries, see: xref:reference:sql/sql-clauses/from/join.adoc[JOIN], xref:reference:sql/sql-clauses/from/right-join.adoc[RIGHT JOIN], xref:reference:sql/sql-clauses/from/left-join.adoc[LEFT JOIN], or xref:reference:sql/sql-clauses/from/outer-join.adoc[OUTER JOIN].
 ====
 
-== FROM - sub queries
+== Subqueries with FROM
 
-FROM clause is also used to specify a sub-query expression. The relation created from the sub-query is then used as a new relation on the other query.
+The `FROM` clause can also specify a subquery. The result of the subquery becomes a new relation that the outer query can reference.
 
 [NOTE]
 ====
-More than one table can be defined by separating it with a comma (`,`). This is an implicit (cross) join: `FROM t1, t2 WHERE t1.id = t2.id` is equivalent to `FROM t1 JOIN t2 ON t1.id = t2.id`. Without a `WHERE` clause, the result is the Cartesian product of all rows in both tables.
+You can list more than one table by separating them with a comma (`,`). This is an implicit (cross) join: `FROM t1, t2 WHERE t1.id = t2.id` is equivalent to `FROM t1 JOIN t2 ON t1.id = t2.id`. Without a `WHERE` clause, the result is the Cartesian product of all rows in both tables.
 ====
 
 === Syntax
-
-Here is an example of the sub-query syntax that uses a FROM clause:
 
 [source,sql]
 ----
@@ -119,13 +110,13 @@ FROM table_2 as X, table_1 as Y
 WHERE conditions (X.column, Y.column);
 ----
 
-. The sub-query in the first `FROM` clause selects the columns from the specific table using a new temporary relation (`SELECT X.column1, X.column2, X.column3 FROM` ).
+. The subquery in the first `FROM` clause selects the columns from the specific table using a new temporary relation (`SELECT X.column1, X.column2, X.column3 FROM`).
 . Set the tables into a new temporary relation (`table_2 as X, table_1 as Y`).
-. Next, the query is evaluated, selecting only those rows from the temporary relation that fulfill the conditions stated in the `WHERE` clause.
+. The query is evaluated, selecting only those rows from the temporary relation that fulfill the conditions stated in the `WHERE` clause.
 
 === Example
 
-The following example finds a product whose price exceeds all categories’ average budget.
+The following example finds a product whose price exceeds the average budget across all categories.
 
 [source,sql]
 ----
@@ -138,7 +129,7 @@ CREATE TABLE product (
 INSERT INTO product
     (id, product, category, price)
 VALUES
-    (445747,'Court vision women’s shoes nike','Shoes', 8000),
+    (445747,'Court vision women''s shoes nike','Shoes', 8000),
     (445641,'Disney kids h&m','Shirt', 6500),
     (477278,'Defacto adidas','Hat', 8500),
     (481427,'Sophie shopping bag','Bag', 6500),
@@ -158,7 +149,7 @@ This creates the following table:
 +---------+----------------------------------+-----------+--------+
 | id      | product                          | category  | price  |
 +---------+----------------------------------+-----------+--------+
-| 445747  | Court vision women’s shoes nike  | Shoes     | 8000   |
+| 445747  | Court vision women's shoes nike  | Shoes     | 8000   |
 | 445641  | Disney kids h&m                  | Shirt     | 6500   |
 | 477278  | Defacto adidas                   | Hat       | 8500   |
 | 481427  | Sophie shopping bag              | Bag       | 6500   |
@@ -167,9 +158,7 @@ This creates the following table:
 +---------+----------------------------------+-----------+--------+
 ----
 
-....
-                                                                  **category table**
-....
+Create a `category` table:
 
 [source,sql]
 ----
@@ -207,16 +196,14 @@ This creates the following table:
 +---------------+----------+
 ----
 
-'''''
-
-. Run the following query to know and ensure the average value of all category’s budgets:
+. Run the following query to find the average budget across all categories:
 +
 [source,sql]
 ----
 select avg(budget) as avgBudget from category;
 ----
 
-. The average budget of all categories from the `category` table is 7700.
+. The query returns the average budget across all categories:
 +
 [source,sql]
 ----
@@ -227,11 +214,11 @@ select avg(budget) as avgBudget from category;
 +--------------------+
 ----
 
-. Now, run the following query:
+. Run:
 +
-* The `product` table is specified as `P` and the budget’s average value from the `category` table as C.
-* The query displays the product’s name, category, and price.
-* The conditions are set where the product’s price exceeds the budget’s average value.
+* The `product` table is aliased as `P` and the budget's average value from the `category` table as `C`.
+* The query displays the product's name, category, and price.
+* The conditions are set where the product's price exceeds the budget's average value.
 +
 [source,sql]
 ----
@@ -239,8 +226,8 @@ select P.product, P.category, P.price from
 (select avg(budget) as avgBudget from category) as C, product as P
 where P.price > C.avgBudget;
 ----
-+
-The output displays “court vision women’s shoes nike” and “Defacto adidas” as the products with a price of more than 7700.
+
+. The query returns the products with a price greater than 7700:
 +
 [source,sql]
 ----
