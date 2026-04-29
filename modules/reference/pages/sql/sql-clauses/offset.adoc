@@ -1,14 +1,10 @@
 = OFFSET
-:description: The OFFSET is a clause that skips some records from the result set.
+:description: The OFFSET clause skips a specified number of records from the result set.
 :page-topic-type: reference
 
-== Overview
-
-The `OFFSET` is a clause that skips some records from the result set.
+The `OFFSET` clause skips a specified number of records from the result set.
 
 == Syntax
-
-The basic syntax of the `OFFSET` clause is as follows:
 
 [source,sql]
 ----
@@ -17,21 +13,22 @@ FROM table_name
 OFFSET num;
 ----
 
-The parameters and arguments from the syntax are:
+Where:
 
-* `columns`: the columns to be fetched.
-* `table_name`: a table from which the records are fetched.
-* `OFFSET`: a clause that skips a subset of records.
-** `num`: the number of records to be skipped.
+* `columns`: The columns to fetch.
+* `table_name`: The table to fetch records from.
+* `num`: The number of records to skip.
 
 == Example
 
-The following example uses a table called `salaryemp`:
+The following example uses a `salaryemp` table.
 
 [source,sql]
 ----
 SELECT * FROM salaryemp ORDER BY emp_sal;
 ----
+
+The query returns:
 
 [source,sql]
 ----
@@ -51,7 +48,7 @@ SELECT * FROM salaryemp ORDER BY emp_sal;
 +-----------+------------+----------------+-------------+
 ----
 
-The following query skips the first 3 rows and returns the next 5, ordered by salary:
+The following query skips the first three rows and returns the next five, ordered by salary:
 
 [source,sql]
 ----
@@ -62,6 +59,8 @@ LIMIT 5 OFFSET 3;
 
 * `OFFSET 3` skips the first three rows (`Harry`, `Lewis`, `Mike`).
 * `LIMIT 5` returns the next five rows.
+
+The query returns:
 
 [source,sql]
 ----

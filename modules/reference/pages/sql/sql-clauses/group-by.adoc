@@ -1,24 +1,15 @@
 = GROUP BY
-:description: The GROUP BY clause returns a group of records from a table or multiple tables with the same values as the specified columns.
+:description: The GROUP BY clause returns a group of records from one or more tables that have the same values in specified columns.
 :page-topic-type: reference
 
-The `GROUP BY` clause returns a group of records from a table or multiple tables with the same values as the specified columns.
-
-The result of the `GROUP BY` clause returns a single row for each value of the column.
+The `GROUP BY` clause returns a group of records from one or more tables that have the same values in specified columns. The result of the `GROUP BY` clause returns a single row for each value of the column.
 
 [NOTE]
 ====
-You can use xref:reference:sql/sql-functions/aggregate-functions/index.adoc[aggregate functions] such as `COUNT()`, `MAX()`, `MIN()`, and `SUM()` to perform the operations on the grouped values in the `SELECT` statement.
+You can use xref:reference:sql/sql-functions/aggregate-functions/index.adoc[aggregate functions] such as `COUNT()`, `MAX()`, `MIN()`, and `SUM()` to perform operations on the grouped values in the `SELECT` statement.
 ====
 
 == Syntax
-
-[WARNING]
-====
-Ensure the column you are using to group is available in the column list.
-====
-
-The basic syntax of the `GROUP BY` clause is as follows −
 
 [source,sql]
 ----
@@ -32,18 +23,18 @@ column_1, column_2,...;
 
 This syntax includes the following elements:
 
-* `SELECT column_1, column_2, aggregate_function(column_3)` defines the columns you want to group (`column_1, column_2`) and the column that you want to apply an aggregate function to (`column_3`).
-* `FROM table_name` defines the table where the data comes from.
-* `GROUP BY column_1, column_2,...;` lists the columns that you want to group in the `GROUP BY` clause.
+* `SELECT column_1, column_2, aggregate_function(column_3)` defines the columns to group (`column_1, column_2`) and the column to apply an aggregate function to (`column_3`).
+* `FROM table_name` defines the table to retrieve data from.
+* `GROUP BY column_1, column_2,...;` lists the columns to group.
 
 [NOTE]
 ====
-The column specified in the `SELECT` command must also appear in the `GROUP BY` clause.
+Each column you group on must also appear in the `SELECT` list, and each column you group on must appear in the `GROUP BY` clause.
 ====
 
-=== Syntax with `WHERE` clause
+=== Syntax with WHERE clause
 
-The `GROUP BY` clause must appear after the `WHERE` clause, as follows:
+The `GROUP BY` clause must appear after the `WHERE` clause:
 
 [source,sql]
 ----
@@ -59,9 +50,9 @@ column_1, column_2,...;
 
 == Examples
 
-Assume there are two tables, the customer table and the orders table:
+Assume there are two tables: `customer` and `orders`.
 
-*customer table*
+Create the `customer` table:
 
 [source,sql]
 ----
@@ -87,7 +78,7 @@ VALUES
 SELECT * FROM customer;
 ----
 
-This creates the following table:
+This returns:
 
 [source,sql]
 ----
@@ -105,10 +96,7 @@ This creates the following table:
 +-----------+------------+
 ----
 
-[width="100%",cols="100%",options="header",]
-|===
-|orders table
-|===
+Create the `orders` table:
 
 [source,sql]
 ----
@@ -138,7 +126,7 @@ VALUES
 SELECT * FROM orders;
 ----
 
-This creates the following table:
+This returns:
 
 [source,sql]
 ----
@@ -156,9 +144,9 @@ This creates the following table:
 +------------+--------------+--------------+-------------+---------------+-----------+
 ----
 
-=== Basic `GROUP BY`
+=== Basic GROUP BY
 
-The following query gets all product names by grouping them using the products ordered from the `orders` table:
+The following query returns all distinct product names from the `orders` table:
 
 [source,sql]
 ----
@@ -167,7 +155,7 @@ FROM orders
 GROUP BY order_prod;
 ----
 
-This query returns the following output:
+The query returns:
 
 [source,sql]
 ----
@@ -180,7 +168,7 @@ This query returns the following output:
 +--------------+
 ----
 
-=== `GROUP BY` on multiple columns
+=== GROUP BY on multiple columns
 
 The following example uses multiple columns in the `GROUP BY` clause:
 
@@ -191,7 +179,7 @@ FROM orders
 GROUP BY order_id, order_prod;
 ----
 
-This query returns the following result:
+The query returns:
 
 [source,sql]
 ----
@@ -209,9 +197,9 @@ This query returns the following result:
 +-----------+--------------+
 ----
 
-=== `GROUP BY` with aggregate functions
+=== GROUP BY with aggregate functions
 
-This example calculates the total amount each customer has paid for their orders using one of the aggregate functions, the `SUM()` function.
+This example calculates the total amount each customer has paid for orders using the `SUM()` aggregate function:
 
 [source,sql]
 ----
@@ -220,7 +208,7 @@ FROM orders
 GROUP BY cust_id;
 ----
 
-This query returns the following output:
+The query returns:
 
 [source,sql]
 ----
@@ -236,9 +224,9 @@ This query returns the following output:
 +-----------+----------+
 ----
 
-=== `GROUP BY` with `JOIN` condition
+=== GROUP BY with JOIN condition
 
-Unlike the previous example, the following query joins the orders table with the customer table and groups customers by their names. It uses `COUNT()` as the aggregate function to count the number of products each customer has purchased.
+The following query joins the `orders` table with the `customer` table and groups customers by name. It uses `COUNT()` to count the number of products each customer has purchased:
 
 [source,sql]
 ----
@@ -248,7 +236,7 @@ JOIN customer C ON O.cust_id = C.cust_id
 GROUP BY C.cust_name;
 ----
 
-This command returns the following result:
+The query returns:
 
 [source,sql]
 ----
@@ -264,9 +252,9 @@ This command returns the following result:
 +------------+---------+
 ----
 
-=== `GROUP BY` with date data type
+=== GROUP BY with date data type
 
-The `order_date` column uses a `DATE` data type. This example groups the order’s quantity and total price by dates using the `DATE()` function.
+The `order_date` column uses the `DATE` data type. This example groups the order quantity and total price by date using the `DATE()` function:
 
 [source,sql]
 ----
@@ -275,7 +263,7 @@ FROM orders
 GROUP BY order_qty, DATE(order_date);
 ----
 
-This query returns the following result:
+The query returns:
 
 [source,sql]
 ----

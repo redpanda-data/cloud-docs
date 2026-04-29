@@ -1,12 +1,10 @@
 = WHERE
-:description: The WHERE clause returns a specific value from a table or multiple tables based on specified conditions.
+:description: The WHERE clause filters records based on specified conditions, returning only the rows that meet the conditions.
 :page-topic-type: reference
 
-The `WHERE` clause returns a specific value from a table or multiple tables based on specified conditions. It filters out records you do not want to include and returns only the exact result when the condition is fulfilled.
+The `WHERE` clause filters records based on specified conditions. It excludes records that do not meet the conditions and returns only the rows that match.
 
 == Syntax
-
-The basic syntax of the WHERE clause is as follows −
 
 [source,sql]
 ----
@@ -18,17 +16,17 @@ WHERE [condition]
 This syntax includes the following elements:
 
 * `SELECT column1, column2, ...` defines the columns where the records are displayed.
-* `FROM table_name` sets the table name where the records are taken from.
-* `WHERE [condition]` specifies the search condition using comparison or logical operators (e.g., `>`, `=`, `LIKE`)
+* `FROM table_name` sets the table where the records are taken from.
+* `WHERE [condition]` specifies the search condition using comparison or logical operators (for example, `>`, `=`, `LIKE`).
 
 [TIP]
 ====
-It starts with the `FROM` clause, then it executes the `WHERE` condition, after that, it runs `SELECT` on the specified columns.
+The query starts with the `FROM` clause, then evaluates the `WHERE` condition, and finally runs `SELECT` on the specified columns.
 ====
 
 == Examples
 
-Assume there is a table called salary with records as follows:
+Assume there is a table called `salary` with the following records:
 
 [source,sql]
 ----
@@ -56,7 +54,7 @@ VALUES
 SELECT * FROM salary;
 ----
 
-This creates the following table:
+This returns:
 
 [source,sql]
 ----
@@ -75,7 +73,7 @@ This creates the following table:
 
 === WHERE clause with `=` operator
 
-The following example uses the “equal” operator to look up the employee who works in the Marketing department:
+The following example uses the `=` (equal) operator to look up the employees who work in the Marketing department:
 
 [source,sql]
 ----
@@ -84,7 +82,7 @@ FROM salary
 WHERE empdept = 'Marketing';
 ----
 
-This returns the following result:
+The query returns:
 
 [source,sql]
 ----
@@ -99,12 +97,12 @@ This returns the following result:
 
 [WARNING]
 ====
-The value defined in the `WHERE` clause’s condition is case-sensitive, so ensure that you specify the correct and precise value.
+The value defined in the `WHERE` clause condition is case-sensitive. Specify the exact value to match.
 ====
 
 === WHERE clause with `!=` operator
 
-The following example uses the “not equal” operator to look up the employee who doesn’t live in Texas:
+The following example uses the `!=` (not equal) operator to look up employees who do not live in Texas:
 
 [source,sql]
 ----
@@ -115,9 +113,10 @@ WHERE empaddress != 'Texas';
 
 [NOTE]
 ====
-You can use the `<>` operator for another “not equal” operator.
+You can also use the `<>` operator for "not equal".
 ====
-This query returns the following result:
+
+The query returns:
 
 [source,sql]
 ----
@@ -131,14 +130,9 @@ This query returns the following result:
 +------------+------------+--------------+
 ----
 
-[WARNING]
-====
-The value defined in the `WHERE` clause's condition is case-sensitive. If you set `texas` it returns all records from the salary table.
-====
-
 === WHERE clause with `>` operator
 
-The following example uses the “greater than” operator to figure out who has a salary above 20000:
+The following example uses the `>` (greater than) operator to find employees with a salary above 20000:
 
 [source,sql]
 ----
@@ -149,9 +143,10 @@ WHERE empsalary > 20000;
 
 [NOTE]
 ====
-You can use the `<` operator for a “less than” condition.
+You can use the `<` operator for a "less than" condition.
 ====
-The output shows that Parker has a salary greater than 20000:
+
+The query returns:
 
 [source,sql]
 ----
@@ -162,9 +157,11 @@ The output shows that Parker has a salary greater than 20000:
 +------------+------------+-------------+
 ----
 
+Only Parker has a salary greater than 20000.
+
 === WHERE clause with `<=` operator
 
-The following example uses the “less than or equal to” operator to see who has a salary less than or equal to 15000:
+The following example uses the `<=` (less than or equal to) operator to find employees with a salary less than or equal to 15000:
 
 [source,sql]
 ----
@@ -175,9 +172,10 @@ WHERE empsalary <= '15000';
 
 [NOTE]
 ====
-You can use the `>=` operator for a “greater than or equal to” condition.
+You can use the `>=` operator for a "greater than or equal to" condition.
 ====
-The output shows that Brandon has a salary equal to 15000 and Lisa has a salary of less than 15000:
+
+The query returns:
 
 [source,sql]
 ----
@@ -189,9 +187,11 @@ The output shows that Brandon has a salary equal to 15000 and Lisa has a salary 
 +------------+------------+-------------+
 ----
 
+Brandon has a salary equal to 15000 and Lisa has a salary less than 15000.
+
 === WHERE clause with `LIKE` operator
 
-The following example uses the “like” operator to retrieve the employee whose first name starts with `Br`.
+The following example uses the `LIKE` operator to retrieve employees whose first name starts with `Br`:
 
 [source,sql]
 ----
@@ -201,9 +201,10 @@ WHERE empname LIKE 'Br%';
 
 [NOTE]
 ====
-Do the reverse to get the result based on the last string, `%string`.
+To match a string at the end instead of the start, use `LIKE '%string'`.
 ====
-This query fetches `Brandon` and `Bradley`.
+
+The query returns `Brandon` and `Bradley`:
 
 [source,sql]
 ----
@@ -217,7 +218,7 @@ This query fetches `Brandon` and `Bradley`.
 
 === WHERE clause with `IS NULL` operator
 
-The following example uses the “is null” operator to search for the employee who doesn’t have a salary value. It returns `true` and displays the result set if a value is `NULL`; otherwise, it returns `false` with no result set.
+The following example uses the `IS NULL` operator to find employees who do not have a salary value:
 
 [source,sql]
 ----
@@ -225,7 +226,7 @@ SELECT * FROM salary
 WHERE empsalary IS NULL;
 ----
 
-This returns the following result:
+The query returns:
 
 [source,sql]
 ----

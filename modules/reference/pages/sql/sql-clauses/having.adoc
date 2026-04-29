@@ -1,24 +1,20 @@
 = HAVING
-:description: The HAVING clause specifies a search condition by using an aggregate function.
+:description: The HAVING clause specifies a search condition using an aggregate function.
 :page-topic-type: reference
 
-The `HAVING` clause specifies a search condition by using an xref:reference:sql/sql-functions/aggregate-functions/index.adoc[aggregate function]. It filters out the records returned from a `GROUP BY` clause that do not fulfill a specified condition.
+The `HAVING` clause specifies a search condition using an xref:reference:sql/sql-functions/aggregate-functions/index.adoc[aggregate function]. It filters the records returned from a `GROUP BY` clause that do not fulfill the specified condition.
 
-== Differences between WHERE and HAVING clause
+== Differences between WHERE and HAVING
 
-The following table illustrates the differences between the `HAVING` and `WHERE` clause:
-
-[width="100%",cols="51%,49%",options="header",]
+[cols="51%,49%",options="header"]
 |===
-|*WHERE* |*HAVING*
-|The `GROUP BY` clause appears after the WHERE clause. |The `GROUP BY` clause appears before the HAVING clause.
-|The `WHERE` clause can’t work with an aggregate function. |The `HAVING` clause can work with an aggregate function.
-|The `WHERE` clause filters particular records. |The `HAVING` clause filters the group of records.
+|WHERE |HAVING
+|The `GROUP BY` clause appears after the `WHERE` clause. |The `GROUP BY` clause appears before the `HAVING` clause.
+|The `WHERE` clause cannot work with an aggregate function. |The `HAVING` clause can work with an aggregate function.
+|The `WHERE` clause filters individual records. |The `HAVING` clause filters groups of records.
 |===
 
 == Syntax
-
-The basic syntax of the `GROUP BY` clause is as follows:
 
 [source,sql]
 ----
@@ -30,16 +26,16 @@ HAVING condition_aggregate_function
 
 This syntax includes the following elements:
 
-* `SELECT column_1, column_2,...` selects the columns you want to display.
-* `FROM table_name` selects the table where the data comes from.
-* `GROUP BY column_name(s)` lists the columns you want to group in the GROUP BY clause.
-* `HAVING condition_aggregate_function` provides the condition for filtering rows, which the `GROUP BY` clause forms. The condition can use an aggregate function, such as `SUM()`, `COUNT()`, `MIN()`, and so on.
+* `SELECT column_1, column_2,...` selects the columns to display.
+* `FROM table_name` selects the table to retrieve data from.
+* `GROUP BY column_name(s)` lists the columns to group.
+* `HAVING condition_aggregate_function` provides the condition for filtering rows formed by the `GROUP BY` clause. The condition can use an aggregate function such as `SUM()`, `COUNT()`, or `MIN()`.
 
 == Examples
 
-Assume there are two tables, the student table and the score table:
+Assume there are two tables: `student` and `score`.
 
-*student table*
+Create the `student` table:
 
 [source,sql]
 ----
@@ -66,7 +62,7 @@ VALUES
 SELECT * FROM student;
 ----
 
-This creates the following table:
+This returns:
 
 [source,sql]
 ----
@@ -85,7 +81,7 @@ This creates the following table:
 +------------+------------+
 ----
 
-*score table*
+Create the `score` table:
 
 [source,sql]
 ----
@@ -119,7 +115,7 @@ VALUES
 SELECT * FROM score;
 ----
 
-This creates the following table:
+This returns:
 
 [source,sql]
 ----
@@ -142,9 +138,9 @@ This creates the following table:
 +-----------+----------+------------+------------+-------------+
 ----
 
-=== `HAVING` clause with `AVG` function
+=== HAVING clause with AVG function
 
-The following example uses an `AVG` aggregate function to filter the student ID with the subject which has an average score of more than 80:
+The following example uses the `AVG` aggregate function to filter subjects with an average score greater than 80:
 
 [source,sql]
 ----
@@ -154,7 +150,7 @@ GROUP BY subject
 HAVING AVG (score_val) > 80;
 ----
 
-This query returns the following result:
+The query returns:
 
 [source,sql]
 ----
@@ -166,7 +162,7 @@ This query returns the following result:
 +-----------+
 ----
 
-=== `HAVING` clause with `COUNT` function
+=== HAVING clause with COUNT function
 
 The following query lists subjects that have more than two `PASSED` scores:
 
@@ -178,7 +174,7 @@ GROUP BY subject
 HAVING SUM(CASE WHEN score_stat = 'PASSED' THEN 1 ELSE 0 END) > 2;
 ----
 
-This query shows that `Math` has more than two `PASSED` values:
+The query returns `Math` as the only subject with more than two `PASSED` values:
 
 [source,sql]
 ----
@@ -189,9 +185,9 @@ This query shows that `Math` has more than two `PASSED` values:
 +--------------+---------+
 ----
 
-=== `HAVING` clause with `MAX` function
+=== HAVING clause with MAX function
 
-Assume that the minimum score criteria is 75. The following query finds the maximum score of each subject with the condition that it should be more than 75.
+Assume the minimum score criterion is 75. The following query finds the maximum score for each subject where the maximum is greater than 75:
 
 [source,sql]
 ----
@@ -201,7 +197,7 @@ GROUP BY subject
 HAVING MAX(score_val)>75;
 ----
 
-The returned result has the maximum score of each subject:
+The query returns:
 
 [source,sql]
 ----
@@ -216,11 +212,9 @@ The returned result has the maximum score of each subject:
 +-----------+--------+
 ----
 
-=== `HAVING` with `JOIN` condition
+=== HAVING with JOIN condition
 
-Assume that you want to know which students have failed in their subject.
-
-You can combine the `student` table with the `score` table using the `JOIN` clause and apply a condition on the `score_stat` column where the values should be equal to `FAILED`, as shown in the following query:
+To find students who have failed in their subjects, combine the `student` and `score` tables using `JOIN` and apply a condition on the `score_stat` column:
 
 [source,sql]
 ----
@@ -232,10 +226,10 @@ HAVING score_stat = 'FAILED';
 ----
 
 * The `JOIN` clause combines the two tables.
-* Then, the `GROUP BY` clause filters all records from both tables based on the specified columns.
-* The `HAVING` clause then filters the records returned from the `GROUP BY` clause according to the specified condition.
+* The `GROUP BY` clause filters records from both tables based on the specified columns.
+* The `HAVING` clause filters the records returned from the `GROUP BY` clause according to the specified condition.
 
-This returns the following result:
+The query returns:
 
 [source,sql]
 ----

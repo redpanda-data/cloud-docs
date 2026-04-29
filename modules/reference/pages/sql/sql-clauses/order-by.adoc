@@ -1,12 +1,10 @@
 = ORDER BY
-:description: The ORDER BY clause is used to sort rows of the result received from a SELECT statement, which retrieves records from one or more tables.
+:description: The ORDER BY clause sorts the rows returned by a SELECT statement.
 :page-topic-type: reference
 
-The `ORDER BY` clause is used to sort rows of the result received from a `SELECT` statement, which retrieves records from one or more tables.
+The `ORDER BY` clause sorts the rows returned by a `SELECT` statement.
 
 == Syntax
-
-The following illustrates the syntax of the `ORDER BY` clause:
 
 [source,sql]
 ----
@@ -17,11 +15,11 @@ ORDER BY sort_expression1 [ASC | DESC] [NULLS FIRST | NULLS LAST];
 
 === Parameters
 
-* `columns`: columns that you wish to retrieve
-* `table_name`: table that you want to retrieve records from.
-* `ORDER BY`: expression used to order the results
-* `ASC` or `DESC`: optional parameter to specify the order in which the results should be returned, either ascending or descending. Default is set to `ASC`.
-* `NULLS FIRST` or `NULLS LAST`: optional parameter to specify where `NULL` values appear in the sort order. `NULLS FIRST` places `NULL` values before non-null values. `NULLS LAST` places `NULL` values after non-null values. The default is `NULLS LAST` for `ASC` order and `NULLS FIRST` for `DESC` order.
+* `columns`: The columns to retrieve.
+* `table_name`: The table to retrieve records from.
+* `ORDER BY`: The expression used to order the results.
+* `ASC` or `DESC`: Optional. Specifies whether results are returned in ascending or descending order. Default is `ASC`.
+* `NULLS FIRST` or `NULLS LAST`: Optional. Specifies where `NULL` values appear in the sort order. `NULLS FIRST` places `NULL` values before non-null values. `NULLS LAST` places `NULL` values after non-null values. The default is `NULLS LAST` for `ASC` order and `NULLS FIRST` for `DESC` order.
 
 == Examples
 
@@ -51,12 +49,14 @@ VALUES
 (1011, 'David', 'Sales', 8200);
 ----
 
-To verify that the values have been inserted successfully, retrieve the results by executing the following code:
+To verify the inserted values, run:
 
 [source,sql]
 ----
 SELECT * FROM salaryemp;
 ----
+
+The query returns:
 
 [source,sql]
 ----
@@ -76,7 +76,7 @@ SELECT * FROM salaryemp;
 +-----------+------------+----------------+-------------+
 ----
 
-=== Use `ORDER BY` in ascending order
+=== ORDER BY in ascending order
 
 This example uses the `ORDER BY` clause to sort employees by their division:
 
@@ -87,7 +87,7 @@ FROM salaryemp
 ORDER BY emp_div;
 ----
 
-This query returns the following output:
+The query returns:
 
 [source,sql]
 ----
@@ -107,9 +107,9 @@ This query returns the following output:
 +------------+----------------+
 ----
 
-=== Use `ORDER BY` in descending order
+=== ORDER BY in descending order
 
-The following statement selects the employee name and employee salary from the `salaryemp` table and sorts the records in the `emp_sal` column in descending order:
+The following statement selects all records from the `salaryemp` table and sorts them by `emp_sal` in descending order:
 
 [source,sql]
 ----
@@ -117,7 +117,7 @@ SELECT * FROM salaryemp
 ORDER BY emp_sal DESC;
 ----
 
-The result of the query is as follows:
+The query returns:
 
 [source,sql]
 ----
@@ -137,9 +137,9 @@ The result of the query is as follows:
 +-----------+------------+----------------+-------------+
 ----
 
-=== Use `ORDER BY` with both ASC & DESC parameters
+=== ORDER BY with both ASC and DESC parameters
 
-The following statement selects all records from the `salaryemp` table and sorts the rows by employee salary in ascending order and employee division in descending order:
+The following statement selects all records from the `salaryemp` table and sorts the rows by `emp_sal` in ascending order and `emp_div` in descending order:
 
 [source,sql]
 ----
@@ -147,7 +147,7 @@ SELECT * FROM salaryemp
 ORDER BY emp_sal ASC, emp_div DESC;
 ----
 
-After executing this command, the following output is returned:
+The query returns:
 
 [source,sql]
 ----
@@ -167,9 +167,9 @@ After executing this command, the following output is returned:
 +-----------+------------+----------------+-------------+
 ----
 
-=== Use `ORDER BY` with `TEXT` data types
+=== ORDER BY with TEXT data types
 
-In this example, two small tables are created with the above-mentioned data types:
+In this example, two small tables are created with `TEXT` data:
 
 [source,sql]
 ----
@@ -190,13 +190,15 @@ INSERT INTO texts
 VALUES ('A'), ('B'), ('a'), ('b');
 ----
 
-When using the `ORDER BY` clause with these types of data, records with uppercase letters are sorted lexicographically first, followed by records with lowercase letters.
+When using the `ORDER BY` clause with these data types, records with uppercase letters are sorted lexicographically first, followed by records with lowercase letters.
 
 [source,sql]
 ----
 SELECT * FROM strings ORDER BY column1;
 SELECT * FROM texts ORDER BY column1;
 ----
+
+The query returns:
 
 [source,sql]
 ----
@@ -208,7 +210,7 @@ SELECT * FROM texts ORDER BY column1;
  b
 ----
 
-=== Use `ORDER BY` with `INTERVAL` data type
+=== ORDER BY with INTERVAL data type
 
 For this example, create a new table called `interval_data`:
 
@@ -232,6 +234,8 @@ VALUES
 ----
 SELECT * FROM interval_data ORDER BY duration;
 ----
+
+The query returns:
 
 [source,sql]
 ----
@@ -258,6 +262,8 @@ VALUES
 ----
 SELECT * FROM interval_data ORDER BY duration;
 ----
+
+The query returns:
 
 [source,sql]
 ----
