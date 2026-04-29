@@ -18,7 +18,7 @@ The `expression` must be a Boolean expression.
 
 == `IF()` with a table
 
-In this example, the `test_result` table is used to determine which participants passed and which failed:
+This example shows how the `test_result` table is used to determine which participants passed and which failed:
 
 [source,sql]
 ----
@@ -41,7 +41,7 @@ INSERT INTO test_result VALUES
 SELECT * FROM test_result;
 ----
 
-This query displays the following table:
+This query displays the table:
 
 [source,sql]
 ----
@@ -63,7 +63,7 @@ This query displays the following table:
 SELECT name, IF(score>=500, 'PASSED', 'NOT PASSED') FROM test_result;
 ----
 
-. This returns the following result:
+. The returned results:
 +
 [source,sql]
 ----
@@ -80,7 +80,7 @@ SELECT name, IF(score>=500, 'PASSED', 'NOT PASSED') FROM test_result;
 
 == IF() with expressions as return value
 
-In the second example, the `deptcost` table is used to determine which department exceeded the budget and which one did not.
+For the second example, use the `deptcost` table to determine which department exceeded the budget and which one did not.
 
 [source,sql]
 ----
@@ -98,7 +98,7 @@ INSERT INTO deptcost VALUES
 ('Sales', 910,860,'within budget');
 ----
 
-Run the following query to display the table:
+Run this query to display the table:
 
 [source,sql]
 ----
@@ -120,14 +120,14 @@ The `deptcost` table:
 +-----------+--------+--------+---------------+
 ----
 
-. The following IF function states that _IF the actual is less than the budget, then return the budget difference, otherwise return 0_.
+. The IF function states that _IF the actual is less than the budget, then return the budget difference, otherwise return 0_.
 +
 [source,sql]
 ----
 SELECT dept, IF(actual < budget, budget - actual, 0) FROM deptcost;
 ----
 
-. The following result is returned using the `IF()` function:
+. The result is returned using the `IF()` function:
 +
 [source,sql]
 ----

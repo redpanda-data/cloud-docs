@@ -2,25 +2,25 @@
 :description: The FORMAT_TIMESTAMP() function returns a given timestamp value in a specified format.
 :page-topic-type: reference
 
-The `FORMAT_TIMESTAMP()` function returns a given timestamp value in a specified format. Its syntax is as follows:
+The `FORMAT_TIMESTAMP()` function returns a given timestamp value in a specified format. Its syntax is:
 
 [source,sql]
 ----
 FORMAT_TIMESTAMP(timestamp, format_string)
 ----
 
-This function requires two arguments, i.e., a *timestamp* string that represents the timestamp value that needs to be converted to a specified format and a *format_string* that specifies the format to be converted into. Its return type is a timestamp value with a timezone.
+This function requires two arguments. For example, a *timestamp* string that represents the timestamp value that needs to be converted to a specified format and a *format_string* that specifies the format to be converted into. Its return type is a timestamp value with a timezone.
 
 == Basic `FORMAT_TIMESTAMP()` function
 
-The below example uses the `FORMAT_TIMESTAMP()` function to convert a given timestamp into a timestamp format as specified in the function arguments.
+This example shows how to use the `FORMAT_TIMESTAMP()` function to convert a given timestamp into a timestamp format as specified in the function arguments.
 
 [source,sql]
 ----
 SELECT FORMAT_TIMESTAMP( 2 '2022-05-30 5:30:04', 3 'YYYY-MM-DD HH:MI:SS' 4);
 ----
 
-Details of the format specified are as follows:
+Details of the format specified:
 
 * `YYYY` is the four-digit year 2022
 * `MM` is the month: 05
@@ -46,14 +46,14 @@ Output:
 
 == `FORMAT_TIMESTAMP()` function using multiple spaces
 
-The `FORMAT_TIMESTAMP()` when given multiple spaces in the input string, omits the spaces and only returns the correct timestamp value. Let’s see how it works using the following example:
+The `FORMAT_TIMESTAMP()`, when given multiple spaces in the input string, omits the spaces and only returns the correct timestamp value. Let’s see how it works using an example:
 
 [source,sql]
 ----
 SELECT 2 FORMAT_TIMESTAMP('2008 Dec','YYYY MON');
 ----
 
-This returns the following output:
+This returns the output:
 
 [source,sql]
 ----
@@ -66,14 +66,14 @@ This returns the following output:
 
 == `FORMAT_TIMESTAMP()` function if the input value of the year is less than 4 digits
 
-`FORMAT_TIMESTAMP()` will adjust the year to the nearest year value if the input argument has less than the required number of digits i.e., less than 4. To see how it works, look at the following example:
+`FORMAT_TIMESTAMP()` will adjust the year to the nearest year value if the input argument has less than the required number of digits (for example, less than 4). This example shows how it works:
 
 [source,sql]
 ----
 SELECT 2 FORMAT_TIMESTAMP('07 25 09 10:40', 'MM DD YY HH:MI');
 ----
 
-This returns the following output:
+This returns the output:
 
 [source,sql]
 ----
@@ -84,4 +84,4 @@ This returns the following output:
 +-----------------------------+
 ----
 
-In this example, the two-digit year `09` has been changed to the nearest four-digit year i.e., `2009`. Similarly, `70` will become `1970`, and `10` will become `2010`.
+In this example, the two-digit year `09` has been changed to the nearest four-digit year (for example, `2009`). Similarly, `70` will become `1970`, and `10` will become `2010`.

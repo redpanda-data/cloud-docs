@@ -11,7 +11,7 @@ Redpanda SQL also supports the xref:reference:sql/sql-functions/string-functions
 
 == Syntax
 
-The syntax for `REPLACE()` function is as follows:
+The syntax for `REPLACE()` function is:
 
 [source,sql]
 ----
@@ -25,10 +25,11 @@ The `REPLACE()` function performs a case-sensitive replacement
 
 === Parameters
 
-The syntax requires three parameters:
+The syntax requires these parameters:
 
 * `string`: string that you want to replace
-* `old_substring`: substring that you want to replace (all parts will be replaced if it appears multiple times in the string)
+* `string`: string to be replaced
+* `old_substring`: substring to be replaced (all parts are replaced if it appears multiple times in the string)
 * `new_substring`: new substring that will replace the old one
 
 == Examples
@@ -42,7 +43,7 @@ This example demonstrates a basic usage of the `REPLACE()` function.
 SELECT REPLACE ('NewDatabase', 'New', 'Redpanda');
 ----
 
-The `REPLACE()` function will find all occurrences of the '`New`' substring in the '`NewDatabase`' string and replace it with the '`Redpanda`' substring, producing the following output:
+The `REPLACE()` function finds all occurrences of the '`New`' substring in the '`NewDatabase`' string and replaces it with the '`Redpanda`' substring, producing:
 
 [source,sql]
 ----
@@ -72,7 +73,7 @@ VALUES
     ('Volleyball','group');
 ----
 
-Once that is done, retrieve all values from the table using the following query:
+After that is completed, retrieve all values from the table using this query:
 
 [source,sql]
 ----
@@ -91,7 +92,7 @@ SELECT * FROM hobby;
 +--------------+-------------+
 ----
 
-The following query replaces the *'`group`'* values in the *category* column with *'`sports`'*:
+This query replaces the *'`group`'* values in the *category* column with *'`sports`'*:
 
 [source,sql]
 ----
@@ -112,7 +113,7 @@ SELECT REPLACE(category, 'group', 'sports') from hobby;
 
 === Remove a substring from a string
 
-The following example shows how to remove a substring from a string using the `REPLACE()` function. In this case, the goal is to find all occurrences of the '`Friends`' substring in the '`Hello Friends`' string and remove it:
+This example shows how to remove a substring from a string using the `REPLACE()` function. In this case, the goal is to find all occurrences of the '`Friends`' substring in the '`Hello Friends`' string and remove it:
 
 [source,sql]
 ----
@@ -130,7 +131,7 @@ SELECT REPLACE('Hello Friends', 'Friends', '');
 
 === Replace multiple patterns
 
-The following example uses the `REPLACE()` function to replace multiple patterns of the given string:
+This example uses the `REPLACE()` function to replace multiple patterns of the given string:
 
 [source,sql]
 ----

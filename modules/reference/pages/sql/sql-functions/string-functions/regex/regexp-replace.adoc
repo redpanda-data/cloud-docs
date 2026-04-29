@@ -6,7 +6,7 @@ The `REGEXP_REPLACE()` function replaces all occurrences of a regular expression
 
 == Syntax
 
-The syntax for `REGEXP_REPLACE()` function is as follows:
+The syntax for `REGEXP_REPLACE()` function is:
 
 [source,sql]
 ----
@@ -34,7 +34,7 @@ This example uses the `REGEXP_REPLACE()` function with a basic POSIX regular exp
 
 [source,sql]
 ----
-SELECT REGEXP_REPLACE('The OXLA supports various data types', 'T[^ ]*', 'We') AS "Replaced_String";
+SELECT REGEXP_REPLACE('The SQL ENGINE supports various data types', 'T[^ ]*', 'The') AS "Replaced_String";
 ----
 
 Output:
@@ -43,7 +43,7 @@ Output:
 ----
  Replaced_String
 -----------------------------------------
- We OXLA supports various data types
+ The SQL ENGINE supports various data types
 ----
 
 The pattern used was *"`T[^ ]*`"*, which matches any substring that starts with a '`T`' character, followed by any number of non-space characters. The function replaces the matched substring with the specified replacement string *"`We`"*.
@@ -66,7 +66,7 @@ In this query, the second parameter is a regular expression *”[^A-Za-z0-9 ]”
  Hello World~
 ----
 
-=== Flags usage
+=== Flag usage
 
 ==== Replace certain substrings with a single flag defined
 
@@ -130,7 +130,7 @@ SELECT REGEXP_REPLACE('ab12c', '[0-9]', 'X');
  abX2c
 ----
 
-In this case, as you can see only the first digit (`1`) was replaced with `X`. By adding the `g` flag, all occurrences are replaced with `X`:
+In this case, only the first digit (`1`) was replaced with `X`. By adding the `g` flag, all occurrences are replaced with `X`:
 
 [source,sql]
 ----
@@ -146,7 +146,7 @@ SELECT REGEXP_REPLACE('ab12c', '[0-9]', 'X', 'g');
 
 [NOTE]
 ====
-If you use multiple flags, the last one takes precedence. If you use the `ci` flags, the regex will be case-insensitive, while using the `ic` flags it will be case-sensitive
+If using multiple flags, the last one takes precedence. If using the `ci` flags, the regex will be case-insensitive, while using the `ic` flags it will be case-sensitive
 ====
 
 == Restrictions

@@ -19,19 +19,19 @@ SELECT has_schema_privilege('user', 'schema', 'privilege');
 ----
 SELECT has_schema_privilege('schema', 'privilege');
 ----
-No matter what syntax version you choose, the `has_schema_privilege()` function will always return `TRUE (t)`.
+No matter what syntax version is choosen, the `has_schema_privilege()` function always returns `TRUE (t)`.
 
 == Parameters
 
-The following parameters are required to execute this function:
+These parameters are required to execute this function:
 
-* `schema`: name of the schema for which you want to check privileges (can be any string value or string columns from other tables)
+* `schema`: name of the schema for which to check privileges (can be any string value or string columns from other tables)
 * `user`: name of the user who has the privileges (can be any string value)
-* `privilege`: specifies the specific privilege you want to check for in the schema (currently, the function supports `create` and `usage`)
+* `privilege`: specifies the specific privilege to check for in the schema (the function supports `create` and `usage`)
 
 [NOTE]
 ====
-The comparison for the `privilege` is case-insensitive, so you can use lowercase or uppercase notation for the privilege name
+The comparison for the `privilege` is case-insensitive, so it does not matter whether lowercase or uppercase notation is used for the privilege name
 ====
 
 == Examples
@@ -56,7 +56,7 @@ This query returns `TRUE`, which means that the current user has a `create` priv
 
 === Check for `USAGE` privilege
 
-You can also use the `has_schema_privilege()` function to check for the `usage` privilege on a schema. For example, to check if the current user can create objects in the "`*public*`" schema, you can execute the following code:
+Use the `has_schema_privilege()` function to check for the `usage` privilege on a schema. For example, to check if the current user can create objects in the "`*public*`" schema, run:
 
 [source,sql]
 ----

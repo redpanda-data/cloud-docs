@@ -23,15 +23,15 @@ Both versions of the `pg_get_expr()` function return an empty string `""`.
 
 == Parameters
 
-The following parameters are required to execute this function:
+These parameters are required to execute this function:
 
-* `expr_text`: expression for which you want to obtain the internal representation (can be any string value)
+* `expr_text`: expression for which to obtain the internal representation (can be any string value)
 * `relation_oid`: OID (Object Identifier) of the table the expression belongs to (integer type)
 * `pretty_bool`: boolean value determining whether to format the expression in a more human-readable format (`TRUE`) or not (`FALSE`)
 
 == Example
 
-First, create a sample table named *employees*
+First, create a sample table named *employees*:
 
 [source,sql]
 ----
@@ -42,7 +42,7 @@ CREATE TABLE employees (
 );
 ----
 
-Then get the OID of the table
+Then get the OID of the table:
 
 [source,sql]
 ----
@@ -56,7 +56,7 @@ SELECT oid FROM pg_class WHERE relname = 'employees';
  1018
 ----
 
-As the last step, retrieve the internal form for the `salary` column using the `pg_get_expr()` function
+As the last step, retrieve the internal form for the `salary` column using the `pg_get_expr()` function:
 
 [source,sql]
 ----
@@ -67,7 +67,7 @@ SELECT pg_get_expr('salary', 1018);
 SELECT pg_get_expr('salary', 1018, TRUE);
 ----
 
-Executing any of the queries above returns the following output:
+Executing any of the preceding queries returns the output:
 
 [source,sql]
 ----
