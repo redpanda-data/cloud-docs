@@ -27,6 +27,10 @@ Remote MCP has been deprecated and removed from Redpanda Cloud.
 
 Serverless clusters now support up to 100 Redpanda Connect pipelines and MCP servers. See xref:get-started:cluster-types/serverless.adoc#_serverless_usage_limits[Serverless usage limits].
 
+=== Terraform provider: Write-only attributes for sensitive fields
+
+The Redpanda Terraform provider (v1.6.0+) now supports https://developer.hashicorp.com/terraform/plugin/framework/resources/write-only-arguments[Terraform 1.11+ write-only attributes^] for sensitive fields such as user passwords and pipeline client secrets. Use the new `<field>_wo` and `<field>_wo_version` attributes to keep credentials out of your `.tfstate` file. See xref:manage:terraform-provider.adoc#manage-sensitive-attributes-with-write-only-fields[Manage sensitive attributes with write-only fields].
+
 === Redpanda Connect updates
 
 * The Redpanda Connect pipeline creation and editing workflow has been simplified. The new UI replaces the previous multi-page wizard with a visual pipeline diagram, an IDE-like configuration editor, slash commands for inserting variables, and inline links to component documentation. See the xref:develop:connect/connect-quickstart.adoc[Redpanda Connect quickstart] to try it out.
