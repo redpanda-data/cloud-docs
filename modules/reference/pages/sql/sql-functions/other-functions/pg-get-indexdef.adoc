@@ -1,20 +1,18 @@
 = pg_get_indexdef()
-:description: The link:https://www.postgresql.org/docs/current/functions-info.html#FUNCTIONS-INFO-CATALOG[pg_get_indexdef()^] is a system catalog information functio
+:description: The pg_get_indexdef() function reconstructs the PostgreSQL command used to retrieve the definition of a specified index.
 :page-topic-type: reference
 
-The link:https://www.postgresql.org/docs/current/functions-info.html#FUNCTIONS-INFO-CATALOG[pg_get_indexdef()^] is a system catalog information function that reconstructs the PostgreSQL command used to retrieve the definition of a specified index.
+The link:https://www.postgresql.org/docs/current/functions-info.html#FUNCTIONS-INFO-CATALOG[`pg_get_indexdef()`^] is a system catalog information function that reconstructs the PostgreSQL command used to retrieve the definition of a specified index.
 
 == Syntax
 
-Here are the two available syntax versions of the `pg_get_indexdef()` function:
+The `pg_get_indexdef()` function has two available syntax versions:
 
-.Version 1
 [source,sql]
 ----
 pg_get_indexdef(index_oid, column_oid)
 ----
 
-.Version 2
 [source,sql]
 ----
 pg_get_indexdef(index_oid, column_oid, pretty_bool)
@@ -24,13 +22,13 @@ pg_get_indexdef(index_oid, column_oid, pretty_bool)
 
 The parameters required to execute this function:
 
-* `index_oid`: specifies the object identifier (OID) of the index
-* `column_oid`: indicates the column number within the index (starting from 1)
-* `pretty_bool`: controls whether to format the output in a human-readable way
+* `index_oid`: Specifies the object identifier (OID) of the index.
+* `column_oid`: Indicates the column number within the index (starting from 1).
+* `pretty_bool`: Controls whether to format the output in a human-readable way.
 
 == Example
 
-This example starts by creating a sample table and an index for it:
+Create a sample table and an index for it:
 
 [source,sql]
 ----
@@ -52,14 +50,14 @@ SELECT oid FROM pg_class WHERE relname = 'sample_index';
  16387
 ----
 
-As the last step, retrieve the index definition:
+Retrieve the index definition:
 
 [source,sql]
 ----
 SELECT pg_get_indexdef(16387);
 ----
 
-Here is the reconstructed definition:
+The query returns the reconstructed definition:
 
 [source,sql]
 ----
