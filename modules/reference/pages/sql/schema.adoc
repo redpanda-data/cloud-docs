@@ -1,41 +1,28 @@
-= Schema Definition
+= Schemas
 :description: Schemas are namespaces that organize tables and other database objects in Redpanda SQL.
 :page-topic-type: reference
 
-== What is a schema?
+A schema is a namespace that groups related database objects, including tables, views, indexes, sequences, data types, operators, and functions. Schemas let you organize objects into logical groups so their names do not collide.
 
-Have you ever wondered how to work with your fellows in one database without interfering with each other? Is it possible to organize the database objects into logical groups which do not collide with the other objects’ names?
+Redpanda SQL supports multiple schemas in a single database. For example, in a database named `mydb`, you might define schemas such as `auth`, `model`, and `business`.
 
-A schema addresses these needs:
+== Default schema
 
-A schema is a collection of tables. A schema also contains views, indexes, sequences, data types, operators, and functions. Redpanda SQL supports multiple schemas. For example, you can have a database named `oxla` and have multiple schemas based on your needs, such as `auth`, `model`, and `business`.
+By default, Redpanda SQL uses the `public` schema. When you reference an unqualified table name, it is equivalent to `public.table_name`. The same rule applies to `CREATE`, `DROP`, and `SELECT` statements.
 
-== Default schema in Redpanda SQL
-
-By default, Redpanda SQL uses the `public` schema. When you reference an unqualified `table_name`, that `table_name` is equivalent to `public.table_name`. The same rule applies to `CREATE`, `DROP`, and `SELECT TABLE` statements.
-
-[NOTE]
-====
-Furthermore, you can create multiple schemas per your needs.
-====
-
-== Schema usage scenarios
+== Syntax
 
 === Create a schema
-
-The basic syntax of creating a schema is as follows:
 
 [source,sql]
 ----
 CREATE SCHEMA [IF NOT EXISTS] schema_name;
 ----
 
-* `schema_name` is the schema name you are going to create.
-* `IF NOT EXISTS` is an optional parameter to avoid errors if the schema already exists.
+* `schema_name`: Name of the schema to create.
+* `IF NOT EXISTS`: Optional. Prevents an error if the schema already exists.
 
-=== Create a table in schema
-
-The syntax to create a table in a specified schema is as follows:
+=== Create a table in a schema
 
 [source,sql]
 ----
@@ -44,34 +31,32 @@ CREATE TABLE schema_name.table_name(
 );
 ----
 
-* `schema_name` is the schema that you have created.
-* `table_name` is the table name you are going to create.
+* `schema_name`: Name of an existing schema.
+* `table_name`: Name of the table to create.
 
-=== Select a table in schema
-
-After creating the table and inserting some data, display all rows with the following syntax:
+=== Query a table in a schema
 
 [source,sql]
 ----
 SELECT * FROM schema_name.table_name;
 ----
 
-* `schema_name` is the name of the schema.
-* `table_name` is the name of the table you want to display.
+* `schema_name`: Name of the schema.
+* `table_name`: Name of the table to query.
 
-=== Drop the schema
+=== Drop a schema
 
-Option 1: To drop an empty schema where no objects remain in it, use the following command:
+To drop an empty schema:
 
 [source,sql]
 ----
 DROP SCHEMA [IF EXISTS] schema_name;
 ----
 
-* `schema_name` is the schema name you are going to create.
-* `IF EXISTS` is an optional parameter to avoid errors if the schema does not exist.
+* `schema_name`: Name of the schema to drop.
+* `IF EXISTS`: Optional. Prevents an error if the schema does not exist.
 
-Option 2: Tables reside in a schema, so it is impossible to drop a schema without also dropping the tables. The following command drops the schema along with the tables.
+To drop a schema that contains tables, use `CASCADE` to drop the schema and its contents:
 
 [source,sql]
 ----
@@ -80,16 +65,16 @@ DROP SCHEMA schema_name CASCADE;
 
 == Examples
 
-=== Create schema
+=== Create a schema and table
 
-. First, connect to Redpanda SQL and create a schema:
+. Create a schema:
 +
 [source,sql]
 ----
 CREATE SCHEMA app_data;
 ----
 
-. Next, create a table in the `app_data` schema with the following details:
+. Create a table in the `app_data` schema and insert rows:
 +
 [source,sql]
 ----
@@ -108,14 +93,14 @@ VALUES
 ('5555', 'Boolean', 'TRUE');
 ----
 
-. You can verify and show the table with the following command:
+. Verify the table contents:
 +
 [source,sql]
 ----
 SELECT * FROM app_data.functions;
 ----
 
-. The query returns the following result:
+. The query returns:
 +
 [source,sql]
 ----
@@ -130,13 +115,13 @@ SELECT * FROM app_data.functions;
 +------+---------------+---------+
 ----
 
-=== Create schema using IF NOT EXISTS
+=== Use IF NOT EXISTS
 
-To avoid errors when the schema already exists, use the `IF NOT EXISTS` option. Here is how it works:
+The `IF NOT EXISTS` option lets the `CREATE SCHEMA` query succeed without error when the schema already exists. The schema is not modified.
 
-==== Example without IF NOT EXISTS
+==== Without IF NOT EXISTS
 
-. First, create the schema without using the `IF NOT EXISTS` option.
+. Create a schema:
 +
 [source,sql]
 ----
@@ -150,7 +135,7 @@ Output:
 CREATE SCHEMA
 ----
 
-. If you attempt to create the schema again without using `IF NOT EXISTS`, it will result in an error.
+. Run the same `CREATE SCHEMA` statement again. The query fails with an error:
 +
 [source,sql]
 ----
@@ -164,43 +149,43 @@ Output:
 ERROR:  Schema: analytics already exists
 ----
 
-==== Example with IF NOT EXISTS
+==== With IF NOT EXISTS
 
-Now, create the schema using the `IF NOT EXISTS` option to avoid the error.
+Run the same `CREATE SCHEMA` statement with `IF NOT EXISTS`. The query succeeds without error:
 
 [source,sql]
 ----
 CREATE SCHEMA IF NOT EXISTS analytics;
 ----
 
-Using `IF NOT EXISTS` allows the query to create a schema even if it already exists.
-
 [source,sql]
 ----
 CREATE
 ----
 
-=== Drop schema
+=== Drop a schema
 
-Use the following command to delete the schema and also the tables in it.
+To drop a schema and all its tables, use `CASCADE`:
 
 [source,sql]
 ----
 DROP SCHEMA app_data CASCADE;
 ----
 
-Another case is if there is no table or object created inside the schema, you can use the following command to drop the schema.
+If the schema is empty, you can drop it without `CASCADE`:
 
 [source,sql]
 ----
 DROP SCHEMA app_data;
 ----
 
-=== Drop schema using IF EXISTS
+=== Use IF EXISTS
 
-==== Example without IF EXISTS
+The `IF EXISTS` option lets the `DROP SCHEMA` query succeed without error when the schema does not exist.
 
-. First, drop the schema without using the `IF EXISTS` option.
+==== Without IF EXISTS
+
+. Drop a schema:
 +
 [source,sql]
 ----
@@ -214,7 +199,7 @@ Output:
 DROP
 ----
 
-. If you attempt to drop the schema again without using `IF EXISTS`, it will result in an error.
+. Run the same `DROP SCHEMA` statement again. The query fails with an error:
 +
 [source,sql]
 ----
@@ -228,16 +213,14 @@ Output:
 ERROR:  schema "analytics" does not exist
 ----
 
-==== Example with IF EXISTS
+==== With IF EXISTS
 
-Now, drop the schema using the `IF EXISTS` option.
+Run the same `DROP SCHEMA` statement with `IF EXISTS`. The query succeeds without error:
 
 [source,sql]
 ----
 DROP SCHEMA IF EXISTS analytics;
 ----
-
-Using `IF` EXISTS allows the query to succeed even if the schema does not exist.
 
 [source,sql]
 ----

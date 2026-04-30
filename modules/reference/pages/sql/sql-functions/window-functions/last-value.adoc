@@ -6,7 +6,7 @@ The `LAST_VALUE()` is a window function that retrieves the last value in an orde
 
 == Syntax
 
-The syntax for this function is as follows:
+The syntax for this function is:
 
 [source,sql]
 ----
@@ -19,10 +19,10 @@ LAST_VALUE(expression) OVER (
 
 == Parameters
 
-* `expression`: input’s column or expression values that returns a single value. It represents the value you want to retrieve from the first row of the sorted partition
-* `PARTITION BY`: optional clause, which divides the result set into partitions to which the `LAST_VALUE()` function is applied (if omitted, the entire result set is treated as a single partition)
-* `ORDER BY`: order of rows in each partition to which the function is applied
-* `RANGE BETWEEN`: range-based window frame relative to the current row
+* `expression`: Column or expression that returns a single value. Represents the value to retrieve from the first row of the sorted partition.
+* `PARTITION BY`: Optional. Divides the result set into partitions, each processed independently. If omitted, the entire result set is treated as a single partition.
+* `ORDER BY`: Order of rows in each partition to which the function is applied.
+* `RANGE BETWEEN`: Range-based window frame relative to the current row.
 
 == Example
 
@@ -56,7 +56,7 @@ INSERT INTO film(title, length, rating) VALUES
   ('CLOCKWORK PARADISE', 143, 'PG-13');
 ----
 
-The query below uses the `LAST_VALUE()` function to retrieve the title of the film with the longest duration, partitioning results by rating and ordering by length.
+The following query uses the `LAST_VALUE()` function to retrieve the title of the film with the longest duration, partitioning results by rating and ordering by length.
 
 [source,sql]
 ----

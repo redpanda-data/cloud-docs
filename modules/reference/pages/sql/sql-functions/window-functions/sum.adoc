@@ -6,7 +6,7 @@ The `SUM()` window function returns the sum of the input column or expression va
 
 == Syntax
 
-The syntax for this function is as follows:
+The syntax for this function is:
 
 [source,sql]
 ----
@@ -17,7 +17,7 @@ SUM(expression) OVER (
 )
 ----
 
-The expression’s argument types supported by the `SUM` window function are `INTEGER`, `BIGINT`, `REAL` and `DOUBLE PRECISION`. The return types of the `SUM` function are: `BIGINT` for integer and `DOUBLE PRECISION` for floating-point arguments.
+The expression's argument types supported by the `SUM` window function are `INTEGER`, `BIGINT`, `REAL` and `DOUBLE PRECISION`. The return types of the `SUM` function are: `BIGINT` for integer and `DOUBLE PRECISION` for floating-point arguments.
 
 [NOTE]
 ====
@@ -26,9 +26,9 @@ The `SUM()` window function works with numeric values and ignores NULL ones
 
 == Parameters
 
-* `expression`: input’s column or expression values to be summed
-* `PARTITION BY`: optional clause, which divides the result set into partitions to which the function is applied
-* `ROWS | RANGE BETWEEN`: range-based window frame relative to the current row
+* `expression`: Column or expression to sum.
+* `PARTITION BY`: Optional. Divides the result set into partitions, each processed independently. If omitted, the entire result set is treated as a single partition.
+* `ROWS | RANGE BETWEEN`: Range-based window frame relative to the current row.
 
 == Examples
 
@@ -170,7 +170,7 @@ FROM winsales
 ORDER BY dateid;
 ----
 
-The output from this query sums the `qty` of all sales within the 30-day window ending at the current row’s `dateid`:
+The output from this query sums the `qty` of all sales within the 30-day window ending at the current row's `dateid`:
 
 [source,sql]
 ----

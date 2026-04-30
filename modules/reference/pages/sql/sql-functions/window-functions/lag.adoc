@@ -6,7 +6,7 @@ The `LAG()` window function returns the values from specific rows based on the o
 
 == Syntax
 
-The syntax for this function is as follows:
+The syntax for this function is:
 
 [source,sql]
 ----
@@ -17,13 +17,13 @@ OVER (
 )
 ----
 
-The output’s data type for this function is the same as the input’s one. If there is no row that meets the offset criteria, it returns a default value (that must be of a type compatible with the expression value)
+The function returns a value of the same data type as the input. If no row meets the offset criteria, the function returns a default value, which must be of a type compatible with the expression.
 
 == Parameters
 
-* `expression`: column, which will be referenced
-* `offset`: numeric indicator of the previous row to access, that is relative to the current row (optional, if not specified 1 will be returned)
-* `default`: value that wil be returned if the `offset` is out of range (optional, if not specified `NULL` will be returned)
+* `expression`: Column to reference.
+* `offset`: Optional. Number of rows behind the current row. Defaults to `1`.
+* `default`: Optional. Value to return if the `offset` is out of range. Defaults to `NULL`.
 
 == Examples
 
@@ -54,7 +54,7 @@ INSERT INTO winsales VALUES
 
 === LAG(expression, offset)
 
-This example executes the `LAG()` function with expression and offset parameters’ values specified:
+This example executes the `LAG()` function with expression and offset parameters' values specified:
 
 [source,sql]
 ----
@@ -64,7 +64,7 @@ FROM winsales WHERE buyerid = 'c'
 ORDER BY buyerid, dateid;
 ----
 
-This query returns the buyer ID, date ID, quantity and previous quantity for all rows with buyer ID equal to `c`:
+The query returns the buyer ID, date ID, quantity and previous quantity for all rows with buyer ID equal to `c`:
 
 [source,sql]
 ----
@@ -79,7 +79,7 @@ This query returns the buyer ID, date ID, quantity and previous quantity for all
 
 === LAG(expression, offset, default)
 
-This example executes the `LAG()` function with expression, offset and default parameters’ values specified:
+This example executes the `LAG()` function with expression, offset and default parameters' values specified:
 
 [source,sql]
 ----
@@ -89,7 +89,7 @@ FROM winsales
 ORDER BY dateid;
 ----
 
-This query returns the buyer ID, date ID, quantity and previous buyer ID for all rows:
+The query returns the buyer ID, date ID, quantity and previous buyer ID for all rows:
 
 [source,sql]
 ----
@@ -111,7 +111,7 @@ This query returns the buyer ID, date ID, quantity and previous buyer ID for all
 
 === Time series: LAG() to compare daily sales quantities
 
-This example uses LAG() to compare each day’s sales quantity (`qty`) with the previous day’s quantity, ordered by `dateid`:
+This example uses LAG() to compare each day's sales quantity (`qty`) with the previous day's quantity, ordered by `dateid`:
 
 [source,sql]
 ----

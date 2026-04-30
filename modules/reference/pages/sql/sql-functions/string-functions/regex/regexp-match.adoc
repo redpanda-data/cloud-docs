@@ -15,14 +15,14 @@ REGEXP_MATCH(source_string, pattern, [flags])
 
 == Parameters
 
-* `source_string`: string on which to perform the match
-* `pattern`: POSIX regular expression pattern to match
-* `flags`: (optional) string with flags that change the matching behavior of `REGEXP_MATCH()` function
+* `source_string`: String on which to perform the match.
+* `pattern`: POSIX regular expression pattern to match.
+* `flags`: Optional. Flags that change the matching behavior of `REGEXP_MATCH()`.
 
 The `flags` parameter is an optional string that controls how the function operates. Here is a list of flags that are supported by Redpanda SQL:
 
-* `i`: use this flag for case-insensitive matching
-* `c`: `REGEXP_MATCH()` function is case sensitive by default, using the `c` flag has the same effect as having no flags at all
+* `i`: Use this flag for case-insensitive matching.
+* `c`: `REGEXP_MATCH()` function is case-sensitive by default, using the `c` flag has the same effect as having no flags at all.
 
 [NOTE]
 ====
@@ -111,7 +111,7 @@ INSERT INTO patterns (id, regex_pattern) VALUES
     (0, '^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$');
 ----
 
-Validate whether user emails in the `users` table are valid. If the regex doesn’t match, a `NULL` value is returned.
+Validate whether user emails in the `users` table are valid. If the regex doesn't match, a `NULL` value is returned.
 
 [source,sql]
 ----
@@ -134,5 +134,5 @@ JOIN patterns ON patterns.id = 0;
 
 === Restrictions
 
-* The function returns `NULL` if it cannot match the regular expression pattern
-* `i` and `c` flags shouldn’t be used with each other
+* The function returns `NULL` if it cannot match the regular expression pattern.
+* `i` and `c` flags shouldn't be used with each other

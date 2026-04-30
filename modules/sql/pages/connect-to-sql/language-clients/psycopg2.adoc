@@ -8,19 +8,8 @@ Psycopg2 is a https://www.psycopg.org/docs/[PostgreSQL adapter for Python^]. You
 
 Before you begin, make sure you have the following installed:
 
-* Docker
 * Python (preferably with a virtual environment)
 * The https://www.psycopg.org/docs/install.html[Psycopg2^] library
-
-== Running Redpanda SQL Docker container
-
-. Open your terminal
-. Pull and run Redpanda SQL Docker container using the following command:
-+
-[source,bash]
-----
-docker run --rm -it -p 5432:5432 public.ecr.aws/oxla/release:latest
-----
 
 == Establish a connection
 
@@ -35,15 +24,15 @@ conn = psycopg2.connect(dbname="test", user="postgres", password="secret")
 
 The following parameters can be used with the https://www.psycopg.org/docs/module.html[psycopg2.connect()^] function:
 
-* `dbname`: your database connection name (that is, "oxla_node_1")
-* `user`: username to authenticate with (that is, "oxla", which is the default username)
-* `password`: password to authenticate with (that is, "oxla", which is the default password)
-* `host`: `localhost` or `127.0.0.1`
-* `Port`: default for PostgreSQL is `5432`
+* `dbname`: Your database connection name.
+* `user`: Username to authenticate with.
+* `password`: Password to authenticate with.
+* `host`: `localhost` or `127.0.0.1`.
+* `port`: Default for RedpandaSQL is `5432`.
 
 == Example usage
 
-Here's an example on how to connect to Redpanda SQL using keyword arguments:
+The following example connects to Redpanda SQL using keyword arguments:
 
 [source,python]
 ----
@@ -136,7 +125,7 @@ finally:
 
 == Supported features and limitations
 
-While Redpanda SQL supports many core SQL features, some limitations exist, in particular related to transaction handling and certain advanced Psycopg2 functionalities. This section clarifies which functions are fully supported, which have limited support and which are currently unavailable.
+While Redpanda SQL supports many core SQL features, some limitations exist, in particular related to transaction handling and certain advanced Psycopg2 functionalities. This section clarifies which functions are fully supported, which have limited support, and which are currently unavailable.
 
 === Supported features
 
@@ -235,11 +224,11 @@ and pipeline mode may not be fully supported due to Redpanda SQL's current archi
 | No
 | -
 
-| `cursor.copy_from(file, table, sep, null, size, columns)`
+| `cursor.copy_from(file, table, sep, NULL, size, columns)`
 | Limited
 | -
 
-| `cursor.copy_to(file, table, sep, null, columns)`
+| `cursor.copy_to(file, table, sep, NULL, columns)`
 | Limited
 | -
 

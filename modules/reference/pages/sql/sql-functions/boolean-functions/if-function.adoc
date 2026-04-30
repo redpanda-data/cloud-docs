@@ -1,24 +1,23 @@
-= IF Function
-:description: This function returns the specified value if the condition is TRUE and another value if the condition is FALSE.
+= IF()
+:description: The IF() function returns one value if the condition is TRUE and another value if the condition is FALSE.
 :page-topic-type: reference
 
-This function returns the specified value if the condition is `TRUE` and another value if the condition is `FALSE`. Here is the syntax of the `IF()` function:
+The `IF()` function returns one value if the condition is `TRUE` and another value if the condition is `FALSE`.
+
+== Syntax
 
 [source,sql]
 ----
 IF(expression, true_result, else_result)
 ----
 
-[WARNING]
-====
-The `expression` must be a Boolean expression.
-====
+The `expression` must evaluate to a Boolean (`TRUE` or `FALSE`).
 
 == Examples
 
-== `IF()` with a table
+=== IF() with a table
 
-This example shows how the `test_result` table is used to determine which participants passed and which failed:
+The following example uses a `test_result` table to determine which participants passed and failed:
 
 [source,sql]
 ----
@@ -36,12 +35,14 @@ INSERT INTO test_result VALUES
 (79769,'Augustine Harkness',572);
 ----
 
+View the table:
+
 [source,sql]
 ----
 SELECT * FROM test_result;
 ----
 
-This query displays the table:
+The query returns:
 
 [source,sql]
 ----
@@ -56,14 +57,14 @@ This query displays the table:
 +---------------+--------------------+--------+
 ----
 
-. IF function in the query below states that _IF the score is equal to or greater than 500, then return “PASSED“. Otherwise, if the score is smaller than 500, return “NOT PASSED”_.
+. The following query returns `'PASSED'` if the score is 500 or greater, and `'NOT PASSED'` otherwise:
 +
 [source,sql]
 ----
 SELECT name, IF(score>=500, 'PASSED', 'NOT PASSED') FROM test_result;
 ----
 
-. The returned results:
+. The query returns:
 +
 [source,sql]
 ----
@@ -78,9 +79,9 @@ SELECT name, IF(score>=500, 'PASSED', 'NOT PASSED') FROM test_result;
 +--------------------+-------------+
 ----
 
-== IF() with expressions as return value
+=== IF() with expressions as return value
 
-For the second example, use the `deptcost` table to determine which department exceeded the budget and which one did not.
+The following example uses a `deptcost` table to determine which departments exceeded the budget:
 
 [source,sql]
 ----
@@ -98,14 +99,14 @@ INSERT INTO deptcost VALUES
 ('Sales', 910,860,'within budget');
 ----
 
-Run this query to display the table:
+View the table:
 
 [source,sql]
 ----
 SELECT * FROM deptcost;
 ----
 
-The `deptcost` table:
+The query returns:
 
 [source,sql]
 ----
@@ -120,14 +121,14 @@ The `deptcost` table:
 +-----------+--------+--------+---------------+
 ----
 
-. The IF function states that _IF the actual is less than the budget, then return the budget difference, otherwise return 0_.
+. The following query returns the budget difference if `actual` is less than `budget`, and `0` otherwise:
 +
 [source,sql]
 ----
 SELECT dept, IF(actual < budget, budget - actual, 0) FROM deptcost;
 ----
 
-. The result is returned using the `IF()` function:
+. The query returns:
 +
 [source,sql]
 ----

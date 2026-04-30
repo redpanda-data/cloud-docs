@@ -13,13 +13,13 @@ The timestamp data type stores time and date values without a time zone. It repr
 YYYY-MM-DD [HH:MM:SS[.SSSSSS]]
 ----
 
-* `YYYY`: Four-digit year
-* `MM`: One / two-digit month
-* `DD`: One / two-digit day
-* `HH`: One / two-digit hour (valid values from 00 to 23)
-* `MM`: One / two-digit minutes (valid values from 00 to 59)
-* `SS`: One / two-digit seconds (valid values from 00 to 59)
-* `[.SSSSSS]`: Up to six fractional digits (microsecond precision)
+* `YYYY`: Four-digit year.
+* `MM`: One / two-digit month.
+* `DD`: One / two-digit day.
+* `HH`: One / two-digit hour (valid values from 00 to 23).
+* `MM`: One / two-digit minutes (valid values from 00 to 59).
+* `SS`: One / two-digit seconds (valid values from 00 to 59).
+* `[.SSSSSS]`: Up to six fractional digits (microsecond precision).
 
 [NOTE]
 ====
@@ -30,7 +30,7 @@ Fractional digits are the digits after the decimal point ( . )
 
 === Create a table
 
-The following example creates a `visitor` table to store visitor data in an office building. It consists of the visitor’s name, the purpose of the visit, company, time, and date, which uses the `Timestamp` data type.
+The following example creates a `visitor` table to store visitor data in an office building. It consists of the visitor's name, the purpose of the visit, company, time, and date, which uses the `Timestamp` data type.
 
 [source,sql]
 ----
@@ -132,7 +132,7 @@ SELECT * FROM visitors
 WHERE visitorName = 'Jolly';
 ----
 
-The seconds are displayed as `00` because `60` adds 1 minute to the minutes’ value.
+The seconds are displayed as `00` because `60` adds 1 minute to the minutes' value.
 
 [source,sql]
 ----
@@ -145,7 +145,7 @@ The seconds are displayed as `00` because `60` adds 1 minute to the minutes’ v
 
 == AT TIME ZONE operator
 
-The `AT TIME ZONE` operator converts the input timestamp to the target time zone specified in the query. Additionally, the timestamp you inputted will always be presented in the user’s local timezone (currently set as UTC).
+The `AT TIME ZONE` operator converts the input timestamp to the target time zone specified in the query. Additionally, the timestamp you inputted will always be presented in the user's local timezone (currently set as UTC).
 
 [WARNING]
 ====
@@ -161,9 +161,9 @@ To use the `AT TIME ZONE` operator, you can follow this syntax:
 SELECT TIMESTAMP 'input_timestamp' AT TIME ZONE 'TIME_ZONE';
 ----
 
-Here’s what each element means:
+Here's what each element means:
 
-* `input_timestamp`: This represents the date and time value you want to convert. The user’s time zone is fixed to UTC.
+* `input_timestamp`: This represents the date and time value you want to convert. The user's time zone is fixed to UTC.
 * `TIME_ZONE`: The target time zone to which Redpanda SQL converts the timestamp.
 
 === Example 1

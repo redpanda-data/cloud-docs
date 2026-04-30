@@ -2,7 +2,7 @@
 :description: When using aggregation functions, they can contain the DISTINCT keyword.
 :page-topic-type: reference
 
-When using aggregation functions, they can contain the `DISTINCT` keyword. It acts as a qualifier for them, to ensure that only unique values are being processed. Here’s how a sample syntax looks like:
+When using aggregation functions, they can contain the `DISTINCT` keyword. It acts as a qualifier for them, to ensure that only unique values are being processed. Here's how a sample syntax looks like:
 
 [source,sql]
 ----
@@ -62,7 +62,7 @@ VALUES
 (8557291, '2022-08-18 15:15:20', '2022-09-01 15:30:19', 'BMW', 11117, 3000);
 ----
 
-Here’s how the created tables will look like, respectively:
+Here's how the created tables will look like, respectively:
 
 [source,sql]
 ----
@@ -119,7 +119,7 @@ This returns the following output:
 +----------------------+
 ----
 
-Here’s another example, that uses `DISTINCT` qualifier combined with `COUNT()` function to calculate the amount of rentals by each customer:
+The following example combines `DISTINCT` with `COUNT()` to calculate the number of rentals by each customer:
 
 [source,sql]
 ----
@@ -186,7 +186,7 @@ SELECT
 FROM rental r;
 ----
 
-Here’s the ouput of the above query:
+The query returns:
 
 [source,sql]
 ----
@@ -203,8 +203,7 @@ The result may help to understand what is the impact of repeating transactions o
 
 There is one use case that is not currently supported:
 
-* Aggregation functions with `DISTINCT` keyword used as an argument of an expression, e.g.
-
+* Aggregation functions with `DISTINCT` keyword used as an argument of an expression, for example, 
 [source,sql]
 ----
 SELECT 1 + COUNT(DISTINCT col) FROM table

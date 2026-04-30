@@ -7,16 +7,16 @@ Redpanda SQL provides two data types for handling timestamps:
 * xref:reference:sql/sql-data-types/timestamp-without-time-zone.adoc[Timestamp without time zone]: Stores both date and time values.
 * Timestamp with time zone: Stores date and time values and processes time zone information during operations.
 ** During an `INSERT` operation, the time zone is ignored. The date and time are stored without considering the time zone.
-** During a `SELECT` operation, the time zone information from the user’s session is also ignored. The data is returned exactly as it is stored without adjusting the time zone.
+** During a `SELECT` operation, the time zone information from the user's session is also ignored. The data is returned exactly as it is stored without adjusting the time zone.
 
 [NOTE]
 ====
-All user sessions have a local timezone associated with them, affecting how `timestamp with time zone` values are displayed. The timezone information is not stored in the database. Every time a user requests a value of this type, Redpanda SQL converts from UTC to the user’s local timezone before displaying it.
+All user sessions have a local timezone associated with them, affecting how `timestamp with time zone` values are displayed. The timezone information is not stored in the database. Every time a user requests a value of this type, Redpanda SQL converts from UTC to the user's local timezone before displaying it.
 ====
 
 [NOTE]
 ====
-Redpanda SQL relies on timezone information served by the host machine’s operating system. It must be up-to-date to ensure correct timestamp conversions, date calculations, and compliance with regional time changes such as daylight saving adjustments.
+Redpanda SQL relies on timezone information served by the host machine's operating system. It must be up-to-date to ensure correct timestamp conversions, date calculations, and compliance with regional time changes such as daylight saving adjustments.
 ====
 
 == Format
@@ -28,20 +28,20 @@ The `timestamp with time zone` data type has the following format:
 YYYY-MM-DD HH:MM:SS.SSSSSS+TZ
 ----
 
-* `YYYY`: Four-digit year
-* `MM`: One or two-digit month
-* `DD`: One or two-digit day
-* `HH`: One or two-digit hour (valid values from 00 to 23)
-* `MM`: One or two-digit minutes (valid values from 00 to 59)
-* `SS`: One or two-digit seconds (valid values from 00 to 59)
-* `.SSSSSS`: Optional fractional digits, up to six (microsecond precision)
-* `+TZ`: Time zone offset in the format +/-HH:MM (for example, +05:30, -08:00)
+* `YYYY`: Four-digit year.
+* `MM`: One or two-digit month.
+* `DD`: One or two-digit day.
+* `HH`: One or two-digit hour (valid values from 00 to 23).
+* `MM`: One or two-digit minutes (valid values from 00 to 59).
+* `SS`: One or two-digit seconds (valid values from 00 to 59).
+* `.SSSSSS`: Optional fractional digits, up to six (microsecond precision).
+* `+TZ`: Time zone offset in the format +/-HH:MM (for example, +05:30, -08:00).
 
 == Examples
 
 === Create a table
 
-The following example creates a table named `event_log` that consists of a timestamp without a time zone and a timestamp with time zone columns. The values in the `event_timestamp_tz` are in the “Europe/Moscow” timezone.
+The following example creates a table named `event_log` that consists of a timestamp without a time zone and a timestamp with time zone columns. The values in the `event_timestamp_tz` are in the "Europe/Moscow" timezone.
 
 [source,sql]
 ----
@@ -103,7 +103,7 @@ ORDER BY
   event_timestamp;
 ----
 
-This query retrieves the `event_timestamp` and `event_timestamp_tz` columns and calculates the corresponding UTC time using the `AT TIME ZONE ‘UTC’` operator.
+This query retrieves the `event_timestamp` and `event_timestamp_tz` columns and calculates the corresponding UTC time using the `AT TIME ZONE 'UTC'` operator.
 
 The results are ordered based on the `event_timestamp` column, producing a sorted list of events with their corresponding local and UTC times.
 

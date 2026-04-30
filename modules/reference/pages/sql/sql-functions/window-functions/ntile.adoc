@@ -6,7 +6,7 @@ The `NTILE()` function is a window function used to divide an ordered data set i
 
 == Syntax
 
-The syntax for this function is as follows:
+The syntax for this function is:
 
 [source,sql]
 ----
@@ -18,11 +18,11 @@ NTILE(buckets) OVER (
 
 == Parameters
 
-* `bucket`: positive integer or an expression that evaluates to a positive integer for each partition. It specifies the number of groups into which the data should be divided.
+* `bucket`: Positive integer or an expression that evaluates to a positive integer for each partition. It specifies the number of groups into which the data should be divided.
 
 == Restrictions
 
-* `buckets`: its value must be a positive integer. If it is a non-integer constant, it will be truncated to an integer.
+* `buckets`: Must be a positive integer. Redpanda SQL truncates non-integer constants to an integer.
 
 == Example
 
@@ -57,7 +57,7 @@ INSERT INTO film(title, length, rating) VALUES
   ('CLOCKWORK PARADISE', 143, 'PG-13');
 ----
 
-The query below uses the `NTILE()` function to divide the films into four quartiles based on their length:
+The following query uses the `NTILE()` function to divide the films into four quartiles based on their length:
 
 [source,sql]
 ----

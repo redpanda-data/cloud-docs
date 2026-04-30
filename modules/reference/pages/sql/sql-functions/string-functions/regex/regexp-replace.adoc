@@ -15,16 +15,16 @@ REGEXP_REPLACE(source_string, pattern, replacement, [flags])
 
 == Parameters
 
-* `source_string`: string on which to perform the replacement
-* `pattern`: POSIX regular expression pattern to match
-* `replacement`: replacement string
-* `flags`: (optional) string that changes the matching behavior of `REGEXP_REPLACE()` function
+* `source_string`: String on which to perform the replacement.
+* `pattern`: POSIX regular expression pattern to match.
+* `replacement`: Replacement string.
+* `flags`: Optional. Flags that change the matching behavior of `REGEXP_REPLACE()`.
 
 The `flags` parameter is an optional string that controls how the function operates. Here is a list of flags supported in Redpanda SQL:
 
-* `g`: global replacement. This flag ensures that all occurrences of the pattern are replaced
-* `i`: use this flag for case-insensitive matching
-* `c`: `REGEXP_REPLACE()` function is case sensitive by default, using the `c` flag has the same effect as using no flags
+* `g`: Global replacement. This flag ensures that all occurrences of the pattern are replaced.
+* `i`: Use this flag for case-insensitive matching.
+* `c`: `REGEXP_REPLACE()` function is case-sensitive by default, using the `c` flag has the same effect as using no flags.
 
 == Examples
 
@@ -57,7 +57,7 @@ This example demonstrates how to replace a non-alphanumeric character in a strin
 SELECT REGEXP_REPLACE('Hello World!', '[^A-Za-z0-9 ]', '~') AS "Replaced_String";
 ----
 
-In this query, the second parameter is a regular expression *”[^A-Za-z0-9 ]”* that matches any characters that are not uppercase / lowercase letters, digits or spaces. Output:
+In this query, the second parameter is a regular expression *"[^A-Za-z0-9 ]"* that matches any characters that are not uppercase / lowercase letters, digits or spaces. Output:
 
 [source,sql]
 ----
@@ -151,6 +151,6 @@ If using multiple flags, the last one takes precedence. If using the `ci` flags,
 
 == Restrictions
 
-* The function returns `NULL` if there are no input rows or `NULL` values
-* If the regular expression pattern isn’t found in the string, the `REGEXP_REPLACE()` function returns the original string
-* `i` and `c` flags shouldn’t be used with each other
+* The function returns `NULL` if there are no input rows or `NULL` values.
+* If the regular expression pattern isn't found in the string, the `REGEXP_REPLACE()` function returns the original string
+* `i` and `c` flags shouldn't be used with each other

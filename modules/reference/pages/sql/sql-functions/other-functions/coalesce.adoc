@@ -1,17 +1,17 @@
 = coalesce()
-:description: Tables can hold null and non-null values.
+:description: The COALESCE() function returns the first non-NULL argument from a list of arguments.
 :page-topic-type: reference
 
-Tables can hold null and non-null values. The `COALESCE()` function is useful for ignoring null values while processing data, by returning the first argument that is not null, while the remaining arguments from the first non-null argument are not evaluated.
+The `COALESCE()` function returns the first non-NULL argument from a list of arguments. After finding the first non-NULL argument, the function stops evaluating the remaining arguments.
 
 [NOTE]
 ====
-If all arguments are null, the COALESCE function will return null.
+If all arguments are NULL, `COALESCE()` returns NULL.
 ====
 
 == Syntax
 
-Syntax:
+The syntax for this function is:
 
 [source,sql]
 ----
@@ -37,7 +37,7 @@ In this example, a set of values is provided. The `COALESCE()` function returns 
 SELECT COALESCE(9, 3, 8, 7, 1);
 ----
 
-The result will be `9`, the first value without null among the provided options.
+The result will be `9`, the first value without NULL among the provided options.
 
 [source,sql]
 ----
@@ -73,7 +73,7 @@ Consider NULL as the first argument in this example:
 Select COALESCE(NULL,1,5,7,9,2);
 ----
 
-The output is `1`, as it is the first non-null value of the argument.
+The query returns `1`, as it is the first non-null value of the argument.
 
 [source,sql]
 ----
@@ -109,7 +109,7 @@ Assume that the given values are entirely composed of nulls.
 Select COALESCE(NULL, NULL ,NULL, NULL);
 ----
 
-In this case, the `COALESCE()` function returns an empty value (null).
+In this case, the `COALESCE()` function returns an empty value (NULL).
 
 [source,sql]
 ----
@@ -156,7 +156,7 @@ SELECT * FROM employee_absent;
  Emily    | HR         |
 ----
 
-The query below uses the `COALESCE()` function on the `absent` column. It retrieves names and absences (with `out of office` for NULL values) for each employee.
+The following query uses the `COALESCE()` function on the `absent` column. It retrieves names and absences (with `out of office` for NULL values) for each employee.
 
 [source,sql]
 ----

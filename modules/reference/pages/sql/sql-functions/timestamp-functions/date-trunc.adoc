@@ -22,9 +22,9 @@ DATE_TRUNC(field, source, time_zone)
 
 == Parameters
 
-* `field`: The unit of time used to truncate the `source` value. It accepts `text` inputs and is case-insensitive
-* `source`: The value to truncate. It can be `INTERVAL`, `TIMESTAMP` or `TIMESTAMP WITH TIME ZONE`
-* `time_zone` _(applicable for the second syntax option)_: The time zone for the operation. It accepts `text` input
+* `field`: The unit of time used to truncate the `source` value. Type: `text`. Case-insensitive.
+* `source`: The value to truncate. Must be of type `INTERVAL`, `TIMESTAMP`, or `TIMESTAMP WITH TIME ZONE`.
+* `time_zone`: Optional. Time zone for the operation. Type: `text`. Used only with the second syntax form.
 
 == Fields
 
@@ -60,7 +60,7 @@ This example truncates the timestamp to the year level.
 select DATE_TRUNC('year', '1911-12-02 19:40:00'::timestamp);
 ----
 
-The timestamp **“1911-12-02 19:40:00”** has been truncated to 1911, with the month and day set to January 1st.
+The timestamp **"1911-12-02 19:40:00"** has been truncated to 1911, with the month and day set to January 1st.
 
 [source,sql]
 ----
