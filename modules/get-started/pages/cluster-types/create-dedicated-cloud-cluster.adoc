@@ -50,7 +50,7 @@ export REDPANDA_BROKERS="<bootstrap-server-address>"
 
 . Go to **Security** > **Users**, click **Create user**, and create a user called **redpanda-chat-account** that uses the SCRAM-SHA-256 mechanism.
 
-. Copy the password, and set the following environment variables on your local machine:
+. In the *User created successfully* dialog, copy the password and set the following environment variables on your local machine:
 +
 ```bash
 export REDPANDA_SASL_USERNAME="redpanda-chat-account"
@@ -58,18 +58,18 @@ export REDPANDA_SASL_PASSWORD="<password>"
 export REDPANDA_SASL_MECHANISM="SCRAM-SHA-256"
 ```
 
-// TODO DOC-2123: confirm final ACL form labels (Resource Type, Pattern Type, Resource Name, Operation, Permission, Host) once the new Security page ships.
-. Go to **Security** > **ACLs**, click **Create ACL**, and grant the **redpanda-chat-account** user full access to the `chat-room` topic:
+. Click **Go to user details**.
+
+. Under *ACLs*, click *+ Add ACL*, and define the following rule to grant the user full access to the `chat-room` topic:
 +
-- **Principal**: `User:redpanda-chat-account`
-- **Resource type**: Topic
-- **Pattern type**: Literal
-- **Resource name**: `chat-room`
+- **Resource Type**: Topic
+- **Pattern Type**: Literal
+- **Resource Name**: `chat-room`
 - **Operation**: All
 - **Permission**: Allow
 - **Host**: `*`
 +
-. Click **Create**.
+. Click **Add ACL**.
 
 . Use `rpk` on your local machine to authenticate to Redpanda as the **redpanda-chat-account** user and get information about the cluster:
 +

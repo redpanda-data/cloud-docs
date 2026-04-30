@@ -10,11 +10,14 @@ This page lists new features added to Redpanda Cloud.
 
 === Redpanda Console: redesigned Security page
 
-Redpanda Console has a redesigned Security page that simplifies ACL and role management:
+Redpanda Console has a redesigned Security page that simplifies ACL and role management. The page now has three tabs — *Users*, *Roles*, and *Permissions* — and ACLs are managed per principal:
 
-* The *ACLs* page lists every ACL as a single row with all of its fields visible: principal, resource type, pattern type, resource name, operation, permission, and host. The filter at the top of the list accepts a regular expression for fast lookup.
-* Role detail pages list each role's ACLs inline, including ACLs inherited from group memberships, so you can see the full set of permissions for a role at a glance.
-* User detail pages let you manage a user's role assignments and view permissions inherited from those roles.
+* The *Users* tab lists each user with their assigned roles and a count of their ACLs, so you can see at a glance which principals have what. Filter the list by name using regular expressions, for example `^prod-` to match every user starting with `prod-`.
+* Open a user (or a role) to manage their permissions on a dedicated detail page. The *ACLs* section shows one row per rule (type, resource, operation, permission, host), and offers three actions:
+** *+ Add ACL* opens a focused form for one rule (resource type, pattern type, resource name, operation, permission, host).
+** *Allow all operations* grants full wildcard access across all resource types in a single step, which is convenient for testing.
+** Select rows with the checkboxes and click *Delete selected* to remove ACLs in bulk.
+* The *Roles* section on a user's detail page lets you assign or revoke roles individually, and the user's effective ACLs include any rules inherited from those roles.
 
 // TODO DOC-2123: confirm with Jan/Martin whether to call out the per-ACL edit improvement (no permission gap during edits) as a customer-facing benefit.
 
