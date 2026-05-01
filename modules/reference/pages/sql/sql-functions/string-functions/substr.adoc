@@ -1,0 +1,144 @@
+= SUBSTR
+:description: The SUBSTR() function extracts a specific number of characters from a string.
+:page-topic-type: reference
+
+The `SUBSTR()` function extracts a specific number of characters from a string.
+
+== Syntax
+
+The syntax of the function is:
+
+*2 Arguments*
+
+[source,sql]
+----
+substr( string, start_position)
+----
+
+*3 Arguments*
+
+[source,sql]
+----
+substr( string, start_position, length )
+----
+
+[TIP]
+====
+Both syntaxes will have input and return of type `string`.
+====
+
+=== Start position
+
+Use the `start_position` as the starting position, specifying the part from where the substring is to be returned. It is written as an integer value.
+
+[width="100%",cols="36%,64%",options="header",]
+|===
+|*Input* |*Return*
+|`start_position < 0 ``start_position < string` |The `start_position` is a given character in the string. The count starts from the first character.
+|`start_position > string` |Returns an empty substring.
+|`start_position` = negative value |The count starts from the provided negative value, with subsequent characters yielded as it approaches 0.
+|===
+
+If the index is less than or equal to 0, no characters are returned.
+
+Once it exceeds 0, characters from the string are yielded, starting from the first one. |
+
+=== Length
+
+Use the `length` function to determine the number of characters to be extracted__.__ It can be one or more characters.
+
+[width="100%",cols="20%,80%",options="header",]
+|===
+|*Input* |*Return*
+|`length` = 0 |Returns an empty substring.
+|`length` is not set |The function will start from the specified `start_position` and end at the last character of the `string`.
+|`length` = negative value |Returns an error.
+|===
+
+== Examples
+
+=== `SUBSTR()` function with specified `start_position` & `length`
+
+In this example, the `start_position` is set to the first six characters and five characters are extracted:
+
+[source,sql]
+----
+SELECT substr('Watermelon',6,5) AS "Fruit";
+----
+
+The query returns:
+
+[source,sql]
+----
+Fruit
+-------
+ melon
+----
+
+=== `SUBSTR()` function with `length` = 0
+
+This query extracts a string with `length` = 0:
+
+[source,sql]
+----
+SELECT substr('Watermelon',6,0) AS "Fruit";
+----
+
+This displays an empty output as there is no `length` specified:
+
+[source,sql]
+----
+Fruit
+-------
+----
+
+=== `SUBSTR()` function with `length` = negative value
+
+This example checks if the `length` is specified with a negative value:
+
+[source,sql]
+----
+SELECT substr('Watermelon',6,-2) AS "Fruit";
+----
+
+Instead of extracting the string from the last characters, it returns an error:
+
+[source,sql]
+----
+ERROR:  Length of substring cannot be negative
+----
+
+=== `SUBSTR()` function with `start_position` > `string`
+
+The string *Watermelon* has only ten characters. This example shows what happens when the specified `start_position` is larger than the string's characters:
+
+[source,sql]
+----
+SELECT substr('Watermelon',20,2) AS "Fruit";
+----
+
+This displays an empty output:
+
+[source,sql]
+----
+Fruit
+-------
+----
+
+=== `SUBSTR()` function with 2 arguments
+
+In this example, the `start_position` is set to the first six characters and five characters are extracted.
+
+[source,sql]
+----
+SELECT substr('database', 6) AS "Result";
+----
+
+This displays the substring from position 6:
+
+[source,sql]
+----
+Result
+--------
+ ase
+----
