@@ -199,6 +199,102 @@ provider "redpanda" {
 --
 ======
 
+== Manage sensitive attributes with write-only fields
+
+You can use https://developer.hashicorp.com/terraform/plugin/framework/resources/write-only-arguments[Terraform 1.11+ write-only attributes^] to keep sensitive values out of your Terraform state file. By default, Terraform persists sensitive attributes such as passwords to `.tfstate` after running `terraform apply` or `terraform plan`. This can leak credentials when state is stored in a remote backend or in CI runner artifacts.
+
+[IMPORTANT]
+====
+Write-only attributes require:
+
+* Terraform CLI 1.11 or later
+* Redpanda Terraform provider v1.6.0 or later
+====
+
+=== How write-only attributes work
+
+For each supported sensitive field, the provider exposes two new attributes alongside the existing one:
+
+* `<field>_wo`: A write-only attribute. Terraform sends the value to the provider during `apply` but never persists it to state.
+* `<field>_wo_version`: An integer version. Because Terraform cannot detect changes in a write-only value (there is nothing to compare against in state), you increment this number to signal that the value has changed and to trigger an update on the next apply.
+
+The original plaintext attributes (such as `password`) are deprecated but retained for backwards compatibility. You can migrate to the write-only variants on your own schedule.
+
+=== Supported attributes
+
+|===
+| Resource | Plaintext attribute (deprecated) | Write-only attribute | Version attribute
+
+| `redpanda_user`
+| `password`
+| `password_wo`
+| `password_wo_version`
+
+| `redpanda_schema`
+| `password`
+| `password_wo`
+| `password_wo_version`
+
+| `redpanda_schema_registry_acl`
+| `password`
+| `password_wo`
+| `password_wo_version`
+
+| `redpanda_pipeline`
+| `client_secret`
+| `client_secret` (write-only)
+| `secret_version`
+|===
+
+=== Set a write-only attribute
+
+Inject the sensitive value through a sensitive Terraform variable, an environment variable, or your secrets manager. The following example uses a `TF_VAR_` environment variable to populate `var.schema_password`:
+
+[source,hcl]
+----
+variable "schema_password" {
+  description = "Password for the Schema Registry user"
+  sensitive   = true
+}
+
+resource "redpanda_user" "schema_user" {
+  name                = "schema-user"
+  password_wo         = var.schema_password
+  password_wo_version = 1
+  mechanism           = "scram-sha-256"
+  cluster_api_url     = data.redpanda_cluster.byoc.cluster_api_url
+  allow_deletion      = true
+}
+----
+
+Set the variable before running Terraform:
+
+[source,bash]
+----
+export TF_VAR_schema_password="your-secret-password"
+terraform apply
+----
+
+Terraform sends the value to Redpanda Cloud during `apply` but never writes it to `.tfstate`.
+
+=== Rotate a write-only attribute
+
+Because Terraform cannot detect a change in the write-only value itself, increment the corresponding `_wo_version` to trigger an update:
+
+[source,hcl]
+----
+resource "redpanda_user" "schema_user" {
+  name                = "schema-user"
+  password_wo         = var.schema_password   # Set TF_VAR_schema_password to the new value
+  password_wo_version = 2                     # Increment from 1 to trigger update
+  mechanism           = "scram-sha-256"
+  cluster_api_url     = data.redpanda_cluster.byoc.cluster_api_url
+  allow_deletion      = true
+}
+----
+
+After running `terraform apply`, the provider sends the new password to Redpanda Cloud. Neither the old nor the new value is written to state.
+
 == Examples
 
 This section provides examples of using the Redpanda Terraform provider to create and manage clusters. For descriptions of resources and data sources, see the https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs[Redpanda Terraform Provider documentation^].
@@ -486,11 +582,12 @@ data "redpanda_cluster" "byoc" {
 }
 
 resource "redpanda_user" "schema_user" {
-  name            = "schema-user"
-  password        = var.schema_password
-  mechanism       = "scram-sha-256"
-  cluster_api_url = data.redpanda_cluster.byoc.cluster_api_url
-  allow_deletion  = true
+  name                = "schema-user"
+  password_wo         = var.schema_password
+  password_wo_version = 1
+  mechanism           = "scram-sha-256"
+  cluster_api_url     = data.redpanda_cluster.byoc.cluster_api_url
+  allow_deletion      = true
 }
 
 resource "redpanda_schema" "user_events" {
@@ -508,8 +605,9 @@ resource "redpanda_schema" "user_events" {
     ]
   })
 
-  username = redpanda_user.schema_user.name
-  password = var.schema_password
+  username            = redpanda_user.schema_user.name
+  password_wo         = var.schema_password
+  password_wo_version = 1
 }
 ----
 
@@ -519,13 +617,13 @@ In this example:
 * `subject` defines the logical name under which schema versions are registered.
 * `schema_type` specifies the serialization type (`AVRO`, `JSON`, or `PROTOBUF`).
 * `schema` provides the full schema definition, encoded with `jsonencode()`.
-* `username` and `password` authenticate the user to the Schema Registry.
+* `username` identifies the Schema Registry user. Set `password_wo` to the password value, and increment `password_wo_version` to trigger updates. For details, see <<manage-sensitive-attributes-with-write-only-fields>>.
 
 ==== Store credentials securely
 
-Store credentials using environment variables or sensitive Terraform variables.
+Use Terraform 1.11+ write-only attributes (such as `password_wo`) to keep Schema Registry credentials out of your `.tfstate` file. For details, see <<manage-sensitive-attributes-with-write-only-fields>>.
 
-For short-lived credentials or CI/CD usage, use provider-level environment variables:
+For short-lived credentials or CI/CD usage, you can also export the Schema Registry credentials as provider-level environment variables. The provider reads them automatically:
 
 [source,bash]
 ----
@@ -533,7 +631,7 @@ export REDPANDA_SR_USERNAME=schema-user
 export REDPANDA_SR_PASSWORD="your-secret-password"
 ----
 
-Or, declare a sensitive Terraform variable and inject it at runtime:
+If you must use the deprecated plaintext `password` attribute (for example, on Terraform versions earlier than 1.11), declare a sensitive Terraform variable and inject the value at runtime to avoid committing secrets to source control:
 
 [source,hcl]
 ----
@@ -543,14 +641,10 @@ variable "schema_password" {
 }
 ----
 
-Then, set the value securely using an environment variable before running Terraform:
-
 [source,bash]
 ----
 export TF_VAR_schema_password="your-secret-password"
 ----
-
-This avoids committing secrets to source control.
 
 ==== Manage Schema Registry ACLs
 
@@ -567,8 +661,9 @@ resource "redpanda_schema_registry_acl" "allow_user_read" {
   host          = "*"
   operation     = "READ"           # READ, WRITE, DELETE, DESCRIBE, etc.
   permission    = "ALLOW"          # ALLOW or DENY
-  username      = redpanda_user.schema_user.name
-  password      = var.schema_password
+  username            = redpanda_user.schema_user.name
+  password_wo         = var.schema_password
+  password_wo_version = 1
 }
 ----
 
@@ -582,7 +677,7 @@ In this example:
 * `operation` defines the permitted action (`READ`, `WRITE`, `DELETE`, etc.).
 * `permission` defines whether the operation is allowed or denied.
 * `host` specifies the host filter (typically `"*"` for all hosts).
-* `username` and `password` authenticate the principal to the Schema Registry.
+* `username` identifies the Schema Registry principal. Set `password_wo` to the password value, and increment `password_wo_version` to trigger updates. For details, see <<manage-sensitive-attributes-with-write-only-fields>>.
 
 TIP: To manage Schema Registry ACLs, the user must have cluster-level `ALTER` permissions. This is typically granted through a Kafka ACL with `ALTER` on the `CLUSTER` resource.
 
@@ -597,11 +692,12 @@ data "redpanda_cluster" "byoc" {
 }
 
 resource "redpanda_user" "schema_user" {
-  name            = "schema-user"
-  password        = var.schema_password
-  mechanism       = "scram-sha-256"
-  cluster_api_url = data.redpanda_cluster.byoc.cluster_api_url
-  allow_deletion  = true
+  name                = "schema-user"
+  password_wo         = var.schema_password
+  password_wo_version = 1
+  mechanism           = "scram-sha-256"
+  cluster_api_url     = data.redpanda_cluster.byoc.cluster_api_url
+  allow_deletion      = true
 }
 
 resource "redpanda_schema" "user_events" {
@@ -619,8 +715,9 @@ resource "redpanda_schema" "user_events" {
     ]
   })
 
-  username = redpanda_user.schema_user.name
-  password = var.schema_password
+  username            = redpanda_user.schema_user.name
+  password_wo         = var.schema_password
+  password_wo_version = 1
 }
 
 resource "redpanda_schema_registry_acl" "user_events_acl" {
@@ -632,8 +729,9 @@ resource "redpanda_schema_registry_acl" "user_events_acl" {
   host          = "*"
   operation     = "READ"
   permission    = "ALLOW"
-  username      = redpanda_user.schema_user.name
-  password      = var.schema_password
+  username            = redpanda_user.schema_user.name
+  password_wo         = var.schema_password
+  password_wo_version = 1
 }
 ----
 
