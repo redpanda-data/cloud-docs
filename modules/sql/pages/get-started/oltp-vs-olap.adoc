@@ -1,0 +1,78 @@
+= OLTP vs OLAP
+:description: Understand the difference between OLTP (transactional) and OLAP (analytical) processing, and why Redpanda SQL uses an OLAP model for querying Kafka data.
+:page-topic-type: concept
+
+Redpanda SQL uses an OLAP (Online Analytical Processing) model — optimized for analytical queries over large datasets — rather than the OLTP (Online Transaction Processing) model used by traditional relational databases. This makes OLAP suitable for querying Redpanda topics at scale. This page explains the differences between OLTP and OLAP and how they apply to querying data with Redpanda SQL.
+
+== What is OLTP?
+
+Online Transaction Processing (OLTP) supports transaction-oriented applications under a 3-tier architecture (such as a https://en.wikipedia.org/wiki/Third_normal_form[3NF^] approach). OLTP usually administers day-to-day transactions through a relational database.
+
+Some daily use cases for transactional processing include:
+
+* Payment: Using a debit or credit card, online or offline payment
+* Online transaction: Any reservation, ticketing, and booking system that requires transactional processing
+* ATM and online banking: Cash withdrawals or online banking operations
+* Record entry: Storing data like student score records, warehouse inventory, or customer service ticketing systems
+
+== What is OLAP?
+
+OLAP stands for Online Analytical Processing and provides data analysis for business decisions. With OLAP, you can get information on multiple databases and data types with the ability to analyze them at the same time, even with complex queries.
+
+Some examples of OLAP in business analytics include:
+
+* Personalization: personalized homepages, e-commerce recommendations, and content platforms
+* Sales analytics: comparing sales across different time periods stored in separate databases
+* Customer behavior: determining customer behavior across industries
+* Trend analysis: statistical analysis across sectors to assist in decision-making
+
+== OLTP and OLAP comparison
+
+The following table outlines the main differences between OLTP and OLAP:
+
+[cols="1,2,2",options="header"]
+|===
+|Parameter |OLTP |OLAP
+
+|Process
+|A transactional mechanism for controlling database modifications
+|Online analysis and data retrieving process
+
+|Characteristic
+|Large numbers of online transactions
+|Large volume of data
+
+|Method
+|Traditional DBMS
+|Data warehouse
+
+|Database normalization
+|Normalized
+|Unnormalized or denormalized
+
+|Operation
+|`INSERT`, `DELETE`, and `UPDATE` commands
+|Mostly `SELECT` operations
+
+|Response time
+|Milliseconds
+|Seconds to minutes, depending on the data amount processed
+
+|Storage size
+|Small database
+|Large database
+
+|Response
+|Quick results for frequently accessed data
+|Consistently fast response to requests
+
+|Audience
+|Market-oriented information
+|Customer-oriented information
+|===
+
+=== Key differences
+
+* OLAP analyzes data stored in a database, while OLTP supports transaction-oriented operations.
+* OLAP handles all business and data analysis, while OLTP is typically used for daily transactions.
+* OLAP can integrate different data sources, while OLTP uses traditional DBMS.

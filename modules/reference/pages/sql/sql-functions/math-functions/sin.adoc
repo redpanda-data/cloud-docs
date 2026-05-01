@@ -1,0 +1,134 @@
+= SIN
+:description: SIN() is a numeric function that returns the trigonometric sine value of a specified angle in radians.
+:page-topic-type: reference
+
+`SIN()` is a numeric function that returns the trigonometric sine value of a specified angle in radians.
+
+== Syntax
+
+The syntax of the `SIN()` function is:
+
+[source,sql]
+----
+SIN (x)
+----
+
+The `SIN()` function requires one argument:
+
+`x`:  A positive or a negative angle (or an expression that evaluates to an angle).
+
+== Examples
+
+=== Sine a positive value
+
+This example uses the `SIN()` function with a positive angle as the argument.
+
+[source,sql]
+----
+SELECT SIN(5);
+----
+
+This returns the sine value of 5.
+
+[source,sql]
+----
++-----------------------+
+| f                     |
++-----------------------+
+| -0.9589242746631385   |
++-----------------------+
+----
+
+=== Sine a negative value
+
+This example shows the `SIN()` function with a negative angle as the argument:
+
+[source,sql]
+----
+SELECT SIN(-3);
+----
+
+The query returns:
+
+[source,sql]
+----
++----------------------+
+| f                    |
++----------------------+
+| -0.1411200080598672  |
++----------------------+
+----
+
+=== Sine a fraction value
+
+This example shows the `SIN()` function with a fractional value as the argument:
+
+[source,sql]
+----
+SELECT SIN(5.8732);
+----
+
+The query returns:
+
+[source,sql]
+----
++----------------------+
+| f                    |
++----------------------+
+| -0.3985959081271079  |
++----------------------+
+----
+
+=== Sine with an expression
+
+The `SIN()` function can also include an expression:
+
+[source,sql]
+----
+SELECT sin(8.5 * 2.3);
+----
+
+The query returns:
+
+[source,sql]
+----
++-----------------------+
+| f                     |
++-----------------------+
+| 0.6445566903363104    |
++-----------------------+
+----
+
+=== Use the `SIN()` function with a table
+
+This example combines the `SIN()` function with a `CREATE TABLE` statement to obtain the sine values of a specific column:
+
+. Create a new table named *sineTable* containing the *initialValue* column. Input some values with the negative and positive angles into the column.
++
+[source,sql]
+----
+CREATE TABLE sineTable(initialValue int);
+INSERT INTO sineTable(initialValue)
+VALUES (-5),(18), (0),(-27);
+----
+
+. Run this query to get the sine value output:
++
+[source,sql]
+----
+SELECT * ,SIN(initialValue) AS sinValue FROM sineTable;
+----
+
+. The final result will have the *initialValue* column with the source value and the *sinValue* column with their calculated sine values.
++
+[source,sql]
+----
++---------------+-------------------------------+
+| initialvalue  | sinvalue                      |
++---------------+-------------------------------+
+| -5            | 0.9589242746631385            |
+| 18            | -0.7509872467716762           |
+| 0             | 0                             |
+| -27           | -0.956375928404503            |
++---------------+-------------------------------+
+----

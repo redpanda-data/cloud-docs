@@ -1,0 +1,55 @@
+= pg_total_relation_size()
+:description: The pg_total_relation_size() function retrieves the size of a table and is useful for monitoring storage requirements.
+:page-topic-type: reference
+
+The link:https://www.postgresql.org/docs/current/functions-admin.html[`pg_total_relation_size()`^] is a database object size function that retrieves the size of a table and is useful for monitoring the storage requirements.
+
+== Syntax
+
+[source,sql]
+----
+pg_total_relation_size('relation_name');
+----
+
+It returns the size of the specified table in bytes.
+
+== Parameters
+
+* `relation_name`: Name of the table to determine the size for.
+
+== Examples
+
+Create a `users` table:
+
+[source,sql]
+----
+CREATE TABLE users (
+    username TEXT,
+    email TEXT
+);
+INSERT INTO users (username, email) VALUES
+    ('john_doe', 'john.doe@example.com'),
+    ('jane_smith', 'jane.smith@example.com'),
+    ('alice_smith', 'alice.smith@example.com'),
+    ('bob_jones', 'bob.jones@example.com'),
+    ('susan_wilson', 'susan.wilson@example.com'),
+    ('michael_jackson', 'michael.jackson@example.com'),
+    ('lisa_johnson', 'lisa.johnson@example.com'),
+    ('david_smith', 'david.smith@example.com');
+----
+
+Use the `pg_total_relation_size()` function to determine the size of the `users` table (in bytes):
+
+[source,sql]
+----
+SELECT pg_total_relation_size('users');
+----
+
+The query returns:
+
+[source,sql]
+----
+ pg_total_relation_size
+------------------------
+                    556
+----

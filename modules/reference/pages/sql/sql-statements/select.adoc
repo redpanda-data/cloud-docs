@@ -1,0 +1,128 @@
+= SELECT
+:description: The SELECT statement retrieves data from one or more tables.
+:page-topic-type: reference
+
+The `SELECT` statement retrieves data from one or more tables. Use `SELECT` to:
+
+* Retrieve specific columns from a table.
+* Query data across multiple tables.
+* Filter results based on specific criteria.
+
+== Syntax
+
+To retrieve data from a table, use this syntax:
+
+[source,sql]
+----
+SELECT * FROM table_name;
+----
+
+To filter by specific columns, use:
+
+[source,sql]
+----
+SELECT column1, column2, ...
+FROM table_name;
+----
+
+Where:
+
+* `SELECT`: Specifies the data to retrieve.
+* `*`: Returns all columns.
+* `FROM`: Specifies the table to query.
+* `table_name`: The name of the table.
+* `column1, column2, ...`: The columns to retrieve.
+
+[NOTE]
+====
+The `SELECT` statement is case-insensitive. `select` and `SELECT` produce the same result.
+====
+
+== Examples
+
+The following examples query a table named `student_data` that contains student records with `id`, `name`, and `domicile` columns.
+
+=== Query data from all columns
+
+. To display all the data from the `student_data` table, use this syntax:
++
+[source,sql]
+----
+SELECT * FROM table_name;
+----
+
+. Run the following query:
++
+[source,sql]
+----
+SELECT * FROM student_data;
+----
+
+. The query returns:
++
+[source,sql]
+----
++--------+----------+----------------+
+| id     | name     | domicile       |
++--------+----------+----------------+
+| 119291 | Jordan   | Los Angeles    |
+| 119292 | Mike     | Melbourne      |
+| 119293 | Will     | Sydney         |
++--------+----------+----------------+
+----
+
+=== Query data from specific columns
+
+. To get the list of students' names with their IDs, use this syntax:
++
+[source,sql]
+----
+SELECT column_1, column_2 FROM table_name;
+----
+
+. Run:
++
+[source,sql]
+----
+SELECT id, name FROM student_data;
+----
+
+. The query returns:
++
+[source,sql]
+----
++--------+----------+
+| id     | name     |
++--------+----------+
+| 119291 | Jordan   |
+| 119292 | Mike     |
+| 119293 | Will     |
++--------+----------+
+----
+
+=== Query data from a specific column with the condition
+
+. With a large amount of data, skimming for the desired data can take a long time. Apply conditions to the `SELECT` statement to narrow the results:
++
+[source,sql]
+----
+SELECT column_1 FROM table_name WHERE condition;
+----
+
+. To find the student who lives in Sydney, run:
++
+[source,sql]
+----
+SELECT name FROM student_data WHERE domicile='Sydney';
+----
+
+. The query returns:
++
+[source,sql]
+----
++----------+
+| name     |
++----------+
+| Will     |
++----------+
+----

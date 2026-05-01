@@ -1,0 +1,77 @@
+= ROW
+:description: The ROW data type represents a composite value containing one or more fields of different types.
+:page-topic-type: reference
+
+The `ROW` data type represents a composite value (also known as a struct or record) containing one or more fields of different types.
+
+== Syntax
+
+[source,sql]
+----
+ROW(expression [, ...])
+(expression, expression [, ...])
+----
+
+The explicit `ROW` keyword is required for single-element composites. For two or more elements, the `ROW` keyword is optional and the parenthesized list is treated as an implicit tuple.
+
+== Examples
+
+=== Create a ROW with multiple values
+
+[source,sql]
+----
+SELECT ROW(1, 'hello', 3.14);
+----
+
+[source,sql]
+----
+       row
+-----------------
+ (1,"hello",3.14)
+(1 row)
+----
+
+=== Use implicit tuple syntax
+
+[source,sql]
+----
+SELECT (1, 2, 3);
+----
+
+[source,sql]
+----
+  row
+---------
+ (1,2,3)
+(1 row)
+----
+
+=== Create a nested ROW
+
+[source,sql]
+----
+SELECT ROW(1, ROW(2, 3));
+----
+
+[source,sql]
+----
+    row
+-----------
+ (1,"(2,3)")
+(1 row)
+----
+
+=== Create an empty ROW
+
+[source,sql]
+----
+SELECT ROW();
+----
+
+[source,sql]
+----
+ row
+-----
+ ()
+(1 row)
+----

@@ -1,0 +1,32 @@
+= DROP REDPANDA CATALOG
+:description: The DROP REDPANDA CATALOG statement removes a Redpanda catalog connection.
+:page-topic-type: reference
+
+The `DROP REDPANDA CATALOG` statement removes a Redpanda catalog connection. You must drop all tables within a catalog before dropping the catalog itself.
+
+== Syntax
+
+[source,sql]
+----
+DROP REDPANDA CATALOG [IF EXISTS] catalog_name;
+----
+
+* `catalog_name`: Name of the catalog to remove.
+* `IF EXISTS`: Optional. Prevents an error if the catalog does not exist.
+
+== Examples
+
+First, drop all tables in the catalog:
+
+[source,sql]
+----
+DROP TABLE my_catalog=>user_events;
+DROP TABLE my_catalog=>transactions;
+----
+
+Then drop the catalog:
+
+[source,sql]
+----
+DROP REDPANDA CATALOG my_catalog;
+----

@@ -1,0 +1,118 @@
+= SQRT
+:description: The SQRT() function returns the square root of a given positive number.
+:page-topic-type: reference
+
+The `SQRT()` function returns the square root of a given positive number.
+
+== Syntax
+
+The syntax for the `SQRT()` function in Redpanda SQL is:
+
+[source,sql]
+----
+SQRT(x)
+----
+
+The `SQRT()` function requires one argument:
+
+* `x`: A positive number or an expression that evaluates to a positive number.
+
+== Examples
+
+=== SQRT() a positive value
+
+This example demonstrates how to find the square root of a positive integer with `SQRT()`:
+
+[source,sql]
+----
+SELECT SQRT(81);
+----
+
+The returned result:
+
+[source,sql]
+----
++-----+
+| f   |
++-----+
+| 9   |
++-----+
+----
+
+=== SQRT() with an expression
+
+This example shows how to use the `SQRT()` function to find the square root of the result of an expression:
+
+[source,sql]
+----
+SELECT SQRT(60 + 4);
+----
+
+The result of this statement is the square root of 64:
+
+[source,sql]
+----
++-----+
+| f   |
++-----+
+| 8   |
++-----+
+----
+
+=== SQRT() with double precision result
+
+In addition to integers, Redpanda SQL also supports calculating square roots with floating-point numbers as the outcome, as shown in this example:
+
+[source,sql]
+----
+SELECT SQRT(70);
+----
+
+The output of this statement is 8.3666, which is the square root of 70 with double precision:
+
+[source,sql]
+----
++----------+
+| f        |
++----------+
+| 8.3666   |
++----------+
+----
+
+=== SQRT() a negative number
+
+This example demonstrates how attempting to use the `SQRT()` function with a negative value returns an error:
+
+[source,sql]
+----
+SELECT SQRT(-25);
+----
+
+As the `SQRT()` function only accepts positive numbers, it returns a *_NaN (Not a Number)_* result for the square root of -25:
+
+[source,sql]
+----
++-------+
+| f     |
++-------+
+| NaN   |
++-------+
+----
+
+=== SQRT operator (`|/(x)`)
+
+This example uses the SQRT operator (`|/(x)`) to calculate the square root of a number:
+
+[source,sql]
+----
+SELECT |/(169) AS sqrt_operator;
+----
+
+This example calculates the square root of 169 using the SQRT operator. The result of this query will be:
+
+[source,sql]
+----
+ sqrt_operator
+---------------
+            13
+----

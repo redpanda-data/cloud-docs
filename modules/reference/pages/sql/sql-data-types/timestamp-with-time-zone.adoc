@@ -1,0 +1,151 @@
+= Timestamp with Time Zone
+:description: Redpanda SQL provides you with two data types for handling timestamps:
+:page-topic-type: reference
+
+Redpanda SQL provides two data types for handling timestamps:
+
+* xref:reference:sql/sql-data-types/timestamp-without-time-zone.adoc[Timestamp without time zone]: Stores both date and time values.
+* Timestamp with time zone: Stores date and time values and processes time zone information during operations.
+** During an `INSERT` operation, the time zone is ignored. The date and time are stored without considering the time zone.
+** During a `SELECT` operation, the time zone information from the user's session is also ignored. The data is returned exactly as it is stored without adjusting the time zone.
+
+[NOTE]
+====
+All user sessions have a local timezone associated with them, affecting how `timestamp with time zone` values are displayed. The timezone information is not stored in the database. Every time a user requests a value of this type, Redpanda SQL converts from UTC to the user's local timezone before displaying it.
+====
+
+[NOTE]
+====
+Redpanda SQL relies on timezone information served by the host machine's operating system. It must be up-to-date to ensure correct timestamp conversions, date calculations, and compliance with regional time changes such as daylight saving adjustments.
+====
+
+== Format
+
+The `timestamp with time zone` data type has the following format:
+
+[source,sql]
+----
+YYYY-MM-DD HH:MM:SS.SSSSSS+TZ
+----
+
+* `YYYY`: Four-digit year.
+* `MM`: One or two-digit month.
+* `DD`: One or two-digit day.
+* `HH`: One or two-digit hour (valid values from 00 to 23).
+* `MM`: One or two-digit minutes (valid values from 00 to 59).
+* `SS`: One or two-digit seconds (valid values from 00 to 59).
+* `.SSSSSS`: Optional fractional digits, up to six (microsecond precision).
+* `+TZ`: Time zone offset in the format +/-HH:MM (for example, +05:30, -08:00).
+
+== Examples
+
+=== Create a table
+
+The following example creates a table named `event_log` that consists of a timestamp without a time zone and a timestamp with time zone columns. The values in the `event_timestamp_tz` are in the "Europe/Moscow" timezone.
+
+[source,sql]
+----
+CREATE TABLE events_log (
+    event_name TEXT,
+    event_timestamp TIMESTAMP WITHOUT TIME ZONE,
+    event_timestamp_tz TIMESTAMP WITH TIME ZONE
+);
+INSERT INTO events_log (event_name, event_timestamp, event_timestamp_tz)
+VALUES
+    ('Event 1', '2023-07-27 12:30:00', '2023-07-27 12:30:00+03:00'),
+    ('Event 2', '2023-07-27 08:45:00', '2023-07-27 08:45:00+03:00'),
+    ('Event 3', '2023-07-27 20:15:00', '2023-07-27 20:15:00+03:00');
+----
+
+The table has been successfully created after executing the query:
+
+[source,sql]
+----
+COMPLETE
+INSERT 0 3
+----
+
+=== Display the table
+
+Run the `SELECT` statement to get all records of the table:
+
+[source,sql]
+----
+SELECT event_timestamp, event_timestamp_tz
+FROM events_log;
+----
+
+This returns the following result. Notice that the `event_timestamp_tz` is converted to UTC timezone.
+
+[source,sql]
+----
+      event_timestamp       |       event_timestamp_tz
+----------------------------+---------------------------------
+ 2023-07-27 12:30:00.000000 | 2023-07-27 09:30:00.000000+0000
+ 2023-07-27 08:45:00.000000 | 2023-07-27 05:45:00.000000+0000
+ 2023-07-27 20:15:00.000000 | 2023-07-27 17:15:00.000000+0000
+(3 rows)
+----
+
+=== Order table by timestamp
+
+To sort the events based on the `event_timestamp` column and display the corresponding UTC in the `event_timestamp_tz` column, run the query:
+
+[source,sql]
+----
+SELECT
+  event_timestamp,
+  event_timestamp_tz,
+  event_timestamp AT TIME ZONE 'UTC' AS utc_time
+FROM
+  events_log
+ORDER BY
+  event_timestamp;
+----
+
+This query retrieves the `event_timestamp` and `event_timestamp_tz` columns and calculates the corresponding UTC time using the `AT TIME ZONE 'UTC'` operator.
+
+The results are ordered based on the `event_timestamp` column, producing a sorted list of events with their corresponding local and UTC times.
+
+[source,sql]
+----
+      event_timestamp       |       event_timestamp_tz        |            utc_time
+----------------------------+---------------------------------+---------------------------------
+ 2023-07-27 08:45:00.000000 | 2023-07-27 05:45:00.000000+0000 | 2023-07-27 08:45:00.000000+0000
+ 2023-07-27 12:30:00.000000 | 2023-07-27 09:30:00.000000+0000 | 2023-07-27 12:30:00.000000+0000
+ 2023-07-27 20:15:00.000000 | 2023-07-27 17:15:00.000000+0000 | 2023-07-27 20:15:00.000000+0000
+(3 rows)
+----
+
+== AT TIME ZONE operator
+
+The `AT TIME ZONE` operator in timestamp with time zone converts the given timestamp with time zone to the new time zone, with no time zone designation.
+
+=== Syntax
+
+[source,sql]
+----
+SELECT TIMESTAMP WITH TIME ZONE 'timestamp' AT TIME ZONE 'TIME_ZONE';
+----
+
+* `timestamp`: The date and time value with the time zone.
+* `TIME_ZONE`: The target time zone to which Redpanda SQL converts the timestamp. The user's time zone is fixed to UTC.
+
+=== Example
+
+In this example, a specified timestamp with time zone is converted into the UTC timezone.
+
+[source,sql]
+----
+SELECT TIMESTAMP WITH TIME ZONE '2023-03-04 10:29:90-05' AT TIME ZONE 'UTC';
+----
+
+The result is a timestamp without a time zone:
+
+[source,sql]
+----
+           timezone
+----------------------------
+ 2023-03-04 15:30:30.000000
+(1 row)
+----

@@ -1,0 +1,28 @@
+= ALTER TABLE
+:description: The ALTER TABLE statement modifies options of a catalog table mapped to a Redpanda topic.
+:page-topic-type: reference
+
+The `ALTER TABLE` statement modifies the options of a catalog table mapped to a Redpanda topic.
+
+== Syntax
+
+[source,sql]
+----
+ALTER TABLE [IF EXISTS] catalog_name=>table_name
+WITH (option = 'value' [, ...]);
+----
+
+* `catalog_name`: Name of the Redpanda catalog containing the table.
+* `table_name`: Name of the table to modify.
+* `IF EXISTS`: Optional. Prevents an error if the table does not exist.
+* `option = 'value'`: One or more table options to update. See xref:reference:sql/sql-statements/create-table.adoc[CREATE TABLE] for the full list of options.
+
+== Examples
+
+Update the error handling policy for an existing catalog table:
+
+[source,sql]
+----
+ALTER TABLE my_catalog=>sensor_readings
+WITH (error_handling_policy = 'FILL_NULL');
+----

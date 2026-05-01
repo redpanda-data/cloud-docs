@@ -1,0 +1,24 @@
+= Overview
+:description: Redpanda SQL provides functions to query and manipulate JSON data.
+
+Redpanda SQL provides functions to query and manipulate JSON data:
+
+[width="100%",cols="53%,47%",options="header",]
+|===
+|*Functions* |*Description*
+|xref:reference:sql/sql-functions/json-functions/json-extract-path.adoc[JSON_EXTRACT_PATH()]﻿ |Extracts a JSON sub-object at the specified path.
+|xref:reference:sql/sql-functions/json-functions/json-extract-path-text.adoc[JSON_EXTRACT_PATH_TEXT()] |Returns text referenced by a series of path elements in a JSON string or JSON body.
+|xref:reference:sql/sql-functions/json-functions/json-array-length.adoc[JSON_ARRAY_LENGTH()] |Returns the number of elements in the outer array of a JSON string or JSON body.
+|xref:reference:sql/sql-functions/json-functions/json-array-extract.adoc[JSON_ARRAY_EXTRACT()] |Returns the JSON array as a set of JSON values.
+|===
+
+Use operators to specify conditions when using JSON functions. Redpanda SQL also supports the following JSON operators:
+
+[width="100%",cols="12%,46%,42%",options="header",]
+|===
+|*Operators* |*Description* |*Example*
+|-> |Gets and returns the element of the JSON array. |`'[{"a":"cab"},{"b":"bac"},{"c":"abc"}]'::json -> 2`
+|-> |Gets and returns the JSON object field. |`'{"a": {"b":"abc"}}'::json -> 'a'`
+|->> |Gets and returns the element of the JSON array as text. |`'[11,22,33]'::json ->> 2`
+|->> |Gets and returns the JSON object field as text. |`'{"a":13,"b":33}'::json ->> 'b'`
+|===

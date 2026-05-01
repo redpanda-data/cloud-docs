@@ -1,0 +1,96 @@
+= FLOOR
+:description: The FLOOR() returns a number rounded down that is less than or equal to the specified argument.
+:page-topic-type: reference
+
+The `FLOOR()` returns a number rounded down that is less than or equal to the specified argument.
+
+== Syntax
+
+The syntax for the `FLOOR()` function in Redpanda SQL is:
+
+[source,sql]
+----
+FLOOR(x)
+----
+
+The `FLOOR()` function requires one argument:
+
+`x`: A positive or a negative decimal number (or an expression that evaluates to a decimal number).
+
+== Examples
+
+=== Round down a positive decimal value
+
+This example demonstrates how the `FLOORL()` function rounds down a positive decimal value:
+
+[source,sql]
+----
+SELECT FLOOR(345.6765467);
+----
+
+This returns 345 as it is the closest value smaller than the argument.
+
+[source,sql]
+----
++------+
+| f    |
++------+
+| 345  |
++------+
+----
+
+=== Round down a negative decimal value
+
+This example demonstrates how the `FLOORL()` function rounds down a negative decimal value:
+
+[source,sql]
+----
+SELECT FLOOR(-0.987657);
+----
+
+The result is the nearest integer smaller than or equal to the specified argument.
+
+[source,sql]
+----
++-------+
+| f     |
++-------+
+| -1    |
++-------+
+----
+
+=== Use the FLOOR() function with a table
+
+This example demonstrates how to use the `FLOOR()` function with a table to round down values in a specific column:
+
+. Create a new table called *FloorRecords* with double-precision values:
++
+[source,sql]
+----
+CREATE TABLE FloorRecords (numbers float);
+INSERT INTO FloorRecords VALUES (3.987), (4.325), (-0.76), (-22.57);
+----
+
+. Retrieve the table with its values:
++
+[source,sql]
+----
+SELECT * ,FLOOR(numbers) AS Floorvalue FROM FloorRecords;
+----
+
+. Result:
++
+* *numbers,* the column with the initial double-precision values.
+* *FloorValue*, the column with the rounded-down values.
++
+[source,sql]
+----
++------------+---------------+
+| numbers    | Floorvalue    |
++------------+---------------+
+| 3.987      | 3             |
+| 4.325      | 4             |
+| -0.76      | -1            |
+| -22.57     | -23           |
++------------+---------------+
+----

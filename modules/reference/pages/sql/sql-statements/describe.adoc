@@ -1,0 +1,128 @@
+= DESCRIBE
+:description: The DESCRIBE statement displays columns of a table or lists tables in a database.
+:page-topic-type: reference
+
+The `DESCRIBE` statement displays columns of a table or lists tables in a database.
+
+== Syntax
+
+[source,sql]
+----
+DESCRIBE DATABASE;
+DESCRIBE TABLE table_name;
+DESCRIBE TABLE catalog_name=>table_name;
+DESCRIBE REDPANDA CATALOG catalog_name;
+----
+
+* `table_name`: Name of the table to describe.
+* `catalog_name=>table_name`: Describes a table that is mapped to a Redpanda topic through a catalog.
+* `catalog_name`: Name of a Redpanda catalog. Lists the tables and topic mappings in that catalog.
+
+[NOTE]
+====
+This statement is available to all users with the `USAGE` privilege on the schema where the table is located.
+====
+
+== Examples
+
+=== Describe a table
+
+To show the columns of the `part` table, run the query:
+
+[source,sql]
+----
+DESCRIBE TABLE part;
+----
+
+The query returns:
+
+[source,sql]
+----
++----------------+------------+-------------+-------+----------+
+| database_name  | table_name |    name     | type  | nullable |
++----------------+------------+-------------+-------+----------+
+| public         | part       | p_partkey   | INT   | f        |
+| public         | part       | p_name      | TEXT  | f        |
+| public         | part       | p_mfgr      | TEXT  | f        |
+| public         | part       | p_category  | TEXT  | f        |
+| public         | part       | p_brand     | TEXT  | f        |
+| public         | part       | p_color     | TEXT  | f        |
+| public         | part       | p_type      | TEXT  | f        |
+| public         | part       | p_size      | INT   | f        |
+| public         | part       | p_container | TEXT  | f        |
++----------------+------------+-------------+-------+----------+
+----
+
+[TIP]
+====
+Tables in this example use the `public` schema, the default in Redpanda SQL. For information on displaying tables from other schemas, see xref:reference:sql/schema.adoc[Schema].
+====
+
+=== Describe a database
+
+To list all tables in the database, run:
+
+[source,sql]
+----
+DESCRIBE DATABASE;
+----
+
+The query returns:
+
+[source,sql]
+----
++-----------------------------+
+| name                        |
++-----------------------------+
+| supplier_scale_1_no_index   |
+| features                    |
+| orders                      |
+| features2                   |
+| featurestable               |
+| featurestable1              |
+| featurestable10             |
++-----------------------------+
+----
+
+=== Describe a catalog table
+
+To view column details for a table mapped through a Redpanda catalog, run:
+
+[source,sql]
+----
+DESCRIBE TABLE my_catalog=>transactions;
+----
+
+The query returns:
+
+[source,sql]
+----
++----------------+--------------+-------------+-------+----------+
+| database_name  | table_name   |    name     | type  | nullable |
++----------------+--------------+-------------+-------+----------+
+| my_catalog     | transactions | tx_id       | INT   | f        |
+| my_catalog     | transactions | amount      | REAL  | f        |
+| my_catalog     | transactions | created_at  | TEXT  | f        |
++----------------+--------------+-------------+-------+----------+
+----
+
+=== Describe a Redpanda catalog
+
+To list the tables and topic mappings in a Redpanda catalog, run:
+
+[source,sql]
+----
+DESCRIBE REDPANDA CATALOG my_catalog;
+----
+
+The query returns:
+
+[source,sql]
+----
++----------------+--------------+
+| table_name     | topic_name   |
++----------------+--------------+
+| transactions   | transactions |
+| user_events    | user-events  |
++----------------+--------------+
+----

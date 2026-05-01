@@ -1,0 +1,84 @@
+= JSON_ARRAY_EXTRACT
+:description: The JSON_ARRAY_EXTRACT() function returns the JSON array as a set of JSON values.
+:page-topic-type: reference
+
+== Overview
+
+The `JSON_ARRAY_EXTRACT()` function returns the JSON array as a set of JSON values.
+
+== Syntax
+
+The `JSON_ARRAY_EXTRACT()` has the following basic syntax.
+
+[source,sql]
+----
+JSON_ARRAY_EXTRACT('json_array'::JSON,id);
+----
+
+`JSON_ARRAY_EXTRACT()` requires the following parameters:
+
+* `json_array`: The array to extract.
+* `::JSON`: Argument indicating that the query is of type JSON.
+* `id`: ID of the element to extract. It is read in an array format that starts with 0.
+
+=== Another option
+
+`JSON_ARRAY_EXTRACT` can also be achieved with the `->` operator, as shown in the following syntax:
+
+[source,sql]
+----
+SELECT 'from_json'::JSON -> path;
+----
+
+* `from_json`: The JSON value from which to extract.
+* `::JSON`: A symbol that casts the string literal to a JSON type.
+* `path`: Key of the field to extract.
+
+== Examples
+
+=== Basic JSON_ARRAY_EXTRACT() function
+
+. The following example extracts a JSON array as a JSON set.
++
+[source,sql]
+----
+SELECT JSON_ARRAY_EXTRACT('["Bougenvile", 2, 12, "Lily"]'::JSON,3);
+----
++
+*or*
++
+[source,sql]
+----
+SELECT ('["Bougenvile", 2, 12, "Lily"]'::JSON -> 3);
+----
+
+. The extracted array will look like the following.
++
+[source,sql]
+----
++------------+
+| f          |
++------------+
+| "Lily"     |
++------------+
+----
+
+=== Extract element of JSON array as text
+
+. This example extracts the element of the JSON array as text with the `->>` operator.
++
+[source,sql]
+----
+SELECT ('["Bougenvile", 2, 12, "Lily"]'::JSON ->> 1);
+----
+
+. Output:
++
+[source,sql]
+----
++------------+
+| f          |
++------------+
+| 2.000000   |
++------------+
+----

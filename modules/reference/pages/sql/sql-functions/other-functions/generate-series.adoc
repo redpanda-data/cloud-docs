@@ -1,0 +1,115 @@
+= GENERATE_SERIES
+:description: The GENERATE_SERIES function generates a set of values from start to stop with an optional step increment.
+:page-topic-type: reference
+
+The `GENERATE_SERIES` function generates a set of values from a start value to a stop value with an optional step increment. Use it as a table function in the `FROM` clause.
+
+== Syntax
+
+[source,sql]
+----
+GENERATE_SERIES(start, stop)
+GENERATE_SERIES(start, stop, step)
+----
+
+== Arguments
+
+* `start`: The first value in the series. Type: `BIGINT`.
+* `stop`: The last value in the series (inclusive). Type: `BIGINT`.
+* `step`: Optional. The increment between values. Defaults to `1`. Use a negative value to generate a descending series. Type: `BIGINT`.
+
+If `step` is positive and `start` is greater than `stop`, an empty set is returned. If `step` is negative and `start` is less than `stop`, an empty set is returned.
+
+== Examples
+
+=== Generate an ascending series
+
+[source,sql]
+----
+SELECT * FROM GENERATE_SERIES(1, 5);
+----
+
+[source,sql]
+----
+ generate_series
+-----------------
+               1
+               2
+               3
+               4
+               5
+(5 rows)
+----
+
+=== Generate a series with a custom step
+
+[source,sql]
+----
+SELECT * FROM GENERATE_SERIES(0, 10, 2);
+----
+
+[source,sql]
+----
+ generate_series
+-----------------
+               0
+               2
+               4
+               6
+               8
+              10
+(6 rows)
+----
+
+=== Generate a descending series
+
+[source,sql]
+----
+SELECT * FROM GENERATE_SERIES(5, 1, -1);
+----
+
+[source,sql]
+----
+ generate_series
+-----------------
+               5
+               4
+               3
+               2
+               1
+(5 rows)
+----
+
+=== Filter a series with WHERE
+
+[source,sql]
+----
+SELECT * FROM GENERATE_SERIES(1, 10) WHERE generate_series % 2 = 0;
+----
+
+[source,sql]
+----
+ generate_series
+-----------------
+               2
+               4
+               6
+               8
+              10
+(5 rows)
+----
+
+=== Aggregate a series
+
+[source,sql]
+----
+SELECT SUM(generate_series) FROM GENERATE_SERIES(1, 100);
+----
+
+[source,sql]
+----
+ sum
+------
+ 5050
+(1 row)
+----

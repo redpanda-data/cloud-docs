@@ -1,0 +1,90 @@
+= TIMESTAMP_MILLIS
+:description: The TIMESTAMP_MILLIS() function converts a given UNIX timestamp value in milliseconds since 1970-01-01 00:00:00 UTC into a timestamp.
+:page-topic-type: reference
+
+The `TIMESTAMP_MILLIS()` function converts a given UNIX timestamp value in milliseconds since 1970-01-01 00:00:00 UTC into a timestamp. Its syntax is:
+
+[source,sql]
+----
+SELECT TIMESTAMP_MILLIS(BIGINT)
+----
+
+Its input type is a `BIGINT` expression which represents a UNIX timestamp in milliseconds and the return data type is a timestamp.
+
+== Examples
+
+=== Basic `TIMESTAMP_MILLIS()` function
+
+This example shows how to use the `TIMESTAMP_MILLIS()` function to convert a given UNIX timestamp in milliseconds into a timestamp without a timezone.
+
+[source,sql]
+----
+SELECT TIMESTAMP_MILLIS(1671975000000) AS timestamp_millisvalues;
+----
+
+The query returns:
+
+[source,sql]
+----
++-----------------------------+
+| timestamp_millisvalues      |
++-----------------------------+
+| 2022-12-25 13:30:00         |
++-----------------------------+
+----
+
+=== `TIMESTAMP_MILLIS()` function using columns
+
+Suppose a table named **unix_example** has these UNIX time values in milliseconds in the *unix_timestamp* column:
+
+[source,sql]
+----
+CREATE TABLE unix_example (
+  unix_timestamp long
+);
+
+INSERT INTO unix_example VALUES
+('171472000000'),
+('1671975000000'),
+('153276000000');
+----
+
+[source,sql]
+----
+SELECT * FROM unix_example;
+----
+
+This query shows the table:
+
+[source,sql]
+----
++----------------+
+| unix_timestamp |
++----------------+
+| 171472000000   |
+| 1671975000000  |
+| 153276000000   |
++----------------+
+----
+
+To convert all UNIX timestamp values in milliseconds to timestamp values, run the query:
+
+[source,sql]
+----
+SELECT unix_timestamp, TIMESTAMP_MILLIS(unix_timestamp)
+AS timestamp_value
+FROM unix_example;
+----
+
+The output displays all the entries in the table in UNIX timestamp format (in milliseconds) in the **unix_timestamp** column and in the timestamp format in the column** timestamp_value** without timezone.
+
+[source,sql]
+----
++-------------------------+-----------------------+
+| unix_timestamp          | timestamp_value       |
++-------------------------+-----------------------+
+|171472000000             | 1975-06-08 15:06:40   |
+|1671975000000            | 2022-12-25 13:30:00   |
+|153276000000             | 1974-11-10 00:40:00   |
++-------------------------+-----------------------+
+----

@@ -1,0 +1,53 @@
+= pg_get_userbyid()
+:description: The pg_get_userbyid() function retrieves the name of a user (role) given its unique identifier (OID).
+:page-topic-type: reference
+
+The link:https://www.postgresql.org/docs/current/functions-info.html#FUNCTIONS-INFO-CATALOG[`pg_get_userbyid()`^] is a system catalog information function that retrieves the name of a user (role) given its unique identifier (OID).
+
+== Syntax
+
+[source,sql]
+----
+pg_get_userbyid(role_oid)
+----
+
+== Parameters
+
+* `role_oid`: Specifies the object identifier (OID) of the user.
+
+== Examples
+
+Get the OIDs of all the users:
+
+[source,sql]
+----
+SELECT id,name FROM oxla_internal.oxla_role;
+----
+
+The query returns the list of users with their IDs (OIDs):
+
+[source,sql]
+----
+ id |  name
+----+---------
+  1 | oxla
+  2 | other_user
+(2 rows)
+----
+
+Translate the OID to a role name:
+
+[source,sql]
+----
+SELECT pg_get_userbyid(2);
+----
+
+The query returns:
+
+[source,sql]
+----
+ pg_get_userbyid
+-----------------
+ other_user
+(1 row)
+----

@@ -1,0 +1,76 @@
+= OFFSET
+:description: The OFFSET clause skips a specified number of records from the result set.
+:page-topic-type: reference
+
+The `OFFSET` clause skips a specified number of records from the result set.
+
+== Syntax
+
+[source,sql]
+----
+SELECT columns
+FROM table_name
+OFFSET num;
+----
+
+Where:
+
+* `columns`: The columns to fetch.
+* `table_name`: The table to fetch records from.
+* `num`: The number of records to skip.
+
+== Examples
+
+The following example uses a `salaryemp` table.
+
+[source,sql]
+----
+SELECT * FROM salaryemp ORDER BY emp_sal;
+----
+
+The query returns:
+
+[source,sql]
+----
++-----------+------------+----------------+-------------+
+| emp_id    | emp_name   | emp_div        | emp_sal     |
++-----------+------------+----------------+-------------+
+| 1008      | Harry      | Operations     | 4500        |
+| 1005      | Lewis      | Sales          | 5500        |
+| 1002      | Mike       | Marketing      | 6000        |
+| 1003      | Sean       | Marketing      | 6500        |
+| 1009      | Steve      | Marketing      | 6800        |
+| 1004      | Victor     | Finance        | 7000        |
+| 1007      | Meghan     | Finance        | 7500        |
+| 1006      | David      | Marketing      | 8000        |
+| 1010      | Omar       | Finance        | 8000        |
+| 1011      | David      | Sales          | 8200        |
++-----------+------------+----------------+-------------+
+----
+
+The following query skips the first three rows and returns the next five, ordered by salary:
+
+[source,sql]
+----
+SELECT * FROM salaryemp
+ORDER BY emp_sal
+LIMIT 5 OFFSET 3;
+----
+
+* `OFFSET 3` skips the first three rows (`Harry`, `Lewis`, `Mike`).
+* `LIMIT 5` returns the next five rows.
+
+The query returns:
+
+[source,sql]
+----
++-----------+------------+----------------+-------------+
+| emp_id    | emp_name   | emp_div        | emp_sal     |
++-----------+------------+----------------+-------------+
+| 1003      | Sean       | Marketing      | 6500        |
+| 1009      | Steve      | Marketing      | 6800        |
+| 1004      | Victor     | Finance        | 7000        |
+| 1007      | Meghan     | Finance        | 7500        |
+| 1006      | David      | Marketing      | 8000        |
++-----------+------------+----------------+-------------+
+----

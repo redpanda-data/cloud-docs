@@ -1,0 +1,91 @@
+= Numeric Data Type - Aliases
+:description: Aliases for the primary numeric data types in Redpanda SQL, mapped to their primary types during processing.
+:page-topic-type: reference
+
+Redpanda SQL accepts aliases that you can use interchangeably with the primary data types. During processing, Redpanda SQL maps these aliases to their corresponding primary data types.
+
+The following sections describe the numeric data type aliases:
+
+== INTEGER alias
+
+The `INTEGER` alias is an alternative name for the `INT` data type. For example, the following two queries are functionally the same:
+
+[source,sql]
+----
+CREATE TABLE ExampleTable (
+    id INTEGER,
+);
+
+-- Functionally the same as the previous table
+CREATE TABLE AnotherTable (
+    id INT,
+);
+----
+
+[NOTE]
+====
+Even though you write `INTEGER`, Redpanda SQL stores and treats the data as `INT`.
+====
+
+== LONG alias
+
+The `LONG` alias is often used to represent larger integer values. For example:
+
+[source,sql]
+----
+CREATE TABLE LargeValues (
+    value LONG,
+);
+
+-- Functionally the same as the previous table
+CREATE TABLE LargeValuesEquivalent (
+    value BIGINT,
+);
+----
+
+[NOTE]
+====
+Any usage of `LONG` is stored and treated as `BIGINT`.
+====
+
+== FLOAT alias
+
+The `FLOAT` alias corresponds to the `REAL` data type. For example:
+
+[source,sql]
+----
+CREATE TABLE FloatExample (
+    price FLOAT,
+);
+
+-- Functionally the same as the previous table
+CREATE TABLE FloatEquivalent (
+    price REAL,
+);
+----
+
+[NOTE]
+====
+When you use `FLOAT`, it's stored and treated as `REAL`.
+====
+
+== DOUBLE alias
+
+The `DOUBLE` alias defines `DOUBLE PRECISION` floating-point numbers. For example:
+
+[source,sql]
+----
+CREATE TABLE DoubleExample (
+    measurement DOUBLE,
+);
+
+-- Functionally the same as the previous table
+CREATE TABLE DoubleEquivalent (
+    measurement DOUBLE PRECISION,
+);
+----
+
+[NOTE]
+====
+When you use `DOUBLE`, it's stored and treated as `DOUBLE PRECISION`.
+====

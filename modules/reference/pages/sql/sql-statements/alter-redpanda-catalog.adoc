@@ -1,0 +1,27 @@
+= ALTER REDPANDA CATALOG
+:description: The ALTER REDPANDA CATALOG statement modifies connection properties of an existing Redpanda catalog.
+:page-topic-type: reference
+
+The `ALTER REDPANDA CATALOG` statement modifies connection properties of an existing Redpanda catalog.
+
+== Syntax
+
+[source,sql]
+----
+ALTER REDPANDA CATALOG [IF EXISTS] catalog_name
+WITH (option = 'value' [, ...]);
+----
+
+* `catalog_name`: Name of the catalog to modify.
+* `IF EXISTS`: Optional. Prevents an error if the catalog does not exist.
+* `option = 'value'`: One or more connection options to update. See xref:reference:sql/sql-statements/create-redpanda-catalog.adoc[CREATE REDPANDA CATALOG] for the full list of options.
+
+== Examples
+
+Update the broker address for an existing catalog:
+
+[source,sql]
+----
+ALTER REDPANDA CATALOG my_catalog
+WITH (initial_brokers = 'new-broker:9092');
+----

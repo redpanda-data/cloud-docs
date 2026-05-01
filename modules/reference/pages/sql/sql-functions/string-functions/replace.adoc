@@ -1,0 +1,152 @@
+= REPLACE()
+:description: The REPLACE() function looks for and replaces a substring with a new one in a string.
+:page-topic-type: reference
+
+The `REPLACE()` function looks for and replaces a substring with a new one in a string. This function is often used to update the outdated or spelling mistakes in data that require an amendment.
+
+[NOTE]
+====
+Redpanda SQL also supports the xref:reference:sql/sql-functions/string-functions/regex/regexp-replace.adoc[`REGEXP_REPLACE()`] function. It searches and replaces a substring that matches with a POSIX regular expression
+====
+
+== Syntax
+
+The syntax for `REPLACE()` function is:
+
+[source,sql]
+----
+REPLACE(string, old_substring, new_substring)
+----
+
+[WARNING]
+====
+The `REPLACE()` function performs a case-sensitive replacement
+====
+
+=== Parameters
+
+The syntax requires these parameters:
+
+* `string`: String to replace.
+* `old_substring`: Substring to replace. All occurrences in the string are replaced.
+* `new_substring`: New substring that will replace the old one.
+
+== Examples
+
+=== Basic usage
+
+This example demonstrates a basic usage of the `REPLACE()` function.
+
+[source,sql]
+----
+SELECT REPLACE ('NewDatabase', 'New', 'Redpanda');
+----
+
+The `REPLACE()` function finds all occurrences of the '`New`' substring in the '`NewDatabase`' string and replaces it with the '`Redpanda`' substring, producing:
+
+[source,sql]
+----
++---------------------+
+| f                   |
++---------------------+
+| RedpandaDatabase    |
++---------------------+
+----
+
+=== Replace specified values in a table
+
+This example shows how to replace the values of a specific column in a table. First, create a new table named *extracurriculars* with *club* and *category* columns and insert the values into the respective columns.
+
+[source,sql]
+----
+CREATE TABLE hobby (
+  club text,
+  category text
+);
+INSERT INTO hobby
+    (club, category)
+VALUES
+    ('Bridge','group'),
+    ('Painting','individual'),
+    ('Basketball','group'),
+    ('Volleyball','group');
+----
+
+After that is completed, retrieve all values from the table using this query:
+
+[source,sql]
+----
+SELECT * FROM hobby;
+----
+
+[source,sql]
+----
++------------+---------------+
+| club       | category      |
++------------+---------------+
+| Bridge     | group         |
+| Painting   | individual    |
+| Basketball | group         |
+| Volleyball | group         |
++--------------+-------------+
+----
+
+This query replaces the *'`group`'* values in the *category* column with *'`sports`'*:
+
+[source,sql]
+----
+SELECT REPLACE(category, 'group', 'sports') from hobby;
+----
+
+[source,sql]
+----
++--------------+
+| f            |
++--------------+
+| sports       |
+| individual   |
+| sports       |
+| sports       |
++--------------+
+----
+
+=== Remove a substring from a string
+
+This example shows how to remove a substring from a string using the `REPLACE()` function. In this case, the goal is to find all occurrences of the '`Friends`' substring in the '`Hello Friends`' string and remove it:
+
+[source,sql]
+----
+SELECT REPLACE('Hello Friends', 'Friends', '');
+----
+
+[source,sql]
+----
++-----------+
+| f         |
++-----------+
+| Hello     |
++-----------+
+----
+
+=== Replace multiple patterns
+
+This example uses the `REPLACE()` function to replace multiple patterns of the given string:
+
+[source,sql]
+----
+SELECT REPLACE(REPLACE(REPLACE(REPLACE('2*[9-5]/{4+8}', '[', '('), ']', ')'), '{', '('), '}', ')');
+----
+
+The `REPLACE()` function is called multiple times to replace the corresponding string as specified:
+
+* *`[]`* into *`()`*
+* *`{}`* into *`()`*
+
+[source,sql]
+----
++------------------+
+| f                |
++------------------+
+| 2*(9-5)/(4+8)    |
++------------------+
+----
