@@ -1,0 +1,28 @@
+= DROP TABLE
+:description: The DROP TABLE statement removes a table that was mapped to a Redpanda topic through a catalog.
+:page-topic-type: reference
+
+The `DROP TABLE` statement removes a table that was mapped to a Redpanda topic through a catalog. This does not delete the underlying Redpanda topic.
+
+== Syntax
+
+[source,sql]
+----
+DROP TABLE [IF EXISTS] catalog_name=>table_name;
+----
+
+* `catalog_name`: Name of the Redpanda catalog containing the table.
+* `table_name`: Name of the table to remove.
+* `IF EXISTS`: Optional. Prevents an error if the table does not exist.
+
+== Examples
+
+[source,sql]
+----
+DROP TABLE my_catalog=>transactions;
+----
+
+[source,sql]
+----
+DROP TABLE IF EXISTS my_catalog=>old_events;
+----
