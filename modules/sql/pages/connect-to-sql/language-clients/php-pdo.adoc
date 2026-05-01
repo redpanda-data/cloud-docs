@@ -4,14 +4,14 @@
 
 https://www.php.net/manual/en/book.pdo.php[PHP Data Objects (PDO)^] is a PHP extension that provides a consistent interface for accessing databases. Because Redpanda SQL implements the PostgreSQL wire protocol, you can use PDO's PostgreSQL driver to connect from PHP. This page describes how to use PHP PDO with Redpanda SQL and lists unsupported functions and structures.
 
-== Establishing connection
+== Establish a SQL connection
 
 [source,php]
 ----
 conn = new PDO(
-    "pgsql:host={oxla_host};port={oxla_port};dbname=oxla",
-    {oxla_user},
-    {oxla_password},
+    "pgsql:host=<host>;port=<port>;dbname=<database>",
+    "<username>",
+    "<password>",
     [
         PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
@@ -28,7 +28,7 @@ Note that the `PDO::ATTR_EMULATE_PREPARES` attribute is set to `true`, which is 
 
 [NOTE]
 ====
-If you are running Redpanda SQL Cloud, you can append `sslmode=verify-full;sslrootcert={path to ssl cert from SaaS}` to the first parameter of `PDO` to ensure full SSL endpoint verification and encryption.
+If you are running Redpanda Cloud, you can append `sslmode=verify-full;sslrootcert=<path-to-ssl-cert>` to the first parameter of `PDO` to ensure full SSL endpoint verification and encryption.
 ====
 
 == Example usage
