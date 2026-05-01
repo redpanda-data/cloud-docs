@@ -1,0 +1,156 @@
+= SET and SHOW
+:description: The SET statement configures session options. The SHOW statement displays their current values.
+:page-topic-type: reference
+
+The `SET` statement configures session options. The `SHOW` statement displays their current values.
+
+== Syntax
+
+`SET` statement:
+
+[source,sql]
+----
+SET <option> TO <value>;
+----
+
+[NOTE]
+====
+The `SET` statement accepts both `TO` and `=` as the assignment operator.
+
+For options that accept boolean values, `<value>` can be `ON` (true) or `OFF` (false).
+====
+
+`SHOW` statement:
+
+[source,sql]
+----
+SHOW <option>;
+----
+
+Available options:
+
+* `extra_float_digits`: Number of extra digits displayed after the decimal point in floating-point numbers.
+* `application_name`: Custom name for the application.
+* `timezone`: Time zone used for date and time functions.
+* `client_min_messages`: Minimum message level sent to the client. Valid values: `DEBUG5`, `DEBUG4`, `DEBUG3`, `DEBUG2`, `DEBUG1`, `LOG`, `NOTICE`, `WARNING`, and `ERROR`.
+* `search_path`: Namespaces in which Redpanda SQL looks for tables.
+* `oxla.enable_fast_math`: Enables math optimizations that trade precision for speed using faster, less accurate functions.
+
+== Examples
+
+=== SET statement
+
+==== extra_float_digits
+
+To change the number of displayed digits for floating-point values, run the query:
+
+[source,sql]
+----
+SET extra_float_digits TO 2;
+----
+
+[source,sql]
+----
+SHOW extra_float_digits;
+----
+
+[source,sql]
+----
+ extra_float_digits
+--------------------
+ 2
+----
+
+==== client_min_messages
+
+To change the minimum client message level:
+
+[source,sql]
+----
+SET client_min_messages TO 'WARNING';
+----
+
+[source,sql]
+----
+SHOW client_min_messages;
+----
+
+[source,sql]
+----
+ client_min_messages
+---------------------
+ warning
+----
+
+==== oxla.enable_fast_math
+
+To enable fast math optimizations:
+
+[source,sql]
+----
+SET oxla.enable_fast_math = ON;
+----
+
+[source,sql]
+----
+SHOW oxla.enable_fast_math;
+----
+
+[source,sql]
+----
+ oxla_enable_fast_math
+-----------------------
+ 1
+(1 row)
+----
+
+=== SHOW statement
+
+==== timezone
+
+To display the current timezone setting, run:
+
+[source,sql]
+----
+SHOW timezone;
+----
+
+[source,sql]
+----
+ timezone
+----------
+ Etc/UTC
+----
+
+==== search_path
+
+To display the current search path, run:
+
+[source,sql]
+----
+SHOW search_path;
+----
+
+[source,sql]
+----
+ search_path
+-------------
+ public
+----
+
+==== oxla.enable_fast_math
+
+To check the status of fast math optimizations, run:
+
+[source,sql]
+----
+SHOW oxla.enable_fast_math;
+----
+
+[source,sql]
+----
+ oxla_enable_fast_math
+-----------------------
+ 0
+(1 row)
+----

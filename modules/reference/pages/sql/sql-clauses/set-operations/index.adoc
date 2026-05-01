@@ -1,0 +1,14 @@
+= Set operations
+:description: Set operations combine, compare, or contrast result sets from multiple SELECT statements.
+:page-topic-type: reference
+
+Set operations combine, compare, or contrast result sets from multiple `SELECT` statements. Redpanda SQL supports the following operations:
+
+* xref:reference:sql/sql-clauses/set-operations/union.adoc[Union]: Combines two or more sets to create a new set containing all unique elements from the input sets.
+* xref:reference:sql/sql-clauses/set-operations/intersect.adoc[Intersect]: Yields a new set with elements common to all input sets.
+* xref:reference:sql/sql-clauses/set-operations/except.adoc[Except]: Generates a set containing elements from the first set that are not present in the second set.
+
+[NOTE]
+====
+For all set operations, the data types of corresponding columns in the `SELECT` queries must be compatible. The order of columns is flexible as long as the columns in consecutive places are pairwise compatible. For example, `SELECT col1, col2 FROM table1 UNION SELECT col2, col1 FROM table2`.
+====

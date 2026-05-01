@@ -1,0 +1,94 @@
+= EXTRACT
+:description: The EXTRACT() function retrieves a specified part (field) from a given date/time or interval value.
+:page-topic-type: reference
+
+The `EXTRACT()` function retrieves a specified part (field) from a given date/time or interval value. It is commonly used to obtain components such as year, month, day, and hour from timestamps or dates.
+
+== Syntax
+
+[source,sql]
+----
+EXTRACT (field FROM source)
+----
+
+== Parameters
+
+* `field`: String or identifier specifying the part of the date / time to extract.
+* `source`: Date / time value from which to extract the specifed field.
+
+This table shows the supported input and corresponding return types for the `EXTRACT()` function:
+
+[width="100%",cols="24%,55%,21%",options="header",]
+|===
+|Input Type: `source` |Supported `field` values |Return Type
+|`TIMESTAMP` |`YEAR`, `MONTH`, `DAY`, `HOUR`, `MINUTE`, `SECOND` |`DOUBLE PRECISION`
+|`TIMESTAMPTZ` |`YEAR`, `MONTH`, `DAY`, `HOUR`, `MINUTE`, `SECOND` |`DOUBLE PRECISION`
+|`DATE` |`YEAR`, `MONTH`, `DAY` |`INTEGER`
+|===
+
+[NOTE]
+====
+The SECOND field returns a fractional value as DOUBLE PRECISION to include fractional seconds, not an integer type
+====
+
+== Examples
+
+=== EXTRACT() with timestamp - year
+
+This example shows how to use the `EXTRACT()` function to extract a given timestamp's year:
+
+[source,sql]
+----
+SELECT EXTRACT(YEAR FROM TIMESTAMP '2025-12-31 13:30:15.123456');
+----
+
+The query returns:
+
+[source,sql]
+----
++----------+
+| extract  |
++----------+
+| 2025     |
++----------+
+----
+
+=== EXTRACT() with timestamp - month
+
+This example uses the `EXTRACT()` function to extract a given timestamp's month:
+
+[source,sql]
+----
+SELECT EXTRACT(MONTH FROM TIMESTAMP '2025-12-31 13:30:15.123456');
+----
+
+The query returns the month's part of the given timestamp:
+
+[source,sql]
+----
++----------+
+| extract  |
++----------+
+| 12       |
++----------+
+----
+
+=== EXTRACT() with timestamp - seconds (including fractional seconds)
+
+This example uses the `EXTRACT()` function to extract a given timestamp's seconds, including fractional seconds:
+
+[source,sql]
+----
+SELECT EXTRACT(SECOND FROM TIMESTAMP '2025-12-31 13:30:15.123456');
+----
+
+The query returns the seconds' part of the given timestamp:
+
+[source,sql]
+----
++----------+
+| extract  |
++----------+
+| 15.123456|
++----------+
+----

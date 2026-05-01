@@ -1,0 +1,40 @@
+= pg_language
+:description: The pg_language system catalog stores information about the procedural languages available in the database.
+:page-topic-type: reference
+
+The `pg_language` system catalog stores information about the procedural languages available in the database. It mimics the https://www.postgresql.org/docs/current/catalog-pg-language.html[pg_language^] PostgreSQL system catalog.
+
+== Columns
+
+The following columns are available for querying in `pg_language`:
+
+[cols="15%,10%,75%",options="header"]
+|===
+|Column |Type |Description
+|`oid` |`int` |Object identifier for the language
+|`lanname` |`text` |Language name (for example, `internal`, `c`, `sql`, `plpgsql`)
+|`lanowner` |`int` |OID of the role that owns the language
+|`lanispl` |`bool` |Whether this is a procedural language (`true` for `plpgsql`, `false` for `internal`, `c`, `sql`)
+|`lanpltrusted` |`bool` |Whether this is a trusted language
+|`lanplcallfoid` |`int` |OID of the call handler function for procedural languages
+|`laninline` |`int` |OID of the inline handler function
+|`lanvalidator` |`int` |OID of the validator function
+|`lanacl` |`text` |Access privileges
+|===
+
+== Examples
+
+[source,sql]
+----
+SELECT lanname, lanispl, lanpltrusted FROM pg_language;
+----
+
+[source,sql]
+----
+  lanname  | lanispl | lanpltrusted
+-----------+---------+--------------
+ internal  | f       | f
+ c         | f       | f
+ sql       | f       | t
+ plpgsql   | t       | t
+----

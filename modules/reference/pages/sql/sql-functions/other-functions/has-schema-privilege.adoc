@@ -1,0 +1,70 @@
+= has_schema_privilege()
+:description: The has_schema_privilege() function checks whether the current user has specific privileges on a schema.
+:page-topic-type: reference
+
+The link:https://www.postgresql.org/docs/current/functions-info.html#FUNCTIONS-INFO-ACCESS[`has_schema_privilege()`^] function is an access privilege inquiry function that checks whether the current user has specific privileges on a schema.
+
+== Syntax
+
+The `has_schema_privilege` function has two available syntax versions:
+
+[source,sql]
+----
+SELECT has_schema_privilege('user', 'schema', 'privilege');
+----
+
+[source,sql]
+----
+SELECT has_schema_privilege('schema', 'privilege');
+----
+
+No matter which syntax version you choose, the `has_schema_privilege()` function always returns `TRUE (t)`.
+
+== Parameters
+
+* `schema`: Name of the schema to check privileges for (can be any string value or string columns from other tables).
+* `user`: Name of the user who has the privileges (can be any string value).
+* `privilege`: Specifies the specific privilege to check for in the schema. The function currently supports `create` and `usage`.
+
+[NOTE]
+====
+The comparison for the `privilege` is case-insensitive, so you can use lowercase or uppercase notation for the privilege name.
+====
+
+== Examples
+
+=== Check for CREATE privilege
+
+This example uses the `has_schema_privilege()` function to determine whether the current user has the `create` privilege on a schema named `public`:
+
+[source,sql]
+----
+SELECT has_schema_privilege('public', 'create');
+----
+
+The query returns `TRUE`, which means that the current user has a `create` privilege on the `public` schema.
+
+[source,sql]
+----
+ has_schema_privilege
+----------------------
+ t
+----
+
+=== Check for USAGE privilege
+
+Use the `has_schema_privilege()` function to check for the `usage` privilege on a schema. For example, to check if the current user can create objects in the "`*public*`" schema, run:
+
+[source,sql]
+----
+SELECT has_schema_privilege('cahyo', 'public', 'USAGE');
+----
+
+The query returns `TRUE`, which means the current user has `usage` privilege on the `public` schema.
+
+[source,sql]
+----
+ has_schema_privilege
+----------------------
+ t
+----

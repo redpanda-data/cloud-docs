@@ -1,0 +1,79 @@
+= LN
+:description: The LN() function returns the natural logarithm of its argument.
+:page-topic-type: reference
+
+The `LN()` function returns the natural logarithm of its argument.
+
+[NOTE]
+====
+`LN()` does not accept negative numbers or zero.
+====
+
+== Syntax
+
+The syntax of the `LN()` function is:
+
+[source,sql]
+----
+LN (x)
+----
+
+`x`: A positive number, or an expression that evaluates to a positive number.
+
+== Examples
+
+=== Basic LN() function
+
+The following example returns the natural logarithm of `7.87653`:
+
+[source,sql]
+----
+SELECT LN(7.87653);
+----
+
+The query returns:
+
+[source,sql]
+----
++-------------+
+| f           |
++-------------+
+| 2.0638874   |
++-------------+
+----
+
+=== Use LN() function with a table
+
+This example combines the `LN()` function with a `CREATE TABLE` statement to obtain natural logarithmic values of a specific column:
+
+. Create a new table named `LNtable` with an integer `initValue` column.
++
+[source,sql]
+----
+CREATE TABLE LNtable(initValue int);
+INSERT INTO LNtable(initValue)
+VALUES (75), (18), (28);
+----
+
+. Run this query to get the logarithm output of the column:
++
+[source,sql]
+----
+SELECT * ,LN(initValue) AS lnValue FROM LNtable;
+----
+
+. The query returns the initial value and its natural logarithm:
++
+* `initValue`: The original integer values.
+* `lnValue`: The natural logarithm values.
++
+[source,sql]
+----
++------------+---------------------------+
+| initValue  | lnValue                   |
++------------+---------------------------+
+| 75         | 4.31748811353631          |
+| 18         | 2.8903717578961645        |
+| 28         | 3.332204510175204         |
++------------+---------------------------+
+----

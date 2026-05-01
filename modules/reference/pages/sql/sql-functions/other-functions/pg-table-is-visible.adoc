@@ -1,0 +1,41 @@
+= pg_table_is_visible()
+:description: The pg_table_is_visible() function checks whether a specified table or other database object is visible in the current schema search path.
+:page-topic-type: reference
+
+The link:https://www.postgresql.org/docs/current/functions-admin.html[`pg_table_is_visible()`^] is a schema visibility inquiry function that checks whether a specified table or other database object is visible in the current schema search path.
+
+== Syntax
+
+[source,sql]
+----
+pg_table_is_visible(table_or_index_oid)
+----
+
+== Parameters
+
+* `table_or_index_oid`: Specifies the object identifier (OID) of a table or its name.
+
+== Examples
+
+[source,sql]
+----
+SELECT pg_table_is_visible(-1);
+ pg_table_is_visible
+----------------------------
+----
+
+[source,sql]
+----
+SELECT pg_table_is_visible(16386);
+ pg_table_is_visible
+----------------------------
+ t
+----
+
+[source,sql]
+----
+SELECT pg_table_is_visible(16381);
+ pg_table_is_visible
+----------------------------
+ f
+----

@@ -1,0 +1,63 @@
+= ROUND
+:description: The ROUND() function rounds numbers using round half to even method (bankers rounding).
+:page-topic-type: reference
+
+The `ROUND()` function rounds numbers using round half to even method (bankers rounding).
+
+== Syntax
+
+[source,sql]
+----
+ROUND(number)
+ROUND(number, scale)
+----
+
+== Arguments
+
+* `number`: The number to round. It can be positive, negative, or zero, and it can be an xref:reference:sql/sql-data-types/numeric-type/numeric.adoc[Integer] or a xref:reference:sql/sql-data-types/numeric-type/numeric.adoc[Double Precision].
+* `scale`: Optional. An integer specifying the number of decimal places to round to. When omitted, the function rounds to the nearest integer. A negative scale rounds to the left of the decimal point (for example, `ROUND(1234, -2)` returns `1200`).
+
+== Examples
+
+=== Round to integer
+
+In this example, the function rounds decimal numbers to integers:
+
+[source,sql]
+----
+SELECT
+    round(28.11) AS "round(28.11)",
+    round(12.51) AS "round(12.51)",
+    round(-9.11) AS "round(-9.11)",
+    round(102.5) AS "round(102.5)",
+    round(101.5) AS "round(101.5)",
+    round(-40.51) AS "round(-40.51)";
+----
+
+The query will return the nearest integer for all provided values.
+
+[source,sql]
+----
+ round(28.11) | round(12.51) | round(-9.11) | round(102.5) | round(101.5) | round(-40.51)
+--------------+--------------+--------------+--------------+---------------+---------------
+           28 |           13 |           -9 |          102 |          102 |           -41
+----
+
+=== Round to a specific number of decimal places
+
+Use the two-argument form to specify the number of decimal places:
+
+[source,sql]
+----
+SELECT
+    round(3.14159, 2) AS "round(3.14159, 2)",
+    round(123.456, 1) AS "round(123.456, 1)",
+    round(99.995, 2) AS "round(99.995, 2)";
+----
+
+[source,sql]
+----
+ round(3.14159, 2) | round(123.456, 1) | round(99.995, 2)
+-------------------+-------------------+------------------
+              3.14 |             123.5 |              100
+----

@@ -1,0 +1,69 @@
+= Date
+:description: The DATE data type stores calendar dates without a time zone in Redpanda SQL.
+:page-topic-type: reference
+
+The `DATE` data type stores calendar dates without a time zone. Use it to store and insert date values.
+
+[NOTE]
+====
+The date value is stored without the time zone.
+====
+
+== Format
+
+[source,sql]
+----
+YYYY-MM-DD
+----
+
+* `YYYY` - Four-digit year
+* `MM` - One / two-digit month
+* `DD` - One / two-digit day
+
+== Examples
+
+In this example, the `emp_submission` table consists of the candidate ID, candidate name, the submitted department, and a submission date with a `DATE` data type.
+
+[source,sql]
+----
+CREATE TABLE emp_submission (
+    candidate_ID INT,
+    candidate_Name TEXT,
+    sub_dept TEXT,
+    sub_date DATE
+);
+
+INSERT INTO emp_submission (candidate_ID, candidate_Name, sub_dept, sub_date)
+VALUES
+(8557411, 'Kumar', 'HR', '2022-05-01'),
+(8557421, 'Ricky', 'HR', '2022-01-09'),
+(8557451, 'Alice', 'Finance', '2022-08-02'),
+(8557461, 'Angel', 'Product', '2012-04-16'),
+(8557431, 'Joan', 'Finance', '2022-02-02'),
+(8557471, 'Cody', 'Product', '2022-03-20'),
+(8557491, 'Liam', 'Product', '2022-06-15');
+----
+
+Now that the data has been inserted, execute the following `SELECT` statement:
+
+[source,sql]
+----
+SELECT * FROM emp_submission;
+----
+
+The following is the result of the `SELECT` statement where the values in the `sub_date` column have `DATE` data type:
+
+[source,sql]
+----
++---------------+------------------+------------+---------------+
+| candidate_id  | candidate_name   | sub_dept   | sub_date      |
++---------------+------------------+------------+---------------+
+| 8557411       | Kumar            | HR         | 2022-05-01    |
+| 8557421       | Ricky            | HR         | 2022-01-09    |
+| 8557451       | Alice            | Finance    | 2022-08-02    |
+| 8557461       | Angel            | Product    | 2012-04-16    |
+| 8557431       | Joan             | Finance    | 2022-02-02    |
+| 8557471       | Cody             | Product    | 2022-03-20    |
+| 8557491       | Liam             | Product    | 2022-06-15    |
++---------------+------------------+------------+---------------+
+----

@@ -1,0 +1,282 @@
+= GROUP BY
+:description: The GROUP BY clause returns a group of records from one or more tables that have the same values in specified columns.
+:page-topic-type: reference
+
+The `GROUP BY` clause returns a group of records from one or more tables that have the same values in specified columns. The result of the `GROUP BY` clause returns a single row for each value of the column.
+
+[NOTE]
+====
+You can use xref:reference:sql/sql-functions/aggregate-functions/index.adoc[aggregate functions] such as `COUNT()`, `MAX()`, `MIN()`, and `SUM()` to perform operations on the grouped values in the `SELECT` statement.
+====
+
+== Syntax
+
+[source,sql]
+----
+SELECT
+column_1, column_2, aggregate_function(column_3)
+FROM
+table_name
+GROUP BY
+column_1, column_2,...;
+----
+
+This syntax includes the following elements:
+
+* `SELECT column_1, column_2, aggregate_function(column_3)` defines the columns to group (`column_1, column_2`) and the column to apply an aggregate function to (`column_3`).
+* `FROM table_name` defines the table to retrieve data from.
+* `GROUP BY column_1, column_2,...;` lists the columns to group.
+
+[NOTE]
+====
+Each column you group on must also appear in the `SELECT` list, and each column you group on must appear in the `GROUP BY` clause.
+====
+
+=== Syntax with WHERE clause
+
+The `GROUP BY` clause must appear after the `WHERE` clause:
+
+[source,sql]
+----
+SELECT
+column_1, column_2, aggregate_function(column_3)
+FROM
+table_name
+WHERE
+conditions
+GROUP BY
+column_1, column_2,...;
+----
+
+== Examples
+
+Assume there are two tables: `customer` and `orders`.
+
+Create the `customer` table:
+
+[source,sql]
+----
+CREATE TABLE customer (
+  cust_id int,
+  cust_name text
+);
+INSERT INTO customer
+    (cust_id, cust_name)
+VALUES
+    (11001, 'Maya'),
+    (11003, 'Ricky'),
+    (11009, 'Sean'),
+    (11008, 'Chris'),
+    (11002, 'Emily'),
+    (11005, 'Rue'),
+    (11007, 'Tom'),
+    (11006, 'Casey');
+----
+
+[source,sql]
+----
+SELECT * FROM customer;
+----
+
+This returns:
+
+[source,sql]
+----
++-----------+------------+
+| cust_id   | cust_name  |
++-----------+------------+
+| 11001     | Maya       |
+| 11003     | Ricky      |
+| 11009     | Sean       |
+| 11008     | Chris      |
+| 11002     | Emily      |
+| 11005     | Rue        |
+| 11007     | Tom        |
+| 11006     | Casey      |
++-----------+------------+
+----
+
+Create the `orders` table:
+
+[source,sql]
+----
+CREATE TABLE orders (
+  order_id int,
+  order_date date,
+  order_prod text,
+  order_qty int,
+  order_price int,
+  cust_id int
+);
+INSERT INTO orders
+    (order_id, order_date, order_prod, order_qty, order_price, cust_id)
+VALUES
+    (999191, '2021-01-08','Butter', 1, 4000, 11001),
+    (999192, '2021-09-30','Sugar', 1, 10000, 11002),
+    (999193, '2021-04-17','Sugar', 1, 10000, 11009),
+    (999194, '2021-08-29','Flour', 4, 20000, 11006),
+    (999195, '2021-05-04','Sugar', 2, 20000, 11008),
+    (999196, '2021-07-27','Butter', 2, 8000, 11006),
+    (999197, '2021-10-30','Flour', 2, 10000, 11001),
+    (999198, '2021-12-18','Flour', 2, 10000, 11007);
+----
+
+[source,sql]
+----
+SELECT * FROM orders;
+----
+
+This returns:
+
+[source,sql]
+----
++------------+--------------+--------------+-------------+---------------+-----------+
+| order_id   | order_date   | order_prod   | order_qty   | order_price   | cust_id   |
++------------+--------------+--------------+-------------+---------------+-----------+
+| 999191     | 2021-01-08   | Butter       | 1           |  4000         | 11001     |
+| 999192     | 2021-09-30   | Sugar        | 1           | 10000         | 11002     |
+| 999193     | 2021-04-17   | Sugar        | 1           | 10000         | 11009     |
+| 999194     | 2021-08-29   | Flour        | 4           | 20000         | 11006     |
+| 999195     | 2021-05-04   | Sugar        | 2           | 20000         | 11008     |
+| 999196     | 2021-07-27   | Butter       | 2           | 8000          | 11006     |
+| 999197     | 2021-10-30   | Flour        | 2           | 10000         | 11001     |
+| 999198     | 2021-12-18   | Flour        | 2           | 10000         | 11007     |
++------------+--------------+--------------+-------------+---------------+-----------+
+----
+
+=== Basic GROUP BY
+
+This query returns all distinct product names from the `orders` table:
+
+[source,sql]
+----
+SELECT order_prod
+FROM orders
+GROUP BY order_prod;
+----
+
+The query returns:
+
+[source,sql]
+----
++--------------+
+| order_prod   |
++--------------+
+| Flour        |
+| Sugar        |
+| Butter       |
++--------------+
+----
+
+=== GROUP BY on multiple columns
+
+This example uses multiple columns in the `GROUP BY` clause:
+
+[source,sql]
+----
+SELECT order_id, order_prod
+FROM orders
+GROUP BY order_id, order_prod;
+----
+
+The query returns:
+
+[source,sql]
+----
++-----------+--------------+
+| order_id  | order_prod   |
++-----------+--------------+
+| 999194    | Flour        |
+| 999191    | Butter       |
+| 999196    | Butter       |
+| 999192    | Sugar        |
+| 999195    | Sugar        |
+| 999198    | Flour        |
+| 999193    | Sugar        |
+| 999197    | Flour        |
++-----------+--------------+
+----
+
+=== GROUP BY with aggregate functions
+
+This example calculates the total amount each customer has paid for orders using the `SUM()` aggregate function:
+
+[source,sql]
+----
+SELECT cust_id, SUM(order_price)
+FROM orders
+GROUP BY cust_id;
+----
+
+The query returns:
+
+[source,sql]
+----
++-----------+----------+
+| cust_id   | sum      |
++-----------+----------+
+| 11009     | 10000    |
+| 11007     | 10000    |
+| 11006     | 28000    |
+| 11002     | 10000    |
+| 11001     | 14000    |
+| 11008     | 20000    |
++-----------+----------+
+----
+
+=== GROUP BY with JOIN condition
+
+This query joins the `orders` table with the `customer` table and groups customers by name. It uses `COUNT()` to count the number of products each customer has purchased:
+
+[source,sql]
+----
+SELECT C.cust_name, COUNT(order_prod)
+FROM orders O
+JOIN customer C ON O.cust_id = C.cust_id
+GROUP BY C.cust_name;
+----
+
+The query returns:
+
+[source,sql]
+----
++------------+---------+
+| cust_name  | count   |
++------------+---------+
+| Tom        | 1       |
+| Chris      | 1       |
+| Casey      | 2       |
+| Maya       | 2       |
+| Sean       | 1       |
+| Emily      | 1       |
++------------+---------+
+----
+
+=== GROUP BY with date data type
+
+The `order_date` column uses the `DATE` data type. This example groups the order quantity and total price by date using the `DATE()` function:
+
+[source,sql]
+----
+SELECT DATE(order_date), order_qty, SUM(order_price)
+FROM orders
+GROUP BY order_qty, DATE(order_date);
+----
+
+The query returns:
+
+[source,sql]
+----
++---------------+------------+---------+
+| date          | order_qty  | sum     |
++---------------+------------+---------+
+| 2021-07-27    | 2          | 8000    |
+| 2021-08-29    | 4          | 20000   |
+| 2021-04-17    | 1          | 10000   |
+| 2021-09-30    | 1          | 10000   |
+| 2021-05-04    | 2          | 20000   |
+| 2021-01-08    | 1          | 4000    |
+| 2021-12-18    | 2          | 10000   |
+| 2021-10-30    | 2          | 10000   |
++---------------+------------+---------+
+----

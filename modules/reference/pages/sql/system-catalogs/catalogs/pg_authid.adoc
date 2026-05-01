@@ -1,0 +1,38 @@
+= pg_authid
+:description: The pg_authid system catalog stores information about database authorization identifiers (roles).
+:page-topic-type: reference
+
+The `pg_authid` system catalog stores information about database authorization identifiers (roles). It mimics the https://www.postgresql.org/docs/current/catalog-pg-authid.html[pg_authid^] PostgreSQL system catalog.
+
+[NOTE]
+====
+This table is only accessible to superusers. For a publicly readable view of role information, use xref:reference:sql/system-catalogs/catalogs/pg_roles.adoc[pg_roles].
+====
+
+== Columns
+
+The following columns are available for querying in `pg_authid`:
+
+[cols="15%,15%,70%",options="header"]
+|===
+|Column |Type |Description
+|`oid` |`bigint` |Object identifier for the role
+|`rolname` |`text` |Role name
+|`rolsuper` |`bool` |Whether the role has superuser privileges
+|`rolinherit` |`bool` |Whether the role inherits privileges of roles it is a member of
+|`rolcreaterole` |`bool` |Whether the role can create other roles
+|`rolcreatedb` |`bool` |Whether the role can create databases
+|`rolcanlogin` |`bool` |Whether the role can log in
+|`rolreplication` |`bool` |Whether the role has replication privileges
+|`rolbypassrls` |`bool` |Whether the role bypasses row-level security policies
+|`rolconnlimit` |`int` |Connection limit for the role (`-1` means no limit)
+|`rolpassword` |`text` |Encrypted password
+|`rolvaliduntil` |`timestamptz` |Password expiration time (NULL if no expiration)
+|===
+
+== Examples
+
+[source,sql]
+----
+SELECT rolname, rolsuper, rolcanlogin FROM pg_authid;
+----

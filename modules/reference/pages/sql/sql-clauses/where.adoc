@@ -1,0 +1,239 @@
+= WHERE
+:description: The WHERE clause filters records based on specified conditions, returning only the rows that meet the conditions.
+:page-topic-type: reference
+
+The `WHERE` clause filters records based on specified conditions. It excludes records that do not meet the conditions and returns only the rows that match.
+
+== Syntax
+
+[source,sql]
+----
+SELECT column1, column2, ...
+FROM table_name
+WHERE [condition]
+----
+
+This syntax includes the following elements:
+
+* `SELECT column1, column2, ...` defines the columns where the records are displayed.
+* `FROM table_name` sets the table where the records are taken from.
+* `WHERE [condition]` specifies the search condition using comparison or logical operators (for example, `>`, `=`, `LIKE`).
+
+[TIP]
+====
+The query starts with the `FROM` clause, then evaluates the `WHERE` condition, and finally runs `SELECT` on the specified columns.
+====
+
+== Examples
+
+Assume there is a table called `salary` with the following records:
+
+[source,sql]
+----
+CREATE TABLE salary (
+  empid int,
+  empname text,
+  empdept text,
+  empaddress text,
+  empsalary int
+);
+INSERT INTO salary
+    (empid, empname, empdept, empaddress, empsalary)
+VALUES
+    (2001,'Paul','HR', 'California', null ),
+    (2002,'Brandon','Product', 'Norway', 15000),
+    (2003,'Bradley','Marketing', 'Texas', null),
+    (2004,'Lisa','Marketing', 'Houston', 10000),
+    (2005,'Emily','Marketing', 'Texas', 20000),
+    (2006,'Bobby','Finance', 'Seattle', 20000),
+    (2007,'Parker','Project', 'Texas', 45000);
+----
+
+[source,sql]
+----
+SELECT * FROM salary;
+----
+
+This returns:
+
+[source,sql]
+----
++--------+-----------+------------+-------------+------------+
+| empid  | empname   |  empdept   | empaddress  | empsalary  |
++--------+-----------+------------+-------------+------------+
+| 2001   | Paul      | HR         | California  | null       |
+| 2002   | Brandon   | Product    | Norway      | 15000      |
+| 2003   | Bradley   | Marketing  | Texas       | null       |
+| 2004   | Lisa      | Marketing  | Houston     | 10000      |
+| 2005   | Emily     | Marketing  | Texas       | 20000      |
+| 2006   | Bobby     | Finance    | Seattle     | 20000      |
+| 2007   | Parker    | Project    | Texas       | 45000      |
++--------+-----------+------------+-------------+------------+
+----
+
+=== WHERE clause with `=` operator
+
+The following example uses the `=` (equal) operator to look up the employees who work in the Marketing department:
+
+[source,sql]
+----
+SELECT empname, empdept
+FROM salary
+WHERE empdept = 'Marketing';
+----
+
+The query returns:
+
+[source,sql]
+----
++------------+-------------+
+| empname    | empdept     |
++------------+-------------+
+| Bradley    | Marketing   |
+| Emily      | Marketing   |
+| Lisa       | Marketing   |
++------------+-------------+
+----
+
+[WARNING]
+====
+The value defined in the `WHERE` clause condition is case-sensitive. Specify the exact value to match.
+====
+
+=== WHERE clause with `!=` operator
+
+The following example uses the `!=` (not equal) operator to look up employees who do not live in Texas:
+
+[source,sql]
+----
+SELECT empname, empdept, empaddress
+FROM salary
+WHERE empaddress != 'Texas';
+----
+
+[NOTE]
+====
+You can also use the `<>` operator for "not equal".
+====
+
+The query returns:
+
+[source,sql]
+----
++------------+------------+--------------+
+| empname    | empdept    | empaddress   |
++------------+------------+--------------+
+| Paul       | HR         | California   |
+| Brandon    | Product    | Norway       |
+| Lisa       | Marketing  | Houston      |
+| Bobby      | Finance    | Seattle      |
++------------+------------+--------------+
+----
+
+=== WHERE clause with `>` operator
+
+The following example uses the `>` (greater than) operator to find employees with a salary above 20000:
+
+[source,sql]
+----
+SELECT empname, empdept, empsalary
+FROM salary
+WHERE empsalary > 20000;
+----
+
+[NOTE]
+====
+You can use the `<` operator for a "less than" condition.
+====
+
+The query returns:
+
+[source,sql]
+----
++------------+------------+-------------+
+| empname    | empdept    | empsalary   |
++------------+------------+-------------+
+| Parker     | Project    | 45000       |
++------------+------------+-------------+
+----
+
+Only Parker has a salary greater than 20000.
+
+=== WHERE clause with `<=` operator
+
+The following example uses the `<=` (less than or equal to) operator to find employees with a salary less than or equal to 15000:
+
+[source,sql]
+----
+SELECT empname, empdept, empsalary
+FROM salary
+WHERE empsalary <= '15000';
+----
+
+[NOTE]
+====
+You can use the `>=` operator for a "greater than or equal to" condition.
+====
+
+The query returns:
+
+[source,sql]
+----
++------------+------------+-------------+
+| empname    | empdept    | empsalary   |
++------------+------------+-------------+
+| Brandon    | Product    | 15000       |
+| Lisa       | Marketing  | 10000       |
++------------+------------+-------------+
+----
+
+Brandon has a salary equal to 15000 and Lisa has a salary less than 15000.
+
+=== WHERE clause with `LIKE` operator
+
+The following example uses the `LIKE` operator to retrieve employees whose first name starts with `Br`:
+
+[source,sql]
+----
+SELECT * FROM salary
+WHERE empname LIKE 'Br%';
+----
+
+[NOTE]
+====
+To match a string at the end instead of the start, use `LIKE '%string'`.
+====
+
+The query returns `Brandon` and `Bradley`:
+
+[source,sql]
+----
++---------+------------+--------------+--------------+-----------+
+| empid   | empname    | empdept     | empaddress   | empsalary  |
++---------+------------+-------------+--------------+------------+
+| 2002    | Brandon    | Product     | Norway       | 15000      |
+| 2003    | Bradley    | Marketing   | Texas        | null       |
++---------+------------+-------------+--------------+------------+
+----
+
+=== WHERE clause with `IS NULL` operator
+
+The following example uses the `IS NULL` operator to find employees who do not have a salary value:
+
+[source,sql]
+----
+SELECT * FROM salary
+WHERE empsalary IS NULL;
+----
+
+The query returns:
+
+[source,sql]
+----
++---------+------------+-------------+--------------+------------+
+| empid   | empname    | empdept     | empaddress   | empsalary  |
++---------+------------+-------------+--------------+------------+
+| 2001    | Paul       | HR          | California   | null       |
+| 2003    | Bradley    | Marketing   | Texas        | null       |
++---------+------------+-------------+--------------+------------+
+----

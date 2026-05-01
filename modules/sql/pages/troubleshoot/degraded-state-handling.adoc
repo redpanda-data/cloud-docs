@@ -1,0 +1,55 @@
+= Degraded state handling
+:description: Learn about node degradation states in Redpanda SQL, including causes, effects, and how they impact your cluster.
+:page-topic-type: concept
+
+Node degradation refers to the condition in which a node cannot perform most queries. If Redpanda SQL is misconfigured or faces a startup issue, it enters a degraded state, returns an error, and rejects all requests. This state can be temporary or permanent, affecting a single node or the entire cluster. This guide explains when degradation occurs and its impact on the node or cluster.
+
+== Cluster state
+
+In Redpanda SQL, most errors that would crash a server should instead put it into a degraded state. Here are key terms related to the node or cluster state:
+
+* Liveness: The node serves incoming client connections, for example via psql. It does not have to allow the user to connect to the database. Returning an error on a connection attempt still meets the liveness condition.
+* Readiness: The cluster can execute queries. It requires the leader node to be in a proper state. If the leader node is degraded, the cluster is not ready to execute queries.
+
+WARNING: Exception: An invalid `postgresql_port` is an exception to the degraded state. Without it being properly set, even the liveness condition is not met.
+
+== Degradation state period
+
+The degradation state of a node can be either permanent or temporary.
+
+=== Permanent degradation
+
+Permanent degradation occurs when a node encounters an error from which it cannot recover. The server logs the reason for this error, and each query returns the error reason. As a result, the node goes into a degraded state. To resolve the issue, the node requires a reboot. Here are a few error examples that can put a Redpanda SQL node in a permanently degraded state:
+
+* Invalid configuration file
+// TODO: Confirm whether OXLA_HOME has been renamed for Redpanda SQL.
+* Invalid `OXLA_HOME` layout or version
+* An error occurred while reading the database state on the leader node
+
+=== Temporary degradation
+
+Temporary degradation occurs when a node cannot perform queries because it waits for specific conditions. These errors are related to a temporary degraded state:
+
+* The node has not been initialized yet
+
+== Effects of degraded state
+
+[cols="1,3", options="header"]
+|===
+| Effect
+| Details
+
+| Database connection
+| If the leader is degraded, the user cannot connect to the database, and all connection attempts return a degradation error.
+
+| Query handling
+a| * When a degraded node receives a query, it responds with a degradation error and cannot process it.
+* If the leader is degraded, the whole cluster is considered degraded and most queries are not processed.
+
+| Degradation types
+a| * Permanent degradation: Nodes that are permanently degraded are excluded from query planning.
+* Temporary degradation: Nodes that are temporarily degraded are assumed to recover and are not considered in query planning.
+
+| Query execution
+| The `SHOW NODES` query requires the cluster to be ready and the scheduling node to not be degraded. Use it to check the degradation status of each node in the cluster. A non-degraded leader collects data on every connected node, including degraded ones.
+|===

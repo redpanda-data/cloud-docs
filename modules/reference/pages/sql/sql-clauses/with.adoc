@@ -1,0 +1,91 @@
+= WITH
+:description: The WITH clause defines auxiliary statements (Common Table Expressions) for use within a larger query.
+:page-topic-type: reference
+
+The `WITH` clause defines auxiliary statements (referred to by their alias names) for use within a larger query. These auxiliary statements are also known as Common Table Expressions (CTEs).
+
+== Syntax
+
+The `WITH` clause precedes the primary statement it is attached to and contains a list of auxiliary statements with corresponding aliases.
+
+[source,sql]
+----
+WITH [with_statement_alias AS (with_statement_body)]+ primary_statement;
+----
+
+* `primary_statement`: A `SELECT`, `INSERT`, `UPDATE`, or `DELETE` statement.
+* `with_statement_body`: A `SELECT` statement. It can refer to aliases defined earlier in the query.
+
+== Semantics
+
+Redpanda SQL only supports non-materialized CTEs. Each auxiliary query alias is replaced with its corresponding body at the early stages of query processing. The following query:
+
+[source,sql]
+----
+WITH a AS (SELECT 77), b AS (SELECT * FROM a) SELECT * FROM b
+----
+
+is effectively turned into:
+
+[source,sql]
+----
+SELECT * FROM (SELECT * FROM (SELECT 77) AS a) AS b
+----
+
+The auxiliary query gets the same alias (`AS b` part) as in the `WITH` clause. To change it, set a new alias on usage.
+
+[source,sql]
+----
+WITH b AS (SELECT 1 AS c1) SELECT b.c1, b1.c1 FROM b CROSS JOIN b AS b1;
+----
+
+== Usage
+
+Non-materialized `WITH` clauses are useful when you want to refactor a complex query to make it more readable. You can extract subqueries or reuse them in several places, having only one definition. Each use of a query is optimized separately, specifically for how the parent query uses its results. For example:
+
+[source,sql]
+----
+WITH math_grades AS (SELECT g_date, semester_id, grade FROM grades WHERE subject="Math")
+SELECT * FROM
+(SELECT AVG(grade) FROM math_grades WHERE semester_id=2137) AS avg_semester_grades,
+(SELECT AVG(grade) FROM math_grades WHERE g_date >= (CURRENT_TIMESTAMP() - INTERVAL '1 y')) AS avg_year_grades
+----
+
+Both subqueries use the same auxiliary `math_grades` query, but each filters it using different keys. As a result, both scans only read part of the table. With a materialized CTE (not yet supported), the query engine would scan the whole table first and then filter the result twice, once for each subquery.
+
+== Alias context
+
+You cannot create more than one CTE with the same alias within a single `WITH` clause. However, nested `SELECT` statements can each have their own `WITH` clauses, creating their own contexts for defined aliases.
+
+[NOTE]
+====
+The same alias can be defined in more than one context.
+====
+
+[source,sql]
+----
+WITH a AS ( -- creates context 1
+    SELECT 1
+)
+SELECT * FROM (
+    WITH a AS (SELECT 2) -- creates context 2
+    SELECT * FROM a -- uses context 2
+) CROSS JOIN a; -- uses context 1
+----
+
+The query returns `2, 1` as output.
+
+When referencing an alias, the context defined at the nested query level is used. If the nested context does not define the referenced alias, the search moves up one level and repeats until an alias definition is found.
+
+[source,sql]
+----
+WITH a AS (
+    SELECT 1
+)
+SELECT * FROM (
+    WITH b as (SELECT 2)
+    SELECT * FROM b
+) CROSS JOIN b; -- error
+----
+
+The query returns `ERROR: relation "b" does not exist`, because `b` is not defined in this context or any of the contexts above.

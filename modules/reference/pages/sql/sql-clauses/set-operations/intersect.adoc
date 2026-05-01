@@ -1,0 +1,207 @@
+= INTERSECT
+:description: The INTERSECT combines the result sets of two or more SELECT statements, retrieving only the common rows between them.
+:page-topic-type: reference
+
+`INTERSECT` combines the result sets of two or more `SELECT` statements, retrieving only the common rows between them. Unlike `UNION`, which combines all rows and removes duplicates, `INTERSECT` returns rows that appear in all `SELECT` statements.
+
+== Syntax
+
+[source,sql]
+----
+SELECT value1, value2, ... value_n
+FROM table1
+INTERSECT
+SELECT value1, value2, ... value_n
+FROM table2;
+----
+
+Where:
+
+* `value1, value2, ... value_n`: The columns to retrieve. You can also use `SELECT * FROM` to retrieve all columns.
+* `table1, table2`: The tables to retrieve records from.
+
+== Examples
+
+Suppose you have two tables: `customers_old` and `customers_new`, containing customer data for different periods. To find the customers who are present in both tables:
+
+[source,sql]
+----
+CREATE TABLE customers_old (
+    customer_id INT,
+    customer_name TEXT
+);
+
+CREATE TABLE customers_new (
+    customer_id INT,
+    customer_name TEXT
+);
+
+INSERT INTO customers_old VALUES
+(1, 'Alice'),
+(2, 'Bob'),
+(3, 'Charlie');
+
+INSERT INTO customers_new VALUES
+(2, 'Bob'),
+(3, 'Charlie'),
+(4, 'David');
+----
+
+View the inserted values:
+
+[source,sql]
+----
+SELECT * FROM customers_old;
+SELECT * FROM customers_new;
+----
+
+[source,sql]
+----
+customer_id | customer_name
+-------------+---------------
+           1 | Alice
+           2 | Bob
+           3 | Charlie
+
+ customer_id | customer_name
+-------------+---------------
+           2 | Bob
+           3 | Charlie
+           4 | David
+----
+
+Combine common customers using `INTERSECT`:
+
+[source,sql]
+----
+SELECT customer_name FROM customers_old
+INTERSECT
+SELECT customer_name FROM customers_new;
+----
+
+The query returns only the names that appear in both tables:
+
+[source,sql]
+----
+customer_name
+---------------
+ Bob
+ Charlie
+----
+
+Only `Bob` and `Charlie` appear in both tables.
+
+== INTERSECT ALL
+
+`INTERSECT ALL` retrieves all common rows between two or more tables, including duplicates. If a row appears in any of the `SELECT` statements multiple times, it is included in the final result set the same number of times.
+
+=== Syntax
+
+[source,sql]
+----
+SELECT value1, value2, ... value_n
+FROM table1
+INTERSECT ALL
+SELECT value1, value2, ... value_n
+FROM table2;
+----
+
+Where:
+
+* `value1, value2, ... value_n`: The columns to retrieve. You can also retrieve all columns using `SELECT * FROM`.
+* `table1, table2`: The tables to retrieve records from.
+
+=== Example
+
+Create three tables of products from different years. To find the common products among all three tables, including duplicates:
+
+[source,sql]
+----
+CREATE TABLE products_electronics2021 (
+    product_id INT,
+    product_name TEXT
+);
+
+CREATE TABLE products_electronics2022 (
+    product_id INT,
+    product_name TEXT
+);
+
+CREATE TABLE products_electronics2023 (
+    product_id INT,
+    product_name TEXT
+);
+
+INSERT INTO products_electronics2021 VALUES
+(1, 'Laptop'),
+(2, 'Phone'),
+(3, 'Tablet'),
+(4, 'Headphones');
+
+INSERT INTO products_electronics2022 VALUES
+(2, 'TV'),
+(3, 'Printer'),
+(4, 'Monitor'),
+(5, 'Phone');
+
+INSERT INTO products_electronics2023 VALUES
+(3, 'Laptop'),
+(4, 'Phone'),
+(5, 'Oven'),
+(6, 'AC');
+----
+
+View the tables:
+
+[source,sql]
+----
+SELECT * FROM products_electronics2021;
+SELECT * FROM products_electronics2022;
+SELECT * FROM products_electronics2023;
+----
+
+[source,sql]
+----
+product_id | product_name
+------------+--------------
+          1 | Laptop
+          2 | Phone
+          3 | Tablet
+          4 | Headphones
+
+ product_id | product_name
+------------+--------------
+          2 | TV
+          3 | Printer
+          4 | Monitor
+          5 | Phone
+
+ product_id | product_name
+------------+--------------
+          3 | Laptop
+          4 | Phone
+          5 | Oven
+          6 | AC
+----
+
+Combine common products from all three tables using `INTERSECT ALL`:
+
+[source,sql]
+----
+SELECT product_name FROM products_electronics2021
+INTERSECT ALL
+SELECT product_name FROM products_electronics2022
+INTERSECT ALL
+SELECT product_name FROM products_electronics2023;
+----
+
+The query returns the products common to all three tables, including duplicates:
+
+[source,sql]
+----
+product_name
+--------------
+ Phone
+----
+
+Only `Phone` appears across all three tables.

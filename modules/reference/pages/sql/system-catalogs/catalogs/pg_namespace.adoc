@@ -1,0 +1,64 @@
+= pg_namespace
+:description: The pg_namespace contains information about schema definitions.
+:page-topic-type: reference
+
+The `pg_namespace` contains information about schema definitions. It mimics the https://www.postgresql.org/docs/current/catalog-pg-namespace.html[pg_namespace^] PostgreSQL system catalog.
+
+[NOTE]
+====
+To learn more about Schema and how it is managed in Redpanda SQL, see the xref:reference:sql/schema.adoc[schema documentation].
+====
+
+== Columns
+
+The `pg_namespace` catalog has the following key columns:
+
+[width="100%",cols="11%,7%,82%",options="header",]
+|===
+|Column |Type |Description
+|`oid` |`int` |This column represents the Object ID, a unique identifier assigned to each namespace
+|`nspname` |`text` |This column represents the name of the namespace
+|`nspowner` |`int` |This column represents the owner of the namespace
+|`nspacl` |`text` |_unused_
+|===
+
+== Examples
+
+=== Create a schema
+
+In this example, the "`sales`" and "`hr`" schemas are created using the following query:
+
+[source,sql]
+----
+CREATE SCHEMA sales;
+CREATE SCHEMA hr;
+----
+
+The successful result would look like this:
+
+[source,sql]
+----
+COMPLETE
+COMPLETE
+----
+
+=== View schema definitions
+
+Use a `SELECT` statement on the `pg_namespace` catalog to show the schema definitions.
+
+[source,sql]
+----
+SELECT nspname AS schema_name, oid AS schema_oid
+FROM pg_namespace;
+----
+
+The result shows the list of schemas and their IDs:
+
+[source,sql]
+----
+ schema_name | schema_oid
+-------------+------------
+ public      |          0
+ sales       |          3
+ hr          |          4
+----
