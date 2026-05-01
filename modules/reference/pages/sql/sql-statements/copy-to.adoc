@@ -1,0 +1,202 @@
+= COPY TO
+:description: The COPY TO statement exports tables, specific columns, or query results to CSV files or to a client.
+:page-topic-type: reference
+
+The `COPY TO` statement exports tables, specific columns, or query results to a CSV file or to the standard output.
+
+[WARNING]
+====
+By default, the `COPY TO` command overwrites the destination file if it already exists. Ensure that the directory where you save the file has the necessary write permissions.
+====
+
+== Syntax
+
+[source,sql]
+----
+COPY { table_name [ ( column_name [, ...] ) ] | ( query ) }
+TO { 'file_path' | STDOUT }
+[ WITH ( option [, ...] ) ];
+----
+
+* `table_name`: Table containing the data to export.
+* `column_name`: Optional. Specific columns to export. If omitted, all columns are exported.
+* `query`: A `SELECT` statement to export specific results.
+* `file_path`: Path to the output file. Use `STDOUT` to send the data to the standard output stream.
+* `option`: One or more options. See <<options,Options>>.
+
+[#options]
+== Options
+
+* `FORMAT`: Output format. Only `CSV` is supported.
+* `DELIMITER`: Single-character string used to separate fields. Default is `,`.
+* `HEADER`: Whether to include a header row with column names. Accepts `ON`, `TRUE`, `1`, `OFF`, `FALSE`, or `0`. Default is `OFF`.
+* `NULL`: String used to represent `NULL` values. Default is the empty string.
+* Cloud storage credentials: Use `AWS_CRED`, `AZURE_CRED`, or `GCS_CRED` to authenticate when exporting to cloud storage. See <<cloud-storage,Export to cloud storage>>.
+
+== Examples
+
+The following examples use a table mapped to a Redpanda topic through a catalog. For information on setting up catalogs and tables, see xref:reference:sql/sql-statements/create-table.adoc[CREATE TABLE].
+
+=== Export all columns from a table
+
+Copy all columns in a table to a CSV file:
+
+[source,sql]
+----
+COPY my_catalog=>employee_salary TO '/path/to/exportsalary.csv';
+----
+
+=== Export specific columns from a table
+
+Specify the column names to export only those columns:
+
+[source,sql]
+----
+COPY my_catalog=>employee_salary (empid, empname, empsalary) TO '/path/to/exportsalary.csv';
+----
+
+=== Export results of a SELECT statement
+
+Export only the rows that match a `WHERE` condition:
+
+[source,sql]
+----
+COPY (SELECT * FROM my_catalog=>employee_salary WHERE empdept = 'Marketing') TO '/path/to/exportsalary.csv';
+----
+
+=== Export with a custom delimiter
+
+Specify the delimiter using the `DELIMITER` option. Common delimiters include comma (`,`), semicolon (`;`), pipe (`|`), and dash (`-`).
+
+[source,sql]
+----
+COPY my_catalog=>customer TO '/path/to/customerexport.csv' WITH (DELIMITER ';');
+----
+
+The exported CSV uses the specified delimiter:
+
+[source,text]
+----
+cust_id;cust_name
+11001;Maya
+11003;Ricky
+11009;Sean
+----
+
+=== Export with column headers
+
+Include column names as a header row using `HEADER ON` (or `HEADER TRUE`, or `HEADER 1`):
+
+[source,sql]
+----
+COPY my_catalog=>personal_details TO '/path/to/personalinfo.csv' WITH (HEADER ON);
+----
+
+The exported file includes a header row:
+
+[source,text]
+----
+id,first_name,last_name,gender
+1,'Mark','Wheeler','M'
+2,'Tom','Hanks','M'
+3,'Jane','Hopper','F'
+----
+
+To omit the header (the default), use `HEADER OFF` (or `HEADER FALSE`, or `HEADER 0`).
+
+=== Export with a NULL replacement string
+
+Specify a string to replace `NULL` values in the exported file:
+
+[source,sql]
+----
+COPY my_catalog=>example_table TO '/path/to/exampleexport.csv' WITH (NULL 'unknown');
+----
+
+In the exported file, `NULL` values are represented as `unknown`.
+
+=== Export to standard output
+
+Send the data directly to the client instead of writing to a server-side file:
+
+[source,sql]
+----
+COPY my_catalog=>book_inventory TO STDOUT;
+----
+
+The query returns:
+
+[source,sql]
+----
+"To Kill a Mockingbird",5
+1984,8
+"The Great Gatsby",3
+"Moby Dick",2
+"War and Peace",4
+----
+
+[NOTE]
+====
+* Only CSV format is supported with `STDOUT`.
+* The default delimiter for CSV format is a comma (`,`).
+====
+
+[#cloud-storage]
+=== Export to cloud storage
+
+To export data to cloud storage, use the `COPY TO` command with the appropriate credentials option for your provider.
+
+==== AWS S3
+
+* `AWS_REGION`: AWS region associated with the storage service.
+* `AWS_KEY_ID`: Key identifier for authentication.
+* `AWS_PRIVATE_KEY`: Access key for authentication.
+* `ENDPOINT`: URL endpoint for the storage service.
+
+[source,sql]
+----
+COPY my_catalog=>film TO 's3://your-bucket/file_name'
+WITH (AWS_CRED(AWS_REGION 'us-west-1', AWS_KEY_ID 'key_id', AWS_PRIVATE_KEY 'access_key', ENDPOINT 's3.us-west-1.amazonaws.com'),
+      FORMAT CSV, HEADER ON, NULL 'unknown');
+----
+
+==== Google Cloud Storage
+
+Pass the path to your credentials JSON file:
+
+[source,sql]
+----
+COPY my_catalog=>film TO 'gs://your-bucket/file_name' WITH (GCS_CRED('/path/to/credentials.json'));
+----
+
+If you cannot use a path to the credentials file, pass its contents as a string:
+
+[source,sql]
+----
+COPY my_catalog=>project TO 'gs://your-bucket/project_file' WITH (GCS_CRED('<contents of the credentials.json file>'));
+----
+
+You can also use `AWS_CRED` with GCS by setting the endpoint:
+
+[source,sql]
+----
+COPY my_catalog=>project TO 'gs://your-bucket/project_file'
+WITH (AWS_CRED(AWS_REGION 'region1', AWS_KEY_ID 'key_id', AWS_PRIVATE_KEY 'access_key', ENDPOINT 'https://storage.googleapis.com'));
+----
+
+[TIP]
+====
+For Google Cloud Storage, use HMAC keys for authentication. See the link:https://cloud.google.com/storage/docs/authentication/hmackeys[HMAC keys - Cloud Storage^] page for details.
+====
+
+==== Azure Blob Storage
+
+* `TENANT_ID`: Tenant identifier representing your organization's identity in Azure.
+* `CLIENT_ID`: Client identifier used for authentication.
+* `CLIENT_SECRET`: Secret identifier used as a password for authentication.
+
+[source,sql]
+----
+COPY my_catalog=>taxi_data TO 'wasbs://container-name/your_blob'
+WITH (AZURE_CRED(TENANT_ID 'your_tenant_id' CLIENT_ID 'your_client_id', CLIENT_SECRET 'your_client_secret'));
+----

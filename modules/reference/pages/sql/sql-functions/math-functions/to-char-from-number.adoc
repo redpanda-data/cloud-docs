@@ -1,0 +1,136 @@
+= TO_CHAR from Number
+:description: The TO_CHAR function formats a number into a string using a given format.
+:page-topic-type: reference
+
+The `TO_CHAR` function formats a number into a string using a given format.
+
+== Syntax
+
+The syntax for this function is:
+
+[source,sql]
+----
+TO_CHAR(value, format_string)
+----
+
+Parameters in the syntax include:
+
+* `value`: Number to format as a string.
+* `format`: The format of the input string.
+
+== Format
+
+The format string supports these template patterns (case-insensitive):
+
+[width="100%",cols="16%,84%",options="header",]
+|===
+|*Pattern* |*Description*
+|`9` |Digit position (may be dropped if insignificant)
+|`0` |Digit position (never dropped)
+|`.` |Decimal point
+|`,` |Group (thousands) separator
+|`D` |Decimal point
+|`G` |Group separator
+|`S` |Plus/minus sign directly before or after a number
+|`PL` |Plus sign in the specified position (for negative numbers)
+|`MI` |Minus sign in specified position (for positive numbers)
+|`SG` |Plus/minus sign in the specified position.
+|===
+
+=== Limitations
+
+* All text inside double quote `"\{text}"` will not be considered a pattern.
+* The quote character `""` will not appear in the result string.
+* Any text that does not match any pattern is preserved in the result string.
+
+== Examples
+
+=== Format with leading zeros
+
+The query formats 123.456 with leading zeros using the pattern '`00000.00000`'.
+
+[source,sql]
+----
+SELECT TO_CHAR(123.456, '00000.00000');
+----
+
+The query returns:
+
+[source,sql]
+----
+   to_char
+--------------
+  00123.45600
+----
+
+=== Format with variable length
+
+The query formats the number 123.456 with a variable-length pattern '`99999.99999`'.
+
+[source,sql]
+----
+SELECT TO_CHAR(123.456, '99999.99999');
+----
+
+The query returns:
+
+[source,sql]
+----
+   to_char
+--------------
+    123.45600
+----
+
+=== Format with group
+
+The query formats the number 123456 with grouping separators using the pattern '`9,999,999,999`'.
+
+[source,sql]
+----
+SELECT TO_CHAR(123456, '9,999,999,999');
+----
+
+The query returns:
+
+[source,sql]
+----
+    to_char
+----------------
+        123,456
+----
+
+=== Format with negative number
+
+The query formats the number -123 with a custom pattern including the sign.
+
+[source,sql]
+----
+SELECT TO_CHAR(-123, '"Number formatted with pattern:000S":{000S}');
+----
+
+The output shows the custom-formatted number.
+
+[source,sql]
+----
+                  to_char
+-------------------------------------------
+ Number formatted with pattern:000S:{123-}
+----
+
+=== Format with sign
+
+The query formats the number -123.456 with a custom pattern including the sign and separated integer.
+
+[source,sql]
+----
+SELECT TO_CHAR(-123.456, '"Sing is: "SG" integer part is: "999", mantissa part is: ".999');
+----
+
+The query returns:
+
+[source,sql]
+----
+                         to_char
+---------------------------------------------------------
+ Sing is: - integer part is: 123, mantissa part is: .456
+----

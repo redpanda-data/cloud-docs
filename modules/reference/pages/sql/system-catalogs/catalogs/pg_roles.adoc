@@ -1,0 +1,39 @@
+= pg_roles
+:description: The pg_roles system catalog provides a publicly readable view of database roles.
+:page-topic-type: reference
+
+The `pg_roles` system catalog provides a publicly readable view of database roles. It mimics the https://www.postgresql.org/docs/current/view-pg-roles.html[pg_roles^] PostgreSQL system view.
+
+[NOTE]
+====
+Unlike xref:reference:sql/system-catalogs/catalogs/pg_authid.adoc[pg_authid], `pg_roles` is accessible to all users. Passwords are masked as `********` for non-superusers.
+====
+
+== Columns
+
+The following columns are available for querying in `pg_roles`:
+
+[cols="15%,15%,70%",options="header"]
+|===
+|Column |Type |Description
+|`rolname` |`text` |Role name
+|`rolsuper` |`bool` |Whether the role has superuser privileges
+|`rolinherit` |`bool` |Whether the role inherits privileges of roles it is a member of
+|`rolcreaterole` |`bool` |Whether the role can create other roles
+|`rolcreatedb` |`bool` |Whether the role can create databases
+|`rolcanlogin` |`bool` |Whether the role can log in
+|`rolreplication` |`bool` |Whether the role has replication privileges
+|`rolconnlimit` |`int` |Connection limit for the role (`-1` means no limit)
+|`rolpassword` |`text` |Password (masked as `********` for non-superusers)
+|`rolvaliduntil` |`timestamptz` |Password expiration time (NULL if no expiration)
+|`rolbypassrls` |`bool` |Whether the role bypasses row-level security policies
+|`rolconfig` |`text` |Session defaults for this role
+|`oid` |`bigint` |Object identifier for the role
+|===
+
+== Examples
+
+[source,sql]
+----
+SELECT rolname, rolsuper, rolcanlogin FROM pg_roles;
+----

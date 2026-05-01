@@ -1,0 +1,206 @@
+= LIMIT
+:description: The LIMIT clause restricts the number of records returned by a SELECT statement.
+:page-topic-type: reference
+
+`LIMIT` is an optional clause used with `SELECT` statements to retrieve records from one or more tables. It specifies the number of records a query returns after filtering the data.
+
+== Syntax
+
+The `LIMIT` clause has two syntax forms that produce identical results. The first is the standard PostgreSQL form:
+
+[source,sql]
+----
+SELECT column_list
+FROM table_name
+ORDER BY sort_expression
+LIMIT row_count
+----
+
+The second is the ANSI SQL form (`FETCH NEXT ... ROWS ONLY`):
+
+[source,sql]
+----
+SELECT column_list
+FROM table_name
+ORDER BY sort_expression
+FETCH NEXT row_count ROWS ONLY
+----
+
+Where:
+
+* `column_list`: The columns or calculations to retrieve.
+* `table_name`: The tables to retrieve records from.
+* `ORDER BY`: An expression used to order the results, either ascending (`ASC`) or descending (`DESC`).
+* `LIMIT row_count`: The number of rows to return based on `row_count`.
+
+[NOTE]
+====
+You can list more than one table in the `FROM` clause.
+====
+
+=== Special cases
+
+* If `row_count` is `NULL`, the query produces the same result as a query without a `LIMIT` clause.
+* If `row_count` is zero, the statement returns an empty set.
+
+== Examples
+
+This example creates a `comporders` table and inserts values into it:
+
+[source,sql]
+----
+CREATE TABLE comporders
+(
+    order_id int,
+    cust_name text,
+    prod_name text,
+    prod_price float,
+    status text
+);
+
+INSERT INTO comporders
+VALUES
+(1002, 'Mike', 'Lenovo IdeaPad Flex 5', 600, 'PAID'),
+(1003, 'Sean', 'Acer Aspire 3', 450, 'PAID'),
+(1004, 'Victor', 'Microsoft Surface Laptop Go 2', 500, 'PENDING'),
+(1005, 'Lewis', 'Lenovo Duet 5i', 700, 'PAID'),
+(1006, 'David', 'Acer Swift 3', 640, 'PAID'),
+(1007, 'Meghan', 'Lenovo IdeaPad Duet 5 Chromebook', 750, 'PAID'),
+(1008, 'Harry', 'Apple iPad Air', 449, 'PENDING'),
+(1009, 'Steve', 'Microsoft Surface Go 3', 680, 'PENDING'),
+(1010, 'Omar', 'HP Victus 16', 800,'PAID');
+----
+
+To verify the inserted values, run:
+
+[source,sql]
+----
+SELECT * FROM comporders;
+----
+
+The query returns:
+
+[source,sql]
+----
++-----------+------------+----------------------------------+-------------+----------+
+| order_id  | cust_name  | prod_name                        | prod_price  | status   |
++-----------+------------+----------------------------------+-------------+----------+
+| 1002      | Mike       | Lenovo IdeaPad Flex 5            | 600         | PAID     |
+| 1003      | Sean       | Acer Aspire 3                    | 450         | PAID     |
+| 1004      | Victor     | Microsoft Surface Laptop Go 2    | 500         | PENDING  |
+| 1005      | Lewis      | Lenovo Duet 5i                   | 700         | PAID     |
+| 1006      | David      | Acer Swift 3                     | 640         | PAID     |
+| 1007      | Meghan     | Lenovo IdeaPad Duet 5 Chromebook | 750         | PAID     |
+| 1008      | Harry      | Apple iPad Air                   | 449         | PENDING  |
+| 1009      | Steve      | Microsoft Surface Go 3           | 680         | PENDING  |
+| 1010      | Omar       | HP Victus 16                     | 800         | PAID     |
++-----------+------------+----------------------------------+-------------+----------+
+----
+
+=== LIMIT with ORDER BY expression
+
+This example uses the `LIMIT` clause to get the first four orders sorted by `order_id`:
+
+[source,sql]
+----
+SELECT order_id, prod_name, prod_price
+FROM comporders
+ORDER BY order_id
+LIMIT 4;
+----
+
+The query returns:
+
+[source,sql]
+----
++-----------+-------------------------------+-------------+
+| order_id  | prod_name                     | prod_price  |
++-----------+-------------------------------+-------------+
+| 1002      | Lenovo IdeaPad Flex 5         | 600         |
+| 1003      | Acer Aspire 3                 | 450         |
+| 1004      | Microsoft Surface Laptop Go 2 | 500         |
+| 1005      | Lenovo Duet 5i                | 700         |
++-----------+-------------------------------+-------------+
+----
+
+=== LIMIT with ASC or DESC
+
+You can use the `LIMIT` clause to select rows with the highest or lowest values from a table.
+
+. To get the five most expensive orders, sort by `prod_price` in descending order (`DESC`) and use `LIMIT` to return the first five rows:
++
+[source,sql]
+----
+SELECT * FROM comporders
+ORDER BY prod_price DESC
+LIMIT 5;
+----
++
+The query returns:
++
+[source,sql]
+----
++-----------+------------+----------------------------------+-------------+----------+
+| order_id  | cust_name  | prod_name                        | prod_price  | status   |
++-----------+------------+----------------------------------+-------------+----------+
+| 1010      | Omar       | HP Victus 16                     | 800         | PAID     |
+| 1007      | Meghan     | Lenovo IdeaPad Duet 5 Chromebook | 750         | PAID     |
+| 1005      | Lewis      | Lenovo Duet 5i                   | 700         | PAID     |
+| 1009      | Steve      | Microsoft Surface Go 3           | 680         | PENDING  |
+| 1006      | David      | Acer Swift 3                     | 640         | PAID     |
++-----------+------------+----------------------------------+-------------+----------+
+----
+
+. To get the five cheapest orders, sort by `prod_price` in ascending order (`ASC`) and use `LIMIT` to return the first five rows:
++
+[source,sql]
+----
+SELECT * FROM comporders
+ORDER BY prod_price ASC
+LIMIT 5;
+----
++
+The query returns:
++
+[source,sql]
+----
++-----------+------------+----------------------------------+-------------+----------+
+| order_id  | cust_name  | prod_name                        | prod_price  | status   |
++-----------+------------+----------------------------------+-------------+----------+
+| 1008      | Harry      | Apple iPad Air                   | 449         | PENDING  |
+| 1003      | Sean       | Acer Aspire 3                    | 450         | PAID     |
+| 1004      | Victor     | Microsoft Surface Laptop Go 2    | 500         | PENDING  |
+| 1002      | Mike       | Lenovo IdeaPad Flex 5            | 600         | PAID     |
+| 1006      | David      | Acer Swift 3                     | 640         | PAID     |
++-----------+------------+----------------------------------+-------------+----------+
+----
+
+=== LIMIT with OFFSET
+
+In this example, the `LIMIT` and `OFFSET` clauses get five orders:
+
+[source,sql]
+----
+SELECT * FROM comporders
+LIMIT 5 OFFSET 2;
+----
+
+The query returns:
+
+[source,sql]
+----
++-----------+------------+----------------------------------+-------------+----------+
+| order_id  | cust_name  | prod_name                        | prod_price  | status   |
++-----------+------------+----------------------------------+-------------+----------+
+| 1004      | Victor     | Microsoft Surface Laptop Go 2    | 500         | PENDING  |
+| 1005      | Lewis      | Lenovo Duet 5i                   | 700         | PAID     |
+| 1006      | David      | Acer Swift 3                     | 640         | PAID     |
+| 1007      | Meghan     | Lenovo IdeaPad Duet 5 Chromebook | 750         | PAID     |
+| 1008      | Harry      | Apple iPad Air                   | 449         | PENDING  |
++-----------+------------+----------------------------------+-------------+----------+
+----
+
+In this result:
+
+* Orders with `order_id` 1002 and 1003 are not displayed because the `OFFSET` value is `2`, so the first two rows are skipped.
+* Orders with `order_id` 1009 and 1010 are not displayed because the `LIMIT` value is `5`, so only five rows are returned.

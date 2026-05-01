@@ -1,0 +1,228 @@
+= Schemas
+:description: Schemas are namespaces that organize tables and other database objects in Redpanda SQL.
+:page-topic-type: reference
+
+A schema is a namespace that groups related database objects, including tables, views, indexes, sequences, data types, operators, and functions. Schemas let you organize objects into logical groups so their names do not collide.
+
+Redpanda SQL supports multiple schemas in a single database. For example, in a database named `mydb`, you might define schemas such as `auth`, `model`, and `business`.
+
+== Default schema
+
+By default, Redpanda SQL uses the `public` schema. When you reference an unqualified table name, it is equivalent to `public.table_name`. The same rule applies to `CREATE`, `DROP`, and `SELECT` statements.
+
+== Syntax
+
+=== Create a schema
+
+[source,sql]
+----
+CREATE SCHEMA [IF NOT EXISTS] schema_name;
+----
+
+* `schema_name`: Name of the schema to create.
+* `IF NOT EXISTS`: Optional. Prevents an error if the schema already exists.
+
+=== Create a table in a schema
+
+[source,sql]
+----
+CREATE TABLE schema_name.table_name(
+...
+);
+----
+
+* `schema_name`: Name of an existing schema.
+* `table_name`: Name of the table to create.
+
+=== Query a table in a schema
+
+[source,sql]
+----
+SELECT * FROM schema_name.table_name;
+----
+
+* `schema_name`: Name of the schema.
+* `table_name`: Name of the table to query.
+
+=== Drop a schema
+
+To drop an empty schema:
+
+[source,sql]
+----
+DROP SCHEMA [IF EXISTS] schema_name;
+----
+
+* `schema_name`: Name of the schema to drop.
+* `IF EXISTS`: Optional. Prevents an error if the schema does not exist.
+
+To drop a schema that contains tables, use `CASCADE` to drop the schema and its contents:
+
+[source,sql]
+----
+DROP SCHEMA schema_name CASCADE;
+----
+
+== Examples
+
+=== Create a schema and table
+
+. Create a schema:
++
+[source,sql]
+----
+CREATE SCHEMA app_data;
+----
+
+. Create a table in the `app_data` schema and insert rows:
++
+[source,sql]
+----
+CREATE TABLE app_data.functions(
+  id int,
+  function_name text,
+  active bool
+);
+
+INSERT INTO app_data.functions(id, function_name, active)
+VALUES
+('1111', 'Numeric', 'TRUE'),
+('2222', 'Text', 'TRUE'),
+('3333', 'Timestamp', 'TRUE'),
+('4444', 'JSON', 'TRUE'),
+('5555', 'Boolean', 'TRUE');
+----
+
+. Verify the table contents:
++
+[source,sql]
+----
+SELECT * FROM app_data.functions;
+----
+
+. The query returns:
++
+[source,sql]
+----
++------+---------------+---------+
+| id   | function_name | active  |
++------+---------------+---------+
+| 1111 | Numeric       | t       |
+| 2222 | Text          | t       |
+| 3333 | Timestamp     | t       |
+| 4444 | JSON          | t       |
+| 5555 | Boolean       | t       |
++------+---------------+---------+
+----
+
+=== Use IF NOT EXISTS
+
+The `IF NOT EXISTS` option lets the `CREATE SCHEMA` query succeed without error when the schema already exists. The schema is not modified.
+
+==== Without IF NOT EXISTS
+
+. Create a schema:
++
+[source,sql]
+----
+CREATE SCHEMA analytics;
+----
++
+The query returns:
++
+[source,sql]
+----
+CREATE SCHEMA
+----
+
+. Run the same `CREATE SCHEMA` statement again. The query fails with an error:
++
+[source,sql]
+----
+CREATE SCHEMA analytics;
+----
++
+The query returns:
++
+[source,sql]
+----
+ERROR:  Schema: analytics already exists
+----
+
+==== With IF NOT EXISTS
+
+Run the same `CREATE SCHEMA` statement with `IF NOT EXISTS`. The query succeeds without error:
+
+[source,sql]
+----
+CREATE SCHEMA IF NOT EXISTS analytics;
+----
+
+[source,sql]
+----
+CREATE
+----
+
+=== Drop a schema
+
+To drop a schema and all its tables, use `CASCADE`:
+
+[source,sql]
+----
+DROP SCHEMA app_data CASCADE;
+----
+
+If the schema is empty, you can drop it without `CASCADE`:
+
+[source,sql]
+----
+DROP SCHEMA app_data;
+----
+
+=== Use IF EXISTS
+
+The `IF EXISTS` option lets the `DROP SCHEMA` query succeed without error when the schema does not exist.
+
+==== Without IF EXISTS
+
+. Drop a schema:
++
+[source,sql]
+----
+DROP SCHEMA analytics;
+----
++
+The query returns:
++
+[source,sql]
+----
+DROP
+----
+
+. Run the same `DROP SCHEMA` statement again. The query fails with an error:
++
+[source,sql]
+----
+DROP SCHEMA analytics;
+----
++
+The query returns:
++
+[source,sql]
+----
+ERROR:  schema "analytics" does not exist
+----
+
+==== With IF EXISTS
+
+Run the same `DROP SCHEMA` statement with `IF EXISTS`. The query succeeds without error:
+
+[source,sql]
+----
+DROP SCHEMA IF EXISTS analytics;
+----
+
+[source,sql]
+----
+DROP
+----

@@ -1,0 +1,149 @@
+= Bool
+:description: BOOL is a data type for expressions that return one of two possible values: true or false.
+:page-topic-type: reference
+
+== Overview
+
+A `BOOL` is a data type for expressions that return one of two possible values: `true` or `false`.
+
+[WARNING]
+====
+`BOOLEAN` is an alias for the `BOOL` data type. You can create a table using `BOOLEAN`, but Redpanda SQL stores and processes the values as `BOOL`.
+====
+
+== Format
+
+* `FALSE`
+* `TRUE`
+
+== Examples
+
+The following are examples of using a bool data type:
+
+=== Create a table
+
+The following example creates a `borrowBook` table to store book borrowing records. The table contains columns for the borrow ID, book name, borrower, and a `bool` column for the returned status.
+
+[source,sql]
+----
+CREATE TABLE borrowBook  (
+   borrowID INT,
+   bookName TEXT,
+   borrower TEXT,
+   returnedStat BOOL NOT NULL
+);
+INSERT INTO borrowBook (borrowID,bookName, borrower, returnedStat)
+VALUES
+    (101, 'The Silent Patient', 'Mike', TRUE),
+    (201, 'Malibu Rising', 'Jean', TRUE),
+    (301, 'The Guest List', 'Mark', FALSE),
+    (401, 'The Four Winds', 'Cliff', TRUE),
+    (501, 'The Vanishing Half: A Novel', 'Sarah', TRUE),
+    (601, 'Red, White & Royal Blue', 'Anna', FALSE),
+    (701, 'The Duke and I', 'Blake', FALSE),
+    (801, 'The Lord of the Rings', 'Sandra', FALSE);
+----
+
+The `borrowBook` table has been successfully created after executing the query:
+
+[source,sql]
+----
+COMPLETE
+INSERT 0 8
+----
+
+=== Display the table
+
+Run the `SELECT` statement to get all records from the `borrowBook` table:
+
+[source,sql]
+----
+SELECT * FROM borrowBook;
+----
+
+This returns the following result:
+
+[source,sql]
+----
++-----------+---------------------------------+------------+---------------+
+| borrowid  | bookname                        | borrower   | returnedstat  |
++-----------+---------------------------------+------------+---------------+
+| 101       | The Silent Patient              | Mike       | t             |
+| 201       | Malibu Rising                   | Jean       | t             |
+| 301       | The Guest List                  | Mark       | f             |
+| 401       | The Four Winds                  | Cliff      | t             |
+| 501       | The Vanishing Half: A Novel     | Sarah      | t             |
+| 601       | Red, White & Royal Blue         | Anna       | f             |
+| 701       | The Duke and I                  | Blake      | f             |
+| 801       | The Lord of the Rings           | Sandra     | f             |
++-----------+---------------------------------+------------+---------------+
+----
+
+=== List of the returned books
+
+This example retrieves all the books that have already been returned:
+
+[source,sql]
+----
+SELECT * FROM borrowbook
+WHERE returnedstat= 'true';
+----
+
+The query returns the following results:
+
+[source,sql]
+----
++-----------+---------------------------------+------------+---------------+
+| borrowid  | bookname                        | borrower   | returnedstat  |
++-----------+---------------------------------+------------+---------------+
+| 101       | The Silent Patient              | Mike       | t             |
+| 201       | Malibu Rising                   | Jean       | t             |
+| 401       | The Four Winds                  | Cliff      | t             |
+| 501       | The Vanishing Half: A Novel     | Sarah      | t             |
++-----------+---------------------------------+------------+---------------+
+----
+
+=== List of the unreturned books
+
+To acquire all of the book records that haven't been returned yet, run the `SELECT` statement with a specified `WHERE` condition as `false`:
+
+[source,sql]
+----
+SELECT * FROM borrowbook
+WHERE returnedstat= 'false';
+----
+
+The query returns the following results:
+
+[source,sql]
+----
++-----------+---------------------------------+------------+---------------+
+| borrowid  | bookname                        | borrower   | returnedstat  |
++-----------+---------------------------------+------------+---------------+
+| 301       | The Guest List                  | Mark       | f             |
+| 601       | Red, White & Royal Blue         | Anna       | f             |
+| 701       | The Duke and I                  | Blake      | f             |
+| 801       | The Lord of the Rings           | Sandra     | f             |
++-----------+---------------------------------+------------+---------------+
+----
+
+=== Check a book's return status
+
+This example finds the returned status of the book "The Lord of the Rings" by executing the `SELECT` statement with a specified column in the `WHERE` clause:
+
+[source,sql]
+----
+SELECT * FROM borrowbook
+WHERE bookname = 'The Lord of the Rings';
+----
+
+This query filters all records based on the specified conditions, showing that Sandra hasn't returned the book yet:
+
+[source,sql]
+----
++-----------+---------------------------------+------------+---------------+
+| borrowid  | bookname                        | borrower   | returnedstat  |
++-----------+---------------------------------+------------+---------------+
+| 801       | The Lord of the Rings           | Sandra     | f             |
++-----------+---------------------------------+------------+---------------+
+----

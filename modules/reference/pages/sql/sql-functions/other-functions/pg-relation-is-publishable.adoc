@@ -1,0 +1,36 @@
+= pg_relation_is_publishable()
+:description: Use the pg_relation_is_publishable() function to determine whether a specified relation (table) can be published in a publication.
+:page-topic-type: reference
+
+Use the`pg_relation_is_publishable()` function to determine whether a specified relation (table) can be published in a link:https://www.postgresql.org/docs/current/logical-replication-publication.html[publication^].
+
+== Syntax
+
+[source,sql]
+----
+pg_relation_is_publishable(table_name_or_oid)
+----
+
+The function returns `false` for every existing table and `NULL` for any non-existing table.
+
+== Parameters
+
+* `table_name_or_oid`: Specifies the object identifier (OID) of a table or its name.
+
+== Examples
+
+[source,sql]
+----
+SELECT pg_relation_is_publishable('existing_table');
+ pg_relation_is_publishable
+----------------------------
+ f
+----
+
+[source,sql]
+----
+SELECT pg_relation_is_publishable(16386);
+ pg_relation_is_publishable
+----------------------------
+ f
+----

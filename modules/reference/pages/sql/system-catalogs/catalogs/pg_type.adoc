@@ -1,0 +1,83 @@
+= pg_type
+:description: The pg_type table stores information about built-in data types.
+:page-topic-type: reference
+
+The `pg_type` table stores information about built-in data types. It mimics the https://www.postgresql.org/docs/current/catalog-pg-type.html[pg_type^] PostgreSQL system catalog.
+
+[WARNING]
+====
+Redpanda SQL does not support custom types.
+====
+
+== Columns
+
+The following columns are available for querying in `pg_type`:
+
+[width="100%",cols="14%,10%,76%",options="header",]
+|===
+|Column |Type |Description
+|`oid` |`int` |This column represents the Object ID (OID) for each type in the database
+|`typname` |`text` |This column represents the data type.
+|`typlen` |`int` |This column represents the number of bytes in the internal representation of the type
+|`typnamespace` |`int` |_Unused_
+|`typowner` |`int` |_Unused_
+|`typtype` |`text` |_Unused_
+|`typisdefined` |`bool` |_Unused_
+|`typstorage` |`text` |_Unused_
+|`typalign` |`text` |_Unused_
+|`typnotnull` |`bool` |_Unused_
+|`typcategory` |`text` |_Unused_
+|`typispreferred` |`bool` |_Unused_
+|`typdelim` |`text` |_Unused_
+|`typrelid` |`int` |_Unused_
+|`typsubscript` |`int` |_Unused_
+|`typelem` |`int` |_Unused_
+|`typarray` |`int` |_Unused_
+|`typinput` |`int` |_Unused_
+|`typoutput` |`int` |_Unused_
+|`typreceive` |`int` |_Unused_
+|`typsend` |`int` |_Unused_
+|`typmodin` |`int` |_Unused_
+|`typmodout` |`int` |_Unused_
+|`typanalyze` |`int` |_Unused_
+|`typalign` |`text` |_Unused_
+|`typstorage` |`text` |_Unused_
+|`typnotnull` |`bool` |_Unused_
+|`typbasetype` |`int` |_Unused_
+|`typtypmod` |`int` |_Unused_
+|`typndims` |`int` |_Unused_
+|`typcollation` |`int` |_Unused_
+|`typdefaultbin` |`text` |_Unused_
+|`typdefault` |`text` |_Unused_
+|`typacl` |`text` |_Unused_
+|===
+
+== Examples
+
+This example query retrieves the Object ID (`oid`) and data type name (`typname`) from the `pg_type` catalog. You can adjust the columns in the `SELECT` statement based on your needs.
+
+[source,sql]
+----
+SELECT oid, typname FROM pg_type;
+----
+
+This returns the list of Redpanda SQL's supported data types:
+
+[source,sql]
+----
+ oid  |   typname
+------+-------------
+   23 | int4
+  700 | float4
+   16 | bool
+   20 | int8
+  701 | float8
+   25 | text
+ 1114 | timestamp
+ 1184 | timestamptz
+ 1083 | time
+ 1186 | interval
+ 1082 | date
+  114 | json
+(12 rows)
+----

@@ -1,0 +1,105 @@
+= CREATE TABLE
+:description: The CREATE TABLE statement maps a Redpanda topic to a SQL table through a catalog, making topic data queryable with SQL.
+:page-topic-type: reference
+
+The `CREATE TABLE` statement maps a Redpanda topic to a SQL table through a catalog. After creating the table, you can query topic data using standard SQL.
+
+NOTE: You must first xref:reference:sql/sql-statements/create-redpanda-catalog.adoc[create a Redpanda catalog connection] before creating tables. `CREATE TABLE` in Redpanda SQL maps Redpanda topics to SQL tables — it does not create standalone tables with user-defined schemas.
+
+== Syntax
+
+[source,sql]
+----
+CREATE TABLE [IF NOT EXISTS] catalog_name=>table_name
+WITH (option = 'value' [, ...]);
+----
+
+* `catalog_name`: Name of an existing Redpanda catalog.
+* `table_name`: Name for the new table.
+* `IF NOT EXISTS`: Optional. Prevents an error if a table with the same name already exists in the catalog.
+
+== Options
+
+[cols="<30%,<15%,<10%,<45%",options="header"]
+|===
+|Option |Type |Required |Description
+
+|`topic`
+|STRING
+|Yes
+|Name of the Redpanda topic to map to this table.
+
+|`schema_subject`
+|STRING
+|No
+|Schema Registry subject name to use for deserializing topic data.
+
+|`schema_lookup_policy`
+|STRING
+|No
+|How to resolve the schema version. Only `LATEST` is supported.
+
+|`error_handling_policy`
+|STRING
+|No
+a|How to handle records that fail deserialization.
+
+* `FAIL` (default): Raises an error.
+* `FILL_NULL`: Replaces failed fields with NULL.
+* `DROP_RECORD`: Skips the record.
+
+|`struct_mapping_policy`
+|STRING
+|No
+a|How to map nested structures to SQL columns.
+
+* `JSON` (default): Stores nested data as JSON.
+* `FLATTEN`: Expands nested fields into top-level columns.
+* `COMPOUND`: Maps to ROW types.
+* `VARIANT`: Stores as a variant type.
+
+|`output_schema_message_full_name`
+|STRING
+|No
+|Full Protobuf message name. Required when the schema contains multiple message definitions.
+|===
+
+== Examples
+
+=== Create a basic table
+
+Map the `transactions` topic to a table through `my_catalog`:
+
+[source,sql]
+----
+CREATE TABLE my_catalog=>transactions
+WITH (topic = 'transactions');
+----
+
+=== Specify a Schema Registry subject
+
+Map a topic and specify the Schema Registry subject:
+
+[source,sql]
+----
+CREATE TABLE my_catalog=>user_events
+WITH (
+  topic = 'user-events',
+  schema_subject = 'user-events-value',
+  schema_lookup_policy = 'LATEST'
+);
+----
+
+=== Create a table with error handling
+
+Map a topic and skip records that fail deserialization:
+
+[source,sql]
+----
+CREATE TABLE IF NOT EXISTS my_catalog=>sensor_readings
+WITH (
+  topic = 'sensor-data',
+  schema_subject = 'sensor-data-value',
+  error_handling_policy = 'DROP_RECORD'
+);
+----

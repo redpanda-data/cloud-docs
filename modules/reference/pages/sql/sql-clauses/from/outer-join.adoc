@@ -1,0 +1,220 @@
+= OUTER JOIN
+:description: The OUTER JOIN returns all the records from the selected fields between two tables, whether the join condition is met or not.
+:page-topic-type: reference
+
+The `OUTER JOIN` (also known as `FULL OUTER JOIN`) returns all the records from the selected fields between the two tables (left and right), whether the join condition is met or not.
+
+== Inner join vs. outer join
+
+An `INNER JOIN` returns only matched rows. An `OUTER JOIN` returns all rows from both tables, whether matched or not.
+
+== Syntax
+
+[source,sql]
+----
+SELECT column_1, column_2...
+FROM table_1
+FULL OUTER JOIN table_2
+ON table_1.matching_field = table_2.matching_field;
+----
+
+In this syntax:
+
+. `SELECT column_1, column_2...` defines the columns from both tables to display data.
+. `FROM table_1` represents `table_1` as the left table in the `FROM` clause.
+. `FULL OUTER JOIN table_2` represents `table_2` as the right table in the `FULL OUTER JOIN` condition.
+. `ON table_1.matching_field = table_2.matching_field` sets the join condition after the `ON` keyword with the matching field between the two tables.
+
+=== Table alias
+
+A table alias is a temporary name given to a table in a query. Aliases don't change the result; they make queries easier to read.
+
+[source,sql]
+----
+SELECT A.column_1, B.column_2...
+FROM table_1 A
+FULL OUTER JOIN table_2 B
+ON A.matching_field = B.matching_field;
+----
+
+[NOTE]
+====
+If there are no matched records from the joined tables, `NULL` values are returned in every column of the table that does not have the matching record.
+====
+
+== Examples
+
+Create the `departments` table:
+
+[source,sql]
+----
+CREATE TABLE departments (
+    department_id int,
+    department_name text
+);
+INSERT INTO departments (department_id,department_name)
+VALUES
+    (1001, 'Sales'),
+    (1002, 'Marketing'),
+    (1003, 'HR'),
+    (1004, 'Project'),
+    (1005, 'Product');
+----
+
+[source,sql]
+----
+SELECT * FROM departments;
+----
+
+This returns:
+
+[source,sql]
+----
++----------------+------------------+
+| department_id  | department_name  |
++----------------+------------------+
+| 1001           | Sales            |
+| 1002           | Marketing        |
+| 1003           | HR               |
+| 1004           | Project          |
+| 1005           | Product          |
++----------------+------------------+
+----
+
+Create the `employee` table:
+
+[source,sql]
+----
+CREATE TABLE employee (
+    employee_id int,
+    employee_name text,
+    dept_id int
+);
+INSERT INTO employee (
+    employee_id,
+    employee_name,
+    dept_id
+)
+VALUES
+    (2001,'Tony Stark', 1002),
+    (2002,'Christian Bale', 1002),
+    (2003,'Anne Hailey', 1003),
+    (2004,'Wilson Cliff', 1004),
+    (2005,'Susan Oh', 1001),
+    (2006,'Julian Robert', 1001),
+    (2007,'Gilbert Tom', null);
+----
+
+[source,sql]
+----
+SELECT * FROM employee;
+----
+
+This returns:
+
+[source,sql]
+----
++--------------+-------------------+------------+
+| employee_id  | employee_name     | dept_id    |
++--------------+-------------------+------------+
+| 2001         | Tony Stark        | 1002       |
+| 2002         | Christian Bale    | 1002       |
+| 2003         | Anne Hailey       | 1003       |
+| 2004         | Wilson Cliff      | 1004       |
+| 2005         | Susan Oh          | 1001       |
+| 2006         | Julian Robert     | 1001       |
+| 2007         | Gilbert Tom       | null       |
++--------------+-------------------+------------+
+----
+
+=== FULL OUTER JOIN
+
+A `FULL OUTER JOIN` query against these tables:
+
+[source,sql]
+----
+SELECT employee_name, department_name
+FROM departments
+FULL OUTER JOIN employee
+ON departments.department_id = employee.dept_id;
+----
+
+The result shows every department with an employee, the employees who work under a specific department, every department that does not have any employees, and the employees who do not belong to a specific department.
+
+[source,sql]
+----
++-------------------+-------------------+
+| employee_name     | department_name   |
++-------------------+-------------------+
+| Julian Robert     | Sales             |
+| Susan Oh          | Sales             |
+| Christian Bale    | Marketing         |
+| Tony Stark        | Marketing         |
+| Anne Hailey       | HR                |
+| Wilson Cliff      | Project           |
+| Gilbert Tom       | null              |
+| null              | Product           |
++-------------------+-------------------+
+----
+
+The following Venn diagram illustrates the `FULL OUTER JOIN`:
+
+image::sql/outer-join-venn.png[Venn diagram showing a full outer join between the Departments and Employee tables]
+
+=== FULL OUTER JOIN with WHERE clause
+
+==== Find departments with no employees
+
+. To find departments that do not have any employees, add a `WHERE` clause with `NULL`:
++
+[source,sql]
+----
+SELECT employee_name, department_name
+FROM departments
+FULL OUTER JOIN employee
+ON departments.department_id = employee.dept_id
+WHERE employee_name IS NULL;
+----
+
+. The query returns:
++
+[source,sql]
+----
++------------------+--------------------+
+| employee_name    | department_name    |
++------------------+--------------------+
+| null             | Product            |
++------------------+--------------------+
+----
+
+The result indicates that the `Product` department has no employees.
+
+==== Find employees with no department
+
+. To find employees who do not belong to any department, add a `WHERE` clause with `NULL`:
++
+[source,sql]
+----
+SELECT employee_name, department_name
+FROM employee
+FULL OUTER JOIN departments
+ON employee.dept_id = departments.department_id
+WHERE department_name IS NULL;
+----
+
+. The query returns:
++
+[source,sql]
+----
++------------------+--------------------+
+| employee_name    | department_name    |
++------------------+--------------------+
+| Gilbert Tom      | null               |
++------------------+--------------------+
+----
+
+The result shows that Gilbert Tom does not belong to any department.
+
+The following Venn diagram illustrates the `FULL OUTER JOIN` with `WHERE` clause filtering for NULL values:
+
+image::sql/outer-join-where-venn.png[Venn diagram showing a full outer join with WHERE clause filtering for NULL values]

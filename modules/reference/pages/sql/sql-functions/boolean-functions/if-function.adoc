@@ -1,0 +1,144 @@
+= IF()
+:description: The IF() function returns one value if the condition is TRUE and another value if the condition is FALSE.
+:page-topic-type: reference
+
+The `IF()` function returns one value if the condition is `TRUE` and another value if the condition is `FALSE`.
+
+== Syntax
+
+[source,sql]
+----
+IF(expression, true_result, else_result)
+----
+
+The `expression` must evaluate to a Boolean (`TRUE` or `FALSE`).
+
+== Examples
+
+=== IF() with a table
+
+The following example uses a `test_result` table to determine which participants passed and failed:
+
+[source,sql]
+----
+CREATE TABLE test_result (
+  applicant_id int,
+  name text,
+  score int
+);
+
+INSERT INTO test_result VALUES
+(78765,'Mike Aoki',677),
+(78786,'Julie Grahams',650),
+(78986,'Alexandra Jones',450),
+(79742,'Lucas Moore',487),
+(79769,'Augustine Harkness',572);
+----
+
+View the table:
+
+[source,sql]
+----
+SELECT * FROM test_result;
+----
+
+The query returns:
+
+[source,sql]
+----
++---------------+--------------------+--------+
+| applicant_id  | name               | score  |
++---------------+--------------------+--------+
+| 78765         | Mike Aoki          | 677    |
+| 78786         | Julie Grahams      | 650    |
+| 78986         | Alexandra Jones    | 450    |
+| 79742         | Lucas Moore        | 487    |
+| 79769         | Augustine Harkness | 572    |
++---------------+--------------------+--------+
+----
+
+. The following query returns `'PASSED'` if the score is 500 or greater, and `'NOT PASSED'` otherwise:
++
+[source,sql]
+----
+SELECT name, IF(score>=500, 'PASSED', 'NOT PASSED') FROM test_result;
+----
+
+. The query returns:
++
+[source,sql]
+----
++--------------------+-------------+
+| name               | case        |
++--------------------+-------------+
+| Mike Aoki          | PASSED      |
+| Julie Grahams      | PASSED      |
+| Alexandra Jones    | NOT PASSED  |
+| Lucas Moore        | NOT PASSED  |
+| Augustine Harkness | PASSED      |
++--------------------+-------------+
+----
+
+=== IF() with expressions as return value
+
+The following example uses a `deptcost` table to determine which departments exceeded the budget:
+
+[source,sql]
+----
+CREATE TABLE deptcost (
+  dept text,
+  budget int,
+  actual int,
+  status text
+);
+INSERT INTO deptcost VALUES
+('Finance', 800,677,'within budget'),
+('HR', 700,930,'over budget'),
+('Marketing', 500,677,'over budget'),
+('Project', 720,700,'within budget'),
+('Sales', 910,860,'within budget');
+----
+
+View the table:
+
+[source,sql]
+----
+SELECT * FROM deptcost;
+----
+
+The query returns:
+
+[source,sql]
+----
++-----------+--------+--------+---------------+
+| dept      | budget | actual | status        |
++-----------+--------+--------+---------------+
+| Finance   | 800    | 677    | within budget |
+| HR        | 700    | 930    | over budget   |
+| Marketing | 500    | 677    | over budget   |
+| Project   | 720    | 700    | within budget |
+| Sales     | 910    | 860    | within budget |
++-----------+--------+--------+---------------+
+----
+
+. The following query returns the budget difference if `actual` is less than `budget`, and `0` otherwise:
++
+[source,sql]
+----
+SELECT dept, IF(actual < budget, budget - actual, 0) FROM deptcost;
+----
+
+. The query returns:
++
+[source,sql]
+----
++-----------+-----+
+|   dept    |  f  |
++-----------+-----+
+| Finance   | 123 |
+| HR        |   0 |
+| Marketing |   0 |
+| Project   |  20 |
+| Sales     |  50 |
++-----------+-----+
+----

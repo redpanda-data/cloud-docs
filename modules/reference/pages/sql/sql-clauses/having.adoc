@@ -1,0 +1,244 @@
+= HAVING
+:description: The HAVING clause specifies a search condition using an aggregate function.
+:page-topic-type: reference
+
+The `HAVING` clause specifies a search condition using an xref:reference:sql/sql-functions/aggregate-functions/index.adoc[aggregate function]. It filters the records returned from a `GROUP BY` clause that do not fulfill the specified condition.
+
+== Differences between WHERE and HAVING
+
+[cols="51%,49%",options="header"]
+|===
+|WHERE |HAVING
+|The `GROUP BY` clause appears after the `WHERE` clause. |The `GROUP BY` clause appears before the `HAVING` clause.
+|The `WHERE` clause cannot work with an aggregate function. |The `HAVING` clause can work with an aggregate function.
+|The `WHERE` clause filters individual records. |The `HAVING` clause filters groups of records.
+|===
+
+== Syntax
+
+[source,sql]
+----
+SELECT column_1, column_2,...
+FROM table_name
+GROUP BY column_name(s)
+HAVING condition_aggregate_function
+----
+
+This syntax includes the following elements:
+
+* `SELECT column_1, column_2,...` selects the columns to display.
+* `FROM table_name` selects the table to retrieve data from.
+* `GROUP BY column_name(s)` lists the columns to group.
+* `HAVING condition_aggregate_function` provides the condition for filtering rows formed by the `GROUP BY` clause. The condition can use an aggregate function such as `SUM()`, `COUNT()`, or `MIN()`.
+
+== Examples
+
+Assume there are two tables: `student` and `score`.
+
+Create the `student` table:
+
+[source,sql]
+----
+CREATE TABLE student (
+  stud_id int,
+  stud_name text
+);
+INSERT INTO student
+    (stud_id, stud_name)
+VALUES
+    (992831192, 'Mary'),
+    (992811191, 'Bobby'),
+    (992311195, 'Sean'),
+    (998311193, 'Harry'),
+    (998311194, 'William'),
+    (928311197, 'Kate'),
+    (928311190, 'Tom'),
+    (928311199, 'Sully'),
+    (998311196, 'Susan');
+----
+
+[source,sql]
+----
+SELECT * FROM student;
+----
+
+This returns:
+
+[source,sql]
+----
++------------+------------+
+| stud_id    | stud_name  |
++------------+------------+
+| 992831192  | Mary       |
+| 992811191  | Bobby      |
+| 992311195  | Sean       |
+| 998311193  | Harry      |
+| 998311194  | William    |
+| 928311197  | Kate       |
+| 928311190  | Tom        |
+| 928311199  | Sully      |
+| 998311196  | Susan      |
++------------+------------+
+----
+
+Create the `score` table:
+
+[source,sql]
+----
+CREATE TABLE score (
+  score_id int,
+  subject text,
+  score_val int,
+  stud_id int,
+  score_stat text
+);
+INSERT INTO score
+    (score_id, subject, score_val, stud_id, score_stat)
+VALUES
+    (12221, 'Math', 90, 992811191, 'PASSED'),
+    (12222, 'Biology', 90, 992811191, 'PASSED'),
+    (12223, 'Art', 80, 992831192, 'PASSED'),
+    (12224, 'History', 70, 928311197, 'FAILED'),
+    (12225, 'Physics', 75, 928311190, 'FAILED'),
+    (12226, 'Art', 85, 928311197, 'PASSED'),
+    (12227, 'Biology', 90, 998311196, 'PASSED'),
+    (12228, 'Biology', 70, 928311199, 'FAILED'),
+    (12229, 'Physics', 80, 998311194, 'PASSED'),
+    (12231, 'Math', 80, 998311193, 'PASSED'),
+    (12232, 'History', 90, 992811191, 'PASSED'),
+    (12233, 'Math', 70, 998311194, 'FAILED'),
+    (12234, 'Math', 80, 928311190, 'PASSED');
+----
+
+[source,sql]
+----
+SELECT * FROM score;
+----
+
+This returns:
+
+[source,sql]
+----
++-----------+----------+------------+------------+-------------+
+| score_id  | subject  | score_val  |  stud_id   | score_stat  |
++-----------+----------+------------+------------+-------------+
+| 12221     | Math     | 90         | 992811191  | PASSED      |
+| 12222     | Biology  | 90         | 992811191  | PASSED      |
+| 12223     | Art      | 80         | 992831192  | PASSED      |
+| 12224     | History  | 70         | 928311197  | FAILED      |
+| 12225     | Physics  | 75         | 928311190  | FAILED      |
+| 12226     | Art      | 85         | 928311197  | PASSED      |
+| 12227     | Biology  | 90         | 998311196  | PASSED      |
+| 12228     | Biology  | 70         | 928311199  | FAILED      |
+| 12229     | Physics  | 80         | 998311194  | PASSED      |
+| 12231     | Math     | 80         | 998311193  | PASSED      |
+| 12232     | History  | 90         | 992811191  | PASSED      |
+| 12233     | Math     | 70         | 998311194  | FAILED      |
+| 12234     | Math     | 80         | 928311190  | PASSED      |
++-----------+----------+------------+------------+-------------+
+----
+
+=== HAVING clause with AVG function
+
+The following example uses the `AVG` aggregate function to filter subjects with an average score greater than 80:
+
+[source,sql]
+----
+SELECT subject
+FROM score
+GROUP BY subject
+HAVING AVG (score_val) > 80;
+----
+
+The query returns:
+
+[source,sql]
+----
++-----------+
+| subject   |
++-----------+
+| Art       |
+| Biology   |
++-----------+
+----
+
+=== HAVING clause with COUNT function
+
+The following query lists subjects that have more than two `PASSED` scores:
+
+[source,sql]
+----
+SELECT SUM(CASE WHEN score_stat = 'PASSED' THEN 1 ELSE 0 END) AS passed_count, subject
+FROM score
+GROUP BY subject
+HAVING SUM(CASE WHEN score_stat = 'PASSED' THEN 1 ELSE 0 END) > 2;
+----
+
+The query returns `Math` as the only subject with more than two `PASSED` values:
+
+[source,sql]
+----
++--------------+---------+
+| passed_count | subject |
++--------------+---------+
+| 3            | Math    |
++--------------+---------+
+----
+
+=== HAVING clause with MAX function
+
+Assume the minimum score criterion is 75. The following query finds the maximum score for each subject where the maximum is greater than 75:
+
+[source,sql]
+----
+SELECT subject, MAX(score_val)
+FROM score
+GROUP BY subject
+HAVING MAX(score_val)>75;
+----
+
+The query returns:
+
+[source,sql]
+----
++-----------+--------+
+| subject   | max    |
++-----------+--------+
+| Math      | 90     |
+| History   | 90     |
+| Physics   | 80     |
+| Art       | 85     |
+| Biology   | 90     |
++-----------+--------+
+----
+
+=== HAVING with JOIN condition
+
+To find students who have failed in their subjects, combine the `student` and `score` tables using `JOIN` and apply a condition on the `score_stat` column:
+
+[source,sql]
+----
+SELECT stud_name, subject, score_val, score_stat
+FROM student A
+JOIN score C ON A.stud_id = C.stud_id
+GROUP BY stud_name, subject, score_val, score_stat
+HAVING score_stat = 'FAILED';
+----
+
+* The `JOIN` clause combines the two tables.
+* The `GROUP BY` clause filters records from both tables based on the specified columns.
+* The `HAVING` clause filters the records returned from the `GROUP BY` clause according to the specified condition.
+
+The query returns:
+
+[source,sql]
+----
++------------+------------+------------+--------------+
+| stud_name  | subject    | score_val  | score_stat   |
++------------+------------+------------+--------------+
+| Kate       | History    | 70         | FAILED       |
+| Sully      | Biology    | 70         | FAILED       |
+| Tom        | Physics    | 75         | FAILED       |
+| William    | Math       | 70         | FAILED       |
++------------+------------+------------+--------------+
+----

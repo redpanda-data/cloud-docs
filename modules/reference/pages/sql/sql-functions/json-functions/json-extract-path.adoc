@@ -1,0 +1,79 @@
+= JSON_EXTRACT_PATH
+:description: JSON_EXTRACT_PATH() function extracts JSON nested value from a specified path.
+:page-topic-type: reference
+
+`JSON_EXTRACT_PATH()` function extracts JSON nested value from a specified path.
+
+== Syntax
+
+The syntax of the `JSON_EXTRACT_PATH()` function is:
+
+[source,sql]
+----
+JSON_EXTRACT_PATH(from_json JSON, path TEXT[])
+----
+
+* `from_json`: The JSON value from which to extract.
+* `path`: The path to extract.
+
+=== Another option
+
+Redpanda SQL also provides and supports the use of operators in queries:
+
+[source,sql]
+----
+SELECT 'from_json'::JSON -> 'path';
+----
+
+* `from_json`: The JSON value from which to extract.
+* `::JSON`: A symbol that casts the text literal to a JSON type.
+* `path`: Key of the field to extract.
+
+== Examples
+
+These examples display how `JSON_EXTRACT_PATH()` extracts the "`oxla`" JSON sub-object from the specified path.
+
+. Use the query:
++
+[source,sql]
+----
+SELECT JSON_EXTRACT_PATH('{"f2":{"f3":1},"f4":{"f5":99,"f6":"oxla"}}', 'f4', 'f6');
+----
++
+*or*
++
+[source,sql]
+----
+SELECT '{"f2":{"f3":1},"f4":{"f5":99,"f6":"oxla"}}'::JSON -> 'f4' -> 'f6';
+----
++
+The query results:
++
+[source,sql]
+----
++---------+
+| f       |
++---------+
+| "oxla"  |
++---------+
+----
+
+. Run the query:
++
+[source,sql]
+----
+SELECT
+    JSON_EXTRACT_PATH('{"a": 1, "b": {"x": "subtract", "y": "plus"}}', 'b', 'x') AS "bx",
+    JSON_EXTRACT_PATH('{"a": 1, "b": {"x": "multiply", "y": "divide"}}', 'b', 'y') AS "by";
+----
++
+The query returns:
++
+[source,sql]
+----
++---------------+-------------+
+| bx            | by          |
++---------------+-------------+
+| "subtract"    | "divide"    |
++---------------+-------------+
+----

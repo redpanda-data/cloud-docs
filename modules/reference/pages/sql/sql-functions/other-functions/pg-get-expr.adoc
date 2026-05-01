@@ -1,0 +1,73 @@
+= pg_get_expr()
+:description: The pg_get_expr() function retrieves the internal form of an individual expression, such as the default value for a column.
+:page-topic-type: reference
+
+The link:https://www.postgresql.org/docs/current/functions-info.html#FUNCTIONS-INFO-CATALOG[`pg_get_expr()`^] is a system catalog information function that retrieves the internal form of an individual expression, such as the default value for a column.
+
+== Syntax
+
+The `pg_get_expr()` function has two available syntax versions:
+
+[source,sql]
+----
+SELECT pg_get_expr('expr_text', relation_oid);
+----
+
+[source,sql]
+----
+SELECT pg_get_expr('expr_text', relation_oid, pretty_bool);
+----
+
+Both versions of the `pg_get_expr()` function return an empty string `""`.
+
+== Parameters
+
+* `expr_text`: Expression to obtain the internal representation for (can be any string value).
+* `relation_oid`: OID (object identifier) of the table the expression belongs to (integer type).
+* `pretty_bool`: Boolean value determining whether to format the expression in a more human-readable format (`TRUE`) or not (`FALSE`).
+
+== Examples
+
+First, create a sample table named *employees*:
+
+[source,sql]
+----
+CREATE TABLE employees (
+    id INT,
+    name TEXT,
+    salary TEXT
+);
+----
+
+Then get the OID of the table:
+
+[source,sql]
+----
+SELECT oid FROM pg_class WHERE relname = 'employees';
+----
+
+[source,sql]
+----
+ oid
+------
+ 1018
+----
+
+Retrieve the internal form for the `salary` column using the `pg_get_expr()` function:
+
+[source,sql]
+----
+-- Version 1
+SELECT pg_get_expr('salary', 1018);
+
+-- Version 2
+SELECT pg_get_expr('salary', 1018, TRUE);
+----
+
+Either query returns:
+
+[source,sql]
+----
+ pg_get_expr
+-------------
+----
