@@ -6,6 +6,23 @@
 
 This page lists new features added to Redpanda Cloud.
 
+== May 2026
+
+=== Redpanda Console: redesigned Security page
+
+Redpanda Console has a redesigned Security page with three tabs (*Users*, *Roles*, and *Permissions*). Each user and role has a detail page for managing its permissions.
+
+* The *Users* tab lists each user with their assigned roles and a count of their ACLs. Filter the list by name using regular expressions; for example, `^prod-` matches every user starting with `prod-`.
+* Open a user or role to manage permissions on its detail page. The *ACLs* section shows one row per rule (type, resource, operation, permission, host) and supports three actions:
+** *+ Add ACL* opens a focused form for one rule (resource type, pattern type, resource name, operation, permission, host).
+** *Allow all operations* grants full wildcard access across all resource types in a single step. Use this for testing only; it is too broad for production.
+** Select rows with the checkboxes and click *Delete selected* to remove ACLs in bulk.
+* The *Permissions* tab is a unified, cluster-wide view of every principal with ACLs. Each row shows direct ACL counts and ACLs inherited from roles, with a red badge highlighting any principal that has Deny rules. Expand a row to see all of that principal's ACLs in one table: direct rules first, then sections labeled *VIA ROLE: <role-name>* for each role they inherit from. Search across principals, resources, and roles, or click *Create ACL* to add a rule from scratch.
+
+// TODO DOC-2123: confirm with Jan/Martin whether to call out the per-ACL edit improvement (no permission gap during edits) as a customer-facing benefit.
+
+See xref:security:authorization/acl.adoc[] for the full ACL reference and xref:security:authorization/rbac/rbac_dp.adoc[] for role management.
+
 == April 2026
 
 === Iceberg: Configurable table namespace
