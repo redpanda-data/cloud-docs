@@ -1,0 +1,162 @@
+= Enable Redpanda SQL on a BYOC cluster
+:description: Enable the Redpanda SQL engine on a BYOC cluster so that users can query streaming data with standard PostgreSQL syntax.
+:page-topic-type: how-to
+
+Enable Redpanda SQL on a BYOC cluster to give your team the ability to query streaming data in Redpanda topics using standard PostgreSQL syntax.
+
+== Prerequisites
+
+To enable Redpanda SQL, you need:
+
+* Admin permissions in your Redpanda Cloud organization.
+* For the Cloud API path, a valid bearer token for the link:/api/doc/cloud-controlplane/topic/topic-cloud-api-overview[Cloud API]. See link:/api/doc/cloud-controlplane/authentication[Authenticate to the API].
+
+== Enable Redpanda SQL
+
+You can enable Redpanda SQL when you create a new BYOC cluster or on an existing cluster.
+
+=== On a new cluster
+
+[tabs]
+=====
+Cloud Console::
++
+--
+. Log in to https://cloud.redpanda.com[Redpanda Cloud^].
+. Start creating a new BYOC cluster on AWS. For details and prerequisites, see xref:get-started:cluster-types/byoc/aws/create-byoc-cluster-aws.adoc[].
+. In the cluster creation form, select the option to enable SQL.
+. Complete the remaining cluster configuration and deploy.
+--
+
+Cloud API::
++
+--
+. Authenticate to the link:/api/doc/cloud-controlplane/topic/topic-cloud-api-overview[Cloud API]. For details, see link:/api/doc/cloud-controlplane/authentication[Authenticate to the API].
+. Make a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_createcluster[`POST /v1/clusters`] request with `oxla.enabled` set to `true` in the cluster spec:
++
+[,bash]
+----
+curl -X POST "https://api.redpanda.com/v1/clusters" \
+  -H "Authorization: Bearer $AUTH_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "cluster": {
+      "name": "<cluster-name>",
+      "cloud_provider": "CLOUD_PROVIDER_AWS",
+      "type": "TYPE_BYOC",
+      "region": "<region>",
+      "zones": [ <zones> ],
+      "throughput_tier": "<tier>",
+      "resource_group_id": "<resource-group-id>",
+      "oxla": {
+        "enabled": true
+      }
+    }
+  }'
+----
++
+For the full request body and field reference, see the link:/api/doc/cloud-controlplane/operation/operation-clusterservice_createcluster[Create cluster API].
+. The request returns the ID of a long-running operation. Poll the link:/api/doc/cloud-controlplane/operation/operation-operationservice_getoperation[`GET /v1/operations/{operation.id}`] endpoint until the operation completes.
+--
+=====
+
+=== On an existing cluster
+
+To enable, scale, or disable SQL on an existing cluster, you also need the cluster ID, which you can find in the *Details* section of the cluster overview in the Cloud Console.
+
+. Authenticate to the link:/api/doc/cloud-controlplane/topic/topic-cloud-api-overview[Cloud API]. For details, see link:/api/doc/cloud-controlplane/authentication[Authenticate to the API].
+. Make a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_updatecluster[`PATCH /v1/clusters/{cluster.id}`] request, replacing `{cluster.id}` with your cluster ID:
++
+[,bash]
+----
+curl -X PATCH "https://api.redpanda.com/v1/clusters/{cluster.id}" \
+  -H "Authorization: Bearer $AUTH_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"oxla":{"enabled":true}}'
+----
++
+The request returns the ID of a long-running operation. Poll the link:/api/doc/cloud-controlplane/operation/operation-operationservice_getoperation[`GET /v1/operations/{operation.id}`] endpoint until the operation completes:
++
+[,bash]
+----
+curl -X GET "https://api.redpanda.com/v1/operations/{operation.id}" \
+  -H "Authorization: Bearer $AUTH_TOKEN" \
+  -H "Content-Type: application/json"
+----
++
+When the operation is complete, the response shows `"state": "STATE_COMPLETED"`.
+
+== Scale Redpanda SQL
+
+Redpanda SQL supports horizontal scaling from 1 to 12 nodes per cluster. Scaling to 0 is not supported. To remove Redpanda SQL from a cluster, disable the SQL engine instead.
+
+[tabs]
+=====
+Cloud Console::
++
+--
+. Log in to https://cloud.redpanda.com[Redpanda Cloud^].
+. Go to your BYOC cluster and open the *SQL* tab.
+. Set the node count to a value between 1 and 12, then save.
+--
+
+Cloud API::
++
+--
+Make a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_updatecluster[`PATCH /v1/clusters/{cluster.id}`] request with the new replica count. Replace `{cluster.id}` with your cluster ID and `<n>` with a value between 1 and 12:
+
+[,bash]
+----
+curl -X PATCH "https://api.redpanda.com/v1/clusters/{cluster.id}" \
+  -H "Authorization: Bearer $AUTH_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"oxla":{"replicas":<n>}}'
+----
+
+The request returns the ID of a long-running operation. Poll link:/api/doc/cloud-controlplane/operation/operation-operationservice_getoperation[`GET /v1/operations/{operation.id}`] until the operation completes.
+--
+=====
+
+== Verify the SQL engine is running
+
+After you enable Redpanda SQL, provisioning may take several minutes. To verify the SQL engine is running:
+
+// TODO: Confirm with engineering if there are any other specific status indicators that users can see in the Console when SQL is running. Is the SQL tab only visible when SQL is enabled?
+
+== Disable Redpanda SQL
+
+[WARNING]
+====
+Disabling Redpanda SQL purges the stored catalog state for the SQL engine and deletes its data from object storage. In-flight queries fail when SQL is disabled. To temporarily stop SQL compute without losing state, <<scale-redpanda-sql,scale the node count down>> instead.
+====
+
+[tabs]
+=====
+Cloud Console::
++
+--
+. Log in to https://cloud.redpanda.com[Redpanda Cloud^].
+. Go to your BYOC cluster and open the *SQL* tab.
+. Click *Remove* and confirm.
+--
+
+Cloud API::
++
+--
+Make a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_updatecluster[`PATCH /v1/clusters/{cluster.id}`] request with `oxla.enabled` set to `false`. Replace `{cluster.id}` with your cluster ID:
+
+[,bash]
+----
+curl -X PATCH "https://api.redpanda.com/v1/clusters/{cluster.id}" \
+  -H "Authorization: Bearer $AUTH_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"oxla":{"enabled":false}}'
+----
+
+The request returns the ID of a long-running operation. Poll link:/api/doc/cloud-controlplane/operation/operation-operationservice_getoperation[`GET /v1/operations/{operation.id}`] until the operation completes.
+--
+=====
+
+== Next steps
+
+* xref:sql:get-started/sql-quickstart.adoc[Quickstart]: Connect to Redpanda SQL with `psql` and run your first query.
