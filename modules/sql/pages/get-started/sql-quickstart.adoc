@@ -1,0 +1,167 @@
+= Redpanda SQL quickstart
+:description: Connect to Redpanda SQL on a BYOC cluster and run your first query on streaming data.
+:page-topic-type: guide
+
+Redpanda SQL is a PostgreSQL-compatible SQL engine built into Redpanda BYOC. It lets you query streaming data in your Redpanda topics with standard SQL, without building ETL pipelines or deploying a separate analytics system. In this quickstart, you connect with `psql` and run your first query against a Redpanda topic.
+
+== Prerequisites
+
+* A Redpanda BYOC cluster on AWS with Redpanda SQL enabled. See xref:sql:get-started/deploy-sql-cluster.adoc[].
+* A Redpanda topic with a schema registered in Schema Registry. If you don't have one, follow the optional <<optional-produce-sample-data,Produce sample data>> section below to create a sample `orders` topic.
+* https://www.postgresql.org/download/[`psql`^] (PostgreSQL client) installed on your local machine.
+
+// TODO: Verify the exact connection string format and where users get credentials.
+// From PRD: SCRAM auth preserved, connection string available in Cloud Console and API response.
+// Confirm with engineering what SCRAM credentials does the user use - superuser auto-created by Control Plane?
+
+== Get connection details
+
+After Redpanda SQL is provisioned on your cluster:
+
+. In the Redpanda Cloud Console, go to your cluster and open the *SQL* tab.
+. Copy the connection string.
+
+== Connect to Redpanda SQL
+
+Use `psql` to connect to the SQL engine. Paste the connection string you copied from the Console:
+
+// TODO: Replace with actual connection string format once confirmed with engineering.
+[,bash]
+----
+psql "<connection-string>"
+----
+
+On a successful connection, you should see output similar to:
+
+// TODO: Verify current psql banner text.
+[.no-copy]
+----
+psql (14.x, server 16.0)
+SSL connection (protocol: TLSv1.3)
+Type "help" for help.
+
+=>
+----
+
+[#optional-produce-sample-data]
+== (Optional) Produce sample data
+
+[TIP]
+====
+Skip this section if you already have a Redpanda topic with a schema registered in Schema Registry that you want to query.
+====
+
+If you don't have a schema-registered topic to query yet, follow these steps to create an `orders` topic with a small set of sample records. Redpanda SQL reads the topic's schema from Schema Registry to map fields to SQL columns, so the topic must have a registered schema before you can query it.
+
+This section uses xref:reference:rpk/index.adoc[`rpk`], which you can install by following xref:get-started:rpk-install.adoc[]. You also need a user with permissions to create topics, register schemas, and produce records.
+
+. Create a topic:
++
+[,bash]
+----
+rpk topic create orders
+----
+
+. Save the following Protobuf schema as `order.proto`:
++
+// TODO: Confirm the GA-supported schema format(s) with engineering. If JSON Schema is supported at GA, consider switching this example to JSON for simpler UX.
+[,proto]
+----
+syntax = "proto3";
+
+message Order {
+  int64 order_id = 1;
+  string customer = 2;
+  string product = 3;
+  int64 amount = 4;       // amount in cents
+  string status = 5;      // "pending", "shipped", "completed"
+}
+----
+
+. Register the schema against the topic's value subject:
++
+[,bash]
+----
+rpk registry schema create orders-value --schema order.proto
+----
+
+. Produce a few sample records. The `--schema-id=topic` flag tells `rpk` to use the topic name strategy to look up the schema you just registered:
++
+[,bash]
+----
+rpk topic produce orders --schema-id=topic <<EOF
+{"order_id": 1, "customer": "alice", "product": "keyboard", "amount": 7500,  "status": "completed"}
+{"order_id": 2, "customer": "bob",   "product": "monitor",  "amount": 32000, "status": "shipped"}
+{"order_id": 3, "customer": "carol", "product": "mouse",    "amount": 4500,  "status": "pending"}
+{"order_id": 4, "customer": "alice", "product": "monitor",  "amount": 32000, "status": "completed"}
+{"order_id": 5, "customer": "dave",  "product": "keyboard", "amount": 7500,  "status": "pending"}
+EOF
+----
+
+When you continue to the next section, use `orders` as the topic name in `CREATE KAFKA SOURCE`.
+
+== Query a Redpanda topic
+
+When you enable Redpanda SQL, default connections to your Redpanda cluster and Iceberg catalog are automatically configured. You don't need to set up any connections manually.
+
+To query a Redpanda topic as a SQL table, create a Kafka source that maps the topic to a queryable table. The following example uses the `orders` topic from the previous section. Replace `orders` with the name of your topic if you're using your own data:
+
+[,sql]
+----
+CREATE KAFKA SOURCE orders
+  TOPIC 'orders'
+  CONNECTION default_redpanda_connection;
+----
+
+The SQL engine fetches the topic's schema from Schema Registry automatically.
+
+Redpanda SQL supports Protobuf, Avro, and JSON schemas registered in Schema Registry. The supported data types at GA are primitive scalar types (`INT`, `BIGINT`, `FLOAT`, `BOOLEAN`, `VARCHAR`, `TIMESTAMP`, and others) and `Struct`.
+
+NOTE: Nested JSON objects may be surfaced as `VARCHAR` containing the raw JSON string rather than as a navigable `Struct` column. The behavior depends on the serialization format: Avro and Protobuf schemas define field types explicitly and map to `Struct` where supported. JSON Schema fields typed as `object` may fall back to `VARCHAR`.
+
+== Run queries
+
+After you create the source, query your topic data with standard SQL. The following examples use the `orders` schema from the optional sample data section. If you're using your own topic, substitute the topic name and column names below.
+
+View a sample of records:
+
+[,sql]
+----
+SELECT * FROM orders LIMIT 10;
+----
+
+Count orders by status:
+
+[,sql]
+----
+SELECT status, COUNT(*) AS total_orders
+FROM orders
+GROUP BY status;
+----
+
+Find the largest orders:
+
+[,sql]
+----
+SELECT order_id, customer, product, amount
+FROM orders
+WHERE amount > 10000
+ORDER BY amount DESC
+LIMIT 20;
+----
+
+== Inspect your SQL cluster
+
+Redpanda SQL provides built-in commands to inspect the state of your SQL cluster:
+
+[,sql]
+----
+SHOW NODES;    -- List SQL compute nodes and their status
+SHOW QUERIES;  -- List currently running queries
+----
+
+== Next steps
+
+* xref:reference:sql/index.adoc[Redpanda SQL reference]: Explore the full SQL syntax, data types, functions, and clauses.
+* xref:sql:connect-to-sql/language-clients/psycopg2.adoc[Connect with Python (psycopg2)]: Query Redpanda SQL programmatically.
+* xref:sql:connect-to-sql/language-clients/java-jdbc.adoc[Connect with Java (JDBC)]: Integrate with Java applications.
