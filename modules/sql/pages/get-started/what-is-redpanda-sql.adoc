@@ -1,46 +1,97 @@
 = What is Redpanda SQL
-:description: Redpanda SQL is a column-oriented OLAP query engine built into Redpanda Cloud BYOC that lets you query Kafka topics using standard SQL.
-:page-topic-type: concept
+:description: Redpanda SQL is a column-oriented OLAP query engine in Redpanda Cloud BYOC for querying Kafka topics and Iceberg tables with PostgreSQL syntax.
+:page-topic-type: overview
+:personas: app_developer, data_engineer, evaluator, platform_admin
+:learning-objective-1: Identify the query patterns Redpanda SQL supports in BYOC clusters
+:learning-objective-2: Recognize the primary use cases for Redpanda SQL
+:learning-objective-3: Describe the architectural characteristics of the engine
 
-// TODO (REWRITE): This page needs BYOC framing. Frame Redpanda SQL as a Kafka/streaming query engine
-// (read-only, no DDL/DML), not a standalone database. Remove or reframe self-hosting content.
+Querying real-time streaming data alongside historical lakehouse data typically means building ETL pipelines, copying data between systems, and running multiple analytical engines. Each copy adds cost, latency, and operational overhead.
 
-Redpanda SQL is a column-oriented OLAP query engine integrated into Redpanda Cloud BYOC. It lets you query Kafka topics using standard SQL, without moving data out of Redpanda. Redpanda SQL aims for close compatibility with PostgreSQL, including support for core SQL constructs such as `FROM`, `JOIN`, `GROUP BY`, `ORDER BY`, and window functions.
+Redpanda SQL turns your Kafka topics and Iceberg lakehouse tables into queryable SQL surfaces inside your Redpanda Bring Your Own Cloud (BYOC) cluster. Built as a column-oriented online analytical processing (OLAP) engine, Redpanda SQL runs analytical queries over streaming and historical data using standard PostgreSQL syntax, without moving or duplicating data. It works with any PostgreSQL client, including `psql`, JDBC, DBeaver, and DataGrip, and aims for close compatibility with PostgreSQL.
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
+
+== What you can do with Redpanda SQL
+
+Redpanda SQL exposes data through catalogs, which are named connections that make external data sources queryable as SQL tables. You can work with that data using three primary query patterns.
+
+=== Query Redpanda topics
+
+Each Redpanda topic in your cluster appears as a SQL table inside a Redpanda catalog. Redpanda SQL reads the topic's Protobuf schema from Schema Registry to map fields to SQL columns, and you query the table with `SELECT`:
+
+[,sql]
+----
+CREATE TABLE default_redpanda_connection=>orders WITH (
+  topic = 'orders',
+  schema_subject = 'orders-value'
+);
+
+SELECT customer_id, SUM(amount) AS total
+FROM default_redpanda_connection=>orders
+GROUP BY customer_id
+ORDER BY total DESC
+LIMIT 10;
+----
+
+This lets analysts and developers query streaming data directly without building ETL pipelines or duplicating data into a separate analytics store.
+
+=== Query Iceberg tables
+
+If you maintain an Apache Iceberg lakehouse, Redpanda SQL can read Parquet data and Iceberg metadata directly from cloud storage and discover tables from external Iceberg REST catalogs. Once you've registered an Iceberg catalog, its tables are queryable through the same SQL surface as Redpanda topics.
+
+=== Bridge queries: combine Kafka topics and Iceberg tables
+
+// "Bridge query" is a tentative internal name; final naming TBC for v1 publication.
+
+When you configure a Redpanda topic for Iceberg translation, you can run a single SQL query that returns a non-overlapping continuum of data across both: live records that haven't been translated yet, plus historical records already in Iceberg. Redpanda SQL handles the planning automatically: there's no `UNION ALL` or pipeline glue to write, and rows aren't duplicated at the boundary between live and historical data.
+
+You can also `JOIN` a Redpanda topic with an unrelated Iceberg table to enrich live events with historical context in one query.
+
+== Primary use cases
+
+* *Real-time analytics on Kafka streams*: Query Redpanda topics directly with SQL. No ETL pipelines required. Useful for analyst-driven investigations in the streaming layer, debugging streaming applications, and prototyping consumers.
+* *Hybrid streaming and historical analytics*: Query Kafka topics alongside Iceberg tables, and join live events with historical data in a single query.
+* *Application-embedded operational analytics*: High-concurrency OLAP queries for dashboards and operational tools, accessible from any PostgreSQL client over the standard wire protocol.
 
 == Read-only query engine
 
-Redpanda SQL operates as a read-only query engine. Regular DDL operations such as `CREATE TABLE`, `INSERT`, `UPDATE`, and `DELETE` are disabled. Instead, data is ingested into Redpanda topics and made available for SQL queries through catalogs -- named connections that map Redpanda topics to SQL tables. This architecture allows analytical queries over streaming data without duplicating or moving it.
+Redpanda SQL operates as a read-only query engine. It doesn't accept standard SQL data manipulation, such as `INSERT`, `UPDATE`, `DELETE`, or most `CREATE TABLE` operations for materializing new data. Upstream systems write data into Redpanda topics and Iceberg tables, and you expose that data to Redpanda SQL by registering catalogs. This architecture lets you run analytical queries over streaming and lakehouse data without duplicating or moving it.
 
-== Key characteristics
+== Architecture characteristics
+
+Redpanda SQL is built from the ground up in C++ for analytical workloads, with a focus on resource efficiency. The following sections describe the core architectural decisions that shape its performance and scalability.
 
 === Vectorized query execution
 
-Redpanda SQL uses a massively parallel processing (MPP) architecture at the core of its compute engine for high-performance processing. While MPP has been the standard in analytics systems for over a decade, Redpanda SQL takes a modern approach: it's a system built from the ground up, without relying on third-party components. This clean-slate design applies recent advancements in computer science to a fresh codebase, with a focus on <<optimized-data-transfer-between-cpu-and-ram,low-level optimizations that improve resource efficiency>>, both in the query engine and across the system.
+Redpanda SQL uses a massively parallel processing (MPP) architecture at the core of its compute engine for high-performance processing. While MPP has been the standard in analytics systems for over a decade, Redpanda SQL takes a modern approach: a clean-slate system built from the ground up in C++, without JVM overhead or third-party engine components. This applies recent advancements in computer science to a fresh codebase, with a focus on <<optimized-data-transfer-between-cpu-and-ram,low-level optimizations that improve resource efficiency>> in the query engine and across the system.
 
 === Columnar storage optimization
 
-Transactional (OLTP) databases like PostgreSQL or Microsoft SQL Server use a row-oriented design, optimized for high-frequency writes. Columnar storage, by contrast, is designed for analytical workloads, allowing for faster scans and more efficient aggregations.
+Transactional (OLTP) databases like PostgreSQL or Microsoft SQL Server use a row-oriented design, optimized for high-frequency writes. Columnar storage, by contrast, targets analytical workloads, allowing for faster scans and more efficient aggregations.
 
 === Decoupled storage and compute
 
-Redpanda SQL benefits from a decoupled storage and compute architecture. This means compute resources can be scaled independently of storage, allowing for more efficient resource allocation, easier deployment, and better cost control.
+Redpanda SQL uses a decoupled storage and compute architecture. Compute resources can be scaled independently of storage, allowing for more efficient resource allocation, easier deployment, and better cost control.
 
 === Distributed, multi-node architecture
 
-Redpanda SQL is distributed, meaning it can run across multiple CPUs (nodes) in parallel for horizontal scaling. Adaptive query pipelines efficiently handle all types of operations across nodes.
+Redpanda SQL is distributed, running across multiple nodes in parallel for horizontal scaling. Adaptive query pipelines handle different operations efficiently across nodes, and execution strategies are selected at runtime based on workload characteristics for optimal performance in both single-node and multi-node setups.
 
-Execution strategies are selected at runtime based on workload characteristics, ensuring optimal performance in both single-node and multi-node setups.
+=== PostgreSQL wire protocol and SQL dialect
 
-=== SQL support
-
-Like many modern OLAP systems, Redpanda SQL uses its own declarative query language under the hood, but provides xref:reference:sql/index.adoc[SQL support] to users. It aims for close compatibility with PostgreSQL, including support for core SQL constructs such as `FROM`, `JOIN`, `GROUP BY`, `ORDER BY`, and window functions.
+Redpanda SQL uses its own declarative query language under the hood but exposes a xref:reference:sql/index.adoc[PostgreSQL-compatible SQL surface] to users, including the PostgreSQL wire protocol. This means you can connect with `psql`, JDBC, ODBC, or any other PostgreSQL client and write SQL using familiar syntax.
 
 [[optimized-data-transfer-between-cpu-and-ram]]
 === Optimized data transfer between CPU and RAM
 
-Over the past decade, CPUs have scaled from 4–8 cores to over 100, but memory bandwidth hasn't kept pace. This hardware limitation creates a critical bottleneck for analytical compute engines.
+Over the past decade, CPUs have scaled from 4–8 cores per node to over 100, but memory bandwidth hasn't kept pace. This hardware imbalance creates a critical bottleneck for analytical compute engines.
 
-Redpanda SQL introduces a set of low-level memory access and caching optimizations to address this issue and achieve high resource efficiency:
+Redpanda SQL introduces a set of low-level memory access and caching optimizations to address this and achieve high resource efficiency:
 
 * User-space storage caches minimize overhead from kernel-level memory operations.
 * A custom data format enhances data locality.
@@ -49,14 +100,22 @@ Redpanda SQL introduces a set of low-level memory access and caching optimizatio
 
 == Why use Redpanda SQL
 
+Redpanda SQL targets two main outcomes: efficient scaling, and a single system for diverse analytical workloads.
+
 === Scalability through resource efficiency
 
-A common reason to move to a fully-managed cloud data warehouse is the promise of "infinite scalability," made possible by on-demand infrastructure in the cloud.
+A common reason to move to a fully-managed cloud data warehouse is the promise of effectively unlimited scalability, made possible by on-demand infrastructure in the cloud.
 
-Redpanda SQL is designed to scale through smarter, more efficient use of hardware, not by throwing more resources at the problem. This principle is baked into how it is designed and built.
-
-By maximizing resource efficiency, Redpanda SQL handles growing datasets while reducing total cost of ownership, helping you squeeze more out of your existing infrastructure.
+Redpanda SQL scales through smarter, more efficient use of hardware, rather than by throwing more resources at the problem. This principle shapes the engine's design throughout. By maximizing resource efficiency, Redpanda SQL handles growing datasets while reducing total cost of ownership.
 
 === Unified support for batch, low-latency, time-series, and multi-dimensional analytics
 
-Redpanda SQL supports a wide range of analytical workloads in a single system. You can power real-time business intelligence (BI) dashboards, process log data, run time-series analytics, and perform exploratory queries over large datasets without switching tools or maintaining separate systems.
+Redpanda SQL handles a wide range of analytical workloads in a single system. You can power real-time business intelligence (BI) dashboards, process log data, run time-series analytics, and perform exploratory queries over large datasets without switching tools or maintaining separate systems.
+
+== Next steps
+
+* xref:sql:get-started/sql-quickstart.adoc[Quickstart]: enable Redpanda SQL on a BYOC cluster and run your first query.
+* xref:sql:connect-to-sql/index.adoc[Connect to Redpanda SQL]: connect from psql, JDBC, PHP PDO, or .NET Dapper.
+* xref:reference:sql/index.adoc[Redpanda SQL Reference]: supported SQL statements, clauses, data types, functions, and operators.
+* xref:sql:get-started/oltp-vs-olap.adoc[OLTP vs OLAP]: understand why Redpanda SQL uses an analytical (OLAP) model.
+* xref:sql:get-started/redpanda-sql-vs-postgresql.adoc[Redpanda SQL vs PostgreSQL]: supported functions, operators, and behavioral differences.
