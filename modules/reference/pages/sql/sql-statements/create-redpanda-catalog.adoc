@@ -9,11 +9,13 @@ The `CREATE REDPANDA CATALOG` statement creates a named connection to a Redpanda
 [source,sql]
 ----
 CREATE REDPANDA CATALOG [IF NOT EXISTS] catalog_name
-WITH (option = 'value' [, ...]);
+  [USING CATALOG [schema.]iceberg_catalog_name]
+  WITH (option = 'value' [, ...]);
 ----
 
 * `catalog_name`: Name for the new catalog connection.
 * `IF NOT EXISTS`: Optional. Prevents an error if a catalog with the same name already exists.
+* `USING CATALOG iceberg_catalog_name`: Optional. Links the Redpanda catalog to an existing Iceberg catalog so that queries against tables in this catalog can return data from both the Redpanda topic and its corresponding Iceberg table in a single result. The Iceberg catalog must already exist. You can qualify the Iceberg catalog name with a schema prefix.
 
 == Options
 
@@ -60,6 +62,11 @@ WITH (option = 'value' [, ...]);
 |STRING
 |No
 |Schema Registry authentication password.
+
+|`pandaproxy_url`
+|STRING
+|Conditional
+|Base URL of the Redpanda HTTP Proxy REST API. Required when the catalog includes a `USING CATALOG` clause; Redpanda SQL uses this endpoint to fetch Iceberg translation state for queries that span the topic and its Iceberg table.
 |===
 
 == Examples
@@ -90,4 +97,19 @@ WITH (
   schema_registry_username = 'sr_user',
   schema_registry_password = 'sr_pass'
 );
+----
+
+=== Create a catalog linked to an Iceberg catalog
+
+Use the `USING CATALOG` clause to link a Redpanda catalog to an existing Iceberg catalog. Queries against tables in the linked Redpanda catalog can then return a non-overlapping continuum of data from the Redpanda topic and its corresponding Iceberg table in a single result.
+
+[source,sql]
+----
+CREATE REDPANDA CATALOG my_linked_catalog
+  USING CATALOG my_iceberg_catalog
+  WITH (
+    initial_brokers = 'broker1:9092',
+    schema_registry_url = 'http://schema-registry:8081',
+    pandaproxy_url = 'http://redpanda:8082'
+  );
 ----
