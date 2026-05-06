@@ -215,6 +215,8 @@ For each supported sensitive field, the provider exposes two new attributes alon
 * `<field>_wo`: A write-only attribute. Terraform sends the value to the provider during `apply` but never persists it to state.
 * `<field>_wo_version`: An integer version. Because Terraform cannot detect changes in a write-only value (there is nothing to compare against in state), you increment this number to signal that the value has changed and to trigger an update on the next apply.
 
+NOTE: `redpanda_pipeline` is an exception to this naming convention. The existing `client_secret` attribute is the write-only attribute (no separate `client_secret_wo` field), and is paired with `secret_version` instead of `client_secret_wo_version`.
+
 The provider retains the original plaintext attributes for backward compatibility. You can migrate to the write-only variants on your own schedule.
 
 === Supported attributes
