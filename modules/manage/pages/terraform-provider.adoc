@@ -217,7 +217,7 @@ For each supported sensitive field, the provider exposes two new attributes alon
 
 NOTE: `redpanda_pipeline` is an exception to this naming convention. The existing `client_secret` attribute is the write-only attribute (no separate `client_secret_wo` field), and is paired with `secret_version` instead of `client_secret_wo_version`.
 
-The provider retains the original plaintext attributes for backward compatibility. You can migrate to the write-only variants on your own schedule.
+The provider retains the original plaintext attributes for backward compatibility. You can migrate to the write-only variants on your own schedule. Avoid setting both the plaintext attribute and its write-only counterpart on the same resource. If both are set, the provider uses the write-only value.
 
 === Supported attributes
 
