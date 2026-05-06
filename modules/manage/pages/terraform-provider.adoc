@@ -201,14 +201,11 @@ provider "redpanda" {
 
 == Manage sensitive attributes with write-only fields
 
-You can use https://developer.hashicorp.com/terraform/plugin/framework/resources/write-only-arguments[Terraform 1.11+ write-only attributes^] to keep sensitive values out of your Terraform state file. By default, Terraform persists sensitive attributes such as passwords to `.tfstate` after running `terraform apply` or `terraform plan`. This can leak credentials when state is stored in a remote backend or in CI runner artifacts.
+You can use https://developer.hashicorp.com/terraform/plugin/framework/resources/write-only-arguments[Terraform 1.11+ write-only attributes^] to keep sensitive values out of your Terraform state file. By default, Terraform persists sensitive attributes such as passwords to `.tfstate` when you run `terraform apply`. When you store state in a remote backend or in CI runner artifacts, this can leak credentials.
 
 [IMPORTANT]
 ====
-Write-only attributes require:
-
-* Terraform CLI 1.11 or later
-* Redpanda Terraform provider v1.6.0 or later
+Write-only attributes require Terraform CLI 1.11 or later and Redpanda Terraform provider v1.6.0 or later.
 ====
 
 === How write-only attributes work
@@ -218,7 +215,7 @@ For each supported sensitive field, the provider exposes two new attributes alon
 * `<field>_wo`: A write-only attribute. Terraform sends the value to the provider during `apply` but never persists it to state.
 * `<field>_wo_version`: An integer version. Because Terraform cannot detect changes in a write-only value (there is nothing to compare against in state), you increment this number to signal that the value has changed and to trigger an update on the next apply.
 
-The original plaintext attributes (such as `password`) are deprecated but retained for backwards compatibility. You can migrate to the write-only variants on your own schedule.
+The provider retains the original plaintext attributes for backward compatibility. You can migrate to the write-only variants on your own schedule.
 
 === Supported attributes
 
