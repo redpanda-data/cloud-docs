@@ -1,11 +1,13 @@
-= Query Redpanda topics
-:description: Map a Redpanda topic to a SQL table and run analytical queries directly against streaming data.
+= Query streaming topics
+:description: Map a Redpanda topic to a SQL table and run analytical queries directly against live streaming data.
 :page-topic-type: how-to
 :personas: app_developer, data_engineer
-:learning-objective-1: Map a Redpanda topic to a SQL table using a Redpanda catalog
-:learning-objective-2: Run analytical SQL queries against Redpanda topic data
+:learning-objective-1: Map a streaming Redpanda topic to a SQL table using the default Redpanda catalog
+:learning-objective-2: Run analytical SQL queries against live topic data
 
-Map a Redpanda topic to a SQL table to run analytical queries directly against streaming data without building ETL pipelines. Redpanda SQL reads each record's fields from the topic's Protobuf schema in Schema Registry.
+Map a Redpanda topic to a SQL table to run analytical queries directly against live streaming data without building ETL pipelines. Redpanda SQL reads each record's fields from the topic's Protobuf schema in Schema Registry.
+
+To query the Iceberg-translated history of a Redpanda topic, see xref:sql:query-data/query-iceberg-topics.adoc[].
 
 After completing these steps, you will be able to:
 
@@ -16,7 +18,7 @@ After completing these steps, you will be able to:
 
 Before you query a topic with SQL:
 
-* Enable the Redpanda SQL engine on your Redpanda Cloud Bring Your Own Cloud (BYOC) cluster. See xref:sql:get-started/sql-quickstart.adoc[Quickstart].
+* Enable the Redpanda SQL engine on your Redpanda Cloud Bring Your Own Cloud (BYOC) cluster. See xref:sql:get-started/deploy-sql-cluster.adoc[Enable Redpanda SQL].
 * Connect to Redpanda SQL with `psql` or another PostgreSQL client. See xref:sql:connect-to-sql/index.adoc[Connect to Redpanda SQL].
 * Confirm that the Redpanda topic you want to query has a Protobuf schema registered in Schema Registry.
 
@@ -61,6 +63,6 @@ LIMIT 10;
 
 == Next steps
 
+* xref:sql:query-data/query-iceberg-topics.adoc[Query Iceberg topics]: query the Iceberg-translated history of an Iceberg-enabled Redpanda topic, and run a single query that spans live and historical records.
 * xref:reference:sql/sql-statements/create-table.adoc[CREATE TABLE]: full reference for the table-against-topic syntax, including all options.
-* xref:reference:sql/sql-statements/create-redpanda-catalog.adoc[CREATE REDPANDA CATALOG]: define additional Redpanda catalogs with custom connection settings.
 * xref:reference:sql/index.adoc[Redpanda SQL Reference]: supported SQL statements, clauses, data types, and functions.
