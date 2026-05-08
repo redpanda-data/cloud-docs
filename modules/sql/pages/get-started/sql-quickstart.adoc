@@ -4,9 +4,12 @@
 
 Redpanda SQL is a PostgreSQL-compatible SQL engine built into Redpanda BYOC. It lets you query streaming data in your Redpanda topics with standard SQL, without building ETL pipelines or deploying a separate analytics system. In this quickstart, you connect with `psql` and run your first query against a Redpanda topic.
 
+This quickstart is written for an admin who can view the SQL connection details in the Cloud Console.
+
 == Prerequisites
 
 * A Redpanda BYOC cluster on AWS with Redpanda SQL enabled. See xref:sql:get-started/deploy-sql-cluster.adoc[].
+* Admin access to the cluster in the Redpanda Cloud Console (required to view SQL connection details).
 * A Redpanda topic with a schema registered in Schema Registry. If you don't have one, follow the optional <<optional-produce-sample-data,Produce sample data>> section below to create a sample `orders` topic.
 * https://www.postgresql.org/download/[`psql`^] (PostgreSQL client) installed on your local machine.
 
@@ -145,6 +148,31 @@ WHERE amount > 10000
 ORDER BY amount DESC
 LIMIT 20;
 ----
+
+== (Optional) Grant access to a non-admin user
+
+Redpanda SQL is deny-all by default. All queries to Redpanda SQL run under a single super-user SASL credential associated with `default_redpanda_connection`, but the engine enforces per-user table access through Redpanda SQL `GRANT` statements. To let a non-admin user query a table, the admin creates a role and grants access:
+
+// TODO: Confirm the exact GRANT mechanism with engineering. Open question:
+// does the SQL `GRANT` statement alone enforce per-user table access, or is
+// an additional ACL / Kafka-side step required? See qa-questions.md #21.
+// Update the example below once confirmed.
+
+. Create a role for the user:
++
+[,sql]
+----
+CREATE ROLE analyst LOGIN PASSWORD '<password>';
+----
+
+. Grant `SELECT` on the table to the role:
++
+[,sql]
+----
+GRANT SELECT ON TABLE default_redpanda_connection=>orders TO analyst;
+----
+
+The non-admin user can now connect to Redpanda SQL with their credentials and run `SELECT` against the `orders` table.
 
 == Next steps
 
