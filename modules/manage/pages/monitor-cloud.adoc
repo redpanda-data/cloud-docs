@@ -14,15 +14,16 @@ Redpanda Cloud exports Redpanda metrics for all brokers and connectors from a si
 - Operating system-level and node-level metrics (such as CPU, memory, disk, and network usage) are not available through this endpoint. For infrastructure monitoring, use your cloud provider's native monitoring tools (such as Azure Monitor, AWS CloudWatch, or Google Cloud Monitoring).
 ====
 
+[#configure-redpanda-monitoring]
 == Configure Redpanda monitoring
 
 To monitor a Redpanda Cloud cluster:
 
-. On the Redpanda Cloud *Overview* page for your cluster, under *How to connect*, click the *Prometheus* tab. 
+. On the Redpanda Cloud *Overview* page for your cluster, under *How to connect*, click the *Prometheus* tab.
 
-. Click the copy icon for *Prometheus YAML* to copy the contents to your clipboard. 
+. Click the copy icon for *Prometheus YAML* to copy the contents to your clipboard.
 +
-The YAML contains the Prometheus scrape target configuration, as well as authentication, for the cluster.
+The YAML is a Prometheus scrape configuration. Use it with Prometheus, or with any Prometheus-compatible scraper such as Grafana Alloy, Grafana Agent, Grafana Mimir, Thanos, or VictoriaMetrics.
 +
 image::shared:cloud_metrics.png[How to connect screenshot]
 +
@@ -70,6 +71,32 @@ instances:
 
 NOTE: Because the OpenMetrics endpoint in Redpanda Cloud aggregates Redpanda metrics for all cluster services, only a single Datadog agent is required. The agent must run in a container in your own container infrastructure. Redpanda does not support launching this container inside a Dedicated or BYOC Kubernetes cluster. For more information, see the https://docs.datadoghq.com/integrations/redpanda/?tab=host[Datadog documentation^] and https://github.com/DataDog/integrations-extras/tree/master/redpanda[Redpanda Datadog integration^].
 
+[#connect-grafana]
+== Connect Grafana
+
+The Redpanda Cloud metrics endpoint (`/api/cloud/prometheus/public_metrics`) is a Prometheus exposition (scrape) endpoint, not a Prometheus query API. You cannot point a Grafana Prometheus data source at it directly. Grafana issues PromQL queries to paths such as `/api/v1/query`, which the endpoint does not serve, so the requests fail with `401 Unauthorized`.
+
+To use Grafana with Redpanda Cloud metrics, run a Prometheus-compatible scraper between Redpanda Cloud and Grafana:
+
+. Configure a scraper to pull metrics from Redpanda Cloud, using the Basic Auth scrape configuration from <<configure-redpanda-monitoring>>. Compatible scrapers include:
++
+* Prometheus
+* Grafana Alloy or Grafana Agent
+* Grafana Mimir, Thanos, or VictoriaMetrics
+
+. In Grafana, add a Prometheus data source pointing at your scraper, not at the Redpanda Cloud endpoint.
+
+. Import a sample dashboard into Grafana. Use xref:reference:rpk/rpk-generate/rpk-generate-grafana-dashboard.adoc[`rpk generate grafana-dashboard`] to generate a dashboard from the https://github.com/redpanda-data/observability/tree/main/cloud[redpanda-data/observability^] repository, or browse the https://github.com/redpanda-data/observability#grafana-dashboards[example Grafana dashboards^] directly.
++
+For example, to generate the sample Serverless dashboard, run:
++
+[,bash]
+----
+rpk generate grafana-dashboard --dashboard serverless
+----
+
+For an end-to-end example with Prometheus and Grafana running in Docker, see the https://github.com/redpanda-data/observability#sandbox-environment[sandbox environment^] in the same repository.
+
 == Use Redpanda monitoring examples
 
 For hands-on learning, Redpanda provides a repository with examples of monitoring Redpanda with Prometheus and Grafana: https://github.com/redpanda-data/observability/tree/main/cloud[redpanda-data/observability^].
@@ -77,18 +104,6 @@ For hands-on learning, Redpanda provides a repository with examples of monitorin
 image::https://github.com/redpanda-data/observability/blob/main/docs/images/Ops%20Dashboard.png?raw=true[Example Redpanda Ops Dashboard^]
 
 It includes https://github.com/redpanda-data/observability#grafana-dashboards[example Grafana dashboards^] and a https://github.com/redpanda-data/observability#sandbox-environment[sandbox environment^] in which you launch a Dockerized Redpanda cluster and create a custom workload to monitor with dashboards.
-
-[TIP]
-====
-Use xref:reference:rpk/rpk-generate/rpk-generate-grafana-dashboard.adoc[`rpk generate grafana-dashboard`] to generate a sample dashboard from the examples repository that you can import into a Grafana instance.
-
-For example, to generate the sample Serverless dashboard, run:
-
-[,bash]
-----
-rpk generate grafana-dashboard --dashboard serverless
-----
-====
 
 == Monitor health and performance
 
