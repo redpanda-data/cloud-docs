@@ -1,0 +1,75 @@
+= Manage access to Redpanda SQL
+:description: Authentication and authorization model for Redpanda SQL — OIDC for authentication, deny-all by default, admin-issued GRANT for per-user table access.
+:page-topic-type: concept
+:personas: platform_admin
+
+Redpanda SQL separates authentication and authorization:
+
+* *Authentication* into Redpanda SQL is handled by your OIDC identity provider, configured at the cluster level.
+* *Authorization* — the data a user can read after they authenticate — is enforced inside Redpanda SQL by table-level `GRANT` statements that an admin issues. Redpanda SQL is deny-all by default.
+
+This page describes the admin-side model. For the client-side connection guide, see xref:sql:connect-to-sql/connect-with-oidc.adoc[].
+
+== Authentication
+
+OIDC authenticates the user to Redpanda SQL. Configuring OIDC is not specific to Redpanda SQL — it is a cluster-level configuration. See xref:security:authorization/gbac/gbac_dp.adoc[Configure GBAC in the Data Plane] for the setup steps.
+
+When a user successfully authenticates with an OIDC bearer token, Redpanda SQL provisions the user automatically on first sign-in.
+
+[CAUTION]
+====
+// TODO: Tighten this caution wording with engineering before publishing
+// (qa-questions.md #17). The underlying issue is OXLA-9382 — concurrent
+// CREATE ROLE under OIDC auto-provisioning corrupts the privilege cache.
+
+Concurrent first-time sign-ins from a connection pool can trigger duplicate role creation under OIDC auto-provisioning, which can corrupt the privilege cache. To avoid this, stagger first-time sign-ins for new OIDC users, or have an admin pre-create the role before the user signs in. Track https://redpandadata.atlassian.net/browse/OXLA-9382[OXLA-9382^] for fix status.
+====
+
+// TODO: Confirm validated IdP coverage with engineering (qa-questions.md #16).
+// Add an "IdPs validated for Redpanda SQL" section listing the providers
+// engineering has explicitly tested (Keycloak is confirmed; Okta, Microsoft
+// Entra ID, Auth0, and Google have not yet been confirmed for SQL).
+
+== How queries reach the underlying topics
+
+All Redpanda SQL queries — regardless of which user issued them — connect to the underlying Redpanda cluster as a single super-user SASL credential associated with the default Redpanda catalog (`default_redpanda_connection`). The super-user credential is provisioned automatically when Redpanda SQL is enabled.
+
+This means:
+
+* Kafka ACLs do not gate query-time access — every query reaches the topics under the super-user SASL credential.
+* The boundary that prevents users from reading data they should not see is enforced inside Redpanda SQL, by `GRANT` and `REVOKE` on the SQL tables themselves.
+
+== Authorization
+
+// TODO: Confirm the GRANT mechanism with engineering (qa-questions.md #21).
+// Specifically: does the SQL `GRANT` statement alone enforce per-user table
+// access, or is an additional ACL / Kafka-side step required? Document the
+// exact scope and granularity (table only, schema-wide, etc.) once confirmed.
+
+Redpanda SQL is deny-all by default. After a user authenticates, they cannot read any table until the admin explicitly grants access. To allow a user to query a table:
+
+. Create a role for the user.
++
+[source,sql]
+----
+CREATE ROLE analyst LOGIN PASSWORD '<password>';
+----
+
+. Grant the role `SELECT` on the table.
++
+[source,sql]
+----
+GRANT SELECT ON TABLE default_redpanda_connection=>orders TO analyst;
+----
+
+. To remove access, revoke the privilege.
++
+[source,sql]
+----
+REVOKE SELECT ON TABLE default_redpanda_connection=>orders FROM analyst;
+----
+
+== Next steps
+
+* xref:sql:connect-to-sql/connect-with-oidc.adoc[Connect with OIDC]: how a user obtains a bearer token and connects to Redpanda SQL.
+* xref:security:authorization/gbac/gbac_dp.adoc[Configure GBAC in the Data Plane]: cluster-level OIDC and GBAC setup.
