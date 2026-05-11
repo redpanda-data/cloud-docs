@@ -1,12 +1,20 @@
 = OLTP vs OLAP
-:description: Understand the difference between OLTP (transactional) and OLAP (analytical) processing, and why Redpanda SQL uses an OLAP model for querying Kafka data.
+:description: Understand the difference between OLTP (transactional) and OLAP (analytical) processing, and why Redpanda SQL uses an OLAP model for querying streaming data.
 :page-topic-type: concept
+:personas: app_developer, data_engineer, evaluator
+:learning-objective-1: Distinguish OLTP from OLAP processing patterns
+:learning-objective-2: Explain why Redpanda SQL uses an OLAP model
 
-Redpanda SQL uses an OLAP (Online Analytical Processing) model — optimized for analytical queries over large datasets — rather than the OLTP (Online Transaction Processing) model used by traditional relational databases. This makes OLAP suitable for querying Redpanda topics at scale. This page explains the differences between OLTP and OLAP and how they apply to querying data with Redpanda SQL.
+Redpanda SQL uses an OLAP (Online Analytical Processing) model, optimized for analytical queries over large datasets, rather than the OLTP (Online Transaction Processing) model used by traditional relational databases. This makes OLAP suitable for querying Redpanda glossterm:topic[,topics] at scale. This page explains the differences between OLTP and OLAP and how they apply to querying data with Redpanda SQL.
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
 
 == What is OLTP?
 
-Online Transaction Processing (OLTP) supports transaction-oriented applications under a 3-tier architecture (such as a https://en.wikipedia.org/wiki/Third_normal_form[3NF^] approach). OLTP usually administers day-to-day transactions through a relational database.
+Online Transaction Processing (OLTP) supports transaction-oriented applications under a 3-tier architecture (such as a https://en.wikipedia.org/wiki/Third_normal_form[3NF^] approach). OLTP administers day-to-day transactions through a relational database.
 
 Some daily use cases for transactional processing include:
 
@@ -17,7 +25,7 @@ Some daily use cases for transactional processing include:
 
 == What is OLAP?
 
-OLAP stands for Online Analytical Processing and provides data analysis for business decisions. With OLAP, you can get information on multiple databases and data types with the ability to analyze them at the same time, even with complex queries.
+OLAP stands for Online Analytical Processing and provides data analysis for business decisions. With OLAP, you can query information across multiple databases and data types simultaneously, including complex queries.
 
 Some examples of OLAP in business analytics include:
 

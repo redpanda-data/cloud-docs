@@ -1,10 +1,18 @@
 = Redpanda Catalogs
 :description: A Redpanda catalog is a named collection of source data that exposes Redpanda topics as queryable SQL tables.
 :page-topic-type: concept
+:personas: app_developer, data_engineer, platform_admin
+:learning-objective-1: Explain the components of the Redpanda catalog model
+:learning-objective-2: Recognize when the default Redpanda catalog is auto-created
 
-A Redpanda catalog is a named collection of source data — typically the data in your Redpanda cluster — that Redpanda SQL exposes as queryable SQL tables.
+A Redpanda catalog is a named collection of source data, typically the data in your Redpanda glossterm:cluster[], that Redpanda SQL exposes as queryable SQL tables.
 
-When Redpanda SQL is enabled on your cluster, a default Redpanda catalog named `default_redpanda_catalog` is created automatically. Use this catalog to map your Redpanda topics as SQL tables and query them.
+When Redpanda SQL is enabled on your cluster, a default Redpanda catalog named `default_redpanda_catalog` is created automatically. Use this catalog to map your Redpanda glossterm:topic[,topics] as SQL tables and query them.
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
 
 NOTE: Redpanda SQL operates in read-only mode. Data mutation operations such as `INSERT`, `UPDATE`, and `DELETE` are not available. Data is ingested into Redpanda topics and made queryable through catalog mappings.
 
@@ -15,7 +23,7 @@ NOTE: Redpanda SQL operates in read-only mode. Data mutation operations such as 
 The Redpanda catalog model has three components, in hierarchy order:
 
 * *Storage connection*: A named connection to object storage that backs the catalog. The default Redpanda catalog's storage connection is automatically defined using your cluster's object storage.
-* *Catalog*: A named collection of source data — typically your Redpanda cluster.
+* *Catalog*: A named collection of source data, typically your Redpanda cluster.
 * *Tables*: Redpanda topics mapped as queryable SQL tables using the `catalog_name=>table_name` syntax.
 
 == Example
