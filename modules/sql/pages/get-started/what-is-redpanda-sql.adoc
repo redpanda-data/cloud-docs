@@ -16,6 +16,26 @@ After reading this page, you will be able to:
 * [ ] {learning-objective-2}
 * [ ] {learning-objective-3}
 
+== Why use Redpanda SQL
+
+Redpanda SQL targets two main outcomes: a single system for diverse analytical workloads, and efficient scaling.
+
+=== Unified support for batch, low-latency, time-series, and multi-dimensional analytics
+
+Redpanda SQL handles a wide range of analytical workloads in a single system. You can power real-time business intelligence (BI) dashboards, process log data, run time-series analytics, and perform exploratory queries over large datasets without switching tools or maintaining separate systems.
+
+=== Scalability through resource efficiency
+
+A common reason to move to a fully-managed cloud data warehouse is the promise of effectively unlimited scalability, made possible by on-demand infrastructure in the cloud.
+
+Redpanda SQL scales through smarter, more efficient use of hardware, rather than by throwing more resources at the problem. This principle shapes the engine's design throughout. By maximizing resource efficiency, Redpanda SQL handles growing datasets while reducing total cost of ownership.
+
+== Primary use cases
+
+* *Real-time analytics on Kafka streams*: Query Redpanda topics directly with SQL. No ETL pipelines required. Useful for analyst-driven investigations in the streaming layer, debugging streaming applications, and prototyping consumers.
+* *Hybrid streaming and historical analytics*: Query Iceberg-enabled topics in a single SQL query that spans live records and historical Iceberg-committed records.
+* *Application-embedded operational analytics*: High-concurrency OLAP queries for dashboards and operational tools, accessible from any PostgreSQL client over the standard wire protocol.
+
 == What you can do with Redpanda SQL
 
 Redpanda SQL exposes data through catalogs, which are named connections that make external data sources queryable as SQL tables. You can work with that data using two primary query patterns.
@@ -46,12 +66,6 @@ When a Redpanda topic is configured for Iceberg translation, Redpanda SQL querie
 
 // "Bridge query" is a tentative internal name; final naming TBC for v1 publication.
 On Iceberg-enabled topics, you can also run a single SQL query that returns a non-overlapping continuum of data across both: live records that haven't been translated to Iceberg yet, plus historical records already in Iceberg. Redpanda SQL handles the planning automatically — no `UNION ALL` or pipeline glue to write, and rows aren't duplicated at the boundary between live and historical data.
-
-== Primary use cases
-
-* *Real-time analytics on Kafka streams*: Query Redpanda topics directly with SQL. No ETL pipelines required. Useful for analyst-driven investigations in the streaming layer, debugging streaming applications, and prototyping consumers.
-* *Hybrid streaming and historical analytics*: Query Iceberg-enabled topics in a single SQL query that spans live records and historical Iceberg-committed records.
-* *Application-embedded operational analytics*: High-concurrency OLAP queries for dashboards and operational tools, accessible from any PostgreSQL client over the standard wire protocol.
 
 == Read-only query engine
 
@@ -92,20 +106,6 @@ Redpanda SQL introduces a set of low-level memory access and caching optimizatio
 * A custom data format enhances data locality.
 * Hybrid row/column formats allow better alignment with CPU cache lines and vectorized execution.
 * Temporal access patterns help retain frequently used data in memory longer, reducing cache misses.
-
-== Why use Redpanda SQL
-
-Redpanda SQL targets two main outcomes: efficient scaling, and a single system for diverse analytical workloads.
-
-=== Scalability through resource efficiency
-
-A common reason to move to a fully-managed cloud data warehouse is the promise of effectively unlimited scalability, made possible by on-demand infrastructure in the cloud.
-
-Redpanda SQL scales through smarter, more efficient use of hardware, rather than by throwing more resources at the problem. This principle shapes the engine's design throughout. By maximizing resource efficiency, Redpanda SQL handles growing datasets while reducing total cost of ownership.
-
-=== Unified support for batch, low-latency, time-series, and multi-dimensional analytics
-
-Redpanda SQL handles a wide range of analytical workloads in a single system. You can power real-time business intelligence (BI) dashboards, process log data, run time-series analytics, and perform exploratory queries over large datasets without switching tools or maintaining separate systems.
 
 == Next steps
 
