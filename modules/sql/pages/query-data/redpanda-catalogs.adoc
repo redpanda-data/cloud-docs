@@ -4,7 +4,7 @@
 
 A Redpanda catalog is a named collection of source data — typically the data in your Redpanda cluster — that Redpanda SQL exposes as queryable SQL tables.
 
-When Redpanda SQL is enabled on your cluster, a default Redpanda catalog named `default_redpanda_connection` is created automatically. Use this catalog to map your Redpanda topics as SQL tables and query them.
+When Redpanda SQL is enabled on your cluster, a default Redpanda catalog named `default_redpanda_catalog` is created automatically. Use this catalog to map your Redpanda topics as SQL tables and query them.
 
 NOTE: Redpanda SQL operates in read-only mode. Data mutation operations such as `INSERT`, `UPDATE`, and `DELETE` are not available. Data is ingested into Redpanda topics and made queryable through catalog mappings.
 
@@ -20,11 +20,11 @@ The Redpanda catalog model has three components, in hierarchy order:
 
 == Example
 
-Map a Redpanda topic as a SQL table through `default_redpanda_connection`:
+Map a Redpanda topic as a SQL table through `default_redpanda_catalog`:
 
 [source,sql]
 ----
-CREATE TABLE default_redpanda_connection=>user_events
+CREATE TABLE default_redpanda_catalog=>user_events
 WITH (topic = 'user-events');
 ----
 
@@ -32,7 +32,7 @@ Query the table:
 
 [source,sql]
 ----
-SELECT * FROM default_redpanda_connection=>user_events LIMIT 10;
+SELECT * FROM default_redpanda_catalog=>user_events LIMIT 10;
 ----
 
 == Related statements
