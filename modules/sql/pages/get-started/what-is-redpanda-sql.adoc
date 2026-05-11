@@ -8,7 +8,7 @@
 
 Querying real-time streaming data alongside historical lakehouse data typically means building ETL pipelines, copying data between systems, and running multiple analytical engines. Each copy adds cost, latency, and operational overhead.
 
-Redpanda SQL turns your Kafka topics — including their Iceberg-translated history — into queryable SQL surfaces inside your Redpanda Bring Your Own Cloud (BYOC) cluster. Built as a column-oriented online analytical processing (OLAP) engine, Redpanda SQL runs analytical queries over streaming and historical data without moving or duplicating data. It is a PostgreSQL-compatible query engine — not a full PostgreSQL database — that implements the PostgreSQL wire protocol and a PostgreSQL-based SQL dialect, so you can connect with any PostgreSQL client, including `psql`, JDBC, DBeaver, and DataGrip.
+Redpanda SQL turns your Kafka topics — including their Iceberg-translated history — into queryable SQL surfaces inside your Redpanda Bring Your Own Cloud (BYOC) cluster. Built as a column-oriented online analytical processing (OLAP) engine, Redpanda SQL runs analytical queries over streaming and historical data without moving or duplicating data. It is a PostgreSQL-compatible query engine that implements the PostgreSQL wire protocol and a PostgreSQL-based SQL dialect, so you can connect with any PostgreSQL client, including `psql`, JDBC, DBeaver, and DataGrip.
 
 After reading this page, you will be able to:
 
@@ -38,21 +38,21 @@ Redpanda SQL scales through smarter, more efficient use of hardware, rather than
 
 == What you can do with Redpanda SQL
 
-Redpanda SQL exposes data through catalogs, which are named connections that make external data sources queryable as SQL tables. You can work with that data using two primary query patterns.
+Redpanda SQL exposes data through catalogs, which are named connections that make data sources in your Redpanda cluster queryable as SQL tables. You can work with that data using two primary query patterns.
 
 === Query streaming topics
 
-Each Redpanda topic in your cluster appears as a SQL table inside a Redpanda catalog. Redpanda SQL reads the topic's Protobuf schema from Schema Registry to map fields to SQL columns, and you query the table with `SELECT`:
+Each Redpanda topic in your cluster appears as a SQL table inside a Redpanda catalog. Redpanda SQL reads the topic's schema from Schema Registry to map fields to SQL columns, and you query the table with `SELECT`:
 
 [,sql]
 ----
-CREATE TABLE default_redpanda_connection=>orders WITH (
+CREATE TABLE default_redpanda_catalog=>orders WITH (
   topic = 'orders',
   schema_subject = 'orders-value'
 );
 
 SELECT customer_id, SUM(amount) AS total
-FROM default_redpanda_connection=>orders
+FROM default_redpanda_catalog=>orders
 GROUP BY customer_id
 ORDER BY total DESC
 LIMIT 10;
@@ -95,7 +95,6 @@ Redpanda SQL is distributed, running across multiple nodes in parallel for horiz
 
 Redpanda SQL uses its own declarative query language under the hood but exposes a xref:reference:sql/index.adoc[PostgreSQL-compatible SQL surface] to users, including the PostgreSQL wire protocol. This means you can connect with `psql`, JDBC, ODBC, or any other PostgreSQL client and write SQL using familiar syntax.
 
-[[optimized-data-transfer-between-cpu-and-ram]]
 === Optimized data transfer between CPU and RAM
 
 Over the past decade, CPUs have scaled from 4–8 cores per node to over 100, but memory bandwidth hasn't kept pace. This hardware imbalance creates a critical bottleneck for analytical compute engines.
