@@ -10,12 +10,18 @@
 // wire protocol + Postgres-based dialect), not a full Postgres database,
 // so there are likely more differences and incompatibilities than the
 // current function/operator/behavior tables capture. Candidates to verify
-// and add: unsupported statement classes (DDL/DML other than the
-// catalog/table mappings, transactions, stored procedures, triggers,
-// extensions), data-type coverage gaps, system-catalog coverage,
-// authn/authz model differences, session/transaction semantics, and
-// connection-protocol limitations. Scope this list with engineering
-// before publication.
+// and add: 
+// 
+// - unsupported statement classes (DDL/DML other than the
+//   catalog/table mappings, transactions, stored procedures, triggers,
+//   extensions) 
+// - data-type coverage gaps 
+// - system-catalog coverage
+// - authn/authz model differences 
+// - session/transaction semantics
+// - connection-protocol limitations
+//
+// Scope this list with engineering before publication.
 
 Redpanda SQL aims for close compatibility with PostgreSQL but differs in some functions, operators, and behaviors. Use this page to check which features are supported and where Redpanda SQL diverges from PostgreSQL.
 
@@ -26,113 +32,13 @@ Use this reference to:
 
 == Functions
 
-=== Mathematical
 
-A mathematical function operates on input values provided as arguments and returns a numeric value as the operation's output.
-
-[cols="1,3,2,1",options="header"]
-|===
-|Function |Description |Example |Available in Redpanda SQL
-
-|ABS
-|Returns the absolute value of a number.
-|`SELECT ABS(-11);`
-|Yes
-
-|CEIL
-|Returns the value after rounding up any positive or negative value to the nearest largest integer.
-|`SELECT CEIL(53.7);`
-|Yes
-
-|FLOOR
-|Returns the value after rounding down any positive or negative decimal value to the nearest integer.
-|`SELECT FLOOR(53.6);`
-|Yes
-
-|LN
-|Returns the natural logarithm of a given number.
-|`SELECT LN(3);`
-|Yes
-
-|RANDOM
-|Returns a random value between 0 and 1.
-|`SELECT RANDOM();`
-|Yes
-
-|SQRT
-|Returns the square root of a given positive number.
-|`SELECT SQRT(225);`
-|Yes
-|===
-
-=== Trigonometric
-
-[cols="1,3,2,1",options="header"]
-|===
-|Function |Description |Example |Available in Redpanda SQL
-
-|SIN
-|Returns the sine of the specified radian.
-|`SELECT sin(0.2);`
-|Yes
-|===
 
 == Operators
 
 === Mathematical operators
 
-[cols="1,1,2,1,1",options="header"]
-|===
-|Operator |Description |Example |Result |Available in Redpanda SQL
 
-|`+`
-|Addition
-|`SELECT 5 + 8;`
-|`13`
-|Yes
-
-|`-`
-|Subtraction
-|`SELECT 2 - 3;`
-|`-1`
-|Yes
-
-|`-`
-|Negation
-|`SELECT -4;`
-|`-4`
-|Yes
-
-|`*`
-|Multiplication
-|`SELECT 3 * 3;`
-|`9`
-|Yes
-
-|`/`
-|Division
-|`SELECT 10 / 2;`
-|`5`
-|Yes
-
-|`%`
-|Modulo
-|`SELECT 20 % 3;`
-|`2`
-|Yes
-
-|`&`
-|Bitwise AND
-|`SELECT 91 & 15;`
-|`11`
-|Yes
-
-|`#`
-|Bitwise XOR
-|`SELECT 17 # 5;`
-|`20`
-|Yes
-|===
 
 === JSON operators
 
