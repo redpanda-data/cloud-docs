@@ -9,7 +9,7 @@
 
 Redpanda SQL turns your Redpanda glossterm:topic[,topics], including their Iceberg-translated history, into queryable SQL surfaces inside your Redpanda Bring Your Own Cloud (BYOC) glossterm:cluster[]. Built as a column-oriented online analytical processing (OLAP) engine, Redpanda SQL runs analytical queries over streaming and historical data without moving or duplicating data. It is a PostgreSQL-compatible query engine that implements the PostgreSQL wire protocol and a PostgreSQL-based SQL dialect, so you can connect with any PostgreSQL client, including `psql`, JDBC, DBeaver, and DataGrip.
 
-Querying real-time streaming data alongside historical lakehouse data typically means building ETL pipelines, copying data between systems, and running multiple analytical engines. Redpanda SQL eliminates this overhead.
+Redpanda SQL handles a wide range of analytical workloads in a single system. You can power real-time business intelligence (BI) dashboards, process log data, run time-series analytics, and perform exploratory queries over large datasets without switching tools or maintaining separate systems.
 
 After reading this page, you will be able to:
 
@@ -19,17 +19,9 @@ After reading this page, you will be able to:
 
 == Why use Redpanda SQL
 
-Redpanda SQL targets two main outcomes: a single system for diverse analytical workloads, and efficient scaling.
+Querying real-time streaming data alongside historical lakehouse data typically means building ETL pipelines, copying data between systems, and running multiple analytical engines. Redpanda SQL eliminates this overhead by querying both live and historical data in place.
 
-=== Unified support for diverse analytical workloads
-
-Redpanda SQL handles a wide range of analytical workloads in a single system. You can power real-time business intelligence (BI) dashboards, process log data, run time-series analytics, and perform exploratory queries over large datasets without switching tools or maintaining separate systems.
-
-=== Scalability through resource efficiency
-
-A common reason to move to a fully-managed cloud data warehouse is the promise of effectively unlimited scalability, made possible by on-demand infrastructure in the cloud.
-
-Redpanda SQL scales through smarter, more efficient use of hardware, rather than by throwing more resources at the problem. This principle shapes the engine's design throughout. By maximizing resource efficiency, Redpanda SQL handles growing datasets while reducing total cost of ownership.
+Redpanda SQL scales horizontally across multiple nodes within a cluster (up to 9 nodes) and uses hardware efficiently within each node, so analytical workloads can grow without proportional infrastructure cost.
 
 == Primary use cases
 
@@ -39,7 +31,7 @@ Redpanda SQL scales through smarter, more efficient use of hardware, rather than
 
 == What you can do with Redpanda SQL
 
-Redpanda SQL exposes data through catalogs, which are named connections that make data sources in your Redpanda cluster queryable as SQL tables. You can work with that data using two primary query patterns.
+Redpanda SQL exposes data through xref:sql:query-data/redpanda-catalogs.adoc[catalogs], which are named collections of source data exposed as queryable SQL tables. You can work with that data using two primary query patterns.
 
 === Query streaming topics
 
@@ -59,7 +51,7 @@ ORDER BY total DESC
 LIMIT 10;
 ----
 
-This lets analysts and developers query streaming data directly without building ETL pipelines or duplicating data into a separate analytics store.
+Analysts and developers can run these queries directly from any PostgreSQL client without moving data into a separate analytics store.
 
 === Query Iceberg topics
 
@@ -98,9 +90,7 @@ Redpanda SQL uses its own declarative query language under the hood but exposes 
 
 === Optimized data transfer between CPU and RAM
 
-Over the past decade, CPUs have scaled from 4–8 cores per node to over 100, but memory bandwidth hasn't kept pace. This hardware imbalance creates a critical bottleneck for analytical compute engines.
-
-Redpanda SQL introduces a set of low-level memory access and caching optimizations to address this and achieve high resource efficiency:
+Redpanda SQL applies low-level memory access and caching optimizations to keep analytical workloads CPU-cache efficient rather than memory-bandwidth-bound:
 
 * User-space storage caches minimize overhead from kernel-level memory operations.
 * A custom data format enhances data locality.
