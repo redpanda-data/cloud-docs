@@ -20,12 +20,13 @@ After completing these steps, you will be able to:
 
 * A Redpanda BYOC cluster on AWS with Redpanda SQL enabled. See xref:sql:get-started/deploy-sql-cluster.adoc[Enable Redpanda SQL].
 * The cluster's xref:reference:properties/cluster-properties.adoc#iceberg_catalog_type[`iceberg_catalog_type`] property is set to `rest`. The `object_storage` catalog type does not support bridge queries from Redpanda SQL.
+* The cluster's Iceberg REST catalog is configured. See xref:manage:iceberg/rest-catalog/index.adoc[Integrate with REST Catalogs] for the supported REST catalog options (AWS Glue, Snowflake, Databricks Unity, Polaris, and others) and their configuration steps.
 * An Iceberg-enabled Redpanda topic with a schema (Protobuf, Avro, or JSON) registered in Schema Registry. To enable Iceberg translation on a topic, see xref:manage:iceberg/about-iceberg-topics.adoc[].
 * Connect to Redpanda SQL with `psql` or another PostgreSQL client. See xref:sql:connect-to-sql/index.adoc[Connect to Redpanda SQL].
 
 == Set up the Iceberg query catalogs
 
-You create three objects, in this order: a storage connection, an Iceberg catalog, and a Redpanda catalog that links to the Iceberg catalog. The storage and Iceberg-catalog options must match the cluster's REST catalog configuration (endpoint, credentials, region).
+You create three objects, in this order: a storage connection, an Iceberg catalog, and a Redpanda catalog that links to the Iceberg catalog. The storage and Iceberg-catalog options must match the cluster's xref:manage:iceberg/rest-catalog/index.adoc[REST catalog configuration] (endpoint, credentials, region).
 
 . Create a storage connection that holds the object-storage credentials your cluster's REST catalog uses:
 +
@@ -110,6 +111,8 @@ NOTE: Bridge queries require additional planning to combine the live Redpanda to
 == Next steps
 
 * xref:sql:query-data/query-streaming-topics.adoc[Query streaming topics]: query a topic that is not Iceberg-enabled.
+* xref:manage:iceberg/rest-catalog/index.adoc[Integrate with REST Catalogs]: managed REST catalog options and their configuration.
+* xref:manage:iceberg/use-iceberg-catalogs.adoc[Use Iceberg Catalogs]: more on how Redpanda exposes Iceberg-translated topic data.
 * xref:reference:sql/sql-statements/create-storage.adoc[CREATE STORAGE]: full reference for the storage statement.
 * xref:reference:sql/sql-statements/create-iceberg-catalog.adoc[CREATE ICEBERG CATALOG]: full reference for the Iceberg catalog statement.
 * xref:reference:sql/sql-statements/create-redpanda-catalog.adoc[CREATE REDPANDA CATALOG]: full reference for the Redpanda catalog statement, including the `USING CATALOG` clause.
