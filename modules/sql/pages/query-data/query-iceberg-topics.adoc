@@ -6,7 +6,7 @@
 :learning-objective-2: Query the Iceberg-committed history of a topic
 :learning-objective-3: Run a bridge query that returns live and historical records in a single result
 
-To query the Iceberg-translated history of a Redpanda topic, you create three objects: a storage connection, an Iceberg catalog, and a Redpanda catalog linked to that Iceberg catalog. The storage connection holds object-storage credentials, the Iceberg catalog exposes the cluster's REST-catalog endpoint, and the linked Redpanda catalog (`CREATE REDPANDA CATALOG ... USING CATALOG <iceberg-cat>`) lets you run bridge queries that span live and historical records.
+To query the Iceberg-translated history of a Redpanda topic, you create three objects: a storage connection, an Iceberg catalog, and a Redpanda catalog linked to that Iceberg catalog. The storage connection holds object-storage credentials, the Iceberg catalog exposes the cluster's REST-catalog endpoint, and the linked Redpanda catalog (`CREATE REDPANDA CATALOG ... USING CATALOG <iceberg-cat>`) lets you run bridge queries that span live and historical records, including records that have aged out of the Redpanda topic under its retention settings.
 
 To query a topic that is not Iceberg-enabled, see xref:sql:query-data/query-streaming-topics.adoc[].
 
@@ -88,12 +88,14 @@ To query only the records that have been translated to Iceberg, query the Iceber
 SELECT * FROM lakehouse_catalog=>redpanda.orders LIMIT 10;
 ----
 
-This query does not include records that are still in the live Kafka topic but have not yet been translated to Iceberg.
+This query does not include records that are still in the live Redpanda topic but have not yet been translated to Iceberg.
+
+NOTE: Iceberg-translated data persists independently of Redpanda topic retention. Records that have aged out of the Redpanda topic under its retention settings remain available through the Iceberg catalog.
 
 == Run a bridge query
 
 // "Bridge query" is the current working term; final naming TBC for v1 publication (qa-questions.md #20).
-A bridge query returns a non-overlapping continuum of records from both the live Redpanda topic and its Iceberg-committed history in a single result. Query the table in the linked Redpanda catalog (the one with `USING CATALOG` set) using standard `SELECT` syntax:
+A bridge query returns a non-overlapping continuum of records from both the live Redpanda topic and its Iceberg-committed history in a single result, including records that have aged out of the Redpanda topic under its retention settings. Query the table in the linked Redpanda catalog (the one with `USING CATALOG` set) using standard `SELECT` syntax:
 
 [source,sql]
 ----
@@ -103,7 +105,7 @@ SELECT * FROM redpanda_with_iceberg=>orders LIMIT 10;
 You don't write a `UNION ALL` because Redpanda SQL plans the union for you, and rows aren't duplicated at the boundary between live and historical data.
 
 // TODO: Verify with engineering whether there are workload patterns that reliably trigger longer planning, and document them if so (qa-questions.md #22).
-NOTE: Bridge queries require additional planning to combine the live Kafka tail with the Iceberg-committed history, so they may take slightly longer to execute than queries against Iceberg-committed data alone. If you only need historical data, query the Iceberg catalog directly.
+NOTE: Bridge queries require additional planning to combine the live Redpanda topic with the Iceberg-committed history, so they may take slightly longer to execute than queries against Iceberg-committed data alone. If you only need historical data, query the Iceberg catalog directly.
 
 == Next steps
 
