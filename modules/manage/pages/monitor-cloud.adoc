@@ -46,31 +46,6 @@ image::shared:cloud_metrics.png[How to connect screenshot]
 * `<prom_pass>`: Copy and paste the onscreen Prometheus password.
 
 
-== Configure Datadog
-
-To monitor a BYOC or Dedicated cluster in https://www.datadoghq.com/[Datadog^]: 
-
-. Follow the steps to configure Redpanda monitoring.
-
-. In Datadog, define the `openmetrics_endpoint` URL for that monitored cluster. The integration configuration should look similar to the following:
-+
-[,yaml]
-----
-instances:
-  # The endpoint to collect metrics from.
-  - openmetrics_endpoint: https://console-<id>.<identifier>.fmc.cloud.redpanda.com/api/cloud/prometheus/public_metrics
-    use_openmetrics: true
-    collect_counters_with_distributions: true
-
-    auth_type: basic
-    username: prom_user
-    password: prom_pass
-----
-
-. Restart the Datadog agent.
-
-NOTE: Because the OpenMetrics endpoint in Redpanda Cloud aggregates Redpanda metrics for all cluster services, only a single Datadog agent is required. The agent must run in a container in your own container infrastructure. Redpanda does not support launching this container inside a Dedicated or BYOC Kubernetes cluster. For more information, see the https://docs.datadoghq.com/integrations/redpanda/?tab=host[Datadog documentation^] and https://github.com/DataDog/integrations-extras/tree/master/redpanda[Redpanda Datadog integration^].
-
 [#connect-grafana]
 == Connect Grafana
 
@@ -96,6 +71,31 @@ rpk generate grafana-dashboard --dashboard serverless
 ----
 
 For an end-to-end example with Prometheus and Grafana running in Docker, see the https://github.com/redpanda-data/observability#sandbox-environment[Redpanda Cloud sandbox^] in the same repository.
+
+== Configure Datadog
+
+To monitor a BYOC or Dedicated cluster in https://www.datadoghq.com/[Datadog^]:
+
+. Follow the steps to configure Redpanda monitoring.
+
+. In Datadog, define the `openmetrics_endpoint` URL for that monitored cluster. The integration configuration should look similar to the following:
++
+[,yaml]
+----
+instances:
+  # The endpoint to collect metrics from.
+  - openmetrics_endpoint: https://console-<id>.<identifier>.fmc.cloud.redpanda.com/api/cloud/prometheus/public_metrics
+    use_openmetrics: true
+    collect_counters_with_distributions: true
+
+    auth_type: basic
+    username: prom_user
+    password: prom_pass
+----
+
+. Restart the Datadog agent.
+
+NOTE: Because the OpenMetrics endpoint in Redpanda Cloud aggregates Redpanda metrics for all cluster services, only a single Datadog agent is required. The agent must run in a container in your own container infrastructure. Redpanda does not support launching this container inside a Dedicated or BYOC Kubernetes cluster. For more information, see the https://docs.datadoghq.com/integrations/redpanda/?tab=host[Datadog documentation^] and https://github.com/DataDog/integrations-extras/tree/master/redpanda[Redpanda Datadog integration^].
 
 == Use Redpanda monitoring examples
 
