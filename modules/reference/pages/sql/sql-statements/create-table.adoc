@@ -68,11 +68,11 @@ a|How to map nested structures to SQL columns.
 
 === Create a basic table
 
-Map the `transactions` topic to a table through `production_redpanda`:
+Map the `transactions` topic to a table through `default_redpanda_catalog`:
 
 [source,sql]
 ----
-CREATE TABLE production_redpanda=>transactions
+CREATE TABLE default_redpanda_catalog=>transactions
 WITH (topic = 'transactions');
 ----
 
@@ -82,7 +82,7 @@ Map a topic and specify the Schema Registry subject:
 
 [source,sql]
 ----
-CREATE TABLE production_redpanda=>user_events
+CREATE TABLE default_redpanda_catalog=>user_events
 WITH (
   topic = 'user-events',
   schema_subject = 'user-events-value',
@@ -96,7 +96,7 @@ Map a topic and skip records that fail deserialization:
 
 [source,sql]
 ----
-CREATE TABLE IF NOT EXISTS production_redpanda=>sensor_readings
+CREATE TABLE IF NOT EXISTS default_redpanda_catalog=>sensor_readings
 WITH (
   topic = 'sensor-data',
   schema_subject = 'sensor-data-value',
