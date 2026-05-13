@@ -43,7 +43,7 @@ Copy all columns in a table to a CSV file:
 
 [source,sql]
 ----
-COPY my_catalog=>employee_salary TO '/path/to/exportsalary.csv';
+COPY production_redpanda=>employee_salary TO '/path/to/exportsalary.csv';
 ----
 
 === Export specific columns from a table
@@ -52,7 +52,7 @@ Specify the column names to export only those columns:
 
 [source,sql]
 ----
-COPY my_catalog=>employee_salary (empid, empname, empsalary) TO '/path/to/exportsalary.csv';
+COPY production_redpanda=>employee_salary (empid, empname, empsalary) TO '/path/to/exportsalary.csv';
 ----
 
 === Export results of a SELECT statement
@@ -61,7 +61,7 @@ Export only the rows that match a `WHERE` condition:
 
 [source,sql]
 ----
-COPY (SELECT * FROM my_catalog=>employee_salary WHERE empdept = 'Marketing') TO '/path/to/exportsalary.csv';
+COPY (SELECT * FROM production_redpanda=>employee_salary WHERE empdept = 'Marketing') TO '/path/to/exportsalary.csv';
 ----
 
 === Export with a custom delimiter
@@ -70,7 +70,7 @@ Specify the delimiter using the `DELIMITER` option. Common delimiters include co
 
 [source,sql]
 ----
-COPY my_catalog=>customer TO '/path/to/customerexport.csv' WITH (DELIMITER ';');
+COPY production_redpanda=>customer TO '/path/to/customerexport.csv' WITH (DELIMITER ';');
 ----
 
 The exported CSV uses the specified delimiter:
@@ -89,7 +89,7 @@ Include column names as a header row using `HEADER ON` (or `HEADER TRUE`, or `HE
 
 [source,sql]
 ----
-COPY my_catalog=>personal_details TO '/path/to/personalinfo.csv' WITH (HEADER ON);
+COPY production_redpanda=>personal_details TO '/path/to/personalinfo.csv' WITH (HEADER ON);
 ----
 
 The exported file includes a header row:
@@ -110,7 +110,7 @@ Specify a string to replace `NULL` values in the exported file:
 
 [source,sql]
 ----
-COPY my_catalog=>example_table TO '/path/to/exampleexport.csv' WITH (NULL 'unknown');
+COPY production_redpanda=>example_table TO '/path/to/exampleexport.csv' WITH (NULL 'unknown');
 ----
 
 In the exported file, `NULL` values are represented as `unknown`.
@@ -121,7 +121,7 @@ Send the data directly to the client instead of writing to a server-side file:
 
 [source,sql]
 ----
-COPY my_catalog=>book_inventory TO STDOUT;
+COPY production_redpanda=>book_inventory TO STDOUT;
 ----
 
 The query returns:
@@ -155,7 +155,7 @@ To export data to cloud storage, use the `COPY TO` command with the appropriate 
 
 [source,sql]
 ----
-COPY my_catalog=>film TO 's3://your-bucket/file_name'
+COPY production_redpanda=>film TO 's3://your-bucket/file_name'
 WITH (AWS_CRED(AWS_REGION 'us-west-1', AWS_KEY_ID 'key_id', AWS_PRIVATE_KEY 'access_key', ENDPOINT 's3.us-west-1.amazonaws.com'),
       FORMAT CSV, HEADER ON, NULL 'unknown');
 ----
@@ -166,21 +166,21 @@ Pass the path to your credentials JSON file:
 
 [source,sql]
 ----
-COPY my_catalog=>film TO 'gs://your-bucket/file_name' WITH (GCS_CRED('/path/to/credentials.json'));
+COPY production_redpanda=>film TO 'gs://your-bucket/file_name' WITH (GCS_CRED('/path/to/credentials.json'));
 ----
 
 If you cannot use a path to the credentials file, pass its contents as a string:
 
 [source,sql]
 ----
-COPY my_catalog=>project TO 'gs://your-bucket/project_file' WITH (GCS_CRED('<contents of the credentials.json file>'));
+COPY production_redpanda=>project TO 'gs://your-bucket/project_file' WITH (GCS_CRED('<contents of the credentials.json file>'));
 ----
 
 You can also use `AWS_CRED` with GCS by setting the endpoint:
 
 [source,sql]
 ----
-COPY my_catalog=>project TO 'gs://your-bucket/project_file'
+COPY production_redpanda=>project TO 'gs://your-bucket/project_file'
 WITH (AWS_CRED(AWS_REGION 'region1', AWS_KEY_ID 'key_id', AWS_PRIVATE_KEY 'access_key', ENDPOINT 'https://storage.googleapis.com'));
 ----
 
@@ -197,6 +197,6 @@ For Google Cloud Storage, use HMAC keys for authentication. See the link:https:/
 
 [source,sql]
 ----
-COPY my_catalog=>taxi_data TO 'wasbs://container-name/your_blob'
+COPY production_redpanda=>taxi_data TO 'wasbs://container-name/your_blob'
 WITH (AZURE_CRED(TENANT_ID 'your_tenant_id' CLIENT_ID 'your_client_id', CLIENT_SECRET 'your_client_secret'));
 ----

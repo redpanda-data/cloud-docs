@@ -18,7 +18,7 @@ To query Redpanda topic data with SQL:
 +
 [source,sql]
 ----
-CREATE REDPANDA CATALOG my_catalog
+CREATE REDPANDA CATALOG production_redpanda
 WITH (
   initial_brokers = 'broker1:9092',
   schema_registry_url = 'http://schema-registry:8081'
@@ -29,7 +29,7 @@ WITH (
 +
 [source,sql]
 ----
-CREATE TABLE my_catalog=>user_events
+CREATE TABLE production_redpanda=>user_events
 WITH (topic = 'user-events');
 ----
 
@@ -37,7 +37,7 @@ WITH (topic = 'user-events');
 +
 [source,sql]
 ----
-SELECT * FROM my_catalog=>user_events LIMIT 10;
+SELECT * FROM production_redpanda=>user_events LIMIT 10;
 ----
 
 == Related statements
