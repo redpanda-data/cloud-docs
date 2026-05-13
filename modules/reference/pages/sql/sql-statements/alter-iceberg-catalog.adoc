@@ -1,0 +1,40 @@
+= ALTER ICEBERG CATALOG
+:description: The ALTER ICEBERG CATALOG statement modifies connection properties of an existing Iceberg catalog.
+:page-topic-type: reference
+
+The `ALTER ICEBERG CATALOG` statement modifies connection properties of an existing Iceberg catalog. You must repeat the `STORAGE` clause when altering, even if the storage connection is not changing.
+
+== Syntax
+
+[source,sql]
+----
+ALTER ICEBERG CATALOG [IF EXISTS] catalog_name STORAGE storage_name
+WITH (option = 'value' [, ...]);
+----
+
+* `catalog_name`: Name of the Iceberg catalog to modify.
+* `IF EXISTS`: Optional. Prevents an error if the Iceberg catalog does not exist.
+* `storage_name`: Name of the storage connection backing the catalog.
+* `option = 'value'`: One or more connection options to update. See xref:reference:sql/sql-statements/create-iceberg-catalog.adoc[CREATE ICEBERG CATALOG] for the full list of options.
+
+== Examples
+
+Update the REST catalog URI for an existing Iceberg catalog:
+
+[source,sql]
+----
+ALTER ICEBERG CATALOG my_iceberg STORAGE my_storage
+WITH (uri = 'https://new-catalog.example.com');
+----
+
+Rotate the basic-authentication credentials on an existing Iceberg catalog:
+
+[source,sql]
+----
+ALTER ICEBERG CATALOG my_iceberg STORAGE my_storage
+WITH (
+  auth_type = 'basic',
+  username = '<new-username>',
+  password = '<new-password>'
+);
+----
