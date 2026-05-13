@@ -85,6 +85,10 @@ xref:develop:topics/cloud-topics.adoc[Cloud Topics] are now available, making it
 
 You can use Cloud Topics exclusively or in combination with standard topics on a cluster supporting low-latency workloads.
 
+=== Schema Registry metadata properties
+
+xref:manage:schema-reg/schema-reg-overview.adoc#metadata-properties[Schema Registry metadata properties] let you store and retrieve arbitrary key-value pairs alongside schemas. Properties such as `owner`, `team`, or `application.version` travel with the schema through its lifecycle, making it easier to track ownership and lineage without modifying the schema itself. You can set metadata when registering a schema using the `POST /subjects/{subject}/versions` endpoint or with the `--metadata-properties` flag in `rpk registry schema create`. Metadata is returned in API responses and viewable with `rpk registry schema get --print-metadata` or in Redpanda Cloud Console.
+
 === Schema Registry Contexts
 
 xref:manage:schema-reg/schema-reg-contexts.adoc[Schema Registry contexts] provide isolated namespaces that separate schemas, subjects, and configuration within a single Schema Registry instance. Each context maintains its own schema ID counter, mode settings, and compatibility settings. 
