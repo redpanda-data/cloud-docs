@@ -118,7 +118,7 @@ Connect to a REST catalog without authentication. The catalog uses TLS verificat
 
 [source,sql]
 ----
-CREATE ICEBERG CATALOG my_iceberg STORAGE my_storage
+CREATE ICEBERG CATALOG lakehouse_catalog STORAGE iceberg_storage
   WITH (
     uri = 'https://catalog.example.com',
     warehouse = 's3://warehouse/'
@@ -129,10 +129,10 @@ CREATE ICEBERG CATALOG my_iceberg STORAGE my_storage
 
 [source,sql]
 ----
-CREATE ICEBERG CATALOG my_iceberg STORAGE my_storage
+CREATE ICEBERG CATALOG lakehouse_catalog STORAGE iceberg_storage
   WITH (
     uri = 'https://catalog.example.com',
-    warehouse = 'my_warehouse',
+    warehouse = 's3://lakehouse-data/',
     auth_type = 'oauth2',
     oauth2_client_id = '<client-id>',
     oauth2_client_secret = '<client-secret>',
@@ -146,7 +146,7 @@ CREATE ICEBERG CATALOG my_iceberg STORAGE my_storage
 
 [source,sql]
 ----
-CREATE ICEBERG CATALOG my_iceberg STORAGE my_storage
+CREATE ICEBERG CATALOG lakehouse_catalog STORAGE iceberg_storage
   WITH (
     uri = 'https://catalog.example.com',
     warehouse = 's3://warehouse/',
@@ -162,7 +162,7 @@ Use for REST catalogs fronted by AWS services (such as AWS Glue).
 
 [source,sql]
 ----
-CREATE ICEBERG CATALOG my_iceberg STORAGE my_storage
+CREATE ICEBERG CATALOG lakehouse_catalog STORAGE iceberg_storage
   WITH (
     uri = 'https://catalog.example.com',
     warehouse = 's3://warehouse/',
@@ -179,7 +179,7 @@ To use the AWS default credential chain (for example, an EC2 instance-profile ro
 
 [source,sql]
 ----
-CREATE ICEBERG CATALOG my_iceberg STORAGE my_storage
+CREATE ICEBERG CATALOG lakehouse_catalog STORAGE iceberg_storage
   WITH (
     uri = 'https://catalog.example.com',
     warehouse = 's3://warehouse/',
