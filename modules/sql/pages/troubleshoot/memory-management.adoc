@@ -1,0 +1,53 @@
+= Troubleshoot memory-related query cancellations
+:description: Recover from query cancellations triggered by Redpanda SQL's automatic out-of-memory protection.
+:page-topic-type: how-to
+
+// TODO: SME — confirm page title and nav label. Now that the page is symptom-led troubleshooting, the previous "Memory management" framing is too broad.
+// Options:
+//   "Troubleshoot memory-related query cancellations" (current; matches Troubleshoot section voice)
+//   "Recover from OOM cancellation" (concise; uses internal term)
+//   Keep "Memory management" (matches current nav label but doesn't signal action)
+
+Redpanda SQL automatically cancels running queries on a node when the node's memory usage approaches its configured limit. If your application sees the following error, your queries have hit this protection:
+
+[source,text]
+----
+cancelled due to OOM prevention
+----
+
+// TODO: SME — confirm the exact client-facing error envelope. The string above is the error reason raised internally by the engine. Clients connecting through `psql` or a PostgreSQL driver typically receive it wrapped in a PostgreSQL error message. Confirm:
+//   - Is a SQLSTATE code set on this error? If so, which one?
+//   - Does the message reach the client verbatim, or is the wording different?
+
+Only queries running on the affected node at the time of reclamation are cancelled. Other nodes in the cluster continue to serve queries. The node resumes accepting new queries immediately after reclamation completes, so in most cases you can retry the failed query and it succeeds.
+
+== If the error keeps happening
+
+If queries are repeatedly cancelled with this error, the workload is consistently pressing a node against its memory limit.
+
+// TODO: SME — runbook depth. Confirm which of the following actions to recommend, and in what order. Suggested guidance to validate:
+//   - Reduce query concurrency on the affected workload.
+//   - Simplify the query — narrow the scan range, add filters, reduce parallel CTEs.
+//   - Scale up the cluster.
+// Also confirm: is there a heuristic for choosing among them (for example, look at oxla_process_memory_total over time)?
+
+== Why this happens
+
+Redpanda SQL monitors each node's resident memory usage and triggers a brief reclamation phase when the node approaches its memory limit. During reclamation, the node cancels its running queries and frees memory so it can keep serving new queries. The protection runs on each node independently and is always on. There is no configuration option to enable, disable, or tune it.
+
+// TODO: SME — confirm whether `memory.max` and `memory.max_non_query` are exposed through the BYOC layer at GA. Per OXLA-9109, the configurable threshold was descoped before ship. If neither is exposed to users (even via support), this section stands as-is. If either is reachable (for example via a support-only path), note it here so users understand what controls exist.
+
+== Monitor memory usage
+
+Use the following Prometheus gauge to track each node's resident memory and watch for sustained growth toward the node's limit:
+
+[cols="1,3"]
+|===
+| Metric | Description
+
+| `oxla_process_memory_total`
+| Process Resident Set Size (RSS) in bytes, reported per node.
+|===
+
+// TODO: Once the Redpanda SQL metrics are finalized, verify where they should be documented.
+
