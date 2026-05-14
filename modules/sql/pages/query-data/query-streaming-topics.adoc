@@ -5,7 +5,7 @@
 :learning-objective-1: Map a streaming Redpanda topic to a SQL table using the default Redpanda catalog
 :learning-objective-2: Run analytical SQL queries against live topic data
 
-Map a Redpanda topic to a SQL table to run analytical queries directly against live streaming data without building ETL pipelines. Redpanda SQL reads each record's fields from the topic's Protobuf schema in Schema Registry.
+Map a Redpanda topic to a SQL table to run analytical queries directly against live streaming data without building ETL pipelines. Redpanda SQL reads each record's fields from the topic's schema in Schema Registry.
 
 To query the Iceberg-translated history of a Redpanda topic, see xref:sql:query-data/query-iceberg-topics.adoc[].
 
@@ -18,9 +18,14 @@ After completing these steps, you will be able to:
 
 Before you query a topic with SQL:
 
-* Enable the Redpanda SQL engine on your Redpanda Cloud Bring Your Own Cloud (BYOC) cluster. See xref:sql:get-started/deploy-sql-cluster.adoc[Enable Redpanda SQL].
+* Enable the Redpanda SQL engine on your Redpanda Bring Your Own Cloud (BYOC) cluster. See xref:sql:get-started/deploy-sql-cluster.adoc[Enable Redpanda SQL].
 * Connect to Redpanda SQL with `psql` or another PostgreSQL client. See xref:sql:connect-to-sql/index.adoc[Connect to Redpanda SQL].
-* Confirm that the Redpanda topic you want to query has a Protobuf schema registered in Schema Registry.
+* Confirm that the Redpanda topic you want to query has a schema registered in Schema Registry.
+
+// TODO: Confirm permissions/roles/ACLs required
+// Is it possible to use a topic without a registered schema? 
+// Any specific limitations on Protobuf vs JSON vs Avro formats?
+// Any requirements related to wire format and subject naming strategy?
 
 == Map the topic to a SQL table
 
@@ -30,7 +35,7 @@ Define a table against the topic with `CREATE TABLE`:
 
 [source,sql]
 ----
-CREATE TABLE default_redpanda_connection=>orders WITH (
+CREATE TABLE default_redpanda_catalog=>orders WITH (
   topic = 'orders',
   schema_subject = 'orders-value'
 );
@@ -38,7 +43,8 @@ CREATE TABLE default_redpanda_connection=>orders WITH (
 
 Replace `orders` with your topic name and `orders-value` with the Schema Registry subject that holds the topic's value schema.
 
-The table inherits its column definitions from the registered Protobuf schema. Each top-level Protobuf field becomes a SQL column.
+// TODO: Nested fields?
+The table inherits its column definitions from the registered schema. For Protobuf schemas, Redpanda SQL maps each top-level field to a SQL column.
 
 == Run queries
 
@@ -46,7 +52,7 @@ Query the table with standard `SELECT` syntax. The following query returns the f
 
 [source,sql]
 ----
-SELECT * FROM default_redpanda_connection=>orders LIMIT 10;
+SELECT * FROM default_redpanda_catalog=>orders LIMIT 10;
 ----
 
 Aggregate and filter records using familiar PostgreSQL constructs:
@@ -54,7 +60,7 @@ Aggregate and filter records using familiar PostgreSQL constructs:
 [source,sql]
 ----
 SELECT customer_id, SUM(amount) AS total
-FROM default_redpanda_connection=>orders
+FROM default_redpanda_catalog=>orders
 WHERE status = 'completed'
 GROUP BY customer_id
 ORDER BY total DESC
