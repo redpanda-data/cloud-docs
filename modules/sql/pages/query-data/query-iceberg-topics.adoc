@@ -80,6 +80,13 @@ CREATE TABLE redpanda_with_iceberg=>orders WITH (
 
 Redpanda SQL reads the registered schema from Schema Registry to map fields to SQL columns.
 
+When you query a table mapped from a Redpanda topic, Redpanda SQL also exposes two reserved metadata columns alongside your schema's columns: 
+
+* `redpanda` (a struct with topic-level metadata such as partition, offset, timestamp, key, and headers)
+* `redpanda_raw` (raw key and value bytes)
+
+These column names are reserved. A topic schema with a top-level `redpanda` or `redpanda_raw` field conflicts with the metadata columns.
+
 == Query Iceberg-committed data only
 
 To query only the records that have been translated to Iceberg, query the Iceberg catalog directly. Iceberg-translated topics appear under the `redpanda` namespace by default (the Iceberg data catalog namespace for Redpanda-translated tables):
@@ -96,6 +103,10 @@ NOTE: Iceberg-translated data persists independently of Redpanda topic retention
 == Run a bridge query
 
 // "Bridge query" is the current working term; final naming TBC for v1 publication (qa-questions.md #20).
+// TODO: SME — confirm when REFRESH must be run on the linked Iceberg table. Source shows that if the Iceberg table's schema isn't refreshed, the bridge query fails at planning time with: `Schema not found for Iceberg table '<table>'. Run: REFRESH <catalog>=><table>`. Confirm:
+//   - Is REFRESH required only the first time, or every time the Iceberg schema changes?
+//   - Is REFRESH required when new records are added to the Iceberg table (no schema change), or only on schema change?
+// Once confirmed, add a prerequisite or step that tells users when to run REFRESH.
 A bridge query returns a non-overlapping continuum of records from both the live Redpanda topic and its Iceberg-committed history in a single result, including records that have aged out of the Redpanda topic under its retention settings. Query the table in the linked Redpanda catalog (the one with `USING CATALOG` set) using standard `SELECT` syntax:
 
 [source,sql]
@@ -107,6 +118,16 @@ You don't write a `UNION ALL` because Redpanda SQL plans the union for you, and 
 
 // TODO: Verify with engineering whether there are workload patterns that reliably trigger longer planning, and document them if so (qa-questions.md #22).
 NOTE: Bridge queries require additional planning to combine the live Redpanda topic with the Iceberg-committed history, so they may take slightly longer to execute than queries against Iceberg-committed data alone. If you only need historical data, query the Iceberg catalog directly.
+
+== Schema compatibility between the topic and the Iceberg table
+
+// TODO: Verify use cases for schema divergence between the topic and the Iceberg table
+
+For a bridge query against a linked Redpanda catalog, the topic and the Iceberg table can have different schemas, within these rules:
+
+* The topic's Schema Registry value subject is canonical. The bridge query result's column order, count, and types come from the topic schema.
+* The Iceberg table can be a name-subset of the topic schema. If the Iceberg table is missing a column that the topic schema has, Redpanda SQL returns `NULL` for that column on Iceberg-side rows.
+* The Iceberg table cannot have columns the topic schema does not. If it does, the bridge query fails at planning time with the error `Kafka schema must be a name-superset of Iceberg schema`. To resolve, either drop the extra Iceberg columns or add the corresponding fields to the topic's Schema Registry subject.
 
 == Next steps
 
