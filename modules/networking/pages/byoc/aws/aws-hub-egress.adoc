@@ -1,0 +1,571 @@
+= Create an AWS Hub for Centralized Egress
+:description: Provision a hub VPC, Transit Gateway, and AWS RAM share so one or more BYOC clusters can route their internet egress through a single, predictable public IP.
+:page-beta: true
+:page-topic-type: how-to
+:personas: platform_admin
+:learning-objective-1: Provision a hub VPC with a NAT Gateway and Transit Gateway on AWS
+:learning-objective-2: Share the Transit Gateway with the Redpanda cluster account using AWS RAM
+:learning-objective-3: Collect the Transit Gateway ID and NAT Gateway public IP needed for BYOC cluster configuration
+
+Use this guide to provision the customer-side infrastructure required for centralized egress on a Redpanda Bring Your Own Cloud (BYOC) cluster on AWS. After you complete the procedure, you have a hub VPC with a NAT Gateway, a Transit Gateway shared with the Redpanda cluster account, and the IDs needed to configure your BYOC network. You can then follow xref:networking:byoc/aws/nat-free-egress.adoc[Configure Centralized Egress with AWS Transit Gateway] to enable centralized egress at cluster creation.
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
+
+== What this sets up
+
+A hub VPC with a single NAT Gateway provides centralized internet egress for one or more spoke VPCs. All outbound traffic from spokes is routed through the hub and exits from one public IP, which you can use for outbound IP allowlisting on external services.
+
+----
+Spoke VPC --> Transit Gateway --> Hub Private Subnet --> NAT Gateway --> Internet Gateway --> Internet
+                                                              ^
+                                                              |
+                                    Return traffic via TGW ---+
+----
+
+Traffic path:
+
+. The spoke private subnet sends `0.0.0.0/0` to the Transit Gateway (TGW).
+. The TGW default route forwards `0.0.0.0/0` to the hub VPC attachment.
+. The hub private subnet routes `0.0.0.0/0` to the NAT Gateway.
+. The NAT Gateway exits through the Internet Gateway.
+. Return traffic enters through the Internet Gateway. The hub public route table sends it back to the TGW, which delivers it to the correct spoke.
+
+[#automated-alternative]
+== Automated alternative
+
+If you prefer to provision this infrastructure with Terraform, the configuration used to produce the setup in this guide is published in the Redpanda Cloud Examples repository:
+
+https://github.com/redpanda-data/cloud-examples/tree/main/aws-hub-egress[redpanda-data/cloud-examples — aws-hub-egress^]
+
+The rest of this guide covers the equivalent steps using the AWS Console or AWS CLI.
+
+== Prerequisites
+
+* AWS CLI configured with credentials for the hub account.
+* Permissions on the hub account for VPC, EC2, Transit Gateway, AWS RAM, and IAM operations.
+* The Redpanda spoke VPC CIDR must not overlap your hub VPC CIDR.
+* If the Redpanda cluster runs in a different AWS account than your hub, note the Redpanda cluster account ID for the AWS RAM share.
+
+[WARNING]
+====
+Hub and spoke VPC CIDRs must not overlap. AWS allows Transit Gateway attachments with overlapping CIDRs, but the hub VPC's local route always wins over the spoke CIDR return route, which silently blackholes reply traffic. Plan your CIDRs before you start.
+====
+
+== Default values used in this guide
+
+The procedure uses the values in the following table. Replace any value that does not match your environment.
+
+[cols="2,2,3"]
+|===
+| Parameter | Default | Notes
+
+| Hub VPC CIDR | `100.64.0.0/16` | CGNAT range, unlikely to conflict with typical workload CIDRs
+| Public subnet 1 | `100.64.0.0/24` | AZ index 0
+| Public subnet 2 | `100.64.1.0/24` | AZ index 1
+| Private subnet 1 | `100.64.2.0/24` | AZ index 0
+| Private subnet 2 | `100.64.3.0/24` | AZ index 1
+| Spoke CIDR | `10.0.0.0/16` | Replace with your actual Redpanda spoke VPC CIDR
+| Region | `us-east-2` | Replace with your target region
+|===
+
+== Create the hub VPC
+
+[tabs]
+======
+Console::
++
+. Open the VPC console and choose *Your VPCs* > *Create VPC*.
+. Set the name to `hub-vpc`.
+. Set the IPv4 CIDR to `100.64.0.0/16`.
+. Enable DNS resolution and DNS hostnames.
+. Click *Create VPC*.
+
+CLI::
++
+[,bash]
+----
+VPC_ID=$(aws ec2 create-vpc \
+  --cidr-block 100.64.0.0/16 \
+  --region us-east-2 \
+  --query 'Vpc.VpcId' --output text)
+
+aws ec2 modify-vpc-attribute --vpc-id $VPC_ID --enable-dns-support
+aws ec2 modify-vpc-attribute --vpc-id $VPC_ID --enable-dns-hostnames
+
+aws ec2 create-tags --resources $VPC_ID \
+  --tags Key=Name,Value=hub-vpc \
+  --region us-east-2
+
+echo "VPC ID: $VPC_ID"
+----
+======
+
+== Get availability zones
+
+The public and private subnets each require two availability zones.
+
+[,bash]
+----
+AZ1=$(aws ec2 describe-availability-zones \
+  --region us-east-2 \
+  --filters Name=opt-in-status,Values=opt-in-not-required \
+  --query 'AvailabilityZones[0].ZoneName' --output text)
+
+AZ2=$(aws ec2 describe-availability-zones \
+  --region us-east-2 \
+  --filters Name=opt-in-status,Values=opt-in-not-required \
+  --query 'AvailabilityZones[1].ZoneName' --output text)
+
+echo "AZ1: $AZ1, AZ2: $AZ2"
+----
+
+== Create public subnets
+
+Leave auto-assign public IPv4 disabled. The hub VPC never assigns public IPs to instances directly.
+
+[tabs]
+======
+Console::
++
+. Open the VPC console and choose *Subnets* > *Create Subnet*.
+. Select the `hub-vpc` VPC.
+. Create two public subnets:
+.. Name `hub-public-0`, in the first AZ, with CIDR `100.64.0.0/24`.
+.. Name `hub-public-1`, in the second AZ, with CIDR `100.64.1.0/24`.
+. Leave *Auto-assign public IPv4* disabled.
+
+CLI::
++
+[,bash]
+----
+PUB_SUBNET_0=$(aws ec2 create-subnet \
+  --vpc-id $VPC_ID \
+  --cidr-block 100.64.0.0/24 \
+  --availability-zone $AZ1 \
+  --region us-east-2 \
+  --query 'Subnet.SubnetId' --output text)
+
+PUB_SUBNET_1=$(aws ec2 create-subnet \
+  --vpc-id $VPC_ID \
+  --cidr-block 100.64.1.0/24 \
+  --availability-zone $AZ2 \
+  --region us-east-2 \
+  --query 'Subnet.SubnetId' --output text)
+
+aws ec2 create-tags --resources $PUB_SUBNET_0 \
+  --tags Key=Name,Value=hub-public-0 --region us-east-2
+aws ec2 create-tags --resources $PUB_SUBNET_1 \
+  --tags Key=Name,Value=hub-public-1 --region us-east-2
+
+echo "Public subnets: $PUB_SUBNET_0, $PUB_SUBNET_1"
+----
+======
+
+== Create private subnets
+
+[tabs]
+======
+Console::
++
+. Open the VPC console and choose *Subnets* > *Create Subnet*.
+. Select the `hub-vpc` VPC.
+. Create two private subnets:
+.. Name `hub-private-0`, in the first AZ, with CIDR `100.64.2.0/24`.
+.. Name `hub-private-1`, in the second AZ, with CIDR `100.64.3.0/24`.
+
+CLI::
++
+[,bash]
+----
+PRIV_SUBNET_0=$(aws ec2 create-subnet \
+  --vpc-id $VPC_ID \
+  --cidr-block 100.64.2.0/24 \
+  --availability-zone $AZ1 \
+  --region us-east-2 \
+  --query 'Subnet.SubnetId' --output text)
+
+PRIV_SUBNET_1=$(aws ec2 create-subnet \
+  --vpc-id $VPC_ID \
+  --cidr-block 100.64.3.0/24 \
+  --availability-zone $AZ2 \
+  --region us-east-2 \
+  --query 'Subnet.SubnetId' --output text)
+
+aws ec2 create-tags --resources $PRIV_SUBNET_0 \
+  --tags Key=Name,Value=hub-private-0 --region us-east-2
+aws ec2 create-tags --resources $PRIV_SUBNET_1 \
+  --tags Key=Name,Value=hub-private-1 --region us-east-2
+
+echo "Private subnets: $PRIV_SUBNET_0, $PRIV_SUBNET_1"
+----
+======
+
+== Create the Internet Gateway
+
+[tabs]
+======
+Console::
++
+. Open the VPC console and choose *Internet Gateways* > *Create internet gateway*.
+. Set the name to `hub-igw`.
+. Click *Create*.
+. Choose *Actions* > *Attach to VPC* and select `hub-vpc`.
+
+CLI::
++
+[,bash]
+----
+IGW_ID=$(aws ec2 create-internet-gateway \
+  --region us-east-2 \
+  --query 'InternetGateway.InternetGatewayId' --output text)
+
+aws ec2 attach-internet-gateway \
+  --internet-gateway-id $IGW_ID \
+  --vpc-id $VPC_ID \
+  --region us-east-2
+
+aws ec2 create-tags --resources $IGW_ID \
+  --tags Key=Name,Value=hub-igw --region us-east-2
+
+echo "IGW ID: $IGW_ID"
+----
+======
+
+== Create the NAT Gateway
+
+The NAT Gateway goes in the first public subnet only. It requires an Elastic IP.
+
+[tabs]
+======
+Console::
++
+. Open the VPC console and choose *Elastic IPs* > *Allocate Elastic IP address* > *Allocate*.
+. Choose *NAT Gateways* > *Create NAT gateway*.
+. Set the name to `hub-nat`.
+. Select subnet `hub-public-0`.
+. Set *Connectivity type* to *Public*.
+. Select the Elastic IP you just allocated.
+. Click *Create NAT Gateway*. The NAT Gateway takes a few minutes to become available.
+
+CLI::
++
+[,bash]
+----
+EIP_ALLOC=$(aws ec2 allocate-address \
+  --domain vpc \
+  --region us-east-2 \
+  --query 'AllocationId' --output text)
+
+NAT_GW_ID=$(aws ec2 create-nat-gateway \
+  --subnet-id $PUB_SUBNET_0 \
+  --allocation-id $EIP_ALLOC \
+  --region us-east-2 \
+  --query 'NatGateway.NatGatewayId' --output text)
+
+aws ec2 create-tags --resources $NAT_GW_ID \
+  --tags Key=Name,Value=hub-nat --region us-east-2
+
+aws ec2 wait nat-gateway-available \
+  --nat-gateway-ids $NAT_GW_ID \
+  --region us-east-2
+
+echo "NAT Gateway ID: $NAT_GW_ID"
+----
+======
+
+== Create the Transit Gateway
+
+[tabs]
+======
+Console::
++
+. Open the VPC console and choose *Transit Gateways* > *Create transit gateway*.
+. Set the name to `hub-tgw`.
+. Enable *Default route table association*, *Default route table propagation*, and *Auto accept shared attachments*.
+. Click *Create transit gateway*. The Transit Gateway takes a few minutes to become available.
+
+CLI::
++
+[,bash]
+----
+TGW_ID=$(aws ec2 create-transit-gateway \
+  --description "Hub egress transit gateway" \
+  --options "DefaultRouteTableAssociation=enable,DefaultRouteTablePropagation=enable,AutoAcceptSharedAttachments=enable" \
+  --region us-east-2 \
+  --query 'TransitGateway.TransitGatewayId' --output text)
+
+aws ec2 create-tags --resources $TGW_ID \
+  --tags Key=Name,Value=hub-tgw --region us-east-2
+
+aws ec2 wait transit-gateway-available \
+  --transit-gateway-ids $TGW_ID \
+  --region us-east-2
+
+HUB_ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
+TGW_ARN="arn:aws:ec2:us-east-2:${HUB_ACCOUNT}:transit-gateway/$TGW_ID"
+
+echo "TGW ID:  $TGW_ID"
+echo "TGW ARN: $TGW_ARN"
+----
+======
+
+== Attach the hub VPC to the Transit Gateway
+
+The hub VPC attaches via its private subnets. This is where the Transit Gateway delivers inbound traffic into the hub.
+
+[tabs]
+======
+Console::
++
+. Open the VPC console and choose *Transit Gateway Attachments* > *Create transit gateway attachment*.
+. Select the `hub-tgw` Transit Gateway.
+. Set *Attachment type* to *VPC*.
+. Select the `hub-vpc` VPC.
+. Select both private subnets (`hub-private-0` and `hub-private-1`).
+. Enable *Associate with the default association route table* and *Propagate to the default propagation route table*.
+. Click *Create*. The attachment takes a few minutes to become available.
+
+CLI::
++
+[,bash]
+----
+TGW_ATTACH_ID=$(aws ec2 create-transit-gateway-vpc-attachment \
+  --transit-gateway-id $TGW_ID \
+  --vpc-id $VPC_ID \
+  --subnet-ids $PRIV_SUBNET_0 $PRIV_SUBNET_1 \
+  --options "ApplianceModeSupport=disable,DnsSupport=enable,Ipv6Support=disable" \
+  --region us-east-2 \
+  --query 'TransitGatewayVpcAttachment.TransitGatewayAttachmentId' --output text)
+
+aws ec2 create-tags --resources $TGW_ATTACH_ID \
+  --tags Key=Name,Value=hub-tgw-attachment --region us-east-2
+
+aws ec2 wait transit-gateway-attachment-available \
+  --transit-gateway-attachment-ids $TGW_ATTACH_ID \
+  --region us-east-2
+
+echo "TGW Attachment ID: $TGW_ATTACH_ID"
+----
+======
+
+== Add a default route to the Transit Gateway route table
+
+This static route forwards all `0.0.0.0/0` traffic to the hub VPC attachment, so spoke traffic reaches the NAT Gateway.
+
+[tabs]
+======
+Console::
++
+. Open the VPC console and choose *Transit Gateway Route Tables*.
+. Select the default route table for `hub-tgw`.
+. Choose *Routes* > *Create static route*.
+. Set the CIDR to `0.0.0.0/0`.
+. Select the hub VPC attachment.
+. Click *Create static route*.
+
+CLI::
++
+[,bash]
+----
+TGW_RTB_ID=$(aws ec2 describe-transit-gateway-route-tables \
+  --filters "Name=transit-gateway-id,Values=$TGW_ID" \
+             "Name=default-association-route-table,Values=true" \
+  --region us-east-2 \
+  --query 'TransitGatewayRouteTables[0].TransitGatewayRouteTableId' --output text)
+
+aws ec2 create-transit-gateway-route \
+  --destination-cidr-block 0.0.0.0/0 \
+  --transit-gateway-route-table-id $TGW_RTB_ID \
+  --transit-gateway-attachment-id $TGW_ATTACH_ID \
+  --region us-east-2
+
+echo "Default route added to TGW route table: $TGW_RTB_ID"
+----
+======
+
+== Create the route tables
+
+=== Public route table
+
+The public subnet route table needs two types of routes:
+
+* `0.0.0.0/0` to the Internet Gateway -- allows the NAT Gateway to reach the internet.
+* One entry per spoke CIDR to the Transit Gateway -- sends reply packets back to the correct spoke.
+
+[tabs]
+======
+Console::
++
+. Open the VPC console and choose *Route Tables* > *Create route table*.
+. Name it `hub-public-rt` and select the `hub-vpc` VPC.
+. Click *Create*.
+. Choose *Routes* > *Edit routes* and add the following:
+.. Destination `0.0.0.0/0`, target type *Internet Gateway*, value `hub-igw`.
+.. Destination `10.0.0.0/16` (your spoke CIDR), target type *Transit Gateway*, value `hub-tgw`. Repeat this entry for each additional spoke.
+. Choose *Subnet Associations* > *Edit subnet associations* and select both public subnets.
+
+CLI::
++
+[,bash]
+----
+PUB_RTB_ID=$(aws ec2 create-route-table \
+  --vpc-id $VPC_ID \
+  --region us-east-2 \
+  --query 'RouteTable.RouteTableId' --output text)
+
+aws ec2 create-tags --resources $PUB_RTB_ID \
+  --tags Key=Name,Value=hub-public-rt --region us-east-2
+
+aws ec2 create-route \
+  --route-table-id $PUB_RTB_ID \
+  --destination-cidr-block 0.0.0.0/0 \
+  --gateway-id $IGW_ID \
+  --region us-east-2
+
+# Add one route per spoke CIDR. Repeat this block for each additional spoke.
+aws ec2 create-route \
+  --route-table-id $PUB_RTB_ID \
+  --destination-cidr-block 10.0.0.0/16 \
+  --transit-gateway-id $TGW_ID \
+  --region us-east-2
+
+aws ec2 associate-route-table \
+  --route-table-id $PUB_RTB_ID \
+  --subnet-id $PUB_SUBNET_0 \
+  --region us-east-2
+
+aws ec2 associate-route-table \
+  --route-table-id $PUB_RTB_ID \
+  --subnet-id $PUB_SUBNET_1 \
+  --region us-east-2
+----
+======
+
+=== Private route table
+
+Private subnets only need a default route to the NAT Gateway. Traffic arrives from the Transit Gateway and exits via NAT.
+
+[tabs]
+======
+Console::
++
+. Open the VPC console and choose *Route Tables* > *Create route table*.
+. Name it `hub-private-rt` and select the `hub-vpc` VPC.
+. Click *Create*.
+. Choose *Routes* > *Edit routes* and add `0.0.0.0/0` with target type *NAT Gateway* and value `hub-nat`.
+. Choose *Subnet Associations* > *Edit subnet associations* and select both private subnets.
+
+CLI::
++
+[,bash]
+----
+PRIV_RTB_ID=$(aws ec2 create-route-table \
+  --vpc-id $VPC_ID \
+  --region us-east-2 \
+  --query 'RouteTable.RouteTableId' --output text)
+
+aws ec2 create-tags --resources $PRIV_RTB_ID \
+  --tags Key=Name,Value=hub-private-rt --region us-east-2
+
+aws ec2 create-route \
+  --route-table-id $PRIV_RTB_ID \
+  --destination-cidr-block 0.0.0.0/0 \
+  --nat-gateway-id $NAT_GW_ID \
+  --region us-east-2
+
+aws ec2 associate-route-table \
+  --route-table-id $PRIV_RTB_ID \
+  --subnet-id $PRIV_SUBNET_0 \
+  --region us-east-2
+
+aws ec2 associate-route-table \
+  --route-table-id $PRIV_RTB_ID \
+  --subnet-id $PRIV_SUBNET_1 \
+  --region us-east-2
+----
+======
+
+== Share the Transit Gateway with the Redpanda account
+
+Skip this section if the Redpanda BYOC cluster runs in the same AWS account as your hub.
+
+Use AWS Resource Access Manager (RAM) to share the Transit Gateway with the Redpanda cluster account.
+
+[tabs]
+======
+Console::
++
+. In the hub account, open the AWS RAM console and choose *Resource shares* > *Create resource share*.
+. Set the name to `hub-tgw-share`.
+. Under *Resources*, select resource type *Transit Gateways* and pick `hub-tgw`.
+. Under *Principals*, enter the Redpanda cluster AWS account ID.
+. Click *Create resource share*.
+. If the accounts are not in the same AWS Organization, in the Redpanda cluster account, open AWS RAM and accept the pending invitation under *Resource share invitations*. Redpanda accepts this invitation as part of cluster deployment.
+
+CLI::
++
+In the hub account:
++
+[,bash]
+----
+REDPANDA_ACCOUNT_ID="<redpanda-account-id>"
+
+RAM_SHARE_ARN=$(aws ram create-resource-share \
+  --name hub-tgw-share \
+  --resource-arns "$TGW_ARN" \
+  --principals "$REDPANDA_ACCOUNT_ID" \
+  --region us-east-2 \
+  --query 'resourceShare.resourceShareArn' --output text)
+
+echo "RAM Share ARN: $RAM_SHARE_ARN"
+----
++
+If the accounts are not in the same AWS Organization, the spoke side must accept the invitation. Within an AWS Organization, shares are auto-accepted.
+======
+
+== Collect the values to provide to Redpanda
+
+Record these values. Provide the Transit Gateway ID when you configure centralized egress on your BYOC network. See xref:networking:byoc/aws/nat-free-egress.adoc[Configure Centralized Egress with AWS Transit Gateway].
+
+[,bash]
+----
+NAT_PUBLIC_IP=$(aws ec2 describe-nat-gateways \
+  --nat-gateway-ids $NAT_GW_ID \
+  --region us-east-2 \
+  --query 'NatGateways[0].NatGatewayAddresses[0].PublicIp' --output text)
+
+echo "hub_vpc_id              = $VPC_ID"
+echo "transit_gateway_id      = $TGW_ID"
+echo "transit_gateway_arn     = $TGW_ARN"
+echo "nat_gateway_public_ip   = $NAT_PUBLIC_IP"
+echo "ram_resource_share_arn  = $RAM_SHARE_ARN"
+----
+
+All outbound internet traffic from every BYOC spoke that attaches to this Transit Gateway exits from the same NAT Gateway public IP. Use that public IP for outbound IP allowlisting on external services.
+
+== High availability
+
+The procedure in this guide deploys a single NAT Gateway in `hub-public-0`, which is not AZ-resilient. For production deployments, run one NAT Gateway per availability zone and use per-AZ private route tables that direct local traffic to the AZ-local NAT Gateway. The <<automated-alternative,Terraform reference module>> also deploys a single NAT Gateway. Extend it with per-AZ NAT Gateways if you need HA egress.
+
+== Troubleshooting
+
+[cols="2,2"]
+|===
+| Symptom | Likely cause
+
+| Spoke cannot reach the internet | Missing `0.0.0.0/0` -> Transit Gateway route in the spoke private route table. The Redpanda agent creates this route when the network is configured for centralized egress.
+| Outbound traffic leaves the hub NAT Gateway but no replies arrive at the spoke | Missing spoke CIDR route in the hub public route table.
+| Transit Gateway attachment is stuck in `pending` | The Redpanda cluster account has not accepted the AWS RAM share invitation. Contact your account team if the invitation was not auto-accepted.
+| CIDR conflict error on attachment | The spoke CIDR overlaps the hub CIDR `100.64.0.0/16`. Choose non-overlapping CIDRs.
+| Outbound traffic is intermittently dropped | Your hub firewall is not allowlisting the third-party endpoints required by Redpanda. See xref:networking:byoc/aws/nat-free-egress.adoc#internet-endpoints[Internet endpoints required from your hub].
+| All traffic appears to come from one public IP | This is the expected behavior of centralized egress. Use that IP for outbound allowlisting.
+|===
+
+== Next steps
+
+* xref:networking:byoc/aws/nat-free-egress.adoc[Configure Centralized Egress with AWS Transit Gateway]
+* xref:get-started:cluster-types/byoc/aws/create-byoc-cluster-aws.adoc[Create a BYOC Cluster on AWS]
