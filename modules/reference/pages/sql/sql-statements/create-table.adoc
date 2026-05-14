@@ -51,17 +51,25 @@ a|How to handle records that fail deserialization.
 |`struct_mapping_policy`
 |STRING
 |No
-a|How to map nested structures to SQL columns.
+a|How to map nested structures from the topic schema to SQL columns.
 
-* `JSON` (default): Stores nested data as JSON.
-* `FLATTEN`: Expands nested fields into top-level columns.
-* `COMPOUND`: Maps to ROW types.
-* `VARIANT`: Stores as a variant type.
+* `COMPOUND` (default): Maps each nested structure to a SQL xref:reference:sql/sql-data-types/row.adoc[ROW] value with named fields, queryable using `(column).field_name` syntax. Cyclic types are not supported in `COMPOUND` mode — use `JSON` for recursive schemas.
+* `JSON`: Stores each nested structure as a JSON value. Required for recursive (cyclic) types.
 
 |`output_schema_message_full_name`
 |STRING
 |No
 |Full Protobuf message name. Required when the schema contains multiple message definitions.
+
+|`confluent_wire_protocol`
+|STRING
+|No
+a|Whether records on the topic are encoded with the https://docs.confluent.io/platform/current/schema-registry/fundamentals/serdes-develop/index.html#wire-format[Confluent Schema Registry wire format^] (a magic byte followed by a 4-byte schema ID before the payload).
+
+* `'true'` (default): Records carry the Confluent wire-format prefix. Use this for topics whose values were produced by a Schema-Registry-aware client.
+* `'false'`: Records are raw Protobuf or Avro without the wire-format prefix.
+
+Only valid when `schema_lookup_policy = 'LATEST'`.
 |===
 
 == Examples
