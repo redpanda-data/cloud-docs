@@ -1,11 +1,11 @@
 = Connect to Redpanda SQL with OIDC
-:description: Authenticate to Redpanda SQL using a bearer token issued by your OIDC identity provider.
+:description: Authenticate to Redpanda SQL using a bearer token or client credentials issued by your OIDC identity provider.
 :page-topic-type: how-to
 :personas: app_developer, data_engineer, platform_admin
-:learning-objective-1: Obtain an OIDC bearer token from your identity provider
-:learning-objective-2: Connect to Redpanda SQL with the token using psql or a PostgreSQL client driver
+:learning-objective-1: Obtain credentials from your OIDC identity provider for Redpanda SQL
+:learning-objective-2: Connect to Redpanda SQL using a bearer token or client credentials
 
-Authenticate to Redpanda SQL using a bearer token issued by your OIDC identity provider. OIDC authenticates the user to Redpanda SQL; per-user data access is enforced separately. See xref:sql:manage/manage-access.adoc[] for the access model.
+Authenticate to Redpanda SQL using OIDC instead of a SCRAM password. The cluster validates the credential locally against the configured identity provider, and the session identity is set from the principal claim in the token (not from the `user=` field in the connection string). Per-user data access is granted separately by the cluster admin. See xref:sql:manage/manage-access.adoc[] for the access model.
 
 After completing these steps, you will be able to:
 
@@ -17,41 +17,50 @@ After completing these steps, you will be able to:
 * A Redpanda BYOC cluster on AWS with Redpanda SQL enabled. See xref:sql:get-started/deploy-sql-cluster.adoc[Enable Redpanda SQL].
 * OIDC configured for your Redpanda cluster. See xref:security:authorization/gbac/gbac_dp.adoc[Configure GBAC in the Data Plane] for the cluster-level OIDC setup. Configuring OIDC is not specific to Redpanda SQL.
 * https://www.postgresql.org/download/[`psql`^] or another PostgreSQL-compatible client.
+* *A SQL user that matches the principal in your OIDC token.* Redpanda SQL does not auto-create users on first OIDC login. The cluster admin must run `CREATE USER <token-principal>` for each user, where `<token-principal>` is the value of the claim configured by the cluster's `oidc.oidc_principal_mapping` (default `$.sub`, often overridden to `$.preferred_username` for human-readable usernames). Usernames listed in the cluster's `oidc.protected_users` (default `["oxla"]`) cannot authenticate via OIDC even when a token resolves to that name.
 
-== Obtain a bearer token
+== Authentication modes
 
-Redpanda SQL accepts bearer tokens issued by any OIDC-compliant identity provider configured on the cluster. The token flow you use depends on your scenario:
+Redpanda SQL accepts two OIDC authentication modes, selected by the connection-string `options` parameter:
 
-* *Authorization Code flow* — for users connecting interactively (for example, through a developer workstation).
-* *Client Credentials flow* — for service-to-service connections (for example, a scheduled job or BI tool service account).
+[cols="<25%,<30%,<45%",options="header"]
+|===
+|Mode |`options` value |When to use
+
+|Bearer token
+|`auth_method=bearer`
+|You already hold a JWT issued by the identity provider (for example, an Authorization Code flow result on a developer workstation, or a token minted by a cluster-side workflow).
+
+|Client credentials
+|`auth_method=client_secret`
+|Service-to-service connections (scheduled jobs, BI tools). Redpanda SQL exchanges the client ID and client secret for a token against the IdP's token endpoint, then validates the returned token.
+|===
+
+If `options` is omitted, Redpanda SQL defaults to SCRAM password authentication. A bearer token presented in the password field without `auth_method=bearer` is treated as a SCRAM password and the connection fails.
+
+The token must include the standard OIDC claims (`sub`, `aud`, `iss`, `exp`) and must be signed with one of the algorithms Redpanda SQL accepts: `RS256`, `RS384`, `RS512`, or `ES256`. Tokens signed with `alg: none` are rejected.
 
 // TODO: Confirm the validated IdP coverage with engineering (qa-questions.md #16).
-// E2E tests use Keycloak; Okta, Microsoft Entra ID, Auth0, and Google have not
-// yet been confirmed as explicitly tested for Redpanda SQL bearer-token auth.
-// List validated IdPs here once confirmed.
+// E2E tests in oxla currently use Keycloak (tests/blackbox/configurations/keycloak/);
+// Okta, Microsoft Entra ID, Auth0, and Google have not been confirmed as explicitly
+// tested for Redpanda SQL bearer-token auth. List validated IdPs here once confirmed.
 
-Refer to your identity provider's documentation for the exact token request. The token must include the standard OIDC claims (`sub`, `aud`, `iss`, `exp`) so Redpanda SQL can verify it.
+// TODO: Verify aud-as-array + azp validation semantics. The RFC states that when
+// `aud` is an array, `azp` is also validated, but the JWT validator code has not
+// been audited line-by-line for this case. Confirm with SME before publishing.
 
-== Connect with psql
+== Connect with a bearer token
 
-Pass the bearer token in place of the SCRAM password when you connect:
+Set `options=auth_method=bearer` in the connection string and pass the token in the password field. The `user=` field is ignored — Redpanda SQL sets the session identity from the principal claim in the token.
 
-// TODO: Confirm the exact `psql` connection-string format with engineering. Some
-// engines accept the token via the `password` field over a TLS connection;
-// others require an explicit OAUTHBEARER mechanism. Document the supported
-// pattern once confirmed.
-
+.psql
 [source,bash]
 ----
-PGPASSWORD="$BEARER_TOKEN" psql "host=<sql-host> port=<sql-port> dbname=oxla user=<oidc-username> sslmode=require"
+PGPASSWORD="$BEARER_TOKEN" \
+  psql "host=<sql-host> port=<sql-port> dbname=oxla user=ignored options='auth_method=bearer' sslmode=require"
 ----
 
-The `<oidc-username>` value is the user identifier from your OIDC token (typically the `sub` or `preferred_username` claim, depending on your IdP).
-
-== Connect with a PostgreSQL client driver
-
-For language clients, set the connection password to the bearer token. The example below uses Python's `psycopg2`:
-
+.Python (psycopg2)
 [source,python]
 ----
 import os
@@ -61,21 +70,57 @@ conn = psycopg2.connect(
     host="<sql-host>",
     port=<sql-port>,
     dbname="oxla",
-    user="<oidc-username>",
+    user="ignored",
     password=os.environ["BEARER_TOKEN"],
+    options="auth_method=bearer",
     sslmode="require",
 )
+
+cur = conn.cursor()
+cur.execute("SELECT current_user")
+# current_user is the principal from the token, not "ignored"
 ----
 
 For more language-client examples, see xref:sql:connect-to-sql/index.adoc[Connect to Redpanda SQL].
 
-== Token refresh
+[NOTE]
+====
+*Concurrent first-time logins.* First-time logins through a connection pool can occasionally produce duplicate role entries in the distributed catalog, after which DDL operations against the role fail. Track https://redpandadata.atlassian.net/browse/OXLA-9382[OXLA-9382^]. As a workaround, have each user log in once with a single connection before using a connection pool against that account.
+====
 
-OIDC bearer tokens expire. When a token expires, Redpanda SQL closes the connection. Your client must obtain a fresh token from the identity provider and reconnect.
+== Connect with client credentials
 
-// TODO: Confirm whether Redpanda SQL supports any in-session token refresh
-// (for example, re-presenting a new token on an existing connection) or whether
-// reconnection is always required.
+Set `options=auth_method=client_secret`, pass the OIDC client ID in `user=`, and the client secret in the password field. Redpanda SQL exchanges these against the identity provider's token endpoint and validates the returned token. The resolved principal becomes the session identity.
+
+[source,bash]
+----
+PGPASSWORD="$CLIENT_SECRET" \
+  psql "host=<sql-host> port=<sql-port> dbname=oxla user=<client-id> options='auth_method=client_secret' sslmode=require"
+----
+
+// TODO: Confirm the exact token-endpoint timeout to document.
+// Source default in oxla/src/net/http/http_client.h is 10s (request_timeout{10000}),
+// constructed via default-initialised HttpClientConfig in
+// oxla/src/network/leader_factory.cpp:15. The RFC quotes 5s. Document the correct
+// value once verified with SME.
+
+== TLS
+
+Bearer tokens and client secrets are transmitted in the password field of the PostgreSQL startup message. To prevent these credentials from being captured in transit, set `sslmode=require` on every OIDC connection.
+
+Two distinct cluster settings affect TLS for OIDC:
+
+* The cluster's SSL mode controls TLS on the `psql` connection to Redpanda SQL itself. If you want OIDC connections to be rejected when they aren't using TLS, configure the cluster so that non-TLS connections are rejected for all clients. See xref:security:authorization/gbac/gbac_dp.adoc[].
+* `oidc.require_tls` (default `true`) controls whether Redpanda SQL uses HTTPS when contacting the identity provider: the OIDC discovery document URL, the JWKS endpoint, and the token endpoint for the client-credentials flow. This setting does not gate TLS on the client's `psql` connection.
+
+== Token expiry
+
+OIDC bearer tokens are short-lived. Redpanda SQL validates the token once at connection time and does not re-validate it over the lifetime of the session. After the token expires, the database session continues until it closes for some other reason; new connections must present a fresh token. Clients are responsible for obtaining a new token from the identity provider and reconnecting.
+
+// TODO: Confirm the exact in-session behavior after a token expires. Source has
+// a single validateToken call at oxla/src/net/postgres/states/wait_for_bearer_auth_state.cpp
+// and no re-validation path, so "the session is unaffected until closed" appears
+// correct, but please confirm and tighten with SME before publishing.
 
 == Next steps
 

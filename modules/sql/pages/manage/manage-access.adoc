@@ -46,6 +46,28 @@ This means:
 // access, or is an additional ACL / Kafka-side step required? Document the
 // exact scope and granularity (table only, schema-wide, etc.) once confirmed.
 
+// TODO: Add xref to GRANT, REVOKE, CREATE ROLE, ALTER ROLE, DROP ROLE
+// reference pages once they exist. These statement reference pages do NOT
+// exist yet under modules/reference/pages/sql/sql-statements/ — the SQL
+// reference set currently covers CATALOG/STORAGE/TABLE DDL + DML only.
+// Filing a follow-up DOC ticket for this coverage gap; the inline examples
+// below are temporary until reference pages land.
+
+// TODO: Document the schema-visibility / creation-privilege policy changes
+// from oxla PR #6793: system.catalogs and SHOW CATALOGS are now filtered by
+// schema USAGE (previously CONNECT only); non-superuser catalog/storage
+// creation now requires CREATE on the schema. The policy half of #6793 is
+// not covered by DOC-2134's scope (that ticket covers the system.catalogs
+// schema reshape but not the ACL-policy tightening). No DOC ticket yet.
+
+// TODO: Document the grants surface from oxla PR #6858: new
+// information_schema.role_external_relation_grants view; ALL PRIVILEGES on
+// external sources resolves to SELECT-only; REVOKE on a non-wildcard pattern
+// matching nothing now errors (was previously a silent no-op); catalog-level
+// grants now appear in information_schema.role_table_grants. No DOC ticket
+// yet — file a follow-up for this when the GRANT/REVOKE reference pages are
+// scoped, since the two work-streams are related.
+
 Redpanda SQL is deny-all by default. After a user authenticates, they cannot read any table until the admin explicitly grants access. To allow a user to query a table:
 
 . Create a role for the user.
