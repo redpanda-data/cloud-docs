@@ -100,7 +100,7 @@ Use a non-overlapping range for your hub. The `100.64.0.0/16` CGNAT range is a s
 | Redpanda spoke VPC, subnets, and EKS cluster | Redpanda
 | Spoke route table entry: `0.0.0.0/0` -> Transit Gateway | Redpanda
 | Interface VPC Endpoints (ECR, STS, CloudWatch Logs) in spoke | Redpanda
-| Accepting the AWS RAM share invitation (cross-account) | Redpanda
+| Accepting the AWS RAM share invitation (cross-account) | Customer
 | Transit Gateway | Customer
 | Hub VPC | Customer
 | Hub NAT Gateway, firewall, or NVA | Customer
@@ -122,7 +122,7 @@ Centralized egress is set at network creation. You cannot change it on an existi
 
 [IMPORTANT]
 ====
-The Transit Gateway ID is immutable after the network is created. To switch back to NAT Gateway egress, you must create a new network and migrate the cluster. 
+To switch back to NAT Gateway egress, create a new network and a new cluster on it, then migrate your data.
 ====
 
 To enable centralized egress, use the Redpanda Cloud UI:
