@@ -9,7 +9,7 @@
 
 [IMPORTANT]
 ====
-This feature is in beta and is available on AWS BYOC clusters only. Availability is controlled per organization. Contact your account team to request access to centralized egress.
+This feature is in beta and is available only on AWS BYOC clusters with private networking. Availability is controlled per organization. Contact your account team to request access to centralized egress.
 ====
 
 Centralized egress lets your BYOC cluster send all internet-bound traffic through your own AWS Transit Gateway (TGW) and hub VPC instead of a Redpanda-managed NAT Gateway in the Redpanda VPC. When centralized egress is enabled, the Redpanda spoke VPC attaches to your TGW, all outbound traffic exits through the NAT Gateway or firewall in your hub, and no per-VPC NAT Gateway is created in the spoke.
@@ -77,6 +77,7 @@ The Redpanda spoke CIDR route on the hub public route table is your responsibili
 Before you configure centralized egress, confirm all of the following:
 
 * Centralized egress is enabled on your Redpanda Cloud organization. Contact your account team to request access.
+* Your BYOC cluster uses private networking (connection type *Private*). Centralized egress is not available on clusters with a public connection type.
 * You have an existing AWS Transit Gateway in the same region where you will create the Redpanda BYOC cluster.
 * Your hub VPC has a NAT Gateway, AWS Network Firewall, or other NVA providing internet egress. See xref:networking:byoc/aws/aws-hub-egress.adoc[Create an AWS Hub for Centralized Egress] if you need to provision a hub.
 * If the Transit Gateway is in a different AWS account than the Redpanda cluster account, you have created an AWS Resource Access Manager (RAM) share for the Transit Gateway and Redpanda will accept the invitation before deployment.
@@ -113,10 +114,7 @@ Redpanda does not manage the availability of the egress path. Plan for multi-AZ 
 
 == Limitations
 
-Centralized egress is currently limited to:
-
-* Setting the Transit Gateway ID at network creation. The field is immutable after the network is created.
-* Migration from a NAT Gateway-based network to a Transit Gateway-based network is not supported. To switch, create a new network and migrate the cluster.
+Centralized egress is currently limited to setting the Transit Gateway ID at network creation. The field is immutable after the network is created.
 
 == Configure egress at network creation
 
@@ -124,7 +122,7 @@ Centralized egress is set at network creation. You cannot change it on an existi
 
 [IMPORTANT]
 ====
-The Transit Gateway ID is immutable after the network is created. To switch back to NAT Gateway egress, you must create a new network and migrate the cluster. Migration of existing clusters is on the roadmap but not yet supported.
+The Transit Gateway ID is immutable after the network is created. To switch back to NAT Gateway egress, you must create a new network and migrate the cluster. 
 ====
 
 To enable centralized egress, use the Redpanda Cloud UI:
