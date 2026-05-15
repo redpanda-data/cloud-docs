@@ -8,6 +8,10 @@ This page lists new features added to Redpanda Cloud.
 
 == May 2026
 
+=== Centralized egress for BYOC on AWS (beta)
+
+You can now route all BYOC cluster egress through your own AWS Transit Gateway and hub VPC instead of a per-VPC NAT Gateway, so outbound traffic exits through your centralized inspection point. This is useful for regulated environments that prohibit per-VPC NAT Gateways and for consolidating egress behind a single, predictable public IP for outbound allowlisting. Centralized egress is in beta and is enabled per organization. Contact your account team for access. See xref:networking:byoc/aws/nat-free-egress.adoc[Configure Centralized Egress with AWS Transit Gateway].
+
 === Schema Registry Authorization enabled by default
 
 Schema Registry Authorization is now enabled automatically on all new BYOC and Dedicated clusters. The xref:reference:properties/cluster-properties.adoc#schema_registry_enable_authorization[`schema_registry_enable_authorization`] cluster property is set to `true` at provisioning, and the predefined Admin, Writer, and Reader roles include Schema Registry permissions for the `subject` and `registry` ACL resource types. You can use ACLs and RBAC roles to grant fine-grained access to schemas and subjects without any additional setup. See xref:manage:schema-reg/schema-reg-authorization.adoc[Schema Registry Authorization] and xref:security:authorization/rbac/rbac.adoc#predefined-roles[Predefined roles].
