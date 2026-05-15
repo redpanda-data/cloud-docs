@@ -502,7 +502,7 @@ Console::
 . Under *Resources*, select resource type *Transit Gateways* and pick `hub-tgw`.
 . Under *Principals*, enter the Redpanda cluster AWS account ID.
 . Click *Create resource share*.
-. If the accounts are not in the same AWS Organization, in the Redpanda cluster account, open AWS RAM and accept the pending invitation under *Resource share invitations*. Redpanda accepts this invitation as part of cluster deployment.
+. If the accounts are not in the same AWS Organization, switch to the BYOC AWS account, open AWS RAM, and accept the pending invitation under *Resource share invitations*. Accept the invitation before you create the Redpanda BYOC cluster. Within an AWS Organization, the share is auto-accepted.
 
 CLI::
 +
@@ -557,7 +557,7 @@ The procedure in this guide deploys a single NAT Gateway in `hub-public-0`, whic
 
 | Spoke cannot reach the internet | Missing `0.0.0.0/0` -> Transit Gateway route in the spoke private route table. The Redpanda agent creates this route when the network is configured for centralized egress.
 | Outbound traffic leaves the hub NAT Gateway but no replies arrive at the spoke | Missing spoke CIDR route in the hub public route table.
-| Transit Gateway attachment is stuck in `pending` | The Redpanda cluster account has not accepted the AWS RAM share invitation. Contact your account team if the invitation was not auto-accepted.
+| Transit Gateway attachment is stuck in `pending` | The BYOC AWS account has not accepted the AWS RAM share invitation. In that account, open AWS RAM and accept the pending invitation. Shares are auto-accepted only within an AWS Organization.
 | CIDR conflict error on attachment | The spoke CIDR overlaps the hub CIDR `100.64.0.0/16`. Choose non-overlapping CIDRs.
 | Outbound traffic is intermittently dropped | Your hub firewall is not allowlisting the third-party endpoints required by Redpanda. See xref:networking:byoc/aws/nat-free-egress.adoc#internet-endpoints[Internet endpoints required from your hub].
 | All traffic appears to come from one public IP | This is the expected behavior of centralized egress. Use that IP for outbound allowlisting.

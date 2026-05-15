@@ -80,7 +80,7 @@ Before you configure centralized egress, confirm all of the following:
 * Your BYOC cluster uses private networking (connection type *Private*). Centralized egress is not available on clusters with a public connection type.
 * You have an existing AWS Transit Gateway in the same region where you will create the Redpanda BYOC cluster.
 * Your hub VPC has a NAT Gateway, AWS Network Firewall, or other NVA providing internet egress. See xref:networking:byoc/aws/aws-hub-egress.adoc[Create an AWS Hub for Centralized Egress] if you need to provision a hub.
-* If the Transit Gateway is in a different AWS account than the Redpanda cluster account, you have created an AWS Resource Access Manager (RAM) share for the Transit Gateway and Redpanda will accept the invitation before deployment.
+* If the hub Transit Gateway is in a different AWS account than the AWS account where your BYOC cluster will be deployed, you have created an AWS Resource Access Manager (RAM) share in the hub account and accepted the invitation in the BYOC account before creating the cluster. Within an AWS Organization, the share is auto-accepted and no manual acceptance step is needed.
 * Your hub VPC CIDR and the planned Redpanda spoke VPC CIDR do not overlap.
 +
 [WARNING]
@@ -198,7 +198,7 @@ Centralized egress does not affect DNS resolution. The Redpanda VPC uses AmazonP
 | Cluster bootstrap fails with no internet egress | Hub default route is missing. The Transit Gateway default route table must include `0.0.0.0/0` -> hub VPC attachment.
 | Outbound packets leave the Redpanda VPC but no replies arrive | The hub public route table is missing the Redpanda spoke CIDR -> Transit Gateway return route.
 | Outbound packets to public IPs succeed intermittently or never | The hub VPC CIDR overlaps the Redpanda spoke CIDR. Re-create the hub with a non-overlapping CIDR such as `100.64.0.0/16`.
-| Transit Gateway attachment stays in `pending` | Redpanda has not accepted the AWS RAM share invitation. Contact your account team.
+| Transit Gateway attachment stays in `pending` | The BYOC AWS account has not accepted the AWS RAM share invitation. In that account, open AWS RAM and accept the pending invitation under *Resource share invitations*. Within an AWS Organization, shares are auto-accepted.
 | Transit Gateway ID is rejected at network creation | The value does not match `tgw-` followed by at least 8 hexadecimal characters, or your organization does not have centralized egress enabled.
 |===
 
