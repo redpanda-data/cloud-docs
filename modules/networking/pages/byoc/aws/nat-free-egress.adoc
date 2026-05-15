@@ -72,6 +72,24 @@ The following diagram shows the connectivity model:
 
 The Redpanda spoke CIDR route on the hub public route table is your responsibility. It is added when you provision your hub. See xref:networking:byoc/aws/aws-hub-egress.adoc[Create an AWS Hub for Centralized Egress] for the full procedure.
 
+== Prerequisites
+
+Before you configure centralized egress, confirm all of the following:
+
+* Centralized egress is enabled on your Redpanda Cloud organization. Contact your account team to request access.
+* You have an existing AWS Transit Gateway in the same region where you will create the Redpanda BYOC cluster.
+* Your hub VPC has a NAT Gateway, AWS Network Firewall, or other NVA providing internet egress. See xref:networking:byoc/aws/aws-hub-egress.adoc[Create an AWS Hub for Centralized Egress] if you need to provision a hub.
+* If the Transit Gateway is in a different AWS account than the Redpanda cluster account, you have created an AWS Resource Access Manager (RAM) share for the Transit Gateway and Redpanda will accept the invitation before deployment.
+* Your hub VPC CIDR and the planned Redpanda spoke VPC CIDR do not overlap.
++
+[WARNING]
+====
+Terraform and AWS do not enforce CIDR uniqueness across Transit Gateway attachments, but overlapping CIDRs cause silent return-route failures. The hub VPC's local route always wins over a Redpanda-spoke-CIDR route on the public route table, blackholing reply traffic.
+
+Use a non-overlapping range for your hub. The `100.64.0.0/16` CGNAT range is a safe default because it rarely conflicts with typical RFC 1918 workload CIDRs.
+====
+* The Transit Gateway ID, in the form `tgw-` followed by at least 8 hexadecimal characters (for example, `tgw-0b629c5b4fb6e364b`).
+
 == Shared responsibility model
 
 [cols="2,1"]
@@ -93,23 +111,12 @@ The Redpanda spoke CIDR route on the hub public route table is your responsibili
 
 Redpanda does not manage the availability of the egress path. Plan for multi-AZ NAT or redundant firewall instances in your hub if you need high availability.
 
-== Prerequisites
+== Limitations
 
-Before you configure centralized egress, confirm all of the following:
+Centralized egress is currently limited to:
 
-* Centralized egress is enabled on your Redpanda Cloud organization. Contact your account team to request access.
-* You have an existing AWS Transit Gateway in the same region where you will create the Redpanda BYOC cluster.
-* Your hub VPC has a NAT Gateway, AWS Network Firewall, or other NVA providing internet egress. See xref:networking:byoc/aws/aws-hub-egress.adoc[Create an AWS Hub for Centralized Egress] if you need to provision a hub.
-* If the Transit Gateway is in a different AWS account than the Redpanda cluster account, you have created an AWS Resource Access Manager (RAM) share for the Transit Gateway and Redpanda will accept the invitation before deployment.
-* Your hub VPC CIDR and the planned Redpanda spoke VPC CIDR do not overlap.
-+
-[WARNING]
-====
-Terraform and AWS do not enforce CIDR uniqueness across Transit Gateway attachments, but overlapping CIDRs cause silent return-route failures. The hub VPC's local route always wins over a Redpanda-spoke-CIDR route on the public route table, blackholing reply traffic.
-
-Use a non-overlapping range for your hub. The `100.64.0.0/16` CGNAT range is a safe default because it rarely conflicts with typical RFC 1918 workload CIDRs.
-====
-* The Transit Gateway ID, in the form `tgw-` followed by at least 8 hexadecimal characters (for example, `tgw-0b629c5b4fb6e364b`).
+* Setting the Transit Gateway ID at network creation. The field is immutable after the network is created.
+* Migration from a NAT Gateway-based network to a Transit Gateway-based network is not supported. To switch, create a new network and migrate the cluster.
 
 == Configure egress at network creation
 
@@ -182,14 +189,6 @@ If your hub firewall enforces an allowlist, allow outbound traffic to these endp
 == DNS resolution
 
 Centralized egress does not affect DNS resolution. The Redpanda VPC uses AmazonProvidedDNS at `VPC_CIDR + 2`, which resolves both internal and external hostnames as long as `0.0.0.0/0` is routable through your hub. You do not need a separate DNS path or DNS resolver endpoint in your hub.
-
-== Beta limitations
-
-Centralized egress is currently limited to:
-
-* AWS BYOC clusters only. GCP and Azure support is not yet available.
-* Setting the Transit Gateway ID at network creation. The field is immutable after the network is created.
-* Migration from a NAT Gateway-based network to a Transit Gateway-based network is not supported. To switch, create a new network and migrate the cluster.
 
 == Troubleshooting
 
