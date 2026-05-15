@@ -199,12 +199,11 @@ Centralized egress does not affect DNS resolution. The Redpanda VPC uses AmazonP
 |===
 | Symptom | Likely cause
 
-| Cluster bootstrap stalls; agent logs show failures reaching `docker.cloudsmith.io` or `public.ecr.aws` | Your hub firewall is blocking outbound traffic from the Redpanda spoke CIDR. Verify the allowlist includes the endpoints in <<internet-endpoints,Internet endpoints required from your hub>>.
-| Cluster bootstrap fails with no internet egress | Hub default route is missing. The Transit Gateway default route table must include `0.0.0.0/0` -> hub VPC attachment.
-| Outbound packets leave the Redpanda VPC but no replies arrive | The hub public route table is missing the Redpanda spoke CIDR -> Transit Gateway return route.
-| Outbound packets to public IPs succeed intermittently or never | The hub VPC CIDR overlaps the Redpanda spoke CIDR. Re-create the hub with a non-overlapping CIDR such as `100.64.0.0/16`.
-| Transit Gateway attachment stays in `pending` | The BYOC AWS account has not accepted the AWS RAM share invitation. In that account, open AWS RAM and accept the pending invitation under *Resource share invitations*. Within an AWS Organization, shares are auto-accepted.
-| Transit Gateway ID is rejected at network creation | The value does not match `tgw-` followed by at least 8 hexadecimal characters, or your organization does not have centralized egress enabled.
+| The Transit Gateway attachment shows status `pending` in your AWS account
+| The BYOC AWS account has not accepted the AWS RAM share invitation. In that account, open AWS RAM and accept the pending invitation under *Resource share invitations*. Within an AWS Organization, shares are auto-accepted.
+
+| Cluster creation does not complete
+| The cluster cannot reach the external services it needs during bootstrap. On the hub side, verify all of the following: the Transit Gateway default route table has `0.0.0.0/0` to the hub VPC attachment; the hub public route table has a static route for the Redpanda spoke CIDR to the Transit Gateway; the hub firewall allowlist includes the endpoints in <<internet-endpoints,Internet endpoints required from your hub>>; and the hub VPC CIDR and the Redpanda spoke CIDR do not overlap. If these all look correct, contact Redpanda Support.
 |===
 
 == Next steps
