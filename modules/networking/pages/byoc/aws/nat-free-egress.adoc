@@ -133,6 +133,11 @@ To enable centralized egress, use the Redpanda Cloud UI:
 . On the *Network* page, in the *Transit Gateway ID* field, enter your Transit Gateway ID. This field is only visible if centralized egress is enabled for your organization.
 . Click *Next* and complete the remaining steps.
 
+[NOTE]
+====
+The CIDR block you enter on the *Network* page is the Redpanda spoke CIDR. Your hub public route table must include a static route for this CIDR with the Transit Gateway as the target so reply traffic from the internet routes back to the cluster. Add this route when you provision the hub. See xref:networking:byoc/aws/aws-hub-egress.adoc[Create an AWS Hub for Centralized Egress] for the procedure. The Transit Gateway's own route table picks up the spoke CIDR automatically through route propagation when the spoke attaches.
+====
+
 // The Cloud API path for centralized egress is intentionally hidden while the
 // `egress_spec` field is in PREVIEW. To re-enable the section when the field
 // graduates, set the :show-preview-api: attribute (either in this page's
