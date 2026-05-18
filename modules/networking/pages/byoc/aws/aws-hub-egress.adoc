@@ -23,16 +23,16 @@ A hub VPC with a single NAT Gateway provides centralized internet egress for one
 Spoke VPC --> Transit Gateway --> Hub Private Subnet --> NAT Gateway --> Internet Gateway --> Internet
                                                               ^
                                                               |
-                                    Return traffic via TGW ---+
+                        Return traffic via Transit Gateway ---+
 ----
 
 Traffic path:
 
-. The spoke private subnet sends `0.0.0.0/0` to the Transit Gateway (TGW).
-. The TGW default route forwards `0.0.0.0/0` to the hub VPC attachment.
+. The spoke private subnet sends `0.0.0.0/0` to the Transit Gateway.
+. The Transit Gateway default route forwards `0.0.0.0/0` to the hub VPC attachment.
 . The hub private subnet routes `0.0.0.0/0` to the NAT Gateway.
 . The NAT Gateway exits through the Internet Gateway.
-. Return traffic enters through the Internet Gateway. The hub public route table sends it back to the TGW, which delivers it to the correct spoke.
+. Return traffic enters through the Internet Gateway. The hub public route table sends it back to the Transit Gateway, which delivers it to the correct spoke.
 
 [#automated-alternative]
 == Automated alternative
@@ -310,8 +310,8 @@ aws ec2 wait transit-gateway-available \
 HUB_ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
 TGW_ARN="arn:aws:ec2:us-east-2:${HUB_ACCOUNT}:transit-gateway/$TGW_ID"
 
-echo "TGW ID:  $TGW_ID"
-echo "TGW ARN: $TGW_ARN"
+echo "Transit Gateway ID:  $TGW_ID"
+echo "Transit Gateway ARN: $TGW_ARN"
 ----
 ======
 
@@ -350,7 +350,7 @@ aws ec2 wait transit-gateway-attachment-available \
   --transit-gateway-attachment-ids $TGW_ATTACH_ID \
   --region us-east-2
 
-echo "TGW Attachment ID: $TGW_ATTACH_ID"
+echo "Transit Gateway Attachment ID: $TGW_ATTACH_ID"
 ----
 ======
 
@@ -385,7 +385,7 @@ aws ec2 create-transit-gateway-route \
   --transit-gateway-attachment-id $TGW_ATTACH_ID \
   --region us-east-2
 
-echo "Default route added to TGW route table: $TGW_RTB_ID"
+echo "Default route added to Transit Gateway route table: $TGW_RTB_ID"
 ----
 ======
 

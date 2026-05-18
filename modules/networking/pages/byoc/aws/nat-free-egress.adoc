@@ -12,7 +12,7 @@
 This feature is in beta and is available only on AWS BYOC clusters with private networking. Availability is controlled per organization. Contact your account team to request access to centralized egress.
 ====
 
-Centralized egress lets your BYOC cluster send all internet-bound traffic through your own AWS Transit Gateway (TGW) and hub VPC instead of a Redpanda-managed NAT Gateway in the Redpanda VPC. When centralized egress is enabled, the Redpanda spoke VPC attaches to your TGW, all outbound traffic exits through the NAT Gateway or firewall in your hub, and no per-VPC NAT Gateway is created in the spoke.
+Centralized egress lets your BYOC cluster send all internet-bound traffic through your own AWS Transit Gateway and hub VPC instead of a Redpanda-managed NAT Gateway in the Redpanda VPC. When centralized egress is enabled, the Redpanda spoke VPC attaches to your Transit Gateway, all outbound traffic exits through the NAT Gateway or firewall in your hub, and no per-VPC NAT Gateway is created in the spoke.
 
 After reading this page, you will be able to:
 
@@ -33,32 +33,32 @@ If none of these apply, the default NAT Gateway egress used by standard BYOC clu
 
 == How it works
 
-Without centralized egress, the Redpanda agent creates a NAT Gateway and Internet Gateway inside the Redpanda VPC. With centralized egress enabled, the agent creates a TGW VPC attachment to your existing Transit Gateway instead, routes all `0.0.0.0/0` traffic through it, and provisions Interface VPC Endpoints in the Redpanda VPC so critical AWS API calls (ECR, STS, CloudWatch Logs) do not need to traverse your hub.
+Without centralized egress, the Redpanda agent creates a NAT Gateway and Internet Gateway inside the Redpanda VPC. With centralized egress enabled, the agent attaches the Redpanda VPC to your existing Transit Gateway instead, routes all `0.0.0.0/0` traffic through it, and provisions Interface VPC Endpoints in the Redpanda VPC so critical AWS API calls (ECR, STS, CloudWatch Logs) do not need to traverse your hub.
 
 The following diagram shows the connectivity model:
 
 ----
-+---------------------+         +-----------+         +-------------------------+
-| Redpanda VPC        |         | Transit   |         | Customer Hub VPC        |
-| (Redpanda account)  |         | Gateway   |         | (Customer account)      |
-|                     |         |           |         |                         |
-| TGW VPC Attachment  +-------->+ Shared    +-------->+ TGW VPC Attachment      |
-| 0.0.0.0/0 -> TGW    |         | via AWS   |         | 0.0.0.0/0 -> NAT GW     |
-| VPC Endpoints       |         | RAM       |         | NAT Gateway -> IGW      |
-| EKS Worker Nodes    |         |           |         | Internet Gateway        |
-| No NAT / No IGW     |         |           |         |                         |
-+---------------------+         +-----------+         +-----------+-------------+
-                                                                  |
-                                                                  v
-                                                              Internet
-                                                  (Cloudsmith, public.ecr.aws,
-                                                            NTP, Helm)
++----------------------------------+         +-----------+         +----------------------------------+
+| Redpanda VPC                     |         | Transit   |         | Customer Hub VPC                 |
+| (Redpanda account)               |         | Gateway   |         | (Customer account)               |
+|                                  |         |           |         |                                  |
+| Transit Gateway VPC Attachment   +-------->+ Shared    +-------->+ Transit Gateway VPC Attachment   |
+| 0.0.0.0/0 -> Transit Gateway     |         | via AWS   |         | 0.0.0.0/0 -> NAT GW              |
+| VPC Endpoints                    |         | RAM       |         | NAT Gateway -> IGW               |
+| EKS Worker Nodes                 |         |           |         | Internet Gateway                 |
+| No NAT / No IGW                  |         |           |         |                                  |
++----------------------------------+         +-----------+         +-----------+----------------------+
+                                                                               |
+                                                                               v
+                                                                           Internet
+                                                               (Cloudsmith, public.ecr.aws,
+                                                                         NTP, Helm)
 ----
 
 === Outbound traffic flow
 
 . An EKS node in a Redpanda private subnet sends a packet destined for the internet.
-. The private route table forwards `0.0.0.0/0` to the TGW VPC attachment in the Redpanda VPC.
+. The private route table forwards `0.0.0.0/0` to the Transit Gateway VPC attachment in the Redpanda VPC.
 . The Transit Gateway's default route table forwards `0.0.0.0/0` to your hub VPC attachment (static route).
 . The hub private route table forwards `0.0.0.0/0` to your NAT Gateway.
 . The NAT Gateway forwards traffic to your Internet Gateway and out to the internet.
