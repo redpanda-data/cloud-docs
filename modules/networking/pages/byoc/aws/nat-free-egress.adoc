@@ -79,7 +79,7 @@ Before you configure centralized egress, confirm all of the following:
 
 * Centralized egress is enabled on your Redpanda Cloud organization. Contact your account team to request access.
 * Your BYOC cluster uses private networking (connection type *Private*). Centralized egress is not available on clusters with a public connection type.
-* You have an existing AWS Transit Gateway in the same region where you will create the Redpanda BYOC cluster, and you know whether it auto-accepts cross-account attachments. Check the setting on your Transit Gateway before you create the cluster:
+* You have an existing AWS Transit Gateway in the same region as the Redpanda BYOC cluster, and you know whether it auto-accepts cross-account attachments. Check the setting on your Transit Gateway before you create the cluster:
 +
 [,bash]
 ----
@@ -151,7 +151,7 @@ To enable centralized egress, use the Redpanda Cloud UI:
 
 [NOTE]
 ====
-The CIDR block you enter on the *Network* page is the Redpanda spoke CIDR. Your hub public route table must include a static route for this CIDR with the Transit Gateway as the target so reply traffic from the internet routes back to the cluster. Add this route when you provision the hub. See xref:networking:byoc/aws/aws-hub-egress.adoc[Create an AWS Hub for Centralized Egress] for the procedure. The Transit Gateway's own route table picks up the spoke CIDR automatically through route propagation when the spoke attaches.
+The CIDR block you enter on the *Network* page is the Redpanda spoke CIDR. Your hub public route table must include a static route for this CIDR with the Transit Gateway as the target so reply traffic from the internet routes back to the cluster. Add this route when you provision the hub. See xref:networking:byoc/aws/aws-hub-egress.adoc[Create an AWS Hub for Centralized Egress]. The Transit Gateway's own route table picks up the spoke CIDR automatically through route propagation when the spoke attaches.
 ====
 
 // The Cloud API path for centralized egress is intentionally hidden while the
