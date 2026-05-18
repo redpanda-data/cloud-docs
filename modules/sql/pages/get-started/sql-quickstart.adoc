@@ -20,7 +20,7 @@ After reading this page, you will be able to:
 * Admin access to your cluster in the Redpanda Cloud Console, or a role with the *SQL: Manage* permission. You need one of these to view SQL connection details and to create catalogs, tables, and grants in the SQL engine. For more information on authorization in Redpanda Cloud, see xref:security:authorization/rbac/index.adoc[].
 * A Redpanda topic with a schema registered in Schema Registry. If you don't have one, follow the optional <<optional-produce-sample-data,Produce sample data>> section below to create a sample `orders` topic.
 * xref:manage:rpk/rpk-install.adoc[`rpk` v26.1.6] or later installed on your local machine to generate an authentication token.
-* https://www.postgresql.org/download/[`psql`^] (PostgreSQL client) installed on your local machine.
+* https://www.postgresql.org/download/[`psql`^] v16 or later (PostgreSQL client) installed on your local machine.
 
 [#optional-produce-sample-data]
 == (Optional) Produce sample data
@@ -137,11 +137,14 @@ When you enable Redpanda SQL, the engine automatically creates a Redpanda catalo
 ----
 CREATE TABLE default_redpanda_catalog=>orders WITH (
   topic = 'orders',
-  schema_subject = 'orders-value'
+  schema_subject = 'orders-value',
+  confluent_wire_protocol = 'false'
 );
 ----
 +
 Redpanda SQL reads the registered schema and maps each top-level field to a SQL column.
++
+Records produced through the Cloud Console don't carry the Confluent Schema Registry wire-format prefix, so the example sets `confluent_wire_protocol = 'false'`. If your producer client adds the wire format, set this option to `'true'` or omit it.
 
 . Run SQL queries against the table. These examples use the `orders` schema from the optional sample data section.
 +
