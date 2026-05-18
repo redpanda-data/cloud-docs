@@ -35,7 +35,7 @@ Redpanda SQL exposes data through xref:sql:query-data/redpanda-catalogs.adoc[cat
 
 === Query streaming topics
 
-Each Redpanda topic in your cluster appears as a SQL table inside a Redpanda catalog. Redpanda SQL reads the topic's glossterm:schema[] from glossterm:Schema Registry[] to map fields to SQL columns, and you query the table with `SELECT`:
+You can expose a Redpanda Streaming topic as a SQL table inside a Redpanda catalog. Redpanda SQL reads the topic's glossterm:schema[] from glossterm:Schema Registry[] to map fields to SQL columns, and you query the table with `SELECT`:
 
 [,sql]
 ----
@@ -57,8 +57,7 @@ Analysts and developers can run these queries directly from any PostgreSQL clien
 
 When a Redpanda topic is configured for Iceberg translation, Redpanda SQL queries its Iceberg-committed data through the same SQL surface as live streaming topics, reading Parquet data and Iceberg metadata directly from cloud storage.
 
-// "Bridge query" is a tentative internal name; final naming TBC for v1 publication.
-On Iceberg-enabled topics, you can also run a single SQL query that returns a non-overlapping continuum of data across both: live records that haven't been translated to Iceberg yet, plus historical records already in Iceberg. You don't write a `UNION ALL` because Redpanda SQL plans the union for you, and rows aren't duplicated at the boundary between live and historical data.
+On Iceberg-enabled topics, a single SQL query can return both the live records and the Iceberg-committed history in one result, with no overlap between them. Redpanda SQL plans this union internally, so you don't need to write a `UNION ALL` and rows aren't duplicated at the boundary between live and historical data.
 
 == Read-only query engine
 

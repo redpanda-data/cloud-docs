@@ -5,40 +5,42 @@
 :learning-objective-1: Identify which PostgreSQL functions and operators Redpanda SQL supports
 :learning-objective-2: Recognize behavioral differences between Redpanda SQL and PostgreSQL
 
-// TODO: Confirm with engineering exactly what should be covered on this
-// page. Redpanda SQL is a PostgreSQL-compatible query engine (Postgres
-// wire protocol + Postgres-based dialect), not a full Postgres database,
-// so there are likely more differences and incompatibilities than the
-// current function/operator/behavior tables capture. Candidates to verify
-// and add: 
-// 
-// - unsupported statement classes (DDL/DML other than the
-//   catalog/table mappings, transactions, stored procedures, triggers,
-//   extensions) 
-// - data-type coverage gaps 
-// - system-catalog coverage
-// - authn/authz model differences 
-// - session/transaction semantics
-// - connection-protocol limitations
-//
-// Scope this list with engineering before publication.
+// TODO: Expand the comparison with engineering input on:
+// - Data-type coverage gaps relative to PostgreSQL
+// - System-catalog coverage and divergences
+// - Authn/authz model differences (e.g., GBAC in Redpanda SQL)
+// - Stored procedures and triggers (not yet documented as supported or not)
+// - Connection-protocol and session-semantics limitations beyond no-transactions
+// - Any other significant differences in supported SQL syntax, functions, or behavior that impact users migrating from PostgreSQL or using both systems in parallel
 
-Redpanda SQL aims for close compatibility with PostgreSQL but differs in some functions, operators, and behaviors. Use this page to check which features are supported and where Redpanda SQL diverges from PostgreSQL.
+Redpanda SQL aims for close compatibility with PostgreSQL semantics, yet differs significantly in design and function. Use this page to check which features are supported and where Redpanda SQL diverges from PostgreSQL.
 
 Use this reference to:
 
 * [ ] {learning-objective-1}
 * [ ] {learning-objective-2}
 
+For example, PostgreSQL is an online transactional processing (OLTP) database by default, whereas Redpanda SQL is an online analytical processing (OLAP) query engine. For more on the distinction, see xref:sql:get-started/oltp-vs-olap.adoc[].
+
+Redpanda SQL doesn't support common PostgreSQL transaction-processing operations like direct writes or upserts.
+
+Instead, Kafka-compatible producers write topics into Redpanda Streaming. From there, Redpanda SQL queries topics in local storage (the "hot" tier) as well as Apache Iceberg-compatible tables in object storage (the "cold" tier). A single query against a linked Redpanda catalog returns records from both tiers in one result, with no overlap between the live tail and the Iceberg-translated history, including records older than your topic retention.
+
+Redpanda SQL is _semantically_ compatible with PostgreSQL but not _code_ compatible. It can't use common PostgreSQL extensions such as pgvector, PostGIS, or pg_cron.
+
 == Functions
 
-
+// TODO: SME confirmation — are there meaningful function-level differences
+// from PostgreSQL beyond the JSON operator? If not, remove this section
+// entirely. Open question on PR #573 review thread
+// (https://github.com/redpanda-data/cloud-docs/pull/573#discussion_r3228320300).
 
 == Operators
 
 === Mathematical operators
 
-
+// TODO: SME confirmation — same question as for Functions above. Remove this
+// subsection if there are no meaningful mathematical-operator differences.
 
 === JSON operators
 
@@ -140,3 +142,9 @@ SELECT ABS(-1.0);
 |_unknown function pi_
 |working as expected
 |===
+
+== Suggested reading
+
+* xref:sql:get-started/overview.adoc[Redpanda SQL Overview]: what Redpanda SQL is, how it fits into Redpanda Cloud BYOC, and the analytical workloads it supports.
+* xref:sql:get-started/oltp-vs-olap.adoc[OLTP vs OLAP]: why Redpanda SQL uses an analytical (OLAP) model rather than the transactional (OLTP) model used by traditional relational databases.
+* xref:reference:sql/index.adoc[Redpanda SQL Reference]: supported SQL statements, clauses, data types, functions, and operators.
