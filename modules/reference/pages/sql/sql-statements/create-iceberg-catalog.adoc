@@ -2,7 +2,7 @@
 :description: The CREATE ICEBERG CATALOG statement creates a named connection to an Iceberg REST catalog, enabling Redpanda SQL to query Iceberg-translated topic data.
 :page-topic-type: reference
 
-The `CREATE ICEBERG CATALOG` statement creates a named connection to an Iceberg REST catalog. The Iceberg catalog can be queried directly or linked to a Redpanda catalog with `USING CATALOG` so that bridge queries return a unified view of live and Iceberg-committed records. See xref:sql:query-data/query-iceberg-topics.adoc[Query Iceberg topics] for the end-to-end workflow.
+The `CREATE ICEBERG CATALOG` statement creates a named connection to an Iceberg REST catalog. Link the Iceberg catalog to a Redpanda catalog with `USING CATALOG` so that queries against the linked Redpanda catalog return both live and Iceberg-translated records. Standalone querying against an Iceberg catalog is not supported. See xref:sql:query-data/query-iceberg-topics.adoc[Query Iceberg topics] for the end-to-end workflow.
 
 The statement requires an existing xref:reference:sql/sql-statements/create-storage.adoc[storage connection] that holds the object-storage credentials for the Iceberg warehouse.
 
@@ -204,5 +204,5 @@ CREATE ICEBERG CATALOG lakehouse_catalog STORAGE iceberg_storage
 |Create the storage connection that backs the Iceberg catalog.
 
 |xref:reference:sql/sql-statements/create-redpanda-catalog.adoc[CREATE REDPANDA CATALOG]
-|Create a Redpanda catalog. Use `USING CATALOG` to link a Redpanda catalog to an Iceberg catalog for bridge queries.
+|Create a Redpanda catalog. Use `USING CATALOG` to link a Redpanda catalog to an Iceberg catalog so that queries return both live and Iceberg-translated records.
 |===
