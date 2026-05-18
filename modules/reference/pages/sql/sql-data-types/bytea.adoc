@@ -2,7 +2,7 @@
 :description: The bytea data type stores arbitrary binary data such as raw key and value bytes from Redpanda topics or binary columns from Iceberg tables.
 :page-topic-type: reference
 
-The bytea data type stores arbitrary binary data as a sequence of bytes. Unlike `text`, bytea values are not UTF-8 validated and can contain any byte value. Redpanda SQL uses bytea to surface binary fields from external sources, including Iceberg tables, Protobuf and Avro topic schemas, and the raw key and value bytes of Kafka records.
+The bytea data type stores arbitrary binary data as a sequence of bytes. Unlike `text`, bytea values are not UTF-8 validated and can contain any byte value. Redpanda SQL uses bytea to surface binary fields from external sources, including Iceberg tables, Protobuf and Avro topic schemas, and the raw key and value bytes of Redpanda Streaming records.
 
 == Syntax
 
@@ -72,21 +72,14 @@ Over the binary wire format, Redpanda SQL returns bytea values as raw bytes with
 
 == Supported operations
 
+bytea supports a narrow set of operations. Operations not listed are not supported.
+
 [cols="<30%,<70%",options="header"]
 |===
 | Operation | Example
 
 | Equality and inequality
 | `payload = '\xDEADBEEF'::bytea`, `payload <> '\x00'::bytea`
-
-| Sorting
-| `SELECT * FROM binary_data ORDER BY payload`
-
-| Distinct
-| `SELECT DISTINCT payload FROM binary_data`
-
-| Group by
-| `SELECT payload, COUNT(*) FROM binary_data GROUP BY payload`
 
 | Cast from a string literal
 | `'\xDEADBEEF'::bytea`
@@ -97,18 +90,6 @@ Over the binary wire format, Redpanda SQL returns bytea values as raw bytes with
 | `octet_length(payload)`
 | Returns the byte count as `INT`. Equivalent to `length()` on a bytea value.
 |===
-
-== Unsupported operations
-
-// TODO: SME — confirm whether any of these are planned for follow-up releases so the doc can phrase them as current limitations rather than implying permanence.
-
-The following operations are not supported on bytea values:
-
-* Ordering operators (`<`, `>`, `\<=`, `>=`)
-* Aggregates such as `SUM`, `AVG`, `MAX`, `MIN`
-* Pattern matching (`LIKE`, `ILIKE`) and regular expression operators
-* Binary string functions such as `substring`, `position`, `overlay`, and `trim`
-* Implicit or explicit casting between `text` and `bytea`. The only supported cast is from a string literal, using `'...'::bytea`.
 
 == Read bytea from external sources
 
@@ -121,13 +102,13 @@ Redpanda SQL maps binary fields from external sources to bytea automatically:
 | Iceberg
 | Columns of type `BinaryType` or `FixedType`.
 
-| Protobuf (Kafka topic schemas)
+| Protobuf (topic schemas)
 | Fields declared as `bytes`.
 
-| Avro (Kafka topic schemas)
+| Avro (topic schemas)
 | Fields declared as `bytes` or `fixed`.
 
-| Kafka record metadata
+| Record metadata
 | `redpanda.key`, `redpanda.headers[].value`, and the raw key and value bytes exposed through `redpanda_raw`.
 |===
 
