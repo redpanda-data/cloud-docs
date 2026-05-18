@@ -1,8 +1,18 @@
 = Enable Redpanda SQL on a BYOC cluster
-:description: Enable the Redpanda SQL engine on a BYOC cluster so that users can query streaming data with standard PostgreSQL syntax.
+:description: Enable the Redpanda SQL engine on a BYOC cluster so you can query streaming data with standard PostgreSQL syntax.
 :page-topic-type: how-to
+:personas: platform_admin, data_engineer
+:learning-objective-1: Enable Redpanda SQL on a new or existing BYOC cluster
+:learning-objective-2: Scale or disable the SQL engine using the Cloud API
+:learning-objective-3: Verify that the SQL engine is running and ready to accept connections
 
-Enable Redpanda SQL on a BYOC cluster to give your team the ability to query streaming data in Redpanda topics using standard PostgreSQL syntax. Iceberg-enabled topics can also be queried alongside their Iceberg-translated history. See xref:sql:query-data/query-iceberg-topics.adoc[Query Iceberg topics] for that workflow.
+Enable Redpanda SQL on a BYOC cluster so you can query streaming data in Redpanda topics using standard PostgreSQL syntax. Iceberg-enabled topics can also be queried alongside their Iceberg-translated history. See xref:sql:query-data/query-iceberg-topics.adoc[Query Iceberg topics] for that workflow.
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
 
 == Prerequisites
 
@@ -35,7 +45,7 @@ The minimum is one node to enable SQL. You can scale up (maximum nine nodes) or 
 Cloud API::
 +
 --
-. Authenticate to the link:/api/doc/cloud-controlplane/topic/topic-cloud-api-overview[Cloud API]. For details, see link:/api/doc/cloud-controlplane/authentication[Authenticate to the API].
+. Authenticate to the link:/api/doc/cloud-controlplane/topic/topic-cloud-api-overview[Cloud API]. For details, see link:/api/doc/cloud-controlplane/authentication[Authenticate to the Cloud API].
 // TODO: confirm field name change to rpsql
 // Is selecting the number of nodes available with this endpoint?
 . Make a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_createcluster[`POST /v1/clusters`] request with `oxla.enabled` set to `true` in the cluster spec:
@@ -72,7 +82,7 @@ To enable, scale, or disable SQL on an existing cluster, you also need the clust
 
 // TODO: Confirm UI functionality
 
-. Authenticate to the link:/api/doc/cloud-controlplane/topic/topic-cloud-api-overview[Cloud API]. For details, see link:/api/doc/cloud-controlplane/authentication[Authenticate to the API].
+. Authenticate to the link:/api/doc/cloud-controlplane/topic/topic-cloud-api-overview[Cloud API]. For details, see link:/api/doc/cloud-controlplane/authentication[Authenticate to the Cloud API].
 . Make a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_updatecluster[`PATCH /v1/clusters/{cluster.id}`] request, replacing `{cluster.id}` with your cluster ID:
 +
 [,bash]
@@ -96,7 +106,7 @@ When the operation is complete, the response shows `"state": "STATE_COMPLETED"`.
 
 == Scale Redpanda SQL
 
-Redpanda SQL supports horizontal scaling from one to nine nodes per cluster. Scaling to zero nodes is not supported. To remove Redpanda SQL from a cluster, disable the SQL engine instead.
+Redpanda SQL supports horizontal scaling from one to nine nodes per cluster. You cannot scale to zero nodes. To remove Redpanda SQL from a cluster, disable the SQL engine instead.
 
 // TODO: Confirm UI functionality
 
@@ -168,3 +178,4 @@ The request returns the ID of a long-running operation. Poll link:/api/doc/cloud
 == Next steps
 
 * xref:sql:get-started/sql-quickstart.adoc[Quickstart]: Connect to Redpanda SQL with `psql` and run your first query.
+* xref:reference:sql/index.adoc[Redpanda SQL reference]: Explore the full SQL syntax, data types, functions, and clauses.

@@ -1,20 +1,18 @@
-= Redpanda SQL quickstart
+= Redpanda SQL Quickstart
 :description: Connect to Redpanda SQL on a BYOC cluster and run your first query on streaming data.
 :page-topic-type: tutorial
-:personas: platform_admin
-:learning-objective-1: Enable Redpanda SQL on a BYOC cluster
-:learning-objective-2: Connect to Redpanda SQL using psql and a bearer token
-:learning-objective-3: Query a Redpanda topic with SQL
+:personas: streaming_developer, data_engineer, platform_admin
+:learning-objective-1: Connect to Redpanda SQL using psql and a bearer token
+:learning-objective-2: Query a Redpanda topic with SQL
 
 Redpanda SQL is a PostgreSQL-compatible SQL engine built into Redpanda Bring Your Own Cloud (BYOC). It lets you query streaming data in your Redpanda topics with standard SQL, without building ETL pipelines or deploying a separate analytics system. In this quickstart, you connect with `psql` and run your first query against a Redpanda topic.
 
 For Iceberg-enabled topics, Redpanda SQL can also query the full Iceberg-translated history alongside live records. For that workflow, see xref:sql:query-data/query-iceberg-topics.adoc[Query Iceberg topics].
 
-After completing this quickstart, you will be able to:
+After reading this page, you will be able to:
 
 * [ ] {learning-objective-1}
 * [ ] {learning-objective-2}
-* [ ] {learning-objective-3}
 
 == Prerequisites
 
@@ -37,8 +35,11 @@ If you don't have a schema-registered topic to query yet, follow these steps to 
 You also need permissions to create topics, register schemas, and produce records.
 
 . https://cloud.redpanda.com/[Log in to Redpanda Cloud^] and select your cluster.
+
 . On the *Topics* page, click *Create Topic*. Name the topic `orders` and create it with default settings.
+
 . On the *Schema Registry* page, click *Create new schema*. 
+
 . Create a new schema with the following:
 +
 * *Strategy*: Topic
@@ -59,8 +60,8 @@ message Order {
 }
 ----
 
-// TODO: Verify exact steps to produce records in UI
 . Return to the *Topics* page and select the `orders` topic. Produce a few sample records:
+// TODO: Verify exact steps to produce records in UI
 +
 [,bash]
 ----
@@ -114,7 +115,7 @@ rpsql_token=$(rpk cloud auth token)
 psql "host=<sql-external-endpoint> port=5432 dbname=oxla user=ignored password=$rpsql_token options='-c auth_method=bearer' sslmode=require"
 ----
 
-On a successful connection, you should see output similar to:
+On a successful connection, you see output similar to:
 
 // TODO: Verify current psql banner text.
 [.no-copy]
@@ -126,12 +127,12 @@ Type "help" for help.
 =>
 ----
 
-== Query a Redpanda topic
+== Query topic data
 
-When you enable Redpanda SQL, the engine automatically creates a Redpanda catalog named `default_redpanda_catalog` that connects to your cluster.
+When you enable Redpanda SQL, the engine automatically creates a Redpanda catalog named `default_redpanda_catalog` that connects to your cluster. To query a Redpanda topic, define a SQL table against the topic, then run standard SQL queries against the table.
 
-To query a Redpanda topic as a SQL table, define a table against the topic with `CREATE TABLE`. The following example uses the `orders` topic from the previous section. Replace `orders` with the name of your topic, and `orders-value` with the Schema Registry subject that holds the topic's value schema:
-
+. Define a SQL table from the topic with `CREATE TABLE`. The following example uses the `orders` topic from the optional sample data section. To use your own topic, replace `orders` with your topic name and `orders-value` with the Schema Registry subject that holds the topic's value schema. Your topic must have a schema registered in Schema Registry.
++
 [,sql]
 ----
 CREATE TABLE default_redpanda_catalog=>orders WITH (
@@ -139,31 +140,29 @@ CREATE TABLE default_redpanda_catalog=>orders WITH (
   schema_subject = 'orders-value'
 );
 ----
++
+Redpanda SQL reads the registered schema and maps each top-level field to a SQL column.
 
-Redpanda SQL reads the registered Protobuf schema from Schema Registry and maps each top-level field to a SQL column.
-
-== Run queries
-
-After you create the table, query the topic with standard SQL. The following examples use the `orders` schema from the optional sample data section. If you're using your own topic, substitute the table name and column names.
-
+. Run SQL queries against the table. These examples use the `orders` schema from the optional sample data section.
++
 View a sample of records:
-
++
 [,sql]
 ----
 SELECT * FROM default_redpanda_catalog=>orders LIMIT 10;
 ----
-
++
 Count orders by status:
-
++
 [,sql]
 ----
 SELECT status, COUNT(*) AS total_orders
 FROM default_redpanda_catalog=>orders
 GROUP BY status;
 ----
-
++
 Find the largest orders:
-
++
 [,sql]
 ----
 SELECT order_id, customer, product, amount
@@ -202,6 +201,7 @@ The user can now connect to Redpanda SQL and run `SELECT` against the tables the
 
 == Next steps
 
+// TODO: Uncomment once DOC-1990 and DOC-2006 merge (target pages are on those branches).
+// * xref:sql:query-data/query-streaming-topics.adoc[Query streaming topics]: Map a Redpanda topic to a SQL table and run analytical queries against live streaming data.
+// * xref:sql:query-data/query-iceberg-topics.adoc[Query Iceberg topics]: Run a single SQL query that spans live records and the Iceberg-translated history of a topic.
 * xref:reference:sql/index.adoc[Redpanda SQL reference]: Explore the full SQL syntax, data types, functions, and clauses.
-* xref:sql:connect-to-sql/language-clients/psycopg2.adoc[Connect with Python (psycopg2)]: Query Redpanda SQL programmatically.
-* xref:sql:connect-to-sql/language-clients/java-jdbc.adoc[Connect with Java (JDBC)]: Integrate with Java applications.
