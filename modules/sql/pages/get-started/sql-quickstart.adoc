@@ -1,22 +1,28 @@
 = Redpanda SQL quickstart
 :description: Connect to Redpanda SQL on a BYOC cluster and run your first query on streaming data.
-:page-topic-type: guide
+:page-topic-type: tutorial
+:personas: platform_admin
+:learning-objective-1: Enable Redpanda SQL on a BYOC cluster
+:learning-objective-2: Connect to Redpanda SQL using psql and a bearer token
+:learning-objective-3: Query a Redpanda topic with SQL
 
-Redpanda SQL is a PostgreSQL-compatible SQL engine built into Redpanda BYOC. It lets you query streaming data in your Redpanda topics with standard SQL, without building ETL pipelines or deploying a separate analytics system. In this quickstart, you connect with `psql` and run your first query against a Redpanda topic.
+Redpanda SQL is a PostgreSQL-compatible SQL engine built into Redpanda Bring Your Own Cloud (BYOC). It lets you query streaming data in your Redpanda topics with standard SQL, without building ETL pipelines or deploying a separate analytics system. In this quickstart, you connect with `psql` and run your first query against a Redpanda topic.
 
-This quickstart is written for an admin who can view the SQL connection details in the Cloud Console.
+For Iceberg-enabled topics, Redpanda SQL can also query the full Iceberg-translated history alongside live records. For that workflow, see xref:sql:query-data/query-iceberg-topics.adoc[Query Iceberg topics].
+
+After completing this quickstart, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
 
 == Prerequisites
 
 * A Redpanda BYOC cluster on AWS with Redpanda SQL enabled. See xref:sql:get-started/deploy-sql-cluster.adoc[].
-* Admin access to the cluster in the Redpanda Cloud Console (required to view SQL connection details).
+* Admin access to your cluster in the Redpanda Cloud Console, or a role with the *SQL: Manage* permission. You need one of these to view SQL connection details and to create catalogs, tables, and grants in the SQL engine. For more information on authorization in Redpanda Cloud, see xref:security:authorization/rbac/index.adoc[].
 * A Redpanda topic with a schema registered in Schema Registry. If you don't have one, follow the optional <<optional-produce-sample-data,Produce sample data>> section below to create a sample `orders` topic.
 * xref:manage:rpk/rpk-install.adoc[`rpk` v26.1.6] or later installed on your local machine to generate an authentication token.
 * https://www.postgresql.org/download/[`psql`^] (PostgreSQL client) installed on your local machine.
-
-// TODO: Verify the exact connection string format and where users get credentials.
-// From PRD: SCRAM auth preserved, connection string available in Cloud Console and API response.
-// Confirm with engineering what SCRAM credentials does the user use - superuser auto-created by Control Plane?
 
 [#optional-produce-sample-data]
 == (Optional) Produce sample data
@@ -87,7 +93,14 @@ When you continue to the next section, use `orders` as the topic name when you d
 
 SQL connection details are available on your cluster's *SQL* tab in the https://cloud.redpanda.com/[Cloud console]. To connect using `psql`:
 
-. Get an authentication token using `rpk`. If prompted, log in to Redpanda Cloud in your browser:
+. Log in to Redpanda Cloud with `rpk`. This opens a browser window for SSO sign-in:
++
+[,bash]
+----
+rpk cloud login
+----
+
+. Retrieve a temporary authentication token for the SQL engine:
 +
 [,bash]
 ----
@@ -131,7 +144,7 @@ Redpanda SQL reads the registered Protobuf schema from Schema Registry and maps 
 
 == Run queries
 
-After you create the table, query your topic data with standard SQL. The following examples use the `orders` schema from the optional sample data section. If you're using your own topic, substitute the table name and column names.
+After you create the table, query the topic with standard SQL. The following examples use the `orders` schema from the optional sample data section. If you're using your own topic, substitute the table name and column names.
 
 View a sample of records:
 
@@ -162,30 +175,30 @@ LIMIT 20;
 
 == (Optional) Grant access to a non-admin user
 
-Redpanda SQL is deny-all by default. All queries to Redpanda SQL run under a single super-user SASL credential associated with `default_redpanda_catalog`, but the engine enforces per-user table access through Redpanda SQL `GRANT` statements. To let a non-admin user query a table, the admin creates a role and grants access:
+Redpanda Cloud's data-plane RBAC controls Redpanda SQL access through two role permissions:
 
-// TODO: Confirm the exact GRANT mechanism with engineering. Open questions:
-// - Does access to SQL engine also require an accout in Redpanda Cloud (user 
-//   or service account), with the new SQL roles?
-// - Does the SQL `GRANT` statement alone enforce per-user table access, or is
-//   an additional ACL / Kafka-side step required? 
-// Update the steps and example below once confirmed.
+* *SQL: Manage*: superuser access to the SQL engine. A user with this role can read all topics, create catalogs and tables, and grant access to other users.
+* *SQL: Access*: regular user access. A user with this role can connect to the SQL engine but has no access to any catalog or table until a SQL: Manage user grants it.
 
-. Create a role for the user:
+When you assign one of these roles to a user in Redpanda Cloud, the cluster provisions a corresponding user in the SQL engine. No manual `CREATE USER` is required. A SQL: Manage user then uses standard SQL `GRANT` statements to give the user access to specific catalogs or tables. Wildcard patterns are supported.
+
+. In Redpanda Cloud, assign a role with the *SQL: Access* permission to the user. Roles are managed in *Organization IAM > Roles*; SQL permissions are under the *Data Plane* tab when you create or edit a role. See xref:security:authorization/rbac/rbac_dp.adoc[].
+
+. As a SQL: Manage user, grant `SELECT` on a specific table. The user identifier is the email on the user's Redpanda Cloud account:
 +
 [,sql]
 ----
-CREATE ROLE analyst LOGIN PASSWORD '<password>';
+GRANT SELECT ON TABLE default_redpanda_catalog=>orders TO "alice@example.com";
 ----
-
-. Grant `SELECT` on the table to the role:
++
+Or grant `SELECT` on multiple tables that match a pattern:
 +
 [,sql]
 ----
-GRANT SELECT ON TABLE default_redpanda_catalog=>orders TO analyst;
+GRANT SELECT ON TABLE default_redpanda_catalog=>orders_* TO "alice@example.com";
 ----
 
-The non-admin user can now connect to Redpanda SQL with their credentials and run `SELECT` against the `orders` table.
+The user can now connect to Redpanda SQL and run `SELECT` against the tables they've been granted.
 
 == Next steps
 

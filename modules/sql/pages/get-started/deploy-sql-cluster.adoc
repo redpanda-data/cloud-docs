@@ -2,7 +2,7 @@
 :description: Enable the Redpanda SQL engine on a BYOC cluster so that users can query streaming data with standard PostgreSQL syntax.
 :page-topic-type: how-to
 
-Enable Redpanda SQL on a BYOC cluster to give your team the ability to query streaming data in Redpanda topics using standard PostgreSQL syntax.
+Enable Redpanda SQL on a BYOC cluster to give your team the ability to query streaming data in Redpanda topics using standard PostgreSQL syntax. Iceberg-enabled topics can also be queried alongside their Iceberg-translated history. See xref:sql:query-data/query-iceberg-topics.adoc[Query Iceberg topics] for that workflow.
 
 == Prerequisites
 
@@ -96,7 +96,7 @@ When the operation is complete, the response shows `"state": "STATE_COMPLETED"`.
 
 == Scale Redpanda SQL
 
-Redpanda SQL supports horizontal scaling from 1 to 9 nodes per cluster. Scaling to 0 is not supported. To remove Redpanda SQL from a cluster, disable the SQL engine instead.
+Redpanda SQL supports horizontal scaling from one to nine nodes per cluster. Scaling to zero nodes is not supported. To remove Redpanda SQL from a cluster, disable the SQL engine instead.
 
 // TODO: Confirm UI functionality
 
@@ -114,17 +114,18 @@ The request returns the ID of a long-running operation. Poll link:/api/doc/cloud
 
 == Verify the SQL engine is running
 
-After you enable Redpanda SQL, the cluster overview page in the Cloud console shows the *SQL* tab. The *Details* pane also displays the number of SQL nodes deployed with the cluster. Provisioning may take several minutes. 
+After you enable Redpanda SQL, the cluster overview page in the Cloud Console shows the *SQL* tab and the *Details* pane displays the number of SQL nodes deployed with the cluster.
 
-To verify the SQL engine is running, use the connection details on the *SQL* tab to connect with a PostgreSQL client, such as `psql`. 
+The *SQL* tab appears as soon as you enable SQL, but you can't connect until the engine is fully provisioned. Provisioning can take up to 30 minutes. Wait for the node-ready status indicator on the overview page to show the engine is ready. For the API flow, poll the long-running operation until it returns `STATE_COMPLETED`.
 
-The following shows how to connect using a bearer token. The `rpk cloud auth token` command (xref:manage:rpk/rpk-install.adoc[`rpk` v26.1.6+] required) retrieves a temporary authentication token for the SQL engine. If your `rpk` session is not authenticated to Redpanda Cloud, the command prompts you to first log in on your browser:
+To verify the SQL engine is running, use the connection details on the *SQL* tab to connect with a PostgreSQL client, such as `psql` (v16 or later required).
 
-// TODO: Confirm behavior when SQL is enabled but not yet fully provisioned. 
-// Does the `psql` connection attempt time out, or return an error message 
-//indicating the engine is not ready?
+The following shows how to connect using a bearer token. Log in to Redpanda Cloud with `rpk`, then retrieve a temporary authentication token for the SQL engine with `rpk cloud auth token` (xref:manage:rpk/rpk-install.adoc[`rpk` v26.1.6+] required):
+
 [,bash]
 ----
+rpk cloud login
+
 rpsql_token=$(rpk cloud auth token)
 
 psql "host=<sql-external-endpoint> port=5432 dbname=oxla user=ignored password=$rpsql_token options='-c auth_method=bearer' sslmode=require"
@@ -143,21 +144,14 @@ SHOW QUERIES;  -- List currently running queries
 
 == Disable Redpanda SQL
 
-// TODO: Confirm with engineering exactly what happens when Redpanda SQL is
-// disabled and document it precisely. Specifically:
-// - What state is purged (catalog metadata, table mappings, role/grant
-//   data, query history, cached query results)?
-// - What is deleted from object storage (Iceberg-translated data for
-//   Iceberg-enabled topics, internal SQL engine state)?
-// - Are Redpanda topic data and Schema Registry subjects affected?
-// - What error / status do clients see for in-flight queries?
-// - If SQL is re-enabled later, is any state restored, or is the engine
-//   provisioned fresh?
-
 [WARNING]
 ====
-Disabling Redpanda SQL purges the stored catalog state for the SQL engine and deletes its data from object storage. In-flight queries fail when SQL is disabled.
+Disabling Redpanda SQL purges the stored catalog state for the SQL engine (catalog metadata, table mappings, and role/grant data) and deletes its data from object storage, including Iceberg-translated data for Iceberg-enabled topics. In-flight queries fail when SQL is disabled.
 ====
+
+Redpanda topic data and Schema Registry subjects are not affected. The Redpanda cluster itself continues to run normally; only the SQL engine and its associated state are removed.
+
+Re-enabling SQL on the same cluster provisions a fresh engine: no prior catalog state, table mappings, or grants are restored. You must re-create catalogs, tables, and grants after re-enabling.
 
 Make a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_updatecluster[`PATCH /v1/clusters/{cluster.id}`] request with `oxla.enabled` set to `false`. Replace `{cluster.id}` with your cluster ID:
 
