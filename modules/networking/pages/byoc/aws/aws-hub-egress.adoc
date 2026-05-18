@@ -50,7 +50,7 @@ The rest of this guide covers the equivalent steps using the AWS Console or AWS 
 
 [WARNING]
 ====
-Hub and spoke VPC CIDRs must not overlap. AWS allows Transit Gateway attachments with overlapping CIDRs, but the hub VPC's local route always wins over the spoke CIDR return route, which silently blackholes reply traffic. Plan your CIDRs before you start.
+Hub and spoke VPC CIDRs must not overlap. AWS allows Transit Gateway attachments with overlapping CIDRs, but the hub VPC's local route always wins over the spoke CIDR return route, which silently blackholes reply traffic. Plan your CIDRs before you start. For background, see xref:networking:cidr-ranges.adoc#what-are-cidrs[What are CIDRs?].
 ====
 
 == Default values
@@ -165,6 +165,8 @@ echo "Public subnets: $PUB_SUBNET_0, $PUB_SUBNET_1"
 
 == Create private subnets
 
+The private subnets are where the Transit Gateway lands traffic delivered from the Redpanda spoke. They have no Internet Gateway route, so workloads in them never get public IPs, and outbound traffic exits the hub through the NAT Gateway.
+
 [tabs]
 ======
 Console::
@@ -203,6 +205,8 @@ echo "Private subnets: $PRIV_SUBNET_0, $PRIV_SUBNET_1"
 ======
 
 == Create the Internet Gateway
+
+The Internet Gateway gives the hub VPC its outbound path to the internet. The NAT Gateway depends on it for source-NAT to a public IP, and reply traffic from the internet enters the hub through it.
 
 [tabs]
 ======
