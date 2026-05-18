@@ -72,13 +72,29 @@ The following diagram shows the connectivity model:
 
 The Redpanda spoke CIDR route on the hub public route table is your responsibility. It is added when you provision your hub. See xref:networking:byoc/aws/aws-hub-egress.adoc[Create an AWS Hub for Centralized Egress] for the full procedure.
 
+[#prerequisites]
 == Prerequisites
 
 Before you configure centralized egress, confirm all of the following:
 
 * Centralized egress is enabled on your Redpanda Cloud organization. Contact your account team to request access.
 * Your BYOC cluster uses private networking (connection type *Private*). Centralized egress is not available on clusters with a public connection type.
-* You have an existing AWS Transit Gateway in the same region where you will create the Redpanda BYOC cluster.
+* You have an existing AWS Transit Gateway in the same region where you will create the Redpanda BYOC cluster, and you know whether it auto-accepts cross-account attachments. Check the setting on your Transit Gateway before you create the cluster:
++
+[,bash]
+----
+aws ec2 describe-transit-gateways \
+  --transit-gateway-ids <tgw-id> \
+  --query 'TransitGateways[0].Options.AutoAcceptSharedAttachments'
+----
++
+** If the value is `enable`, the Redpanda spoke attachment is accepted automatically when the BYOC cluster provisions. No action is required from you during cluster creation.
+** If the value is `disable`, you must manually accept the spoke attachment during cluster provisioning. In the AWS account that owns the Transit Gateway, open *VPC > Transit Gateway Attachments*, select the pending attachment from the Redpanda BYOC account, and choose *Actions > Accept transit gateway attachment*. Cluster provisioning pauses until you accept the attachment.
++
+[NOTE]
+====
+Enabling `AutoAcceptSharedAttachments` causes the Transit Gateway to accept attachments from any AWS account it is shared with through AWS Resource Access Manager. Share the Transit Gateway only with accounts you trust to attach VPCs.
+====
 * Your hub VPC has a NAT Gateway, AWS Network Firewall, or other NVA providing internet egress. See xref:networking:byoc/aws/aws-hub-egress.adoc[Create an AWS Hub for Centralized Egress] if you need to provision a hub.
 * If the hub Transit Gateway is in a different AWS account than the AWS account where your BYOC cluster will be deployed, you have created an AWS Resource Access Manager (RAM) share in the hub account and accepted the invitation in the BYOC account before creating the cluster. Within an AWS Organization, the share is auto-accepted and no manual acceptance step is needed.
 * Your hub VPC CIDR and the planned Redpanda spoke VPC CIDR do not overlap.
@@ -118,7 +134,7 @@ Centralized egress is currently limited to setting the Transit Gateway ID at net
 
 == Configure egress at network creation
 
-Centralized egress is set at network creation. You cannot change it on an existing network.
+Centralized egress is set at network creation. You cannot change it on an existing network. Complete all hub-side setup, including your decision on Transit Gateway attachment acceptance (see <<prerequisites,Prerequisites>>), before you start the cluster creation flow.
 
 [IMPORTANT]
 ====
@@ -199,8 +215,11 @@ Centralized egress does not affect DNS resolution. The Redpanda VPC uses AmazonP
 |===
 | Symptom | Likely cause
 
-| The Transit Gateway attachment shows status `pending` in your AWS account
-| The BYOC AWS account has not accepted the AWS RAM share invitation. In that account, open AWS RAM and accept the pending invitation under *Resource share invitations*. Within an AWS Organization, shares are auto-accepted.
+| A new Transit Gateway VPC attachment from the Redpanda BYOC account appears in your hub AWS account with state `pendingAcceptance`, and cluster provisioning is stuck
+| Your Transit Gateway has `AutoAcceptSharedAttachments` set to `disable`. In the AWS account that owns the Transit Gateway, open *VPC > Transit Gateway Attachments*, select the pending attachment, and choose *Actions > Accept transit gateway attachment*. To remove this manual step on future BYOC cluster provisions, set `AutoAcceptSharedAttachments=enable` on the Transit Gateway, but only if you trust every account the Transit Gateway is shared with through AWS RAM.
+
+| The Transit Gateway resource share does not appear in the BYOC AWS account, or cluster creation rejects the Transit Gateway ID
+| The BYOC AWS account has not accepted the AWS RAM share invitation, so Redpanda cannot see the Transit Gateway. In that account, open AWS RAM and accept the pending invitation under *Resource share invitations*. Within an AWS Organization, shares are auto-accepted.
 
 | Cluster creation does not complete
 | The cluster cannot reach the external services it needs during bootstrap. On the hub side, verify all of the following: the Transit Gateway default route table has `0.0.0.0/0` to the hub VPC attachment; the hub public route table has a static route for the Redpanda spoke CIDR to the Transit Gateway; the hub firewall allowlist includes the endpoints in <<internet-endpoints,Internet endpoints required from your hub>>; and the hub VPC CIDR and the Redpanda spoke CIDR do not overlap. If these all look correct, contact Redpanda Support.
