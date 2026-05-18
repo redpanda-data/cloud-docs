@@ -146,22 +146,44 @@ Both ROW values must have the same number of fields, and corresponding fields mu
 
 == Check for NULL
 
-ROW values support `IS NULL` and `IS NOT NULL`.
+ROW values support `IS NULL` and `IS NOT NULL`, but with semantics that differ from scalar columns:
+
+* `expression IS NULL` returns `true` when the expression itself is NULL, *or* when all of the row's fields are NULL.
+* `expression IS NOT NULL` returns `true` when the expression itself is non-NULL *and* all of the row's fields are non-NULL.
+
+Because of this, `IS NULL` and `IS NOT NULL` are not always inverses for ROW values. Both can return `false` for the same input, such as a ROW with a mix of NULL and non-NULL fields.
 
 [source,sql]
 ----
-SELECT ROW(1, 'a') IS NULL;
+SELECT ROW(1, 'a') IS NULL    AS is_null,
+       ROW(1, 'a') IS NOT NULL AS is_not_null;
 ----
 
 [source,sql]
 ----
- ?column?
-----------
- f
+ is_null | is_not_null
+---------+-------------
+ f       | t
 (1 row)
 ----
 
-To check whether a specific field within a ROW is NULL, access the field directly and test that.
+For a ROW with at least one NULL field and at least one non-NULL field, both checks return `false`:
+
+[source,sql]
+----
+SELECT ROW(NULL, 'a') IS NULL    AS is_null,
+       ROW(NULL, 'a') IS NOT NULL AS is_not_null;
+----
+
+[source,sql]
+----
+ is_null | is_not_null
+---------+-------------
+ f       | f
+(1 row)
+----
+
+NOTE: These checks do not recurse into nested ROW values. A nested ROW with all-NULL fields counts as a value (not NULL) at the outer level, so the outer `IS NULL` returns `false`. To check a specific nested field directly, access the field and test that.
 
 == Convert to text
 
