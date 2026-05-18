@@ -545,7 +545,7 @@ echo "ram_resource_share_arn  = $RAM_SHARE_ARN"
 
 All outbound internet traffic from every BYOC spoke that attaches to this Transit Gateway exits from the same NAT Gateway public IP. Use that public IP for outbound IP allowlisting on external services.
 
-== High availability
+== Plan for high availability
 
 The procedure in this guide deploys a single NAT Gateway in `hub-public-0`, which is not AZ-resilient. For production deployments, run one NAT Gateway per availability zone and use per-AZ private route tables that direct local traffic to the AZ-local NAT Gateway. The <<automated-alternative,Terraform reference module>> also deploys a single NAT Gateway. Extend it with per-AZ NAT Gateways if you need HA egress.
 
