@@ -18,6 +18,8 @@ CREATE ICEBERG CATALOG [IF NOT EXISTS] catalog_name STORAGE storage_name
 * `IF NOT EXISTS`: Optional. Prevents an error if an Iceberg catalog with the same name already exists.
 * `storage_name`: Name of an existing storage connection. Create it first with xref:reference:sql/sql-statements/create-storage.adoc[CREATE STORAGE].
 
+NOTE: Catalogs are created in the current schema (`public` by default). To create a catalog in a different schema, qualify the name as `schema.catalog_name`. The auto-created `default_iceberg_catalog` is in `public`.
+
 == Options
 
 [cols="<30%,<15%,<10%,<45%",options="header"]
