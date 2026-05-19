@@ -1,29 +1,20 @@
-= Manage access to Redpanda SQL
-:description: Authentication and authorization model for Redpanda SQL — OIDC for authentication, deny-all by default, admin-issued GRANT for per-user table access.
+= Manage Access to Redpanda SQL
+:description: Authentication and authorization model for Redpanda SQL: OIDC, deny-all by default, admin GRANT for per-user access to topics and catalogs.
 :page-topic-type: concept
 :personas: platform_admin
 
 Redpanda SQL separates authentication and authorization:
 
 * *Authentication* into Redpanda SQL is handled by your OIDC identity provider, configured at the cluster level.
-* *Authorization* — the data a user can read after they authenticate — is enforced inside Redpanda SQL by table-level `GRANT` statements that an admin issues. Redpanda SQL is deny-all by default.
+* *Authorization* (the data a user can read after they authenticate) is enforced inside Redpanda SQL by `GRANT` statements that an admin issues on tables, Redpanda catalogs, and schemas. Redpanda SQL is deny-all by default.
 
 This page describes the admin-side model. For the client-side connection guide, see xref:sql:connect-to-sql/connect-with-oidc.adoc[].
 
 == Authentication
 
-OIDC authenticates the user to Redpanda SQL. Configuring OIDC is not specific to Redpanda SQL — it is a cluster-level configuration. See xref:security:authorization/gbac/gbac_dp.adoc[Configure GBAC in the Data Plane] for the setup steps.
+OIDC authenticates the user to Redpanda SQL. Configuring OIDC is not specific to Redpanda SQL; it is a cluster-level configuration. See xref:security:authorization/gbac/gbac_dp.adoc[Configure GBAC in the Data Plane] for the setup steps.
 
-When a user successfully authenticates with an OIDC bearer token, Redpanda SQL provisions the user automatically on first sign-in.
-
-[CAUTION]
-====
-// TODO: Tighten this caution wording with engineering before publishing
-// (qa-questions.md #17). The underlying issue is OXLA-9382 — concurrent
-// CREATE ROLE under OIDC auto-provisioning corrupts the privilege cache.
-
-Concurrent first-time sign-ins from a connection pool can trigger duplicate role creation under OIDC auto-provisioning, which can corrupt the privilege cache. To avoid this, stagger first-time sign-ins for new OIDC users, or have an admin pre-create the role before the user signs in. Track https://redpandadata.atlassian.net/browse/OXLA-9382[OXLA-9382^] for fix status.
-====
+When a user is assigned a role with the *SQL: Access* or *SQL: Manage* permission in Redpanda Cloud's data-plane RBAC, Redpanda Cloud provisions a corresponding user in the SQL engine. No manual `CREATE USER` is required. To assign roles, go to *Organization IAM > Roles*; SQL permissions are under the *Data Plane* tab when you create or edit a role. See xref:security:authorization/rbac/rbac_dp.adoc[].
 
 // TODO: Confirm validated IdP coverage with engineering (qa-questions.md #16).
 // Add an "IdPs validated for Redpanda SQL" section listing the providers
@@ -32,19 +23,14 @@ Concurrent first-time sign-ins from a connection pool can trigger duplicate role
 
 == How queries reach the underlying topics
 
-All Redpanda SQL queries — regardless of which user issued them — connect to the underlying Redpanda cluster as a single super-user SASL credential associated with the default Redpanda catalog (`default_redpanda_connection`). The super-user credential is provisioned automatically when Redpanda SQL is enabled.
+All Redpanda SQL queries connect to the underlying Redpanda cluster as a single super-user SASL credential associated with the default Redpanda catalog (`default_redpanda_catalog`), regardless of which user issued the query. The super-user credential is provisioned automatically when Redpanda SQL is enabled.
 
 This means:
 
-* Kafka ACLs do not gate query-time access — every query reaches the topics under the super-user SASL credential.
-* The boundary that prevents users from reading data they should not see is enforced inside Redpanda SQL, by `GRANT` and `REVOKE` on the SQL tables themselves.
+* Kafka ACLs do not gate query-time access. Every query reaches the topics under the super-user SASL credential.
+* The boundary that prevents users from reading data they should not see is enforced inside Redpanda SQL by `GRANT` and `REVOKE`.
 
 == Authorization
-
-// TODO: Confirm the GRANT mechanism with engineering (qa-questions.md #21).
-// Specifically: does the SQL `GRANT` statement alone enforce per-user table
-// access, or is an additional ACL / Kafka-side step required? Document the
-// exact scope and granularity (table only, schema-wide, etc.) once confirmed.
 
 // TODO: Add xref to GRANT, REVOKE, CREATE ROLE, ALTER ROLE, DROP ROLE
 // reference pages once they exist. These statement reference pages do NOT
@@ -53,42 +39,64 @@ This means:
 // Filing a follow-up DOC ticket for this coverage gap; the inline examples
 // below are temporary until reference pages land.
 
-// TODO: Document the schema-visibility / creation-privilege policy changes
-// from oxla PR #6793: system.catalogs and SHOW CATALOGS are now filtered by
-// schema USAGE (previously CONNECT only); non-superuser catalog/storage
-// creation now requires CREATE on the schema. The policy half of #6793 is
-// not covered by DOC-2134's scope (that ticket covers the system.catalogs
-// schema reshape but not the ACL-policy tightening). No DOC ticket yet.
+Redpanda SQL access is controlled by two role permissions in Redpanda Cloud's data-plane RBAC:
 
-// TODO: Document the grants surface from oxla PR #6858: new
-// information_schema.role_external_relation_grants view; ALL PRIVILEGES on
-// external sources resolves to SELECT-only; REVOKE on a non-wildcard pattern
-// matching nothing now errors (was previously a silent no-op); catalog-level
-// grants now appear in information_schema.role_table_grants. No DOC ticket
-// yet — file a follow-up for this when the GRANT/REVOKE reference pages are
-// scoped, since the two work-streams are related.
+* *SQL: Manage*: superuser access to the SQL engine. A user with this role can read all topics, create catalogs and tables, and grant access to other users.
+* *SQL: Access*: regular user access. A user with this role can connect to the SQL engine but has no access to any catalog or table until a *SQL: Manage* user grants it.
 
-Redpanda SQL is deny-all by default. After a user authenticates, they cannot read any table until the admin explicitly grants access. To allow a user to query a table:
+When you assign one of these roles to a user in Redpanda Cloud, the cluster provisions a corresponding user in the SQL engine. No manual `CREATE USER` is required. A *SQL: Manage* user then uses standard SQL `GRANT` statements to give the user access to the data they need.
 
-. Create a role for the user.
+. In Redpanda Cloud, assign a role with the *SQL: Access* permission to the user. Roles are managed in *Organization IAM > Roles*; SQL permissions are under the *Data Plane* tab when you create or edit a role. See xref:security:authorization/rbac/rbac_dp.adoc[].
+
+. As a *SQL: Manage* user, grant `SELECT` on a topic surfaced through a Redpanda catalog. The user identifier is the email on the user's Redpanda Cloud account:
 +
 [source,sql]
 ----
-CREATE ROLE analyst LOGIN PASSWORD '<password>';
+GRANT SELECT ON EXTERNAL SOURCE default_redpanda_catalog => 'orders' TO "alice@example.com";
 ----
-
-. Grant the role `SELECT` on the table.
++
+Or grant `SELECT` on multiple topics that match a wildcard pattern. The wildcard `*` is only allowed at the end of the pattern:
 +
 [source,sql]
 ----
-GRANT SELECT ON TABLE default_redpanda_connection=>orders TO analyst;
+GRANT SELECT ON EXTERNAL SOURCE default_redpanda_catalog => 'orders_*' TO "alice@example.com";
 ----
-
-. To remove access, revoke the privilege.
++
+To grant `SELECT` on every topic in a catalog, omit the relation pattern:
 +
 [source,sql]
 ----
-REVOKE SELECT ON TABLE default_redpanda_connection=>orders FROM analyst;
+GRANT SELECT ON EXTERNAL SOURCE default_redpanda_catalog TO "alice@example.com";
+----
+
+. To remove access, revoke the privilege:
++
+[source,sql]
+----
+REVOKE SELECT ON EXTERNAL SOURCE default_redpanda_catalog => 'orders' FROM "alice@example.com";
+----
+
+=== Grant behavior for Redpanda catalogs
+
+A few details affect how grants on Redpanda catalogs behave:
+
+* *Privilege type.* `SELECT` is the only privilege type that has effect on a Redpanda catalog. `GRANT ALL PRIVILEGES` on a catalog resolves to `SELECT` only.
+* *REVOKE on a non-matching pattern.* `REVOKE SELECT ... \=> '_pattern_'` errors if the pattern matches no existing grant for the role. The catalog-level form (no pattern) is idempotent and silently no-ops if no grants exist, so cleanup scripts can safely run it.
+* *Inspecting current grants.* To see which roles have grants on which catalogs and relations, query `information_schema.role_external_relation_grants`. Catalog-level grants also appear as rows in `information_schema.role_table_grants`, where `table_name` is the catalog name.
+
+=== Schema-level privileges for Redpanda catalogs and SQL storage
+
+Redpanda catalogs and SQL storage definitions live in a schema (`public` by default). To work with them, a user needs schema-level privileges in addition to any per-relation grants:
+
+* `USAGE` on the schema: required to see catalogs in `system.catalogs` and `SHOW CATALOGS`, and to reference any object in the schema by name. Without `USAGE`, the catalog is hidden from the user.
+* `CREATE` on the schema: required for a non-superuser to run `CREATE REDPANDA CATALOG` or `CREATE STORAGE` in that schema.
+
+Grant schema-level privileges with the `ON SCHEMA` form:
+
+[source,sql]
+----
+GRANT USAGE ON SCHEMA public TO "alice@example.com";
+GRANT CREATE ON SCHEMA public TO "alice@example.com";
 ----
 
 == Next steps

@@ -5,7 +5,7 @@
 :learning-objective-1: Obtain credentials from your OIDC identity provider for Redpanda SQL
 :learning-objective-2: Connect to Redpanda SQL using a bearer token or client credentials
 
-Authenticate to Redpanda SQL using glossterm:OpenID Connect (OIDC)[] instead of a SCRAM password. The cluster validates the credential locally against the configured glossterm:identity provider (IdP)[,identity provider] and takes the session identity from the glossterm:principal[] claim in the token, not from the `user=` field in the connection string. The cluster admin grants per-user data access separately. See xref:sql:manage/manage-access.adoc[] for the access model.
+Authenticate to Redpanda SQL using glossterm:OpenID Connect (OIDC)[] instead of a SCRAM password. The cluster validates the credential locally against the configured glossterm:identity provider (IdP)[,identity provider]. The session identity comes from the glossterm:principal[] claim in the token, not from the `user=` field in the connection string. The cluster admin grants per-user data access separately. See xref:sql:manage/manage-access.adoc[] for the access model.
 
 After completing these steps, you will be able to:
 
@@ -14,10 +14,10 @@ After completing these steps, you will be able to:
 
 == Prerequisites
 
-* A Redpanda glossterm:BYOC[] cluster on AWS with Redpanda SQL enabled. See xref:sql:get-started/deploy-sql-cluster.adoc[Enable Redpanda SQL].
+* A Redpanda BYOC cluster on AWS with Redpanda SQL enabled. See xref:sql:get-started/deploy-sql-cluster.adoc[Enable Redpanda SQL].
 * OIDC configured for your Redpanda cluster. See xref:security:authorization/gbac/gbac_dp.adoc[Configure GBAC in the Data Plane] for the cluster-level OIDC setup. Configuring OIDC is not specific to Redpanda SQL.
 * https://www.postgresql.org/download/[`psql`^] or another PostgreSQL-compatible client.
-* *A SQL user that matches the principal in your OIDC token.* Redpanda SQL does not auto-create users on first OIDC login. The cluster admin must run `CREATE USER <token-principal>` for each user, where `<token-principal>` is the value of the claim configured by the cluster's `oidc.oidc_principal_mapping` (default `$.sub`, often overridden to `$.preferred_username` for human-readable usernames). Usernames listed in the cluster's `oidc.protected_users` (default `["oxla"]`) cannot authenticate via OIDC even when a token resolves to that name.
+* A user or service account assigned a role with the *SQL: Access* or *SQL: Manage* permission in Redpanda Cloud's data-plane RBAC. Redpanda Cloud provisions a corresponding user in the SQL engine when the role is assigned. To assign roles, go to *Organization IAM > Roles*; SQL permissions are under the *Data Plane* tab when you create or edit a role. See xref:security:authorization/rbac/rbac_dp.adoc[].
 
 == Authentication modes
 
@@ -29,7 +29,7 @@ Redpanda SQL accepts two OIDC authentication modes, selected by the connection-s
 
 |Bearer token
 |`auth_method=bearer`
-|You already hold a JSON Web Token (JWT) issued by the identity provider (for example, an Authorization Code flow result on a developer workstation, or a token minted by a cluster-side workflow).
+|You already hold a JSON Web Token (JWT) issued by the identity provider (for example, from an Authorization Code flow or a cluster-side workflow).
 
 |Client credentials
 |`auth_method=client_secret`
@@ -50,6 +50,8 @@ The token must include the standard OIDC claims (`sub`, `aud`, `iss`, `exp`) and
 // been audited line-by-line for this case. Confirm with SME before publishing.
 
 == Connect with a bearer token
+
+Use bearer-token authentication for human users who hold a JWT issued by your identity provider. For Redpanda Cloud users, `rpk cloud auth token` returns a token you can pass directly; see xref:sql:get-started/sql-quickstart.adoc[Quickstart] for the end-to-end setup.
 
 Set `options=auth_method=bearer` in the connection string and pass the token in the password field. Redpanda SQL ignores the `user=` field and takes the session identity from the principal claim in the token.
 
@@ -83,12 +85,25 @@ cur.execute("SELECT current_user")
 
 For more language-client examples, see xref:sql:connect-to-sql/index.adoc[Connect to Redpanda SQL].
 
-[NOTE]
-====
-*Concurrent first-time logins.* First-time logins through a connection pool can occasionally produce duplicate role entries in the distributed catalog, after which DDL operations against the role fail. Track https://redpandadata.atlassian.net/browse/OXLA-9382[OXLA-9382^]. As a workaround, have each user log in once with a single connection before using a connection pool against that account.
-====
+// TODO: OXLA-9382 (concurrent first-time login via connection pool produces
+// duplicate role entries in the distributed catalog) is marked Done in Jira
+// but has no fixVersions set. Confirm with SME the fix is in the GA 2026-05-22
+// build before publishing this note. If confirmed in GA, delete this comment.
+// If NOT confirmed, restore the user-facing NOTE below:
+//
+// [NOTE]
+// ====
+// *Concurrent first-time logins.* First-time logins through a connection pool
+// can occasionally produce duplicate role entries in the distributed catalog,
+// after which DDL operations against the role fail. Track
+// https://redpandadata.atlassian.net/browse/OXLA-9382[OXLA-9382^]. As a
+// workaround, have each user log in once with a single connection before
+// using a connection pool against that account.
+// ====
 
 == Connect with client credentials
+
+Use client-credentials authentication for service-to-service connections: scheduled jobs, BI tools, or other automated clients that can't perform interactive sign-in. Each service account has an OIDC client ID and client secret issued by your identity provider; Redpanda SQL exchanges those credentials for a token and validates it.
 
 Set `options=auth_method=client_secret`, pass the OIDC client ID in `user=`, and the client secret in the password field. Redpanda SQL exchanges these against the identity provider's token endpoint and validates the returned token. The resolved principal becomes the session identity.
 
