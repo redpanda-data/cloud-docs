@@ -91,12 +91,9 @@ These column names are reserved. A topic schema with a top-level `redpanda` or `
 
 == Query live and historical records together
 
-// TODO: SME — confirm when REFRESH must be run on the linked Iceberg table. Source shows that if the Iceberg table's schema isn't refreshed, the query fails at planning time with: `Schema not found for Iceberg table '<table>'. Run: REFRESH <catalog>=><table>`. Confirm:
-//   - Is REFRESH required only the first time, or every time the Iceberg schema changes?
-//   - Is REFRESH required when new records are added to the Iceberg table (no schema change), or only on schema change?
-// Once confirmed, add a prerequisite or step that tells users when to run REFRESH.
-
 Query the table in the linked Redpanda catalog (the one with `USING CATALOG` set) using standard `SELECT` syntax. The query returns records from both the live Redpanda topic and the Iceberg-translated history in one result, with no overlap between them.
+
+NOTE: After any shape change to the Iceberg table or its corresponding Redpanda topic schema, run `REFRESH <catalog>=><table>` to update the schema view Redpanda SQL uses for query planning. Without a refresh, the next query against the table fails at planning time with `Schema not found for Iceberg table '<table>'`. `REFRESH` updates only the schema view, not data; you don't run it between writes.
 
 [source,sql]
 ----
@@ -111,13 +108,13 @@ NOTE: Iceberg-translated data persists independently of Redpanda topic retention
 
 == Handle schema differences
 
-// TODO: Verify use cases for schema divergence between the topic and the Iceberg table
+A topic schema can evolve over time. You might add or remove fields in your Schema Registry value subject as your application changes. Redpanda translates new records into the Iceberg table forward-only: it adds columns to the Iceberg table when the topic schema widens, but it does not drop columns from the Iceberg table when the topic schema narrows. As a result, the Iceberg table can carry columns the current topic schema doesn't have.
 
-For a query against a linked Redpanda catalog, the topic and the Iceberg table can have different schemas, within these rules:
+Redpanda SQL handles this divergence by treating the topic's Schema Registry subject as canonical and filling in missing fields on the Iceberg side. The rules that apply to a query against a linked Redpanda catalog:
 
-* The topic's Schema Registry value subject is canonical. The result's column order, count, and types come from the topic schema.
-* The Iceberg table can be a name-subset of the topic schema. If the Iceberg table is missing a column that the topic schema has, Redpanda SQL returns `NULL` for that column on Iceberg-side rows.
-* The Iceberg table cannot have columns the topic schema does not. If it does, the query fails at planning time with the error `Kafka schema must be a name-superset of Iceberg schema`. To resolve, either drop the extra Iceberg columns or add the corresponding fields to the topic's Schema Registry subject.
+* The result's column order, count, and types come from the topic schema.
+* If the Iceberg table is missing a column that the topic schema has, Redpanda SQL returns `NULL` for that column on Iceberg-side rows. This is common after adding a new column to the topic schema, since earlier records already in Iceberg don't have it.
+* If the Iceberg table has columns the topic schema does not, the query fails at planning time with the error `Kafka schema must be a name-superset of Iceberg schema`. This happens when a column is removed from the topic's Schema Registry subject. To resolve, re-add the column to the topic's Schema Registry subject so the topic schema covers every column present in the Iceberg table.
 
 == Next steps
 
