@@ -1,14 +1,16 @@
 = Manage Access to Redpanda SQL
-:description: Authentication and authorization model for Redpanda SQL: OIDC, deny-all by default, admin GRANT for per-user access to topics and catalogs.
+:description: Authentication and authorization model for Redpanda SQL: OIDC authentication and admin GRANT for per-user access to topics and catalogs.
 :page-topic-type: concept
 :personas: platform_admin
 
 Redpanda SQL separates authentication and authorization:
 
-* *Authentication* into Redpanda SQL is handled by your OIDC identity provider, configured at the cluster level.
-* *Authorization* (the data a user can read after they authenticate) is enforced inside Redpanda SQL by `GRANT` statements that an admin issues on tables, Redpanda catalogs, and schemas. Redpanda SQL is deny-all by default.
+* *Authentication*: Your OIDC identity provider authenticates the user, configured at the cluster level. For the client-side connection guide, see xref:sql:connect-to-sql/connect-with-oidc.adoc[].
+* *Authorization*: Two roles control what a user can do once they authenticate:
+** *SQL: Manage*: SQL engine superuser. Can read every topic, create catalogs and tables, and grant access to other users.
+** *SQL: Access*: Regular user. Can connect to the SQL engine but cannot read any catalog or table they don't own. By default, a *SQL: Access* user owns nothing; a *SQL: Manage* user grants `SELECT` on specific resources to give them access.
 
-This page describes the admin-side model. For the client-side connection guide, see xref:sql:connect-to-sql/connect-with-oidc.adoc[].
+This page focuses on the admin-side authorization model.
 
 == Authentication
 
@@ -23,25 +25,20 @@ When a user is assigned a role with the *SQL: Access* or *SQL: Manage* permissio
 
 == How queries reach the underlying topics
 
-All Redpanda SQL queries connect to the underlying Redpanda cluster as a single super-user SASL credential associated with the default Redpanda catalog (`default_redpanda_catalog`), regardless of which user issued the query. The super-user credential is provisioned automatically when Redpanda SQL is enabled.
+All Redpanda SQL queries connect to the underlying Redpanda cluster as a single internal SASL credential associated with the default Redpanda catalog (`default_redpanda_catalog`), regardless of which SQL user issued the query. The internal credential is provisioned automatically when Redpanda SQL is enabled and is not a user-facing role.
 
 This means:
 
-* Kafka ACLs do not gate query-time access. Every query reaches the topics under the super-user SASL credential.
-* The boundary that prevents users from reading data they should not see is enforced inside Redpanda SQL by `GRANT` and `REVOKE`.
+* Kafka ACLs do not gate query-time access. Every query reaches the topics under the internal SASL credential.
+* The boundary that prevents users from reading data they should not see is enforced inside Redpanda SQL by `GRANT` and `REVOKE` against the SQL-level roles.
 
 == Authorization
 
-Redpanda SQL access is controlled by two role permissions in Redpanda Cloud's data-plane RBAC:
+A *SQL: Manage* user uses standard SQL xref:reference:sql/sql-statements/grant.adoc[GRANT] statements to give a *SQL: Access* user access to specific topics, catalogs, or schemas. The user identifier is the email on the user's Redpanda Cloud account.
 
-* *SQL: Manage*: superuser access to the SQL engine. A user with this role can read all topics, create catalogs and tables, and grant access to other users.
-* *SQL: Access*: regular user access. A user with this role can connect to the SQL engine but has no access to any catalog or table until a *SQL: Manage* user grants it.
+. Assign the user a role with the *SQL: Access* permission (see <<Authentication>>).
 
-When you assign one of these roles to a user in Redpanda Cloud, the cluster provisions a corresponding user in the SQL engine. No manual xref:reference:sql/sql-statements/create-user.adoc[CREATE USER] is required. A *SQL: Manage* user then uses standard SQL xref:reference:sql/sql-statements/grant.adoc[GRANT] statements to give the user access to the data they need.
-
-. In Redpanda Cloud, assign a role with the *SQL: Access* permission to the user. Roles are managed in *Organization IAM > Roles*; SQL permissions are under the *Data Plane* tab when you create or edit a role. See xref:security:authorization/rbac/rbac_dp.adoc[].
-
-. As a *SQL: Manage* user, grant `SELECT` on a topic surfaced through a Redpanda catalog. The user identifier is the email on the user's Redpanda Cloud account:
+. As a *SQL: Manage* user, grant `SELECT` on a topic surfaced through a Redpanda catalog:
 +
 [source,sql]
 ----
