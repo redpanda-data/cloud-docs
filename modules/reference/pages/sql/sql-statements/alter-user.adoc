@@ -1,0 +1,51 @@
+= ALTER USER
+:description: The ALTER USER statement changes the password or superuser status of an existing user.
+:page-topic-type: reference
+
+The `ALTER USER` statement changes the password or superuser status of an existing user. `ALTER ROLE` is a synonym for `ALTER USER`, provided for PostgreSQL compatibility.
+
+A superuser can alter any user. A non-superuser can alter their own user (for example, to change their own password) but cannot change their own superuser status.
+
+== Syntax
+
+[source,sql]
+----
+ALTER { USER | ROLE } user_name [WITH]
+    [ PASSWORD 'password' ]
+    [ SUPERUSER | NOSUPERUSER ];
+----
+
+* `user_name`: Name of the existing user to alter. Use the reserved keyword `CURRENT_USER` or `CURRENT_ROLE` to alter the user running the statement.
+* `PASSWORD 'password'`: Optional. The new password. Must be a non-empty string literal if specified.
+* `SUPERUSER`: Optional. Promotes the user to superuser. Requires superuser privileges on the current session.
+* `NOSUPERUSER`: Optional. Removes superuser status from the user. The protected system superuser cannot be demoted.
+* `WITH`: Optional. Has no effect; provided for PostgreSQL compatibility.
+
+== Examples
+
+Change the password for an existing user:
+
+[source,sql]
+----
+ALTER USER alice WITH PASSWORD 'new_secret';
+----
+
+Change your own password (as the current user):
+
+[source,sql]
+----
+ALTER USER CURRENT_USER WITH PASSWORD 'new_secret';
+----
+
+Promote a regular user to superuser:
+
+[source,sql]
+----
+ALTER USER alice SUPERUSER;
+----
+
+== Suggested reading
+
+* xref:reference:sql/sql-statements/create-user.adoc[CREATE USER]
+* xref:reference:sql/sql-statements/drop-user.adoc[DROP USER]
+* xref:sql:manage/manage-access.adoc[Manage access to Redpanda SQL]

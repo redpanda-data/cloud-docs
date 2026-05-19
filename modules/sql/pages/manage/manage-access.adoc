@@ -37,7 +37,7 @@ Redpanda SQL access is controlled by two role permissions in Redpanda Cloud's da
 * *SQL: Manage*: superuser access to the SQL engine. A user with this role can read all topics, create catalogs and tables, and grant access to other users.
 * *SQL: Access*: regular user access. A user with this role can connect to the SQL engine but has no access to any catalog or table until a *SQL: Manage* user grants it.
 
-When you assign one of these roles to a user in Redpanda Cloud, the cluster provisions a corresponding user in the SQL engine. No manual xref:reference:sql/sql-statements/create-role.adoc[CREATE USER] is required. A *SQL: Manage* user then uses standard SQL xref:reference:sql/sql-statements/grant.adoc[GRANT] statements to give the user access to the data they need.
+When you assign one of these roles to a user in Redpanda Cloud, the cluster provisions a corresponding user in the SQL engine. No manual xref:reference:sql/sql-statements/create-user.adoc[CREATE USER] is required. A *SQL: Manage* user then uses standard SQL xref:reference:sql/sql-statements/grant.adoc[GRANT] statements to give the user access to the data they need.
 
 . In Redpanda Cloud, assign a role with the *SQL: Access* permission to the user. Roles are managed in *Organization IAM > Roles*; SQL permissions are under the *Data Plane* tab when you create or edit a role. See xref:security:authorization/rbac/rbac_dp.adoc[].
 
@@ -101,6 +101,6 @@ GRANT CREATE ON SCHEMA public TO "alice@example.com";
 
 * xref:reference:sql/sql-statements/grant.adoc[GRANT]
 * xref:reference:sql/sql-statements/revoke.adoc[REVOKE]
-* xref:reference:sql/sql-statements/create-role.adoc[CREATE ROLE]
-* xref:reference:sql/sql-statements/alter-role.adoc[ALTER ROLE]
-* xref:reference:sql/sql-statements/drop-role.adoc[DROP ROLE]
+* xref:reference:sql/sql-statements/create-user.adoc[CREATE USER]
+* xref:reference:sql/sql-statements/alter-user.adoc[ALTER USER]
+* xref:reference:sql/sql-statements/drop-user.adoc[DROP USER]

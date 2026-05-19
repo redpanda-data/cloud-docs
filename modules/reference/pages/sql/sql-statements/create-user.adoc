@@ -1,0 +1,48 @@
+= CREATE USER
+:description: The CREATE USER statement creates a new user in Redpanda SQL with a required password. Only a superuser can create users.
+:page-topic-type: reference
+
+The `CREATE USER` statement creates a new user in Redpanda SQL. `CREATE ROLE` is a synonym for `CREATE USER`, provided for PostgreSQL compatibility. Only a superuser can run this statement.
+
+A password is required when creating a user.
+
+[NOTE]
+====
+Error messages from the SQL engine refer to users as "roles" (for example, `role "alice" does not exist`). This is consistent with PostgreSQL terminology and refers to the same object that `CREATE USER` produces.
+====
+
+== Syntax
+
+[source,sql]
+----
+CREATE { USER | ROLE } user_name [WITH] PASSWORD 'password' [SUPERUSER | NOSUPERUSER];
+----
+
+* `user_name`: Name of the new user. Cannot be `CURRENT_USER` or `CURRENT_ROLE`.
+* `PASSWORD 'password'`: Required. The password must be a non-empty string literal.
+* `SUPERUSER`: Optional. Grants superuser privileges to the new user. Superusers bypass authorization checks.
+* `NOSUPERUSER`: Optional. Explicitly marks the user as a non-superuser. Default when neither `SUPERUSER` nor `NOSUPERUSER` is specified.
+* `WITH`: Optional. Has no effect; provided for PostgreSQL compatibility.
+
+== Examples
+
+Create a regular user with a password:
+
+[source,sql]
+----
+CREATE USER alice WITH PASSWORD 'secret123';
+----
+
+Create a superuser:
+
+[source,sql]
+----
+CREATE USER admin_user WITH PASSWORD 'admin_secret' SUPERUSER;
+----
+
+== Suggested reading
+
+* xref:reference:sql/sql-statements/alter-user.adoc[ALTER USER]
+* xref:reference:sql/sql-statements/drop-user.adoc[DROP USER]
+* xref:reference:sql/sql-statements/grant.adoc[GRANT]
+* xref:sql:manage/manage-access.adoc[Manage access to Redpanda SQL]
