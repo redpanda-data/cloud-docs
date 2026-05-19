@@ -73,9 +73,9 @@ REVOKE SELECT ON EXTERNAL SOURCE default_redpanda_catalog => 'orders' FROM "alic
 
 A few details affect how grants on Redpanda catalogs behave:
 
-* *Privilege type.* `SELECT` is the only privilege type that has effect on a Redpanda catalog. `GRANT ALL PRIVILEGES` on a catalog resolves to `SELECT` only.
-* *REVOKE on a non-matching pattern.* `REVOKE SELECT ... \=> '_pattern_'` errors if the pattern matches no existing grant for the role. The catalog-level form (no pattern) is idempotent and silently no-ops if no grants exist, so cleanup scripts can safely run it.
-* *Inspecting current grants.* To see which roles have grants on which catalogs and relations, query `information_schema.role_external_relation_grants`. Catalog-level grants also appear as rows in `information_schema.role_table_grants`, where `table_name` is the catalog name.
+* Privilege type: `SELECT` is the only privilege type that has effect on a Redpanda catalog. `GRANT ALL PRIVILEGES` on a catalog resolves to `SELECT` only.
+* `REVOKE` on a non-matching pattern: `REVOKE SELECT ... \=> 'pattern'` errors if the pattern matches no existing grant for the role. The catalog-level form (no pattern) is idempotent and silently no-ops if no grants exist, so cleanup scripts can safely run it.
+* Inspecting current grants: To see which roles have grants on which catalogs and relations, query `information_schema.role_external_relation_grants`. Catalog-level grants also appear as rows in `information_schema.role_table_grants`, where `table_name` is the catalog name.
 
 === Schema-level privileges for Redpanda catalogs and SQL storage
 
