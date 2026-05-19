@@ -1,8 +1,8 @@
 = ALTER REDPANDA CATALOG
-:description: The ALTER REDPANDA CATALOG statement modifies connection properties of an existing Redpanda catalog.
+:description: The ALTER REDPANDA CATALOG statement modifies connection properties of an existing Redpanda catalog, including the link to an Iceberg catalog.
 :page-topic-type: reference
 
-The `ALTER REDPANDA CATALOG` statement modifies connection properties of an existing Redpanda catalog.
+The `ALTER REDPANDA CATALOG` statement modifies connection properties of an existing Redpanda catalog. You can also use it to link the Redpanda catalog to an Iceberg catalog (or detach an existing link) so that queries against the Redpanda catalog return both live records and Iceberg-translated history.
 
 == Syntax
 
@@ -10,18 +10,58 @@ The `ALTER REDPANDA CATALOG` statement modifies connection properties of an exis
 ----
 ALTER REDPANDA CATALOG [IF EXISTS] catalog_name
 WITH (option = 'value' [, ...]);
+
+ALTER REDPANDA CATALOG [IF EXISTS] catalog_name
+USING CATALOG [schema.]iceberg_catalog_name
+[WITH (option = 'value' [, ...])];
+
+ALTER REDPANDA CATALOG [IF EXISTS] catalog_name
+USING CATALOG NULL
+[WITH (option = 'value' [, ...])];
 ----
 
-* `catalog_name`: Name of the catalog to modify.
+* `catalog_name`: Name of the Redpanda catalog to modify.
 * `IF EXISTS`: Optional. Prevents an error if the catalog does not exist.
 * `option = 'value'`: One or more connection options to update. See xref:reference:sql/sql-statements/create-redpanda-catalog.adoc[CREATE REDPANDA CATALOG] for the full list of options.
+* `USING CATALOG iceberg_catalog_name`: Links the Redpanda catalog to an existing Iceberg catalog. The Iceberg catalog must already exist. You can qualify the Iceberg catalog name with a schema prefix.
+* `USING CATALOG NULL`: Detaches the Redpanda catalog from any linked Iceberg catalog.
 
 == Examples
 
-Update the broker address for an existing catalog:
+=== Update broker address
 
 [source,sql]
 ----
 ALTER REDPANDA CATALOG production_redpanda
 WITH (initial_brokers = 'new-broker:9092');
+----
+
+=== Link to an Iceberg catalog
+
+To link a Redpanda catalog to an existing Iceberg catalog so that queries against the Redpanda catalog return both live records and Iceberg-translated history:
+
+[source,sql]
+----
+ALTER REDPANDA CATALOG production_redpanda
+USING CATALOG lakehouse_catalog;
+----
+
+=== Retarget the linked Iceberg catalog
+
+To change which Iceberg catalog a Redpanda catalog is linked to, run `ALTER REDPANDA CATALOG ... USING CATALOG <new-iceberg-cat>`:
+
+[source,sql]
+----
+ALTER REDPANDA CATALOG production_redpanda
+USING CATALOG new_lakehouse_catalog;
+----
+
+=== Detach from an Iceberg catalog
+
+To remove an existing link to an Iceberg catalog so that queries against the Redpanda catalog return only live records:
+
+[source,sql]
+----
+ALTER REDPANDA CATALOG production_redpanda
+USING CATALOG NULL;
 ----

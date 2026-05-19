@@ -1,12 +1,12 @@
 = SHOW TABLES
-:description: The SHOW TABLES statement retrieves information about existing tables.
+:description: The SHOW TABLES statement retrieves information about existing tables, including tables mapped from Redpanda topics and Iceberg tables registered in the local catalog.
 :page-topic-type: reference
 
-The `SHOW TABLES` statement retrieves information about existing tables.
+The `SHOW TABLES` statement retrieves information about existing tables in the current schema. Variants filter by the table's source: Redpanda topics or Iceberg.
 
 [NOTE]
 ====
-`SHOW TABLES` only displays tables in schemas where the user has the `USAGE` grant.
+`SHOW TABLES` and its variants only display tables in schemas where the user has the `USAGE` grant.
 ====
 
 == Syntax
@@ -15,9 +15,24 @@ The `SHOW TABLES` statement retrieves information about existing tables.
 ----
 SHOW TABLES;
 SHOW TABLES FROM catalog_name;
+
+SHOW REDPANDA TABLES;
+SHOW REDPANDA TABLES catalog_name;
+SHOW REDPANDA TABLES schema.catalog_name;
+
+SHOW KAFKA TABLES;
+SHOW KAFKA TABLES catalog_name;
+SHOW KAFKA TABLES schema.catalog_name;
+
+SHOW ICEBERG TABLES;
+SHOW ICEBERG TABLES catalog_name;
+SHOW ICEBERG TABLES schema.catalog_name;
 ----
 
-* `catalog_name`: Optional. The name of a Redpanda catalog. When specified, lists tables mapped to Redpanda topics through that catalog.
+* `catalog_name`: Optional. Filter by a specific Redpanda or Iceberg catalog.
+* `schema.catalog_name`: Optional. Filter by both schema and catalog. Useful when catalogs in different schemas share a name.
+
+`SHOW KAFKA TABLES` is a synonym for `SHOW REDPANDA TABLES`.
 
 == Examples
 
@@ -42,11 +57,41 @@ SHOW TABLES;
 +------------+
 ----
 
-=== List tables from a catalog
+=== List tables from a Redpanda catalog
 
 To list tables mapped through a specific Redpanda catalog:
 
 [source,sql]
 ----
-SHOW TABLES FROM default_redpanda_catalog;
+SHOW REDPANDA TABLES default_redpanda_catalog;
+----
+
+To list all Redpanda-catalog tables across all connections:
+
+[source,sql]
+----
+SHOW REDPANDA TABLES;
+----
+
+=== List Iceberg tables
+
+To list all Iceberg tables registered in the local catalog:
+
+[source,sql]
+----
+SHOW ICEBERG TABLES;
+----
+
+To list Iceberg tables in a specific catalog:
+
+[source,sql]
+----
+SHOW ICEBERG TABLES lakehouse_catalog;
+----
+
+To list Iceberg tables in a specific schema and catalog (here, schema `analytics`, catalog `lakehouse_catalog`):
+
+[source,sql]
+----
+SHOW ICEBERG TABLES analytics.lakehouse_catalog;
 ----

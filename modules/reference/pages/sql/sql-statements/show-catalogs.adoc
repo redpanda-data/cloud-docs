@@ -1,0 +1,51 @@
+= SHOW CATALOGS
+:description: The SHOW CATALOGS statement lists catalogs in the cluster. Variants list only Redpanda catalogs or only Iceberg catalogs.
+:page-topic-type: reference
+
+The `SHOW CATALOGS` statement lists catalogs in the cluster. Variants filter by catalog type: Redpanda catalogs or Iceberg catalogs.
+
+[NOTE]
+====
+`SHOW CATALOGS` and its variants only display catalogs in schemas where the user has the `USAGE` grant. Catalogs created in schemas where the caller lacks `USAGE` are not returned.
+====
+
+== Syntax
+
+[source,sql]
+----
+SHOW CATALOGS;
+SHOW REDPANDA CATALOGS;
+SHOW KAFKA CATALOGS;
+SHOW ICEBERG CATALOGS;
+----
+
+`SHOW KAFKA CATALOGS` is a synonym for `SHOW REDPANDA CATALOGS`.
+
+== Examples
+
+=== List all catalogs
+
+To list all catalogs (both Redpanda and Iceberg) visible to the caller:
+
+[source,sql]
+----
+SHOW CATALOGS;
+----
+
+For SQL-queryable access to the same information (with `WHERE`, `ORDER BY`, and `LIMIT` support), see xref:reference:sql/system-virtual-tables.adoc#_system_catalogs[`system.catalogs`].
+
+=== List only Redpanda catalogs
+
+[source,sql]
+----
+SHOW REDPANDA CATALOGS;
+----
+
+=== List only Iceberg catalogs
+
+[source,sql]
+----
+SHOW ICEBERG CATALOGS;
+----
+
+For each Iceberg catalog's REST endpoint, warehouse, and authentication type, see xref:reference:sql/system-virtual-tables.adoc#_system_iceberg_catalogs[`system.iceberg_catalogs`] or xref:reference:sql/sql-statements/describe.adoc[`DESCRIBE ICEBERG CATALOG`].
