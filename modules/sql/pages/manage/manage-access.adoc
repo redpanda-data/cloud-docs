@@ -32,19 +32,12 @@ This means:
 
 == Authorization
 
-// TODO: Add xref to GRANT, REVOKE, CREATE ROLE, ALTER ROLE, DROP ROLE
-// reference pages once they exist. These statement reference pages do NOT
-// exist yet under modules/reference/pages/sql/sql-statements/ — the SQL
-// reference set currently covers CATALOG/STORAGE/TABLE DDL + DML only.
-// Filing a follow-up DOC ticket for this coverage gap; the inline examples
-// below are temporary until reference pages land.
-
 Redpanda SQL access is controlled by two role permissions in Redpanda Cloud's data-plane RBAC:
 
 * *SQL: Manage*: superuser access to the SQL engine. A user with this role can read all topics, create catalogs and tables, and grant access to other users.
 * *SQL: Access*: regular user access. A user with this role can connect to the SQL engine but has no access to any catalog or table until a *SQL: Manage* user grants it.
 
-When you assign one of these roles to a user in Redpanda Cloud, the cluster provisions a corresponding user in the SQL engine. No manual `CREATE USER` is required. A *SQL: Manage* user then uses standard SQL `GRANT` statements to give the user access to the data they need.
+When you assign one of these roles to a user in Redpanda Cloud, the cluster provisions a corresponding user in the SQL engine. No manual xref:reference:sql/sql-statements/create-role.adoc[CREATE USER] is required. A *SQL: Manage* user then uses standard SQL xref:reference:sql/sql-statements/grant.adoc[GRANT] statements to give the user access to the data they need.
 
 . In Redpanda Cloud, assign a role with the *SQL: Access* permission to the user. Roles are managed in *Organization IAM > Roles*; SQL permissions are under the *Data Plane* tab when you create or edit a role. See xref:security:authorization/rbac/rbac_dp.adoc[].
 
@@ -103,3 +96,11 @@ GRANT CREATE ON SCHEMA public TO "alice@example.com";
 
 * xref:sql:connect-to-sql/connect-with-oidc.adoc[Connect with OIDC]: how a user obtains a bearer token and connects to Redpanda SQL.
 * xref:security:authorization/gbac/gbac_dp.adoc[Configure GBAC in the Data Plane]: cluster-level OIDC and GBAC setup.
+
+== Suggested reading
+
+* xref:reference:sql/sql-statements/grant.adoc[GRANT]
+* xref:reference:sql/sql-statements/revoke.adoc[REVOKE]
+* xref:reference:sql/sql-statements/create-role.adoc[CREATE ROLE]
+* xref:reference:sql/sql-statements/alter-role.adoc[ALTER ROLE]
+* xref:reference:sql/sql-statements/drop-role.adoc[DROP ROLE]
