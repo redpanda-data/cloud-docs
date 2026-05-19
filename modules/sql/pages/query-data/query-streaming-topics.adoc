@@ -20,11 +20,10 @@ Before you query a topic with SQL:
 
 * Enable the Redpanda SQL engine on your Redpanda Bring Your Own Cloud (BYOC) cluster. See xref:sql:get-started/deploy-sql-cluster.adoc[Enable Redpanda SQL].
 * Connect to Redpanda SQL with `psql` or another PostgreSQL client. See xref:sql:connect-to-sql/index.adoc[Connect to Redpanda SQL].
-* Confirm that the Redpanda topic you want to query has a schema registered in Schema Registry.
+* Confirm that the Redpanda topic you want to query has a schema registered in Schema Registry. Redpanda SQL supports Protobuf, JSON, and Avro schemas.
 
 // TODO: Confirm permissions/roles/ACLs required
-// Is it possible to use a topic without a registered schema? 
-// Any specific limitations on Protobuf vs JSON vs Avro formats?
+// Is it possible to use a topic without a registered schema?
 // Any requirements related to wire format and subject naming strategy?
 
 == Map the topic to a SQL table
@@ -41,10 +40,22 @@ CREATE TABLE default_redpanda_catalog=>orders WITH (
 );
 ----
 
-Replace `orders` with your topic name and `orders-value` with the Schema Registry subject that holds the topic's value schema.
+Replace `orders` with your topic name and `orders-value` with the Schema Registry subject that holds the topic's value schema. `schema_subject` is required: Redpanda SQL needs a schema to deserialize and query the topic's records.
 
-// TODO: Nested fields?
-The table inherits its column definitions from the registered schema. For Protobuf schemas, Redpanda SQL maps each top-level field to a SQL column.
+If the topic uses a Protobuf schema that defines more than one message, also set `output_schema_message_full_name` to the fully-qualified name of the message to use:
+
+[source,sql]
+----
+CREATE TABLE default_redpanda_catalog=>orders WITH (
+  topic = 'orders',
+  schema_subject = 'orders-value',
+  output_schema_message_full_name = 'com.example.orders.Order'
+);
+----
+
+The table inherits its column definitions from the registered schema. Each top-level field in the schema becomes a SQL column.
+
+// TODO: Add xref to query-nested-fields.adoc (DOC-2019) once it lands for nested-field handling guidance.
 
 == Run queries
 

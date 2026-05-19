@@ -31,8 +31,8 @@ WITH (option = 'value' [, ...]);
 
 |`schema_subject`
 |STRING
-|No
-|Schema Registry subject name to use for deserializing topic data.
+|Yes
+|Schema Registry subject name to use for deserializing topic data. Redpanda SQL requires a schema to query a topic.
 
 |`schema_lookup_policy`
 |STRING
@@ -81,20 +81,23 @@ Map the `transactions` topic to a table through `default_redpanda_catalog`:
 [source,sql]
 ----
 CREATE TABLE default_redpanda_catalog=>transactions
-WITH (topic = 'transactions');
+WITH (
+  topic = 'transactions',
+  schema_subject = 'transactions-value'
+);
 ----
 
-=== Specify a Schema Registry subject
+=== Create a table from a multi-message Protobuf schema
 
-Map a topic and specify the Schema Registry subject:
+When the Protobuf schema for the topic defines more than one message, specify the message to use with `output_schema_message_full_name`:
 
 [source,sql]
 ----
-CREATE TABLE default_redpanda_catalog=>user_events
+CREATE TABLE default_redpanda_catalog=>orders
 WITH (
-  topic = 'user-events',
-  schema_subject = 'user-events-value',
-  schema_lookup_policy = 'LATEST'
+  topic = 'orders',
+  schema_subject = 'orders-value',
+  output_schema_message_full_name = 'com.example.orders.Order'
 );
 ----
 
