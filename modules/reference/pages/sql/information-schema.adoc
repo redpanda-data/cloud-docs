@@ -1,4 +1,4 @@
-= Information schema
+= Information Schema
 :description: Information schema views in Redpanda SQL expose database object metadata and grants through SQL-standard views.
 :page-topic-type: reference
 
@@ -11,14 +11,14 @@ The `information_schema` namespace provides SQL-standard views over database obj
 |View |Description
 
 |`information_schema.role_external_relation_grants`
-|Per-relation EXTERNAL SOURCE grants. Redpanda SQL extension that captures grants whose stored relation pattern is anything other than `*` (catalog-level grants surface in `information_schema.role_table_grants` instead).
+|Per-relation EXTERNAL SOURCE grants. Redpanda SQL extension that captures grants whose stored relation pattern is anything other than `\*` (catalog-level grants surface in `information_schema.role_table_grants` instead).
 |===
 
 == information_schema.role_external_relation_grants
 
-Per-relation EXTERNAL SOURCE grants. Rows whose stored relation pattern is anything other than `*`. Catalog-level EXTERNAL SOURCE grants (stored pattern `*`) surface in `information_schema.role_table_grants`, like foreign-table grants in PostgreSQL.
+Per-relation EXTERNAL SOURCE grants. Rows whose stored relation pattern is anything other than `\*`. Catalog-level EXTERNAL SOURCE grants (stored pattern `\*`) surface in `information_schema.role_table_grants`, like foreign-table grants in PostgreSQL.
 
-Visibility mirrors `information_schema.role_table_grants`: a regular role sees rows where it is the grantee; a superuser sees grants for every non-superuser.
+Visibility mirrors `information_schema.role_table_grants`. A regular role sees rows where it is the grantee. A superuser sees grants for every non-superuser.
 
 [cols="<30%,<15%,<10%,<45%",options="header"]
 |===
@@ -27,9 +27,9 @@ Visibility mirrors `information_schema.role_table_grants`: a regular role sees r
 |`grantor` |`text` |No |Role that granted the privilege.
 |`grantee` |`text` |No |Role that holds the privilege.
 |`database_name` |`text` |No |Database the grant applies to.
-|`schema_name` |`text` |No |Schema (namespace) the grant applies to.
+|`schema_name` |`text` |No |Schema the grant applies to.
 |`source_name` |`text` |No |External source (catalog or storage) the grant applies to.
-|`relation_pattern` |`text` |No |Relation-name pattern the grant matches. Wildcards (`*`) are allowed in the pattern.
+|`relation_pattern` |`text` |No |Relation-name pattern the grant matches. Wildcards (`\*`) are allowed in the pattern.
 |`privilege_type` |`text` |No |Privilege granted, such as `SELECT`.
 |`is_grantable` |`text` |No |`YES` if the grantee can grant this privilege to other roles; `NO` otherwise.
 |===
