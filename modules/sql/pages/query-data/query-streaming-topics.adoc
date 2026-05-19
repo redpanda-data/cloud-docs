@@ -2,12 +2,12 @@
 :description: Map a Redpanda topic to a SQL table and run analytical queries directly against live streaming data.
 :page-topic-type: how-to
 :personas: app_developer, data_engineer
-:learning-objective-1: Map a streaming Redpanda topic to a SQL table using the default Redpanda catalog
+:learning-objective-1: Map a Redpanda topic to a SQL table using the default Redpanda catalog
 :learning-objective-2: Run analytical SQL queries against live topic data
 
-Map a Redpanda topic to a SQL table to run analytical queries directly against live streaming data without building ETL pipelines. Redpanda SQL reads each record's fields from the topic's schema in Schema Registry.
+Map a Redpanda topic to a SQL table to run analytical queries directly against live streaming data without building ETL pipelines. Redpanda SQL reads each record's fields from the topic's registered schema.
 
-To query the Iceberg-translated history of a Redpanda topic, see xref:sql:query-data/query-iceberg-topics.adoc[].
+To extend queries past your Redpanda retention window by reading from Iceberg-translated history, see xref:sql:query-data/query-iceberg-topics.adoc[].
 
 After completing these steps, you will be able to:
 
@@ -19,16 +19,13 @@ After completing these steps, you will be able to:
 Before you query a topic with SQL:
 
 * Enable the Redpanda SQL engine on your Redpanda Bring Your Own Cloud (BYOC) cluster. See xref:sql:get-started/deploy-sql-cluster.adoc[Enable Redpanda SQL].
+* A Redpanda Cloud user with the *SQL: Access* (or *SQL: Manage*) data-plane RBAC permission. For a *SQL: Access* user to query a topic, a *SQL: Manage* user must first `GRANT SELECT` on the topic to that user. See xref:sql:manage/manage-access.adoc[Manage access to Redpanda SQL].
 * Connect to Redpanda SQL with `psql` or another PostgreSQL client. See xref:sql:connect-to-sql/index.adoc[Connect to Redpanda SQL].
 * Confirm that the Redpanda topic you want to query has a schema registered in Schema Registry. Redpanda SQL supports Protobuf, JSON, and Avro schemas.
 
-// TODO: Confirm permissions/roles/ACLs required
-// Is it possible to use a topic without a registered schema?
-// Any requirements related to wire format and subject naming strategy?
-
 == Map the topic to a SQL table
 
-Each Redpanda topic appears as a SQL table inside a Redpanda catalog. When you enable the SQL engine, Redpanda SQL automatically creates a catalog named `default_redpanda_catalog` that points at your cluster.
+Each Redpanda topic appears as a SQL table inside a Redpanda catalog. When Redpanda SQL is enabled, a catalog named `default_redpanda_catalog` is created automatically and points at your cluster.
 
 Define a table against the topic with `CREATE TABLE`:
 
@@ -53,9 +50,7 @@ CREATE TABLE default_redpanda_catalog=>orders WITH (
 );
 ----
 
-The table inherits its column definitions from the registered schema. Each top-level field in the schema becomes a SQL column.
-
-// TODO: Add xref to query-nested-fields.adoc (DOC-2019) once it lands for nested-field handling guidance.
+The table inherits its column definitions from the registered schema. Each top-level field in the schema becomes a SQL column. For querying nested fields in struct types, see xref:sql:query-data/query-nested-fields.adoc[].
 
 == Run queries
 
@@ -80,6 +75,6 @@ LIMIT 10;
 
 == Next steps
 
-* xref:sql:query-data/query-iceberg-topics.adoc[Query Iceberg topics]: query the Iceberg-translated history of an Iceberg-enabled Redpanda topic, and run a single query that spans live and historical records.
+* xref:sql:query-data/query-iceberg-topics.adoc[Query Iceberg-enabled topics]: run queries against historical data retained beyond your Redpanda retention window.
 * xref:reference:sql/sql-statements/create-table.adoc[CREATE TABLE]: full reference for the table-against-topic syntax, including all options.
 * xref:reference:sql/index.adoc[Redpanda SQL Reference]: supported SQL statements, clauses, data types, and functions.
