@@ -20,7 +20,7 @@ If you select a *Scheduled* maintenance window, then Redpanda Cloud runs operati
 TIP: Redpanda Cloud maintenance cycles always start on Tuesdays. Clusters scheduled for maintenance on Tuesdays are updated first, and clusters scheduled on Mondays are updated last. Keep this in mind when sequencing updates for multiple clusters.
 
 [[serverless-maintenance]]
-== Serverless maintenance
+=== Serverless maintenance
 
 Serverless clusters run on shared, multi-tenant infrastructure, so Redpanda manages all maintenance centrally. You cannot configure a maintenance window, choose a maintenance day, or defer upgrades for an individual Serverless cluster. Operations run in a rolling fashion across the underlying infrastructure and are designed to be transparent to your workload. As with BYOC and Dedicated, all mainstream Kafka client libraries support automatic reconnections when a restart occurs.
 
@@ -33,14 +33,6 @@ Typical maintenance cadence for Serverless clusters:
 These cadences are typical and may change as the service evolves.
 
 If you need control over when maintenance runs on your cluster, use a xref:get-started:cluster-types/create-dedicated-cloud-cluster.adoc[Dedicated] or xref:get-started:cluster-types/byoc/index.adoc[BYOC] cluster. Both support configurable maintenance windows.
-
-[TIP]
-====
-If your Kafka clients are sensitive to brief broker reconnections during rolling operations, consider lowering the metadata refresh interval so clients detect structural changes faster. For example, for librdkafka-based clients:
-
-* `topic.metadata.refresh.interval.ms=60000`
-* `metadata.max.age.ms=240000`
-====
 
 == Minor upgrades
 
