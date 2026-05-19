@@ -102,7 +102,19 @@ Not all features included in BYOC clusters are available in Serverless. For exam
 * Multiple availability zones (AZs)
 * Role-based access control (RBAC) in the data plane and mTLS authentication for Kafka API clients
 * Group-based access control (GBAC)
-* Kafka Connect 
+* Kafka Connect
+* Configurable maintenance windows. See <<maintenance-and-upgrades>>.
+
+[[maintenance-and-upgrades]]
+== Maintenance and upgrades
+
+Redpanda manages all maintenance for Serverless clusters. Because Serverless runs on shared, multi-tenant infrastructure, you cannot configure a maintenance window or schedule upgrades for an individual cluster.
+
+Maintenance operations run in a rolling fashion and are designed to be non-disruptive. Mainstream Kafka client libraries reconnect automatically when broker connections restart.
+
+If you need control over when maintenance runs on your cluster, use a Dedicated or BYOC cluster, both of which support configurable maintenance windows.
+
+For the full upgrade and maintenance policy, including the typical cadence for Serverless, see xref:manage:maintenance.adoc[].
 
 == Next steps
 
