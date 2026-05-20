@@ -89,20 +89,24 @@ Common VPN options:
 
 The following diagram shows the network path from a workstation, through the VPN, into the client VPC, and across PrivateLink to Redpanda Console:
 
+[mermaid]
 ....
-Workstation
-  │  (public internet, OpenVPN tunnel, mutual TLS)
-  ▼
-AWS Client VPN endpoint        ← AWS-managed; not PrivateLink
-  │  (workstation is now logically inside the client VPC)
-  ▼
-Client VPC subnet
-  │  (VPC routing; DNS resolved via VPC resolver to a private IP)
-  ▼
-PrivateLink VPC endpoint ENI   ← PrivateLink begins here
-  │  (AWS PrivateLink service network, not on the public internet)
-  ▼
-Redpanda cluster VPC → Console load balancer → Redpanda Console
+flowchart TD
+    A[Workstation]
+    B[AWS Client VPN endpoint]
+    C[Client VPC subnet]
+    D[PrivateLink VPC endpoint ENI]
+    E["Redpanda cluster VPC → Console load balancer → Redpanda Console"]
+
+    A -->|"public internet, OpenVPN tunnel, mutual TLS"| B
+    B -->|"workstation is now logically inside the client VPC"| C
+    C -->|"VPC routing; DNS resolved via VPC resolver to a private IP"| D
+    D -->|"AWS PrivateLink service network, not on the public internet"| E
+
+    N1[/"AWS-managed; not PrivateLink"/]
+    N2[/"PrivateLink begins here"/]
+    B -.- N1
+    D -.- N2
 ....
 
 The Client VPN tunnel itself does not use PrivateLink. The VPN's role is to place the workstation logically inside the client VPC; the private connection to the cluster is always the PrivateLink endpoint. This is true regardless of how a client reaches the client VPC (Client VPN, corporate VPN, peered network, transit gateway, SSH bastion, or an EC2 instance inside the VPC).
