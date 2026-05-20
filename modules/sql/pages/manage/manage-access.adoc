@@ -5,7 +5,7 @@
 
 Redpanda SQL separates authentication and authorization:
 
-* *Authentication*: Your OIDC identity provider authenticates the user, configured at the cluster level. For the client-side connection guide, see xref:sql:connect-to-sql/connect-with-oidc.adoc[].
+* *Authentication*: Redpanda Cloud validates the user with OIDC (default) or SCRAM password (for legacy clients), against the engine's preconfigured OIDC settings. For the client-side guide, see xref:sql:connect-to-sql/authenticate.adoc[].
 * *Authorization*: Two roles control what a user can do once they authenticate:
 ** *SQL: Manage*: SQL engine superuser. Can read every topic, create catalogs and tables, and grant access to other users.
 ** *SQL: Access*: Regular user. Can connect to the SQL engine but cannot read any catalog or table they don't own. By default, a *SQL: Access* user owns nothing; a *SQL: Manage* user grants `SELECT` on specific resources to give them access.
@@ -14,7 +14,7 @@ This page focuses on the admin-side authorization model.
 
 == Authentication
 
-OIDC authenticates the user to Redpanda SQL. Configuring OIDC is not specific to Redpanda SQL; it is a cluster-level configuration. See xref:security:authorization/gbac/gbac_dp.adoc[Configure GBAC in the Data Plane] for the setup steps.
+Redpanda Cloud preconfigures the SQL engine's OIDC settings when SQL is enabled on the cluster, so you do not need to configure an external identity provider for the SQL engine. The engine validates bearer tokens minted by Redpanda Cloud, regardless of whether you sign in to Redpanda Cloud with email and password or SSO.
 
 When a user is assigned a role with the *SQL: Access* or *SQL: Manage* permission in Redpanda Cloud's data-plane RBAC, Redpanda Cloud provisions a corresponding user in the SQL engine. No manual `CREATE USER` is required. To assign roles, go to *Organization IAM > Roles*; SQL permissions are under the *Data Plane* tab when you create or edit a role. See xref:security:authorization/rbac/rbac_dp.adoc[].
 
@@ -91,8 +91,8 @@ GRANT CREATE ON SCHEMA public TO "alice@example.com";
 
 == Next steps
 
-* xref:sql:connect-to-sql/connect-with-oidc.adoc[Connect with OIDC]: how a user obtains a bearer token and connects to Redpanda SQL.
-* xref:security:authorization/gbac/gbac_dp.adoc[Configure GBAC in the Data Plane]: cluster-level OIDC and GBAC setup.
+* xref:sql:connect-to-sql/authenticate.adoc[Authenticate to Redpanda SQL]: how a user connects with a bearer token, client credentials, or a SCRAM password.
+* xref:security:authorization/rbac/rbac_dp.adoc[Configure RBAC in the Data Plane]: assign the data-plane RBAC roles that gate SQL engine access.
 
 == Suggested reading
 
