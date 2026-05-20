@@ -1,13 +1,14 @@
-You can access Redpanda services such as Schema Registry and HTTP Proxy from the client VPC or virtual network; for example, from a compute instance in the VPC or network.
+You can access Redpanda services such as Redpanda Console, Schema Registry, and HTTP Proxy from the client VPC or virtual network; for example, from a compute instance in the VPC or network.
 
 The bootstrap server hostname is unique to each cluster. The service attachment exposes a set of bootstrap ports for access to Redpanda services. These ports load balance requests among brokers. Make sure you use the following ports for initiating a connection from a consumer:
 
-|=== 
-| Redpanda service | Default bootstrap port 
+|===
+| Redpanda service | Default port
 
-| Kafka API | 30292 
-| HTTP Proxy | 30282 
-| Schema Registry | 30081 
+| Kafka API | 30292
+| HTTP Proxy | 30282
+| Schema Registry | 30081
+| Redpanda Console | 443
 |===
 
 === Access Kafka API seed service
@@ -53,3 +54,19 @@ Use port `30282` to access the Redpanda HTTP Proxy seed service.
 ----
 curl -vv -u <user>:<password> -H "Content-Type: application/vnd.kafka.json.v2+json" --sslv2 --http2 <http-proxy-bootstrap-server-hostname>:30282/topics
 ----
+
+=== Access Redpanda Console
+
+From a host in the client VPC, browse to Redpanda Console over HTTPS at:
+
+`https://console.<cluster_domain>`
+
+For example, if `cluster_domain` is `cki01qgth38kk81ard3g.fmc.dev.cloud.redpanda.com`, Redpanda Console is reachable at `https://console.cki01qgth38kk81ard3g.fmc.dev.cloud.redpanda.com`.
+
+[NOTE]
+====
+* DNS resolution for the Redpanda Console hostname is handled automatically by the PrivateLink endpoint service. You don't need to create a private hosted zone or override DNS in the client VPC.
+* The Redpanda Console hostname follows the same `cluster_domain` shown in the *How to Connect* section of the cluster overview in the Redpanda Cloud Console.
+* The security group attached to your VPC endpoint must allow inbound TCP on port `443`.
+* If the cluster's API gateway access is set to `PRIVATE`, Redpanda Console is reachable only through PrivateLink (or another private route into the cluster VPC). If set to `PUBLIC`, Redpanda Console remains reachable on the public internet as well.
+====
