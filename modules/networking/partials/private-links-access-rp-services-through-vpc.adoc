@@ -55,24 +55,18 @@ Use port `30282` to access the Redpanda HTTP Proxy seed service.
 curl -vv -u <user>:<password> -H "Content-Type: application/vnd.kafka.json.v2+json" --sslv2 --http2 <http-proxy-bootstrap-server-hostname>:30282/topics
 ----
 
-=== Access Redpanda Console
+=== Verify the Redpanda Console network path
 
-You can access Redpanda Console from any host in the client VPC. The Redpanda Console URL is shown in the *How to Connect* section of the cluster overview in the Redpanda Cloud Console.
+The Redpanda Console URL is served on port `443` (HTTPS) and follows the form `https://console-<id>.<cluster_domain>`. The `<id>` is a per-cluster suffix assigned by the control plane; the full URL is shown in the *How to Connect* section of the cluster overview in the Redpanda Cloud Console.
 
-The URL is served on port `443` (HTTPS) and follows the form:
-
-`https://console-<id>.<cluster_domain>`
-
-For example: `https://console-65e0163a.cki01qgth38kk81ard3g.fmc.dev.cloud.redpanda.com`
-
-To verify reachability from a host in the client VPC, confirm that DNS resolves the Redpanda Console hostname to a private IP on the PrivateLink endpoint:
+To verify that the network path to Redpanda Console is open, run the following commands from a host in the client VPC. First, confirm DNS resolves the hostname to a private IP on the PrivateLink endpoint:
 
 [,bash]
 ----
 dig +short console-<id>.<cluster_domain>
 ----
 
-The response is a private IP from the client VPC's CIDR range. For example:
+The response is a private IP from the client VPC's CIDR range, for example:
 
 [,bash,role=no-copy]
 ----
@@ -92,6 +86,8 @@ Expected output:
 ----
 200
 ----
+
+A 200 response confirms the network path. The Console UI itself does not expose a standalone login form: sign in to https://cloud.redpanda.com[cloud.redpanda.com^], navigate to the cluster, and use the cluster's left navigation (*Topics*, *Brokers*, *Consumer groups*) to interact with Redpanda Console. See xref:networking:configure-privatelink-in-cloud-ui.adoc#access-redpanda-console-from-a-workstation[Access Redpanda Console from a workstation] for the recommended workflow when connecting from a laptop.
 
 [NOTE]
 ====

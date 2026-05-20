@@ -74,6 +74,69 @@ After you have enabled PrivateLink for your cluster, your connection URLs for th
 
 include::networking:partial$private-links-access-rp-services-through-vpc.adoc[]
 
+[#access-redpanda-console-from-a-workstation]
+== Access Redpanda Console from a workstation
+
+For a private BYOC cluster, Redpanda Console is exposed only through the PrivateLink endpoint, so a workstation outside the client VPC cannot resolve or reach the Console URL directly. To open Redpanda Console from a laptop, first connect the workstation to the client VPC over a VPN, then sign in to Redpanda Cloud Console and navigate to the cluster.
+
+Common VPN options:
+
+* AWS Client VPN attached to the client VPC (described below).
+* A corporate VPN configured with a DNS forwarder that resolves `<cluster_domain>` against the client VPC's DNS resolver.
+* An SSH SOCKS5 proxy through a bastion host in the client VPC.
+
+=== Set up AWS Client VPN
+
+For full setup instructions, see the https://docs.aws.amazon.com/vpn/latest/clientvpn-admin/cvpn-getting-started.html[AWS Client VPN Administrator Guide^]. The settings specific to Redpanda PrivateLink are:
+
+* *Authentication*: mutual certificate authentication. Generate a CA, server certificate, and client certificate; upload the server certificate and the CA certificate to AWS Certificate Manager (ACM).
+* *Client IPv4 CIDR*: a `/22` or larger CIDR that does not overlap the client VPC CIDR. For example: `10.100.0.0/22`.
+* *DNS server IP addresses*: the IP of the client VPC's DNS resolver (the second usable IP in the VPC CIDR). For a default VPC with CIDR `172.31.0.0/16`, use `172.31.0.2`. This is what makes PrivateLink hostnames resolve to the endpoint's ENI IPs from connected clients rather than to public DNS.
+* *Split-tunnel*: enabled. Only traffic destined for the client VPC CIDR is routed through the VPN; the rest stays on the local internet.
+* *VPC ID*: the client VPC where the PrivateLink endpoint lives.
+* *Target network association*: associate the endpoint with a subnet in the same VPC as the PrivateLink endpoint.
+* *Authorization rule*: allow your client CIDR to reach the client VPC CIDR.
+
+The Client VPN endpoint takes several minutes to reach the *Available* state after the subnet association is created.
+
+Allow inbound from the Client VPN security group on the PrivateLink endpoint's security group, on port `443` (Console / Schema Registry) and on the Kafka and HTTP Proxy seed ports (`30000-30999`).
+
+=== Connect using AWS VPN Client
+
+. Install the https://aws.amazon.com/vpn/client-vpn-download/[AWS VPN Client^] for macOS or Windows.
+. From the AWS Console, download the Client VPN endpoint configuration file (`.ovpn`). Add your client certificate and private key inside `<cert>...</cert>` and `<key>...</key>` blocks at the bottom of the file.
+. Open AWS VPN Client and choose *File* > *Manage Profiles* > *Add Profile*. Select the `.ovpn` file and give the profile a name.
+. Select the profile and click *Connect*. The connection establishes in a few seconds.
+
+To verify, run the following from the workstation:
+
+[,bash]
+----
+dig +short console-<id>.<cluster_domain>
+----
+
+The response should be a private IP from the client VPC's CIDR range. For example:
+
+[,bash,role=no-copy]
+----
+172.31.0.97
+----
+
+If the response shows a public address (for example, the cluster VPC's internal LB IPs such as `10.x.x.x`), the VPC's DNS resolver was not pushed to the client. Re-check the *DNS server IP addresses* setting on the Client VPN endpoint.
+
+=== Open Redpanda Console through the Cloud Console left navigation
+
+With the VPN connected, sign in to the Redpanda Cloud Console at https://cloud.redpanda.com[cloud.redpanda.com^] and select your cluster.
+
+. The cluster *Overview* page loads as normal; it is served by the Redpanda Cloud control plane and does not depend on the VPN.
+. Click any item in the cluster's left navigation (*Topics*, *Brokers*, *Consumer groups*, and so on). These views are served by Redpanda Console at `https://console-<id>.<cluster_domain>`. With the VPN connected, your browser resolves the hostname to the PrivateLink endpoint's ENI in the client VPC and the views load.
+. If the left navigation does not load (the page hangs or returns a network error), confirm the VPN session is connected and that `dig` returns a private IP for the Console hostname. Without an active VPN session, only the cluster *Overview* page is reachable from a workstation outside the client VPC.
+
+[NOTE]
+====
+Redpanda Console does not provide a standalone login form. Do not open `https://console-<id>.<cluster_domain>` directly in a browser: the SPA loads but cannot complete authentication, because the authentication token is handed off from Redpanda Cloud Console. Always start from https://cloud.redpanda.com[cloud.redpanda.com^].
+====
+
 == Test the connection
 
 You can test the connection to the endpoint service from any VM or container in the client VPC. If configuring a client isn't possible right away, you can do these checks using `rpk` or cURL:
