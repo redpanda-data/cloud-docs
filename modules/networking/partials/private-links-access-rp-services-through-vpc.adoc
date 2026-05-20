@@ -57,16 +57,45 @@ curl -vv -u <user>:<password> -H "Content-Type: application/vnd.kafka.json.v2+js
 
 === Access Redpanda Console
 
-From a host in the client VPC, browse to Redpanda Console over HTTPS at:
+You can access Redpanda Console from any host in the client VPC. The Redpanda Console URL is shown in the *How to Connect* section of the cluster overview in the Redpanda Cloud Console.
 
-`https://console.<cluster_domain>`
+The URL is served on port `443` (HTTPS) and follows the form:
 
-For example, if `cluster_domain` is `cki01qgth38kk81ard3g.fmc.dev.cloud.redpanda.com`, Redpanda Console is reachable at `https://console.cki01qgth38kk81ard3g.fmc.dev.cloud.redpanda.com`.
+`https://console-<id>.<cluster_domain>`
+
+For example: `https://console-65e0163a.cki01qgth38kk81ard3g.fmc.dev.cloud.redpanda.com`
+
+To verify reachability from a host in the client VPC, confirm that DNS resolves the Redpanda Console hostname to a private IP on the PrivateLink endpoint:
+
+[,bash]
+----
+dig +short console-<id>.<cluster_domain>
+----
+
+The response is a private IP from the client VPC's CIDR range. For example:
+
+[,bash,role=no-copy]
+----
+172.31.0.97
+----
+
+Then confirm Redpanda Console responds over HTTPS through the endpoint:
+
+[,bash]
+----
+curl -sS -o /dev/null -w "%{http_code}\n" https://console-<id>.<cluster_domain>/
+----
+
+Expected output:
+
+[,bash,role=no-copy]
+----
+200
+----
 
 [NOTE]
 ====
 * DNS resolution for the Redpanda Console hostname is handled automatically by the PrivateLink endpoint service. You don't need to create a private hosted zone or override DNS in the client VPC.
-* The Redpanda Console hostname follows the same `cluster_domain` shown in the *How to Connect* section of the cluster overview in the Redpanda Cloud Console.
 * The security group attached to your VPC endpoint must allow inbound TCP on port `443`.
 * If the cluster's API gateway access is set to `PRIVATE`, Redpanda Console is reachable only through PrivateLink (or another private route into the cluster VPC). If set to `PUBLIC`, Redpanda Console remains reachable on the public internet as well.
 ====
