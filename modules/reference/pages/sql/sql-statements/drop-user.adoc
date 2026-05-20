@@ -22,22 +22,22 @@ Drop an existing user:
 
 [source,sql]
 ----
-DROP USER alice;
+DROP USER "alice@example.com";
 ----
 
 Drop a user only if it exists:
 
 [source,sql]
 ----
-DROP USER IF EXISTS legacy_account;
+DROP USER IF EXISTS "legacy-account@example.com";
 ----
 
 If the user has dependent grants or owned objects, the statement fails with an error listing the objects. Revoke the grants and reassign or drop owned objects first:
 
 [source,sql]
 ----
-REVOKE SELECT ON EXTERNAL SOURCE default_redpanda_catalog FROM alice;
-DROP USER alice;
+REVOKE SELECT ON EXTERNAL SOURCE default_redpanda_catalog FROM "alice@example.com";
+DROP USER "alice@example.com";
 ----
 
 == Suggested reading

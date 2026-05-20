@@ -8,7 +8,7 @@ A password is required when creating a user.
 
 [NOTE]
 ====
-Error messages from the SQL engine refer to users as "roles" (for example, `role "alice" does not exist`). This is consistent with PostgreSQL terminology and refers to the same object that `CREATE USER` produces.
+Error messages from the SQL engine refer to users as "roles" (for example, `role "alice@example.com" does not exist`). This is consistent with PostgreSQL terminology and refers to the same object that `CREATE USER` produces.
 ====
 
 == Syntax
@@ -30,14 +30,14 @@ Create a regular user with a password:
 
 [source,sql]
 ----
-CREATE USER alice WITH PASSWORD 'secret123';
+CREATE USER "alice@example.com" WITH PASSWORD 'secret123';
 ----
 
 Create a superuser:
 
 [source,sql]
 ----
-CREATE USER admin_user WITH PASSWORD 'admin_secret' SUPERUSER;
+CREATE USER "admin@example.com" WITH PASSWORD 'admin_secret' SUPERUSER;
 ----
 
 == Suggested reading
