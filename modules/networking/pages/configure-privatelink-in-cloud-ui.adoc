@@ -85,6 +85,26 @@ Common VPN options:
 * A corporate VPN configured with a DNS forwarder that resolves `<cluster_domain>` against the client VPC's DNS resolver.
 * An SSH SOCKS5 proxy through a bastion host in the client VPC.
 
+The following diagram shows the network path from a workstation, through the VPN, into the client VPC, and across PrivateLink to Redpanda Console:
+
+....
+Workstation
+  │  (public internet, OpenVPN tunnel, mutual TLS)
+  ▼
+AWS Client VPN endpoint        ← AWS-managed; not PrivateLink
+  │  (workstation is now logically inside the client VPC)
+  ▼
+Client VPC subnet
+  │  (VPC routing; DNS resolved via VPC resolver to a private IP)
+  ▼
+PrivateLink VPC endpoint ENI   ← PrivateLink begins here
+  │  (AWS PrivateLink service network, not on the public internet)
+  ▼
+Redpanda cluster VPC → Console load balancer → Redpanda Console
+....
+
+The Client VPN tunnel itself does not use PrivateLink. The VPN's role is to place the workstation logically inside the client VPC; the private connection to the cluster is always the PrivateLink endpoint. This is true regardless of how a client reaches the client VPC (Client VPN, corporate VPN, peered network, transit gateway, SSH bastion, or an EC2 instance inside the VPC).
+
 === Set up AWS Client VPN
 
 For full setup instructions, see the https://docs.aws.amazon.com/vpn/latest/clientvpn-admin/cvpn-getting-started.html[AWS Client VPN Administrator Guide^]. The settings specific to Redpanda PrivateLink are:
