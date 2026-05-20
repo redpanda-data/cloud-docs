@@ -74,6 +74,8 @@ After you have enabled PrivateLink for your cluster, your connection URLs for th
 
 include::networking:partial$private-links-access-rp-services-through-vpc.adoc[]
 
+If you are connecting from a workstation outside the client VPC, see <<access-redpanda-console-from-a-workstation>>.
+
 [#access-redpanda-console-from-a-workstation]
 == Access Redpanda Console from a workstation
 
@@ -110,7 +112,7 @@ The Client VPN tunnel itself does not use PrivateLink. The VPN's role is to plac
 For full setup instructions, see the https://docs.aws.amazon.com/vpn/latest/clientvpn-admin/cvpn-getting-started.html[AWS Client VPN Administrator Guide^]. The settings specific to Redpanda PrivateLink are:
 
 * *Authentication*: mutual certificate authentication. Generate a CA, server certificate, and client certificate; upload the server certificate and the CA certificate to AWS Certificate Manager (ACM).
-* *Client IPv4 CIDR*: a `/22` or larger CIDR that does not overlap the client VPC CIDR. For example: `10.100.0.0/22`.
+* *Client IPv4 CIDR*: a CIDR between `/22` (minimum) and `/12` (maximum) that does not overlap the client VPC CIDR. For example: `10.100.0.0/22`.
 * *DNS server IP addresses*: the IP of the client VPC's DNS resolver (the second usable IP in the VPC CIDR). For a default VPC with CIDR `172.31.0.0/16`, use `172.31.0.2`. This is what makes PrivateLink hostnames resolve to the endpoint's ENI IPs from connected clients rather than to public DNS.
 * *Split-tunnel*: enabled. Only traffic destined for the client VPC CIDR is routed through the VPN; the rest stays on the local internet.
 * *VPC ID*: the client VPC where the PrivateLink endpoint lives.
