@@ -5,9 +5,7 @@
 :learning-objective-1: Connect to Redpanda SQL using psql and a bearer token
 :learning-objective-2: Query a Redpanda topic with SQL
 
-Redpanda SQL is a PostgreSQL-compatible SQL engine built into Redpanda Bring Your Own Cloud (BYOC). It lets you query streaming data in your Redpanda topics with standard SQL, without building ETL pipelines or deploying a separate analytics system. In this quickstart, you connect with `psql` and run your first query against a Redpanda topic.
-
-For Iceberg-enabled topics, Redpanda SQL can also query the full Iceberg-translated history alongside live records. For that workflow, see xref:sql:query-data/query-iceberg-topics.adoc[Query Iceberg topics].
+Connect to Redpanda SQL on a Bring Your Own Cloud (BYOC) cluster and run your first query against streaming data, with no ETL pipelines required. For querying topics with Iceberg-translated history, see xref:sql:query-data/query-iceberg-topics.adoc[Query Iceberg topics].
 
 After reading this page, you will be able to:
 
@@ -23,7 +21,7 @@ After reading this page, you will be able to:
 * https://www.postgresql.org/download/[`psql`^] v16 or later (PostgreSQL client) installed on your local machine.
 
 [#optional-produce-sample-data]
-== (Optional) Produce sample data
+== Produce sample data
 
 [TIP]
 ====
@@ -129,7 +127,7 @@ Type "help" for help.
 
 == Query topic data
 
-When you enable Redpanda SQL, the engine automatically creates a Redpanda catalog named `default_redpanda_catalog` that connects to your cluster. To query a Redpanda topic, define a SQL table against the topic, then run standard SQL queries against the table.
+When you enable Redpanda SQL, a Redpanda catalog named `default_redpanda_catalog` is created automatically and points at your cluster. To query a Redpanda topic, define a SQL table against the topic, then run standard SQL queries against the table.
 
 . Define a SQL table from the topic with `CREATE TABLE`. The following example uses the `orders` topic from the optional sample data section. To use your own topic, replace `orders` with your topic name and `orders-value` with the Schema Registry subject that holds the topic's value schema. Your topic must have a schema registered in Schema Registry.
 +
@@ -144,7 +142,7 @@ CREATE TABLE default_redpanda_catalog=>orders WITH (
 +
 Redpanda SQL reads the registered schema and maps each top-level field to a SQL column.
 +
-Records produced through the Cloud Console don't carry the Confluent Schema Registry wire-format prefix, so the example sets `confluent_wire_protocol = 'false'`. If your producer client adds the wire format, set this option to `'true'` or omit it.
+Records produced through the Cloud Console don't carry the Schema Registry wire-format prefix, so the example sets `confluent_wire_protocol = 'false'`. If your producer client adds the wire format, set this option to `'true'` or omit it. For details on this and other CREATE TABLE options, see xref:reference:sql/sql-statements/create-table.adoc[CREATE TABLE].
 
 . Run SQL queries against the table. These examples use the `orders` schema from the optional sample data section.
 +
@@ -175,36 +173,32 @@ ORDER BY amount DESC
 LIMIT 20;
 ----
 
-== (Optional) Grant access to a non-admin user
+== Grant access to a non-admin user
 
-Redpanda Cloud's data-plane RBAC controls Redpanda SQL access through two role permissions:
+[TIP]
+====
+Skip this section if you don't need to share SQL access yet.
+====
 
-* *SQL: Manage*: superuser access to the SQL engine. A user with this role can read all topics, create catalogs and tables, and grant access to other users.
-* *SQL: Access*: regular user access. A user with this role can connect to the SQL engine but has no access to any catalog or table until a SQL: Manage user grants it.
+To share SQL access with a teammate or service account:
 
-When you assign one of these roles to a user in Redpanda Cloud, the cluster provisions a corresponding user in the SQL engine. No manual `CREATE USER` is required. A SQL: Manage user then uses standard SQL `GRANT` statements to give the user access to specific catalogs or tables. Wildcard patterns are supported.
+. In Redpanda Cloud, assign the user a role with the *SQL: Access* permission (see xref:security:authorization/rbac/rbac_dp.adoc[Configure RBAC in the Data Plane]). Redpanda Cloud provisions a corresponding user in the SQL engine.
 
-. In Redpanda Cloud, assign a role with the *SQL: Access* permission to the user. Roles are managed in *Organization IAM > Roles*; SQL permissions are under the *Data Plane* tab when you create or edit a role. See xref:security:authorization/rbac/rbac_dp.adoc[].
-
-. As a SQL: Manage user, grant `SELECT` on a specific table. The user identifier is the email on the user's Redpanda Cloud account:
+. As a *SQL: Manage* user, grant `SELECT` on the topics they need. The user identifier is the email on the user's Redpanda Cloud account:
 +
 [,sql]
 ----
-GRANT SELECT ON TABLE default_redpanda_catalog=>orders TO "alice@example.com";
+GRANT SELECT ON EXTERNAL SOURCE default_redpanda_catalog => 'orders' TO "alice@example.com";
 ----
-+
-Or grant `SELECT` on multiple tables that match a pattern:
-+
-[,sql]
-----
-GRANT SELECT ON TABLE default_redpanda_catalog=>orders_* TO "alice@example.com";
-----
+
+For the full access model (privilege levels, wildcards, schema-level permissions, and grant inspection), see xref:sql:manage/manage-access.adoc[Manage access to Redpanda SQL].
 
 The user can now connect to Redpanda SQL and run `SELECT` against the tables they've been granted.
 
 == Next steps
 
-// TODO: Uncomment once DOC-1990 and DOC-2006 merge (target pages are on those branches).
+// TODO: Uncomment once DOC-1990, DOC-1999, and DOC-2006 merge (target pages are on those branches).
 // * xref:sql:query-data/query-streaming-topics.adoc[Query streaming topics]: Map a Redpanda topic to a SQL table and run analytical queries against live streaming data.
 // * xref:sql:query-data/query-iceberg-topics.adoc[Query Iceberg topics]: Run a single SQL query that spans live records and the Iceberg-translated history of a topic.
+// * xref:sql:connect-to-sql/authenticate.adoc[Authenticate to Redpanda SQL]: Connect with an OIDC bearer token, OIDC client credentials, or a SCRAM password for clients that don't support OIDC (for example, Power BI).
 * xref:reference:sql/index.adoc[Redpanda SQL reference]: Explore the full SQL syntax, data types, functions, and clauses.
