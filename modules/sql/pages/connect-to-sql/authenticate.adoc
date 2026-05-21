@@ -39,25 +39,21 @@ Redpanda SQL supports three authentication modes, selected by the connection-str
 |Legacy clients that don't support bearer-token or client-credentials authentication. The username is the Redpanda Cloud account or service account email; the password is set by a *SQL: Manage* user with `ALTER USER`. See <<Connect with SCRAM for legacy clients>>.
 |===
 
-Redpanda SQL treats a glossterm:bearer token[] in the password field without `auth_method=bearer` as a SCRAM password, and the connection fails. To use a bearer token, you must set `options=auth_method=bearer`.
+Redpanda SQL treats a glossterm:bearer token[] in the password field without `auth_method=bearer` as a SCRAM password, and the connection fails. To use a bearer token, you must set `options='-c auth_method=bearer'`.
 
 For OIDC tokens, the token must include the standard claims (`sub`, `aud`, `iss`, `exp`) and must use one of these signing algorithms: `RS256`, `RS384`, `RS512`, or `ES256`. Redpanda SQL rejects tokens signed with `alg: none`.
-
-// TODO: At Cloud GA the IdP is Auth0 (single-IdP architecture per RFC + SME
-// comments). External IdP federation and customer-owned IdPs are not supported.
-// Once federation lands, document the validated external IdPs here.
 
 == Connect with a bearer token
 
 Use bearer-token authentication for human users who hold a JWT issued by Redpanda Cloud. Run `rpk cloud auth token` to obtain a token you can pass directly; see xref:sql:get-started/sql-quickstart.adoc[Quickstart] for the end-to-end setup.
 
-Set `options=auth_method=bearer` in the connection string and pass the token in the password field. Redpanda SQL ignores the `user=` field and takes the session identity from the principal claim in the token.
+Set `options='-c auth_method=bearer'` in the connection string and pass the token in the password field. Redpanda SQL ignores the `user=` field and takes the session identity from the principal claim in the token.
 
 .psql
 [source,bash]
 ----
 PGPASSWORD="$BEARER_TOKEN" \
-  psql "host=<sql-host> port=<sql-port> dbname=oxla user=ignored options='auth_method=bearer' sslmode=require"
+  psql "host=<sql-host> port=<sql-port> dbname=oxla user=ignored options='-c auth_method=bearer' sslmode=require"
 ----
 
 .Python (psycopg2)
@@ -72,7 +68,7 @@ conn = psycopg2.connect(
     dbname="oxla",
     user="ignored",
     password=os.environ["BEARER_TOKEN"],
-    options="auth_method=bearer",
+    options="-c auth_method=bearer",
     sslmode="require",
 )
 
@@ -103,12 +99,12 @@ For more language-client examples, see xref:sql:connect-to-sql/index.adoc[Connec
 
 Use client-credentials authentication for service-to-service connections: scheduled jobs, BI tools, or other automated clients that can't perform interactive sign-in. Each Redpanda Cloud service account has a client ID and client secret; Redpanda SQL exchanges those credentials for a token against Redpanda Cloud's token endpoint and validates it.
 
-Set `options=auth_method=client_secret`, pass the Redpanda Cloud service account's client ID in `user=`, and the client secret in the password field. The resolved principal becomes the session identity.
+Set `options='-c auth_method=client_secret'`, pass the Redpanda Cloud service account's client ID in `user=`, and the client secret in the password field. The resolved principal becomes the session identity.
 
 [source,bash]
 ----
 PGPASSWORD="$CLIENT_SECRET" \
-  psql "host=<sql-host> port=<sql-port> dbname=oxla user=<client-id> options='auth_method=client_secret' sslmode=require"
+  psql "host=<sql-host> port=<sql-port> dbname=oxla user=<client-id> options='-c auth_method=client_secret' sslmode=require"
 ----
 
 // TODO: Reconcile token-endpoint timeout. The RFC says 5s
@@ -145,12 +141,9 @@ PGPASSWORD='shared_secret' \
 
 Credentials travel in the password field of the PostgreSQL startup message, whether you authenticate with a bearer token, client credentials, or a SCRAM password. To protect them in transit, set `sslmode=require` on every connection.
 
-Two distinct cluster settings affect TLS:
+The cluster's SSL mode controls TLS on the `psql` connection to Redpanda SQL itself. To reject connections that aren't using TLS, configure the cluster to reject all non-TLS connections.
 
-* The cluster's SSL mode controls TLS on the `psql` connection to Redpanda SQL itself. To reject connections that aren't using TLS, configure the cluster to reject all non-TLS connections.
-+
-// TODO: Confirm the correct cross-link for the cluster SSL mode setting in Redpanda Cloud. The previous reference to `security:authorization/gbac/gbac_dp.adoc` was misdirected (GBAC covers group-claim mapping, not SSL mode).
-* `oidc.require_tls` (default `true`) controls whether Redpanda SQL uses HTTPS when contacting Redpanda Cloud's identity provider: the OIDC discovery document URL, the JWKS endpoint, and the token endpoint for the client-credentials flow. This setting does not gate TLS on the client's `psql` connection.
+// TODO: Confirm the correct cross-link for the cluster SSL mode setting in Redpanda Cloud.
 
 == Reconnect when a token expires
 
