@@ -16,7 +16,7 @@ PostgreSQL is an online transactional processing (OLTP) database by default, whe
 
 Redpanda SQL doesn't support common PostgreSQL transaction-processing operations like direct writes or upserts.
 
-Instead, Kafka-compatible producers write topics into Redpanda Streaming. From there, Redpanda SQL queries topics in log form using local and/or object storage (the "hot" tier), as well as corresponding Apache Iceberg tables in columnar form (the "cold" tier). A single query against a linked Redpanda catalog returns records from both tiers in one result, with no overlap between the live tail and the topic's history in Iceberg, including records older than your topic retention.
+Instead, Kafka-compatible producers write topics into Redpanda Streaming. From there, Redpanda SQL queries topics in log form using local or object storage (the "hot" tier), as well as corresponding Apache Iceberg tables in columnar form (the "cold" tier). A single query against a linked Redpanda catalog returns records from both tiers in one result, with no overlap between the live tail and the topic's history in Iceberg, including records older than your topic retention.
 
 Redpanda SQL is _semantically_ compatible with PostgreSQL but not _code_ compatible. It can't use common PostgreSQL extensions such as pgvector, PostGIS, or pg_cron.
 
