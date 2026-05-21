@@ -96,7 +96,7 @@ Workstation
 AWS Client VPN endpoint        ← AWS-managed; not PrivateLink
   │  (workstation is now logically inside the client VPC)
   ▼
-Client VPC subnet
+client VPC subnet
   │  (VPC routing; DNS resolved via VPC resolver to a private IP)
   ▼
 PrivateLink VPC endpoint ENI   ← PrivateLink begins here
@@ -105,7 +105,7 @@ PrivateLink VPC endpoint ENI   ← PrivateLink begins here
 Redpanda cluster VPC → Console load balancer → Redpanda Console
 ....
 
-The Client VPN tunnel itself does not use PrivateLink. The VPN's role is to place the workstation logically inside the client VPC; the private connection to the cluster is always the PrivateLink endpoint. This is true regardless of how a client reaches the client VPC (Client VPN, corporate VPN, peered network, transit gateway, SSH bastion, or an EC2 instance inside the VPC).
+The client VPN tunnel itself does not use PrivateLink. The VPN's role is to place the workstation logically inside the client VPC; the private connection to the cluster is always the PrivateLink endpoint. This is true regardless of how a client reaches the client VPC (client VPN, corporate VPN, peered network, transit gateway, SSH bastion, or an EC2 instance inside the VPC).
 
 === Set up AWS Client VPN
 
@@ -119,14 +119,14 @@ For full setup instructions, see the https://docs.aws.amazon.com/vpn/latest/clie
 * *Target network association*: associate the endpoint with a subnet in the same VPC as the PrivateLink endpoint.
 * *Authorization rule*: allow your client CIDR to reach the client VPC CIDR.
 
-The Client VPN endpoint takes several minutes to reach the *Available* state after the subnet association is created.
+The client VPN endpoint takes several minutes to reach the *Available* state after the subnet association is created.
 
-Allow inbound from the Client VPN security group on the PrivateLink endpoint's security group, on port `443` (Console / Schema Registry) and on the Kafka API and HTTP Proxy ports (`30000-35999`, covering both the seed and per-broker ports).
+Allow inbound from the client VPN security group on the PrivateLink endpoint's security group, on port `443` (Console / Schema Registry) and on the Kafka API and HTTP Proxy ports (`30000-35999`, covering both the seed and per-broker ports).
 
 === Connect using AWS VPN Client
 
 . Install the https://aws.amazon.com/vpn/client-vpn-download/[AWS VPN Client^] for macOS or Windows.
-. From the AWS Console, download the Client VPN endpoint configuration file (`.ovpn`). Add your client certificate and private key inside `<cert>...</cert>` and `<key>...</key>` blocks at the bottom of the file.
+. From the AWS Console, download the client VPN endpoint configuration file (`.ovpn`). Add your client certificate and private key inside `<cert>...</cert>` and `<key>...</key>` blocks at the bottom of the file.
 . Open AWS VPN Client and choose *File* > *Manage Profiles* > *Add Profile*. Select the `.ovpn` file and give the profile a name.
 . Select the profile and click *Connect*. The connection establishes in a few seconds.
 
@@ -144,7 +144,7 @@ The response should be a private IP from the client VPC's CIDR range. For exampl
 172.31.0.97
 ----
 
-If the response shows a public address (for example, the cluster VPC's internal LB IPs such as `10.x.x.x`), the VPC's DNS resolver was not pushed to the client. Re-check the *DNS server IP addresses* setting on the Client VPN endpoint.
+If the response shows a public address (for example, the cluster VPC's internal LB IPs such as `10.x.x.x`), the VPC's DNS resolver was not pushed to the client. Re-check the *DNS server IP addresses* setting on the client VPN endpoint.
 
 === Open Redpanda Console through the Cloud Console left navigation
 
