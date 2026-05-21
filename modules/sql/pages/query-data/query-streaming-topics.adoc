@@ -1,4 +1,4 @@
-= Query streaming topics
+= Query Streaming Topics
 :description: Map a Redpanda topic to a SQL table and run analytical queries directly against live streaming data.
 :page-topic-type: how-to
 :personas: app_developer, data_engineer
@@ -7,9 +7,9 @@
 
 Map a Redpanda topic to a SQL table to run analytical queries directly against live streaming data without building ETL pipelines. Redpanda SQL reads each record's fields from the topic's registered schema.
 
-To extend queries past your Redpanda retention window by reading from Iceberg-translated history, see xref:sql:query-data/query-iceberg-topics.adoc[].
+To extend queries past your Redpanda retention window by reading the Iceberg history of Iceberg-enabled topics, see xref:sql:query-data/query-iceberg-topics.adoc[Query Iceberg-enabled Topics].
 
-After completing these steps, you will be able to:
+Use this page to:
 
 * [ ] {learning-objective-1}
 * [ ] {learning-objective-2}
@@ -19,8 +19,8 @@ After completing these steps, you will be able to:
 Before you query a topic with SQL:
 
 * Enable the Redpanda SQL engine on your Redpanda Bring Your Own Cloud (BYOC) cluster. See xref:sql:get-started/deploy-sql-cluster.adoc[Enable Redpanda SQL].
-* A Redpanda Cloud user with the *SQL: Access* (or *SQL: Manage*) data-plane RBAC permission. For a *SQL: Access* user to query a topic, a *SQL: Manage* user must first `GRANT SELECT` on the topic to that user. See xref:sql:manage/manage-access.adoc[Manage access to Redpanda SQL].
-* Connect to Redpanda SQL with `psql` or another PostgreSQL client. See xref:sql:connect-to-sql/index.adoc[Connect to Redpanda SQL].
+* Have a Redpanda Cloud user with the *SQL: Access* (or *SQL: Manage*) data-plane RBAC permission. For a *SQL: Access* user to query a topic, a *SQL: Manage* user must first `GRANT SELECT` on the topic to that user. See xref:sql:manage/manage-access.adoc[Manage access to Redpanda SQL].
+* Connect to Redpanda SQL with `psql` or another PostgreSQL client. See xref:sql:get-started/sql-quickstart.adoc[] for a `psql` example, or xref:sql:connect-to-sql/index.adoc[Connect to Redpanda SQL].
 * Confirm that the Redpanda topic you want to query has a schema registered in Schema Registry. Redpanda SQL supports Protobuf, JSON, and Avro schemas.
 
 == Map the topic to a SQL table
@@ -75,6 +75,6 @@ LIMIT 10;
 
 == Next steps
 
-* xref:sql:query-data/query-iceberg-topics.adoc[Query Iceberg-enabled topics]: run queries against historical data retained beyond your Redpanda retention window.
+* xref:sql:query-data/query-iceberg-topics.adoc[Query Iceberg-enabled Topics]: run queries against historical data retained beyond your Redpanda retention window.
 * xref:reference:sql/sql-statements/create-table.adoc[CREATE TABLE]: full reference for the table-against-topic syntax, including all options.
 * xref:reference:sql/index.adoc[Redpanda SQL Reference]: supported SQL statements, clauses, data types, and functions.
