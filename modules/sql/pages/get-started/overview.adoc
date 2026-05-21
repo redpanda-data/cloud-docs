@@ -1,5 +1,5 @@
 = Redpanda SQL Overview
-:description: Redpanda SQL is a column-oriented OLAP query engine in Redpanda Cloud BYOC for querying live and Iceberg-translated Redpanda topics with PostgreSQL syntax.
+:description: Redpanda SQL is a column-oriented OLAP query engine in Redpanda Cloud BYOC for querying live Redpanda topics and their history in Iceberg tables with PostgreSQL syntax.
 :page-topic-type: overview
 :page-aliases: sql:get-started/what-is-redpanda-sql.adoc
 :personas: app_developer, data_engineer, evaluator
@@ -7,9 +7,9 @@
 :learning-objective-2: Identify the query patterns Redpanda SQL supports
 :learning-objective-3: Describe the architectural characteristics that enable those patterns
 
-Redpanda SQL turns your Redpanda glossterm:topic[,topics], including their Iceberg-translated history, into queryable SQL surfaces inside your Redpanda Bring Your Own Cloud (BYOC) glossterm:cluster[]. Built as a column-oriented online analytical processing (OLAP) engine, Redpanda SQL runs analytical queries over streaming and historical data without moving or duplicating data. It is a PostgreSQL-compatible query engine that implements the PostgreSQL wire protocol and a PostgreSQL-based SQL dialect, so you can connect with any PostgreSQL client, including `psql`, JDBC, DBeaver, and DataGrip.
+Redpanda SQL turns your Redpanda glossterm:topic[,topics], including their history in Apache Iceberg, into queryable SQL tables inside your Redpanda Bring Your Own Cloud (BYOC) glossterm:cluster[]. Built as a column-oriented online analytical processing (OLAP) engine, Redpanda SQL runs analytical queries over streaming and historical data without moving or duplicating data. It is a PostgreSQL-compatible query engine that implements the PostgreSQL wire protocol and a PostgreSQL-based SQL dialect, so you can connect with any PostgreSQL client, including `psql`, JDBC, DBeaver, and DataGrip.
 
-Redpanda SQL handles a wide range of analytical workloads in a single system. You can power real-time business intelligence (BI) dashboards, process log data, run time-series analytics, and perform exploratory queries over large datasets without switching tools or maintaining separate systems.
+Redpanda SQL handles a wide range of analytical workloads in a single system. You can power real-time and agentic AI applications, create business intelligence (BI) dashboards, run time-series analytics, and perform exploratory queries over large datasets without moving data, switching tools, or maintaining separate systems for streaming and historical data.
 
 After reading this page, you will be able to:
 
@@ -19,15 +19,15 @@ After reading this page, you will be able to:
 
 == Why use Redpanda SQL
 
-Querying real-time streaming data alongside historical lakehouse data typically means building ETL pipelines, copying data between systems, and running multiple analytical engines. Redpanda SQL eliminates this overhead by querying both live and historical data in place.
+Querying real-time streaming data alongside historical lakehouse data typically means building ETL pipelines, managing connector fleets, copying data between systems, and running multiple resource-intensive analytical engines. Redpanda SQL eliminates this overhead by querying both live and historical data in place.
 
-Redpanda SQL scales horizontally across multiple nodes within a cluster (up to 9 nodes) and uses hardware efficiently within each node, so analytical workloads can grow without proportional infrastructure cost.
+Redpanda SQL scales horizontally across multiple nodes in a cluster and uses hardware efficiently within each node, so analytical workloads can grow without proportional infrastructure cost.
 
 == Primary use cases
 
-* *Real-time analytics on data streams*: Query Redpanda topics directly with SQL. No ETL pipelines required. Useful for analyst-driven investigations in the streaming layer, debugging streaming applications, and prototyping consumers.
-* *Hybrid streaming and historical analytics*: Query Iceberg-enabled topics in a single SQL query that spans live records and historical Iceberg-committed records, including records older than your topic retention.
-* *Application-embedded operational analytics*: Run high-concurrency OLAP queries for dashboards and operational tools from any PostgreSQL client.
+* Real-time analytics on data streams: Query Redpanda topics directly with SQL. No ETL pipelines or Kafka API ecosystem tooling is required. This is useful for analyst-driven investigations in the streaming layer, debugging streaming applications, and prototyping consumers.
+* Hybrid analytics spanning real-time and historical data: Query Iceberg-enabled topics in a single SQL query that spans live records and historical Iceberg-committed records, including records older than your topic retention limit.
+* Application-embedded operational analytics: Run high-concurrency OLAP queries to power dashboards, leaderboards, and real-time decisioning, using any PostgreSQL client.
 
 == What you can do with Redpanda SQL
 
@@ -55,13 +55,13 @@ Analysts and developers can run these queries directly from any PostgreSQL clien
 
 === Query Iceberg topics
 
-When a Redpanda topic is configured for Iceberg translation, Redpanda SQL queries its Iceberg-committed data through the same SQL surface as live streaming topics, reading Parquet data and Iceberg metadata directly from cloud storage.
+When a Redpanda topic is configured as an Iceberg topic, Redpanda SQL queries its Iceberg-committed data through the same SQL interface as live streaming topics, reading Parquet data and Iceberg metadata directly from cloud storage.
 
-On Iceberg-enabled topics, a single SQL query can return both the live records and the Iceberg-committed history in one result, with no overlap between them. Redpanda SQL plans this union internally, so you don't need to write a `UNION ALL` and rows aren't duplicated at the boundary between live and historical data.
+On Iceberg-enabled topics, a single SQL query can return both the live records and the Iceberg-committed history in one result, with no overlap or gap between them. Redpanda SQL plans this union internally, so you don't need to write a `UNION ALL` and rows aren't duplicated at the boundary between live and historical data.
 
 == Read-only query engine
 
-Redpanda SQL operates as a read-only query engine. It doesn't accept standard SQL data manipulation, such as `INSERT`, `UPDATE`, `DELETE`, or most `CREATE TABLE` operations for materializing new data. Upstream systems write data into Redpanda topics (with optional Iceberg translation), and you expose that data to Redpanda SQL through catalog mappings. This architecture lets you run analytical queries over streaming and historical data without duplicating or moving it.
+Redpanda SQL operates as a read-only query engine. It doesn't accept standard SQL data manipulation, such as `INSERT`, `UPDATE`, `DELETE`, or most `CREATE TABLE` operations for materializing new data. Upstream systems write data into Redpanda topics (and optionally into Iceberg when enabled), and you expose that data to Redpanda SQL through catalog mappings. This architecture lets you run analytical queries over streaming and historical data without duplicating or moving it.
 
 == Architecture characteristics
 
@@ -85,7 +85,7 @@ Redpanda SQL is distributed, running across multiple nodes in parallel for horiz
 
 === PostgreSQL wire protocol and SQL dialect
 
-Redpanda SQL uses its own declarative query language under the hood but exposes a xref:reference:sql/index.adoc[PostgreSQL-compatible SQL surface] to users, including the PostgreSQL wire protocol. This means you can connect with `psql`, JDBC, ODBC, or any other PostgreSQL client and write SQL using familiar syntax.
+Redpanda SQL uses its own declarative query language under the hood but exposes a xref:reference:sql/index.adoc[PostgreSQL-based SQL dialect] to users, including the PostgreSQL wire protocol. This means you can connect with `psql`, JDBC, ODBC, or any other PostgreSQL client and write SQL using familiar syntax.
 
 === Optimized data transfer between CPU and RAM
 

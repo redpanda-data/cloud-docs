@@ -1,9 +1,6 @@
 = Redpanda SQL vs PostgreSQL
 :description: Comparison of Redpanda SQL and PostgreSQL covering supported functions, operators, and behavioral differences.
 :page-topic-type: reference
-:personas: app_developer, data_engineer
-:learning-objective-1: Identify which PostgreSQL functions and operators Redpanda SQL supports
-:learning-objective-2: Recognize behavioral differences between Redpanda SQL and PostgreSQL
 
 // TODO: Expand the comparison with engineering input on:
 // - Data-type coverage gaps relative to PostgreSQL
@@ -13,18 +10,13 @@
 // - Connection-protocol and session-semantics limitations beyond no-transactions
 // - Any other significant differences in supported SQL syntax, functions, or behavior that impact users migrating from PostgreSQL or using both systems in parallel
 
-Redpanda SQL aims for close compatibility with PostgreSQL semantics, yet differs significantly in design and function. Use this page to check which features are supported and where Redpanda SQL diverges from PostgreSQL.
+Redpanda SQL aims for close compatibility with PostgreSQL syntax and semantics, yet differs significantly in design and function. Use this page to check which features are supported and where Redpanda SQL diverges from PostgreSQL.
 
-Use this reference to:
-
-* [ ] {learning-objective-1}
-* [ ] {learning-objective-2}
-
-For example, PostgreSQL is an online transactional processing (OLTP) database by default, whereas Redpanda SQL is an online analytical processing (OLAP) query engine. For more on the distinction, see xref:sql:get-started/oltp-vs-olap.adoc[].
+PostgreSQL is an online transactional processing (OLTP) database by default, whereas Redpanda SQL is an online analytical processing (OLAP) query engine. For more on the distinction, see xref:sql:get-started/oltp-vs-olap.adoc[].
 
 Redpanda SQL doesn't support common PostgreSQL transaction-processing operations like direct writes or upserts.
 
-Instead, Kafka-compatible producers write topics into Redpanda Streaming. From there, Redpanda SQL queries topics in local storage (the "hot" tier) as well as Apache Iceberg-compatible tables in object storage (the "cold" tier). A single query against a linked Redpanda catalog returns records from both tiers in one result, with no overlap between the live tail and the Iceberg-translated history, including records older than your topic retention.
+Instead, Kafka-compatible producers write topics into Redpanda Streaming. From there, Redpanda SQL queries topics in log form using local and/or object storage (the "hot" tier), as well as corresponding Apache Iceberg tables in columnar form (the "cold" tier). A single query against a linked Redpanda catalog returns records from both tiers in one result, with no overlap between the live tail and the topic's history in Iceberg, including records older than your topic retention.
 
 Redpanda SQL is _semantically_ compatible with PostgreSQL but not _code_ compatible. It can't use common PostgreSQL extensions such as pgvector, PostGIS, or pg_cron.
 
@@ -44,11 +36,11 @@ Redpanda SQL is _semantically_ compatible with PostgreSQL but not _code_ compati
 
 === JSON operators
 
-Redpanda SQL supports operators for handling JSON data.
+Redpanda SQL's JSON `=` operator is order-sensitive, unlike PostgreSQL's.
 
 ==== Equal operator (`=`)
 
-This operator checks if two JSON values are identical. In Redpanda SQL, this operator is order-sensitive: for two JSON objects to be considered equal, their key-value pairs must appear in the exact same order.
+This operator checks if two JSON values are identical. In Redpanda SQL, two JSON objects are considered equal only when their key-value pairs appear in the exact same order.
 
 [source,sql]
 ----

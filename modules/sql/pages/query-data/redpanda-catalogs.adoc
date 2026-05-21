@@ -14,17 +14,23 @@ After reading this page, you will be able to:
 * [ ] {learning-objective-1}
 * [ ] {learning-objective-2}
 
-NOTE: Redpanda SQL operates in read-only mode. Data mutation operations such as `INSERT`, `UPDATE`, and `DELETE` are not available. Data is ingested into Redpanda topics and made queryable through catalog mappings.
+NOTE: Redpanda SQL operates in read-only mode. Data Manipulation Language (DML) operations such as `INSERT`, `UPDATE`, and `DELETE` are not available. Data is ingested into Redpanda topics and made queryable through catalog mappings.
 
 == Catalog model
 
 // TODO: consider adding a diagram to illustrate the catalog hierarchy.
 
-The Redpanda catalog model has three components, in hierarchy order:
+The Redpanda catalog model has three components:
 
-* Storage connection: A named connection to object storage that backs the catalog. The default Redpanda catalog's storage connection is automatically defined using your cluster's object storage.
-* Catalog: A named collection of source data, typically your Redpanda cluster.
+* Storage connection: A named connection to an object storage bucket or container that backs the catalog. The default Redpanda catalog's storage connection is automatically defined using your cluster's object storage.
+* Catalog: A named collection of source data, typically containing your Redpanda cluster's topics.
 * Tables: Redpanda topics mapped as queryable SQL tables using the `catalog_name=>table_name` syntax.
+
+=== Layered catalogs for Iceberg-enabled topics
+
+To query an Iceberg-enabled topic alongside its history in Apache Iceberg, a Redpanda catalog is layered over an Iceberg catalog using the `USING CATALOG` clause of `CREATE REDPANDA CATALOG`. The layered Redpanda catalog reads live records from the topic and historical records from the linked Iceberg catalog, returning both in a single query.
+
+In Redpanda BYOC, both catalogs are created and linked for you when Redpanda SQL is enabled, so you can query an Iceberg-enabled topic with a simple `CREATE TABLE` against `default_redpanda_catalog`. No manual `CREATE ICEBERG CATALOG` or `CREATE REDPANDA CATALOG ... USING CATALOG` is required. To inspect the layered relationship, run `DESCRIBE REDPANDA CATALOG default_redpanda_catalog`.
 
 == Example
 
