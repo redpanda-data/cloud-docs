@@ -5,9 +5,9 @@
 :learning-objective-1: Connect to Redpanda SQL using psql and a bearer token
 :learning-objective-2: Query a Redpanda topic with SQL
 
-Connect to Redpanda SQL on a Bring Your Own Cloud (BYOC) cluster and run your first query against streaming data, with no ETL pipelines required. For querying topics with Iceberg-translated history, see xref:sql:query-data/query-iceberg-topics.adoc[Query Iceberg topics].
+Connect to Redpanda SQL on a Bring Your Own Cloud (BYOC) cluster and run your first query against streaming data, with no ETL pipelines required. For querying topics with Iceberg history, see xref:sql:query-data/query-iceberg-topics.adoc[Query Iceberg-enabled Topics].
 
-After reading this page, you will be able to:
+Use this page to:
 
 * [ ] {learning-objective-1}
 * [ ] {learning-objective-2}
@@ -36,6 +36,40 @@ You also need permissions to create topics, register schemas, and produce record
 
 . On the *Topics* page, click *Create Topic*. Name the topic `orders` and create it with default settings.
 
+. Open the `orders` topic you just created. Click *Produce record*.
+
+. Produce each sample record one at a time. For each record, set:
++
+--
+* *Key*: Null type
+* *Value*: JSON type, then paste the JSON object into the Data field.
+--
++
+[,json]
+----
+{"order_id": 1, "customer": "alice", "product": "keyboard", "amount": 7500, "status": "completed"}
+----
++
+[,json]
+----
+{"order_id": 2, "customer": "bob", "product": "monitor", "amount": 32000, "status": "shipped"}
+----
++
+[,json]
+----
+{"order_id": 3, "customer": "carol", "product": "mouse", "amount": 4500, "status": "pending"}
+----
++
+[,json]
+----
+{"order_id": 4, "customer": "alice", "product": "monitor", "amount": 32000, "status": "completed"}
+----
++
+[,json]
+----
+{"order_id": 5, "customer": "dave", "product": "keyboard", "amount": 7500, "status": "pending"}
+----
+
 . On the *Schema Registry* page, click *Create new schema*. 
 
 . Create a new schema with the following:
@@ -43,54 +77,30 @@ You also need permissions to create topics, register schemas, and produce record
 * *Strategy*: Topic
 * *Topic name*: orders
 * *Schema applies to*: Value
-* *Schema definition*: Select Protobuf and paste the following schema definition:
+* *Schema definition*: Select JSON format and paste the following schema definition:
 +
-[,proto]
+[,json]
 ----
-syntax = "proto3";
-
-message Order {
-  int64 order_id = 1;
-  string customer = 2;
-  string product = 3;
-  int64 amount = 4;       // amount in cents
-  string status = 5;      // "pending", "shipped", "completed"
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Order",
+  "type": "object",
+  "properties": {
+    "order_id": { "type": "integer" },
+    "customer": { "type": "string" },
+    "product":  { "type": "string" },
+    "amount":   { "type": "integer", "description": "Amount in cents" },
+    "status":   { "type": "string", "enum": ["pending", "shipped", "completed"] }
+  },
+  "required": ["order_id", "customer", "product", "amount", "status"]
 }
 ----
-
-. Return to the *Topics* page and select the `orders` topic. Produce a few sample records:
-// TODO: Verify exact steps to produce records in UI
 +
-[,bash]
-----
-{"order_id": 1, "customer": "alice", "product": "keyboard", "amount": 7500, "status": "completed"}
-----
-+
-[,bash]
-----
-{"order_id": 2, "customer": "bob", "product": "monitor", "amount": 32000, "status": "shipped"}
-----
-+
-[,bash]
-----
-{"order_id": 3, "customer": "carol", "product": "mouse", "amount": 4500, "status": "pending"}
-----
-+
-[,bash]
-----
-{"order_id": 4, "customer": "alice", "product": "monitor", "amount": 32000, "status": "completed"}
-----
-+
-[,bash]
-----
-{"order_id": 5, "customer": "dave", "product": "keyboard", "amount": 7500, "status": "pending"}
-----
-
-When you continue to the next section, use `orders` as the topic name when you define the SQL table.
+Click *Save* to register the schema.
 
 == Connect to Redpanda SQL
 
-SQL connection details are available on your cluster's *SQL* tab in the https://cloud.redpanda.com/[Cloud console]. To connect using `psql`:
+SQL connection details are available on your cluster's *SQL* tab in the https://cloud.redpanda.com/[Cloud Console]. To connect using `psql`:
 
 . Log in to Redpanda Cloud with `rpk`. This opens a browser window for SSO sign-in:
 +
@@ -194,6 +204,6 @@ The user can now connect to Redpanda SQL and run `SELECT` against the tables the
 
 // TODO: Uncomment once DOC-1990, DOC-1999, and DOC-2006 merge (target pages are on those branches).
 // * xref:sql:query-data/query-streaming-topics.adoc[Query streaming topics]: Map a Redpanda topic to a SQL table and run analytical queries against live streaming data.
-// * xref:sql:query-data/query-iceberg-topics.adoc[Query Iceberg topics]: Run a single SQL query that spans live records and the Iceberg-translated history of a topic.
+// * xref:sql:query-data/query-iceberg-topics.adoc[Query Iceberg-enabled Topics]: Run a single SQL query that spans live records and the Iceberg history of a topic.
 // * xref:sql:connect-to-sql/authenticate.adoc[Authenticate to Redpanda SQL]: Connect with an OIDC bearer token, OIDC client credentials, or a SCRAM password for clients that don't support OIDC (for example, Power BI).
 * xref:reference:sql/index.adoc[Redpanda SQL reference]: Explore the full SQL syntax, data types, functions, and clauses.
