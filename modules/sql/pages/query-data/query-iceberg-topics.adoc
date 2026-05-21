@@ -1,16 +1,14 @@
-= Query Iceberg-enabled topics
-:description: Query the Iceberg-translated history of a Redpanda topic, and run a single SQL query that spans live records and historical Iceberg-committed records.
+= Query Iceberg-enabled Topics
+:description: Query the history of a Redpanda topic in Iceberg, and run a single SQL query that spans live records and historical Iceberg-committed records.
 :page-topic-type: how-to
 :personas: app_developer, data_engineer
-:learning-objective-1: Set up the storage, Iceberg catalog, and Redpanda catalog needed to query an Iceberg-enabled topic
-:learning-objective-2: Query both the live records and the Iceberg-translated history of a topic in a single result
+:learning-objective-1: Identify the storage and catalog objects Cloud sets up for querying Iceberg-enabled topics
+:learning-objective-2: Query both the live records and the Iceberg-committed history of a topic in a single result
 :learning-objective-3: Handle schema differences between a Redpanda topic and its Iceberg table
 
-With Iceberg-enabled topics, you can retain streaming data in your lakehouse beyond your Redpanda topic retention window and continue to query it with SQL. A single query returns both the live records still in the topic and the Iceberg-translated history that has aged out under topic retention, in one result.
+With Iceberg-enabled topics, you can retain streaming data in your lakehouse beyond your Redpanda topic retention window and continue to query it with SQL. A single query returns both the live records still in the topic and the Iceberg-committed history that has aged out under topic retention, in one result.
 
-To set this up, you create three objects: a storage connection that holds object-storage credentials, an Iceberg catalog that exposes the cluster's REST-catalog endpoint, and a Redpanda catalog linked to the Iceberg catalog with `CREATE REDPANDA CATALOG ... USING CATALOG <iceberg-catalog-name>`.
-
-To query a topic that is not Iceberg-enabled, see xref:sql:query-data/query-streaming-topics.adoc[].
+For the streaming-only query path (live records only, without Iceberg history), see xref:sql:query-data/query-streaming-topics.adoc[].
 
 After completing these steps, you will be able to:
 
@@ -23,18 +21,18 @@ After completing these steps, you will be able to:
 * A Redpanda BYOC cluster on AWS with Redpanda SQL enabled. See xref:sql:get-started/deploy-sql-cluster.adoc[Enable Redpanda SQL].
 * The cluster's xref:reference:properties/cluster-properties.adoc#iceberg_catalog_type[`iceberg_catalog_type`] property is set to `rest`. The `object_storage` catalog type does not support Iceberg queries from Redpanda SQL.
 * The cluster's Iceberg REST catalog is configured. See xref:manage:iceberg/rest-catalog/index.adoc[Integrate with REST Catalogs] for the supported REST catalog options (AWS Glue, Snowflake, Databricks Unity, Polaris, and others) and their configuration steps.
-* An Iceberg-enabled Redpanda topic with a schema (Protobuf, Avro, or JSON) registered in Schema Registry. To enable Iceberg translation on a topic, see xref:manage:iceberg/about-iceberg-topics.adoc[].
+* An Iceberg-enabled Redpanda topic with a schema (Protobuf, Avro, or JSON) registered in Schema Registry. To enable Iceberg on a topic, see xref:manage:iceberg/about-iceberg-topics.adoc[].
 * Connect to Redpanda SQL with `psql` or another PostgreSQL client. See xref:sql:connect-to-sql/index.adoc[Connect to Redpanda SQL].
 
-== Set up the Iceberg query catalogs
+== How the query catalogs are set up
 
-You create three objects, in this order: a storage connection, an Iceberg catalog, and a Redpanda catalog that links to the Iceberg catalog. The storage and Iceberg-catalog options must match the cluster's xref:manage:iceberg/rest-catalog/index.adoc[REST catalog configuration] (endpoint, credentials, region).
+When you enable Redpanda SQL on a BYOC cluster with the Iceberg REST catalog configured, Cloud runs the following statements under the hood so you don't have to. The result is a `default_redpanda_catalog` already linked to an Iceberg catalog, ready for `CREATE TABLE` against an Iceberg-enabled topic. The storage and Iceberg-catalog options match the cluster's xref:manage:iceberg/rest-catalog/index.adoc[REST catalog configuration] (endpoint, credentials, region).
 
-. Create a storage connection that holds the object-storage credentials your cluster's REST catalog uses:
+. A storage connection holds the object-storage credentials your cluster's REST catalog uses:
 +
 [source,sql]
 ----
-CREATE STORAGE IF NOT EXISTS iceberg_storage TYPE = S3 WITH (
+CREATE STORAGE iceberg_storage TYPE = S3 WITH (
     endpoint = '<rest-catalog-storage-endpoint>',
     access_key_id = '<access-key-id>',
     secret_access_key = '<secret-access-key>',
@@ -43,38 +41,36 @@ CREATE STORAGE IF NOT EXISTS iceberg_storage TYPE = S3 WITH (
 );
 ----
 
-. Create an Iceberg catalog that points at the cluster's REST catalog endpoint. Replace `<auth-type>` with the authentication type your REST catalog requires (for example, `aws_sigv4`, `oauth2`, or `basic`) and provide the matching credential options:
+. An Iceberg catalog points at the cluster's REST catalog endpoint:
 +
 [source,sql]
 ----
-CREATE ICEBERG CATALOG IF NOT EXISTS lakehouse_catalog STORAGE iceberg_storage WITH (
+CREATE ICEBERG CATALOG lakehouse_catalog STORAGE iceberg_storage WITH (
     uri = '<rest-catalog-uri>',
     warehouse = '<warehouse>',
     auth_type = '<auth-type>'
 );
 ----
-+
-For the full option list and per-auth examples, see xref:reference:sql/sql-statements/create-iceberg-catalog.adoc[CREATE ICEBERG CATALOG].
 
-. Create a Redpanda catalog linked to the Iceberg catalog with `USING CATALOG`. The `pandaproxy_url` option is required when `USING CATALOG` is set:
+. The `default_redpanda_catalog` is linked to the Iceberg catalog. The `pandaproxy_url` option is required when a Redpanda catalog is linked:
 +
 [source,sql]
 ----
-CREATE REDPANDA CATALOG IF NOT EXISTS redpanda_with_iceberg
+ALTER REDPANDA CATALOG default_redpanda_catalog
 USING CATALOG lakehouse_catalog WITH (
-    initial_brokers = '<broker-host>:<port>',
-    schema_registry_url = '<schema-registry-url>',
     pandaproxy_url = '<pandaproxy-url>'
 );
 ----
 
+To inspect the link on your cluster, run `DESCRIBE REDPANDA CATALOG default_redpanda_catalog`. For full option lists, see xref:reference:sql/sql-statements/create-storage.adoc[CREATE STORAGE], xref:reference:sql/sql-statements/create-iceberg-catalog.adoc[CREATE ICEBERG CATALOG], and xref:reference:sql/sql-statements/create-redpanda-catalog.adoc[CREATE REDPANDA CATALOG].
+
 == Map a topic as a SQL table
 
-Define a SQL table against the Iceberg-enabled topic in the linked Redpanda catalog. Replace `orders` and `orders-value` with your topic name and Schema Registry value subject:
+Define a SQL table against the Iceberg-enabled topic in `default_redpanda_catalog`. Replace `orders` and `orders-value` with your topic name and Schema Registry value subject:
 
 [source,sql]
 ----
-CREATE TABLE redpanda_with_iceberg=>orders WITH (
+CREATE TABLE default_redpanda_catalog=>orders WITH (
   topic = 'orders',
   schema_subject = 'orders-value'
 );
@@ -91,24 +87,24 @@ These column names are reserved. A topic schema with a top-level `redpanda` or `
 
 == Query live and historical records together
 
-Query the table in the linked Redpanda catalog (the one with `USING CATALOG` set) using standard `SELECT` syntax. The query returns records from both the live Redpanda topic and the Iceberg-translated history in one result, with no overlap between them.
+Query the table using standard `SELECT` syntax. The query returns records from both the live Redpanda topic and the Iceberg-committed history in one result, with no overlap between them.
 
 NOTE: After any shape change to the Iceberg table or its corresponding Redpanda topic schema, run `REFRESH <catalog>=><table>` to update the schema view Redpanda SQL uses for query planning. Without a refresh, the next query against the table fails at planning time with `Schema not found for Iceberg table '<table>'`. `REFRESH` updates only the schema view, not data; you don't run it between writes.
 
 [source,sql]
 ----
-SELECT * FROM redpanda_with_iceberg=>orders LIMIT 10;
+SELECT * FROM default_redpanda_catalog=>orders LIMIT 10;
 ----
 
-Redpanda SQL plans the union internally, so you don't write a `UNION ALL`, and rows aren't duplicated at the boundary between live and historical data.
+Redpanda SQL plans the union internally, so you don't write a `UNION ALL`.
 
-NOTE: Iceberg-translated data persists independently of Redpanda topic retention. Queries continue to return records past the Redpanda topic's retention window, provided they were translated to Iceberg first.
+NOTE: Iceberg-committed data persists independently of Redpanda topic retention. Queries continue to return records past the Redpanda topic's retention window, provided they were committed to Iceberg first.
 
 // TODO: Verify with engineering whether there are workload patterns that reliably trigger longer planning, and document them if so (qa-questions.md #22).
 
 == Handle schema differences
 
-A topic schema can evolve over time. You might add or remove fields in your Schema Registry value subject as your application changes. Redpanda translates new records into the Iceberg table forward-only: it adds columns to the Iceberg table when the topic schema widens, but it does not drop columns from the Iceberg table when the topic schema narrows. As a result, the Iceberg table can carry columns the current topic schema doesn't have.
+A topic schema can evolve over time. You might add or remove fields in your Schema Registry value subject as your application changes. Redpanda writes new records to the Iceberg table forward-only: it adds columns to the Iceberg table when the topic schema widens, but it does not drop columns from the Iceberg table when the topic schema narrows. As a result, the Iceberg table can carry columns the current topic schema doesn't have.
 
 Redpanda SQL handles this divergence by treating the topic's Schema Registry subject as canonical and filling in missing fields on the Iceberg side. The rules that apply to a query against a linked Redpanda catalog:
 
@@ -118,9 +114,9 @@ Redpanda SQL handles this divergence by treating the topic's Schema Registry sub
 
 == Next steps
 
-* xref:sql:query-data/query-streaming-topics.adoc[Query streaming topics]: query a topic that is not Iceberg-enabled.
+* xref:sql:query-data/query-streaming-topics.adoc[Query streaming topics]: the streaming-only query path, without the Iceberg history layer.
 * xref:manage:iceberg/rest-catalog/index.adoc[Integrate with REST Catalogs]: managed REST catalog options and their configuration.
-* xref:manage:iceberg/use-iceberg-catalogs.adoc[Use Iceberg Catalogs]: more on how Redpanda exposes Iceberg-translated streaming data.
+* xref:manage:iceberg/about-iceberg-topics.adoc[About Iceberg Topics]: how Iceberg topics work in Redpanda and how to enable them.
 * xref:reference:sql/sql-statements/create-storage.adoc[CREATE STORAGE]: full reference for the storage statement.
 * xref:reference:sql/sql-statements/create-iceberg-catalog.adoc[CREATE ICEBERG CATALOG]: full reference for the Iceberg catalog statement.
 * xref:reference:sql/sql-statements/create-redpanda-catalog.adoc[CREATE REDPANDA CATALOG]: full reference for the Redpanda catalog statement, including the `USING CATALOG` clause.
