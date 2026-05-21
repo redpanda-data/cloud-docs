@@ -1,4 +1,4 @@
-= Query topics with nested fields
+= Query Topics with Nested Fields
 :description: Map a topic with nested Protobuf, Avro, or JSON fields to SQL ROW columns, then query those fields directly.
 :page-topic-type: how-to
 :personas: app_developer, data_engineer
@@ -6,9 +6,9 @@
 :learning-objective-2: Query nested fields using ROW field-access syntax
 :learning-objective-3: Resolve cyclic-reference errors
 
-When a glossterm:topic[]'s schema includes nested Protobuf, Avro, or JSON message types, you can map those nested structures as user-defined types (UDTs) with named fields, queryable using SQL `ROW` field-access syntax, instead of opaque JSON. This makes nested fields queryable by name, includable in projections, and usable in `WHERE`, `GROUP BY`, and `ORDER BY` clauses, without parsing JSON at query time.
+When a glossterm:topic[]'s schema includes nested Protobuf, Avro, or JSON message types, you can map those nested structures as user-defined types (UDTs) with named fields, queryable using SQL `ROW` field-access syntax instead of opaque JSON. This makes nested fields queryable by name, includable in projections, and usable in `WHERE`, `GROUP BY`, and `ORDER BY` clauses, without parsing JSON at query time.
 
-After completing these steps, you will be able to:
+Use this page to:
 
 * [ ] {learning-objective-1}
 * [ ] {learning-objective-2}
@@ -20,8 +20,9 @@ Before you query a topic with nested fields:
 
 * Enable Redpanda SQL on your Redpanda Bring Your Own Cloud (BYOC) cluster. See xref:sql:get-started/deploy-sql-cluster.adoc[Enable Redpanda SQL].
 * Connect to Redpanda SQL with `psql` or another PostgreSQL client. See xref:sql:connect-to-sql/index.adoc[Connect to Redpanda SQL].
-* The topic has a schema registered in glossterm:schema-registry[Schema Registry]. The schema includes one or more nested message types.
-* You have a Redpanda catalog connection. See xref:reference:sql/sql-statements/create-redpanda-catalog.adoc[CREATE REDPANDA CATALOG].
+// TODO: Confirm TopicNameStrategy requirement
+* Register a schema for the topic in glossterm:schema-registry[Schema Registry], including one or more nested message types.
+* The topic's data is reachable through a Redpanda catalog. The `default_redpanda_catalog` is created and linked for you when Redpanda SQL is enabled.
 
 == Map the topic as a SQL table
 
@@ -35,6 +36,10 @@ CREATE TABLE default_redpanda_catalog=>orders WITH (
   struct_mapping_policy = 'COMPOUND'
 );
 ----
+
+* The `topic` option is required. 
+* The `struct_mapping_policy` option is optional and defaults to `'COMPOUND'`.
+// TODO: Confirm schema_subject required when struct_mapping_policy=COMPOUND
 
 Replace `orders` with your topic name and `orders-value` with the Schema Registry subject that holds the topic's value schema.
 
@@ -61,7 +66,7 @@ TIP: `COMPOUND` is the default `struct_mapping_policy`. To map nested structures
 
 == Query nested fields
 
-Access a nested field by its declared name using the `(column).field` form. You must wrap the column in parentheses:
+Access a nested field by its declared name using the `(column).field` form. Wrap the column in parentheses:
 
 [source,sql]
 ----
@@ -91,14 +96,14 @@ For the full `ROW` reference, including comparison operators, NULL handling, and
 [[handle-recursive-cyclic-schemas]]
 == Handle recursive (cyclic) schemas
 
-Topic schemas can include recursive structures, such as a `Comment` message that references itself or two messages that reference each other. Mapping such a schema with `COMPOUND` fails at table-creation time with the following error:
+Redpanda SQL supports recursive (cyclic) schemas, such as a `Comment` message that references itself or two messages that reference each other, only when you map them to JSON. The `COMPOUND` policy does not support recursive types; trying to map such a schema fails at table-creation time with the following error:
 
 [source,text]
 ----
 Cyclic reference at '<parent>.<field>' → '<type>'. Cyclic types are not supported in COMPOUND struct mapping policy; use struct_mapping_policy=JSON for recursive types.
 ----
 
-The error message tells you the resolution: re-create the table with `struct_mapping_policy = 'JSON'`. In JSON mode, Redpanda SQL stores each nested structure as a JSON value:
+Re-create the table with `struct_mapping_policy = 'JSON'`. In JSON mode, Redpanda SQL stores each nested structure as a JSON value:
 
 [source,sql]
 ----
@@ -119,7 +124,7 @@ Query JSON-mapped fields with standard JSON functions instead of ROW field acces
 
 | `COMPOUND` (default)
 | The topic schema has nested structures that are not recursive, and you want to query nested fields directly by name.
-| Typed access; usable in `WHERE`, `GROUP BY`, `ORDER BY`. Required if you xref:sql:query-data/query-iceberg-topics.adoc[query an Iceberg-enabled topic via a linked Redpanda catalog], so that nested fields stay typed across both live and Iceberg-translated records.
+| Typed access; usable in `WHERE`, `GROUP BY`, `ORDER BY`. Required if you xref:sql:query-data/query-iceberg-topics.adoc[query an Iceberg-enabled topic via a linked Redpanda catalog], so that nested fields stay typed across both live records and the topic's Iceberg history.
 
 | `JSON`
 | The topic schema is recursive, or you prefer flexible access through JSON functions.
@@ -129,6 +134,6 @@ Query JSON-mapped fields with standard JSON functions instead of ROW field acces
 == Next steps
 
 * xref:sql:query-data/query-streaming-topics.adoc[Query streaming topics]: query a topic without Iceberg history.
-* xref:sql:query-data/query-iceberg-topics.adoc[Query Iceberg topics]: query the Iceberg-translated history of a topic. Use `struct_mapping_policy = 'COMPOUND'` so nested fields align between the Redpanda topic and the linked Iceberg table.
+* xref:sql:query-data/query-iceberg-topics.adoc[Query Iceberg-enabled topics]: query a topic with both its live streaming data and Iceberg history. Use `struct_mapping_policy = 'COMPOUND'` so nested fields align between the Redpanda topic and the linked Iceberg table.
 * xref:reference:sql/sql-data-types/row.adoc[ROW]: full reference for the `ROW` data type, including comparisons, NULL semantics, and conversion to text.
 * xref:reference:sql/sql-statements/create-table.adoc[CREATE TABLE]: complete option list for mapping a Redpanda topic to a SQL table.
