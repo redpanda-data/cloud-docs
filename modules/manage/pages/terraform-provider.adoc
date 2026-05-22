@@ -110,7 +110,7 @@ To prevent this, apply one or both of the following:
 * Set `allow_deletion` to `false`.
 * Add a `lifecycle` block instructing Terraform to ignore changes to `throughput_tier`:
 +
-[source,terraform]
+[source,hcl]
 ----
 lifecycle {
   ignore_changes = [
@@ -754,7 +754,7 @@ This configuration registers an Avro schema for the `user_events` subject and gr
 
 The `terraform destroy` command deletes all resources defined in your configuration.
 
-NOTE: Terraform deletes dependent resources in the correct order. For example, Terraform removes a cluster that depends on a network after it deletes the network.
+NOTE: Terraform deletes dependent resources in the correct order. For example, Terraform removes a cluster that depends on a network before it deletes the network.
 
 === Delete all resources
 
