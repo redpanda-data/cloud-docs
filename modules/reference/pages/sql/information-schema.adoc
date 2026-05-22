@@ -2,7 +2,7 @@
 :description: Information schema views in Redpanda SQL expose database object metadata and grants through SQL-standard views.
 :page-topic-type: reference
 
-The `information_schema` namespace provides SQL-standard views over database object metadata. Redpanda SQL implements the standard views needed for tool compatibility, plus extension views for Redpanda-specific concepts that don't fit the standard shape.
+The `information_schema` namespace provides SQL-standard views over database object metadata. Use these views to inspect catalogs, tables, schemas, columns, and privilege grants without querying the underlying PostgreSQL system catalogs directly. Redpanda SQL implements the standard views needed for tool compatibility, plus extension views for Redpanda-specific concepts that don't fit the standard shape.
 
 == Available views
 
@@ -19,6 +19,8 @@ The `information_schema` namespace provides SQL-standard views over database obj
 Per-relation EXTERNAL SOURCE grants. Rows whose stored relation pattern is anything other than `\*`. Catalog-level EXTERNAL SOURCE grants (stored pattern `\*`) surface in `information_schema.role_table_grants`, like foreign-table grants in PostgreSQL.
 
 Visibility mirrors `information_schema.role_table_grants`. A regular role sees rows where it is the grantee. A superuser sees grants for every non-superuser.
+
+Use this view to find the exact stored relation pattern when you need to xref:reference:sql/sql-statements/revoke.adoc[revoke] a grant. `REVOKE` requires the pattern argument to match an existing stored grant exactly; query this view first to see the patterns currently registered.
 
 [cols="<30%,<15%,<10%,<45%",options="header"]
 |===
@@ -40,3 +42,9 @@ SELECT grantee, source_name, relation_pattern, privilege_type
 FROM information_schema.role_external_relation_grants
 WHERE grantee = 'analyst';
 ----
+
+== Suggested reading
+
+* xref:reference:sql/sql-statements/grant.adoc[GRANT]: Assign privileges on a database object to a role.
+* xref:reference:sql/sql-statements/revoke.adoc[REVOKE]: Remove privileges from a role.
+* xref:sql:manage/manage-access.adoc[Manage access to Redpanda SQL]: Full access model, including privilege levels, wildcards, and grant inspection.
