@@ -2,19 +2,13 @@
 :description: Recover from `Query Out of Memory` errors in Redpanda SQL and understand the memory limits that govern query execution.
 :page-topic-type: troubleshooting
 :personas: platform_admin, data_engineer
-:learning-objective-1: Identify when a query was cancelled because it ran out of memory
-:learning-objective-2: Recover from a `Query out of memory` error and reduce its frequency
+:learning-objective-1: Identify when a query was canceled because it ran out of memory
+:learning-objective-2: Recover from a query out-of-memory error and reduce its frequency
 :learning-objective-3: Monitor node memory usage to anticipate memory pressure
 
 If a Redpanda SQL query exhausts the memory available to it, the engine cancels the query and returns an error to the client:
 
-// TODO: SME — the OOM error currently surfaces with SQLSTATE XX000
-// (InternalError, the fall-through default in session.cpp). That's a generic
-// "internal error" class, not a memory-class code like 53200 (out_of_memory)
-// or 53400 (configuration_limit_exceeded). Confirm whether this is intentional
-// or a bug to be fixed — if the SQLSTATE changes, add the
-// verbose-mode example.
-[source,text]
+[source,bash]
 ----
 ERROR:  Query Out of Memory!
 ----
@@ -29,15 +23,11 @@ Use this page to:
 
 == How Redpanda SQL uses memory
 
-// TODO: SME — rewrite this section per the PR 584 review thread.
-// Placeholder below is suggested draft from the review.
-//
-// Goal of the section: explain enough about RP SQL's memory model that a
-// user reading this troubleshooting page understands *why* a Query out of
-// Memory error can happen even on large clusters, and what shapes their
-// query / workload to make it more or less likely.
+Redpanda SQL queries can read very large input sources (many terabytes), and simple operations such as filtering or projection process input incrementally with a small, roughly constant memory footprint. In those cases the engine can process far more data than fits in RAM.
 
-Redpanda SQL queries can read very large input sources (many terabytes). However, the result set and any intermediate results produced by operations such as joins and aggregations must fit into the aggregate memory available across all nodes in the cluster. All concurrently running queries contribute to total memory consumption, so a single query can hit the node memory limit because of pressure from other queries running at the same time.
+Memory pressure comes from operations that materialize intermediate state: hash tables for `JOIN` and `GROUP BY`, heaps for `ORDER BY` and top-K, and network buffers between nodes. All of this intermediate state, along with the final result set, must fit into the aggregate memory available across the cluster. The engine does not spill intermediate state to disk, so a query that builds intermediate structures larger than available memory is canceled rather than slowed.
+
+All concurrently running queries contribute to total memory consumption, so a single query can hit the node memory limit because of pressure from other queries running at the same time.
 
 == Recover from the error
 
@@ -50,31 +40,24 @@ If the same query keeps failing, the query itself is too memory-hungry for the c
 Run fewer queries in parallel against the cluster. Other queries running at the same time contribute to the total memory pressure.
 * Simplify the query.
 +
-Narrow the scan range with tighter `WHERE` filters, reduce the number of `JOIN`s, or break a large aggregation into smaller ones. Operations that materialize wide intermediate results (joins, sorts, distinct aggregations) drive memory consumption the most.
+Narrow the scan range with tighter `WHERE` filters, reduce the number of joins, or break a large aggregation into smaller ones. Operations that materialize wide intermediate results (joins, sorts, distinct aggregations) drive memory consumption the most.
 * Scale the cluster.
 +
 Add SQL nodes to increase the aggregate memory available to queries. See xref:sql:get-started/deploy-sql-cluster.adoc#scale-redpanda-sql[Scale Redpanda SQL].
 
-// TODO: SME — confirm the recovery order above and whether a heuristic
-// exists for choosing among them (for example, watching
-// `oxla_process_memory_total` over time before deciding to scale).
-
 == Monitor memory usage
 
-Use the following Prometheus gauge to track each node's resident memory and watch for sustained growth toward the node's limit:
+Use the following Prometheus gauge to track memory consumed by the SQL workload and watch for sustained growth toward the node's limit:
 
 [cols="1,3"]
 |===
 | Metric | Description
 
-| `oxla_process_memory_total`
-| Process Resident Set Size (RSS) in bytes, reported per node.
+| `query_memory_consumption_total`
+| Memory consumed by queries on the node, in bytes. Use this metric to monitor workload memory usage. Unlike `oxla_process_memory_total`, which includes cached files and can sit near the limit even when the node is idle, `query_memory_consumption_total` reflects only memory attributed to query execution.
 |===
 
-// TODO: Once the Redpanda SQL metrics catalog is finalized, replace this
-// inline table with a cross-link to the metrics page.
-
-== If you see `cancelled due to OOM prevention` instead
+== OOM prevention cancellations
 
 The `cancelled due to OOM prevention` error is a separate case. Redpanda SQL's engine includes an overseer that monitors overall node memory independently of per-query accounting. When the overseer detects that the untracked memory pool has grown unexpectedly, it cancels running queries on the affected node to keep the engine operational.
 
