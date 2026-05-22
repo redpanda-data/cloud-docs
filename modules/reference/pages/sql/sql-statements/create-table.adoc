@@ -4,7 +4,7 @@
 
 The `CREATE TABLE` statement maps a Redpanda topic to a SQL table through a catalog. After creating the table, you can query topic data using standard SQL.
 
-NOTE: You must first xref:reference:sql/sql-statements/create-redpanda-catalog.adoc[create a Redpanda catalog connection] before creating tables. `CREATE TABLE` in Redpanda SQL maps Redpanda topics to SQL tables. It does not create standalone tables with user-defined schemas.
+NOTE: You must first xref:reference:sql/sql-statements/create-redpanda-catalog.adoc[create a Redpanda catalog connection] before creating tables. `CREATE TABLE` in Redpanda SQL maps Redpanda topics to SQL tables and does not create standalone tables with user-defined schemas.
 
 == Syntax
 
@@ -37,7 +37,7 @@ WITH (option = 'value' [, ...]);
 |`schema_lookup_policy`
 |STRING
 |No
-|How to resolve the schema version. Only `LATEST` is supported.
+|How to resolve the schema version. `LATEST` is the only supported value.
 
 |`error_handling_policy`
 |STRING
@@ -113,7 +113,7 @@ Contains Kafka record metadata. Always present on every row.
 |`timestamp_type`
 |`INT`
 |Yes
-|Kafka timestamp type (for example, `CreateTime` or `LogAppendTime`).
+|Kafka timestamp type code. `0` for `CreateTime`, `1` for `LogAppendTime`. `NULL` when not available.
 |===
 
 === `redpanda_raw`
@@ -139,7 +139,7 @@ Use `redpanda_raw` as a dead-letter pattern. Rows whose value fails schema deser
 
 == Examples
 
-=== Create a basic table
+=== Map a topic to a table
 
 Map the `transactions` topic to a table through `default_redpanda_catalog`:
 
