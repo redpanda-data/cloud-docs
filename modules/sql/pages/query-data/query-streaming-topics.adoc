@@ -37,7 +37,7 @@ CREATE TABLE default_redpanda_catalog=>orders WITH (
 );
 ----
 
-Replace `orders` with your topic name and `orders-value` with the Schema Registry subject that holds the topic's value schema. `schema_subject` is required: Redpanda SQL needs a schema to deserialize and query the topic's records.
+Replace `orders` with your topic name and `orders-value` with the Schema Registry subject that holds the topic's value schema. `schema_subject` is optional. If omitted, Redpanda SQL uses the topic-name strategy default (`<topic>-value`).
 
 If the topic uses a Protobuf schema that defines more than one message, also set `output_schema_message_full_name` to the fully-qualified name of the message to use:
 
@@ -51,6 +51,13 @@ CREATE TABLE default_redpanda_catalog=>orders WITH (
 ----
 
 The table inherits its column definitions from the registered schema. Each top-level field in the schema becomes a SQL column. For querying nested fields in struct types, see xref:sql:query-data/query-nested-fields.adoc[].
+
+In addition to the columns derived from your topic's schema, Redpanda SQL adds two struct columns to every catalog-mapped table:
+
+* `redpanda`: Kafka record metadata such as partition, offset, and timestamp.
+* `redpanda_raw`: populated only when `error_handling_policy = 'FILL_NULL'` and a record fails to decode.
+
+For details, see xref:reference:sql/sql-statements/create-table.adoc#auto-added-columns[Auto-added columns].
 
 == Run queries
 

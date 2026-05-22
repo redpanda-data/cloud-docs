@@ -72,6 +72,71 @@ a|Whether records on the topic are encoded with the https://docs.confluent.io/pl
 Only valid when `schema_lookup_policy = 'LATEST'`.
 |===
 
+[#auto-added-columns]
+== Auto-added columns
+
+Every catalog-mapped table includes two struct columns in addition to the columns derived from the topic's schema. Redpanda SQL adds these columns to both Kafka-backed and Iceberg-backed tables. The names `redpanda` and `redpanda_raw` are reserved. A topic schema cannot define columns with these names.
+
+=== `redpanda`
+
+Contains Kafka record metadata. Always present on every row.
+
+[cols="<22%,<28%,<10%,<40%",options="header"]
+|===
+|Field |Type |Nullable |Description
+
+|`partition`
+|`INT`
+|No
+|Partition the record was read from.
+
+|`offset`
+|`BIGINT`
+|No
+|Offset of the record within its partition.
+
+|`timestamp`
+|`TIMESTAMP WITH TIME ZONE`
+|Yes
+|Record timestamp.
+
+|`headers`
+|Array of struct `{key TEXT, value BYTEA}`
+|Yes
+|Record headers, as an array where each element is a struct of header name and value bytes.
+
+|`key`
+|`BYTEA`
+|Yes
+|Record key bytes.
+
+|`timestamp_type`
+|`INT`
+|Yes
+|Kafka timestamp type (for example, `CreateTime` or `LogAppendTime`).
+|===
+
+=== `redpanda_raw`
+
+Populated only when `error_handling_policy = 'FILL_NULL'` and a record fails to decode. In all other cases, `redpanda_raw` is `NULL`.
+
+Use `redpanda_raw` as a dead-letter pattern. Rows whose value fails schema deserialization remain queryable, with the malformed payload preserved for inspection or reprocessing.
+
+[cols="<22%,<28%,<10%,<40%",options="header"]
+|===
+|Field |Type |Nullable |Description
+
+|`key`
+|`BYTEA`
+|Yes
+|Raw record key bytes.
+
+|`value`
+|`BYTEA`
+|Yes
+|Raw record value bytes that failed to decode.
+|===
+
 == Examples
 
 === Create a basic table
