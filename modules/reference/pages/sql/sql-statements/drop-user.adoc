@@ -6,6 +6,11 @@ The `DROP USER` statement removes an existing user from Redpanda SQL. `DROP ROLE
 
 A user cannot be dropped while they own objects (for example, a catalog or table created by that user) or hold privilege grants. Reassign or drop the owned objects and revoke the grants first, then drop the user.
 
+[NOTE]
+====
+On Redpanda Cloud BYOC, the Cloud operator synchronizes users from Redpanda Cloud's organization IAM. If you `DROP USER` for an identity that still exists in Redpanda Cloud IAM, the operator can re-provision the user on the next sync. Remove the user from Redpanda Cloud IAM first, or use the data-plane RBAC role to revoke their SQL access. See xref:sql:manage/manage-access.adoc[Manage access to Redpanda SQL].
+====
+
 == Syntax
 
 [source,sql]
