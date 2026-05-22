@@ -37,12 +37,9 @@ Cloud Console::
 --
 . Log in to https://cloud.redpanda.com[Redpanda Cloud^].
 . Start creating a new BYOC cluster on AWS. For details and prerequisites, see xref:get-started:cluster-types/byoc/aws/create-byoc-cluster-aws.adoc[].
-. In the cluster creation form, select the option to enable SQL.
-// TODO: Confirm guidance to provide on selecting capacity. The node-count
-// selection is expected to be replaced with RPUs
-. Choose the number of SQL nodes to deploy.
+. In the cluster creation form, locate the *Redpanda SQL engine* card. Toggle the engine on and use the *RPU* slider to set the compute size.
 +
-The minimum is one node to enable SQL. You can scale up (maximum nine nodes) or down later as needed, but the cluster must have at least one SQL node to run the engine.
+For more on RPUs, compute, and cost calculations, see xref:billing:billing.adoc#redpanda-sql-billing-metrics[Redpanda SQL billing metrics].
 . Complete the remaining cluster configuration and deploy.
 --
 
@@ -82,9 +79,6 @@ For the full request body and field reference, see the link:/api/doc/cloud-contr
 
 === On an existing cluster
 
-// TODO: The node-count selection in the Edit RP SQL dialog is expected to be
-// replaced with one for RPUs
-
 [tabs]
 =====
 Cloud Console::
@@ -93,7 +87,7 @@ Cloud Console::
 . Log in to https://cloud.redpanda.com[Redpanda Cloud^] and open your cluster.
 . From the left navigation, select *Dataplane settings*.
 . On the *Cluster* tab, find the *RP SQL* row and click *Edit*.
-. In the *Edit RP SQL* dialog, select *Enable*, set the *Number of RP SQL nodes* (1-9), and click *Save*.
+. In the *Enable Redpanda SQL engine* dialog, use the *RPU* slider to set the compute size, then click *Enable Redpanda SQL engine*.
 --
 
 Cloud API::
@@ -126,10 +120,7 @@ When the operation is complete, the response shows `"state": "STATE_COMPLETED"`.
 
 == Scale Redpanda SQL
 
-Redpanda SQL supports horizontal scaling from one to nine nodes per cluster. You cannot scale to zero nodes. To remove Redpanda SQL from a cluster, disable the SQL engine instead.
-
-// TODO: Scaling unit is changing. The node-count input (1-9) shown in the
-// current UI is expected to be replaced with RPUs
+Redpanda SQL scales horizontally by RPU. Adjust the compute size as your workload grows. To remove Redpanda SQL from a cluster, disable the SQL engine instead.
 
 [tabs]
 =====
@@ -139,13 +130,13 @@ Cloud Console::
 . Log in to https://cloud.redpanda.com[Redpanda Cloud^] and open your cluster.
 . From the left navigation, select *Dataplane settings*.
 . On the *Cluster* tab, find the *RP SQL* row and click *Edit*.
-. In the *Edit RP SQL* dialog, keep *Enable* selected, update *Number of RP SQL nodes* to a value between 1 and 9, and click *Save*.
+. In the *Edit Redpanda SQL engine* dialog, drag the *RPU* slider to the desired compute size, then click *Save changes*.
 --
 
 Cloud API::
 +
 --
-Make a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_updatecluster[`PATCH /v1/clusters/{cluster.id}`] request with the new replica count. Replace `{cluster.id}` with your cluster ID and `<n>` with a value between 1 and 9:
+Make a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_updatecluster[`PATCH /v1/clusters/{cluster.id}`] request with the new replica count. Replace `{cluster.id}` with your cluster ID and `<n>` with the desired replica count. The `replicas` field is an integer node count with a minimum of 1:
 
 [,bash]
 ----
@@ -225,7 +216,7 @@ Cloud Console::
 . Log in to https://cloud.redpanda.com[Redpanda Cloud^] and open your cluster.
 . From the left navigation, select *Dataplane settings*.
 . On the *Cluster* tab, find the *RP SQL* row and click *Edit*.
-. In the *Edit RP SQL* dialog, select *Disable*, then click *Save*.
+. In the *Edit Redpanda SQL engine* dialog, click *Disable*.
 --
 
 Cloud API::
