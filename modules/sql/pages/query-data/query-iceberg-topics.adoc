@@ -100,8 +100,6 @@ Redpanda SQL plans the union internally, so you don't write a `UNION ALL`.
 
 NOTE: Iceberg-committed data persists independently of Redpanda topic retention. Queries continue to return records past the Redpanda topic's retention window, provided they were committed to Iceberg first.
 
-// TODO: Verify with engineering whether there are workload patterns that reliably trigger longer planning, and document them if so (qa-questions.md #22).
-
 == Handle schema differences
 
 A topic schema can evolve over time. You might add or remove fields in your Schema Registry value subject as your application changes. Redpanda writes new records to the Iceberg table forward-only: it adds columns to the Iceberg table when the topic schema widens, but it does not drop columns from the Iceberg table when the topic schema narrows. As a result, the Iceberg table can carry columns the current topic schema doesn't have.
