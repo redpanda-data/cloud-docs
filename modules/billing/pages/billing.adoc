@@ -4,10 +4,10 @@
 :personas: platform_admin, evaluator
 :page-aliases: deploy:deployment-option/cloud/manage-billing/billing.adoc
 
-Redpanda Cloud uses various <<usage-based-billing-metrics,metrics>> to measure the consumption of resources.
+Redpanda Cloud uses various <<redpanda-streaming-billing-metrics,metrics>> to measure the consumption of resources.
 
 * All pricing is set in US dollars (USD).
-* All billing computations are conducted in Coordinated Universal Time (UTC). Billing accrues at hourly intervals. Any usage that is less than an hour is billed for the full hour.
+* All usage-based billing computations are conducted in Coordinated Universal Time (UTC). Billing accrues at hourly intervals. Any usage that is less than an hour is billed for the full hour.
 * The *Billing* page shows detailed billing activity for your organization and lets you xref:billing:manage-payment-methods.adoc[manage payment methods]. Redpanda charges the credit card marked as the default.
 
 [NOTE]
@@ -16,7 +16,7 @@ Redpanda Cloud uses various <<usage-based-billing-metrics,metrics>> to measure t
 * Pricing information is available on https://www.redpanda.com/price-estimator[redpanda.com^]. For questions about billing, contact billing@redpanda.com.
 ====
 
-== Usage-based billing metrics
+== Redpanda Streaming billing metrics
 
 [tabs]
 ======
@@ -114,6 +114,21 @@ Replication to object storage is implemented with glossterm:Tiered Storage[]. Al
 |=== 
 --
 ======
+
+== Redpanda SQL billing metrics
+
+Pricing for Redpanda SQL depends on the provisioned compute resources allocated to the SQL workload, measured in RPUs. The cost of an RPU can vary based on the cloud provider and region you select.
+
+[cols="1,3",options="header"]
+|===
+| Metric | Description
+
+| Compute | Tracks the server resources (vCPU and memory) Redpanda SQL uses on an hourly basis in Redpanda units (RPUs). Where:
+
+1 RPU = 2 vCPU + 8 GB memory
+|===
+
+NOTE: Redpanda SQL uses the same RPU definition as Redpanda Streaming BYOC clusters, but the price per RPU differs. Contact your Redpanda account team for current pricing.
 
 
 == Redpanda Connect billing metrics
