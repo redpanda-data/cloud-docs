@@ -1,8 +1,8 @@
 = percent_rank
-:description: PERCENT_RANK() window function determines the relative rank of a value in a group of values, based on the ORDER BY expression in the OVER clause.
+:description: `percent_rank()` window function determines the relative rank of a value in a group of values, based on the ORDER BY expression in the OVER clause.
 :page-topic-type: reference
 
-`PERCENT_RANK()` window function determines the relative rank of a value in a group of values, based on the `ORDER BY` expression in the `OVER` clause. It can be used with all xref:reference:sql/sql-data-types/index.adoc[data types supported by Redpanda SQL].
+`percent_rank()` window function determines the relative rank of a value in a group of values, based on the `ORDER BY` expression in the `OVER` clause. It can be used with all xref:reference:sql/sql-data-types/index.adoc[data types supported by Redpanda SQL].
 
 == Syntax
 
@@ -16,7 +16,7 @@ PERCENT_RANK() OVER (
 )
 ----
 
-The `PERCENT_RANK()` is calculated as:
+The `percent_rank()` is calculated as:
 
 [source,bash]
 ----
@@ -25,7 +25,7 @@ The `PERCENT_RANK()` is calculated as:
 
 Where `r` is the rank of the current row and `n` is the total number of rows in the window or partition.
 
-Rows with equal values for the ranking criteria receive the same relative rank. The output data type for this function is `DOUBLE PRECISION`. The output will indicate the rank of values in a table, regardless of the input types.
+Rows with equal values for the ranking criteria receive the same relative rank. The output data type for this function is `double precision`. The output will indicate the rank of values in a table, regardless of the input types.
 
 * If the optional `PARTITION BY` expression is present, the rankings are reset for each group of rows
 * If the `ORDER BY` expression is omitted then all relative ranks are equal to 0
@@ -63,9 +63,9 @@ INSERT INTO winsales VALUES
     (30007, '9/7/2004', 3, 'c', 30, null);
 ----
 
-=== PERCENT_RANK() with ORDER BY
+=== `percent_rank()` with ORDER BY
 
-This example executes the `PERCENT_RANK()` function with `ORDER BY` keyword and calculates the descending percent rank of all rows based on the quantity sold:
+This example executes the `percent_rank()` function with `ORDER BY` keyword and calculates the descending percent rank of all rows based on the quantity sold:
 
 [source,sql]
 ----
@@ -95,9 +95,9 @@ Output that includes the sales ID along with the quantity sold and both percent 
    40001 |  40 |     0 |   1
 ----
 
-=== PERCENT_RANK() with ORDER BY and PARTITION BY
+=== `percent_rank()` with ORDER BY and PARTITION BY
 
-This example executes the `PERCENT_RANK()` function with `ORDER BY` keyword and `PARTITION BY` clause, partitions the table by seller ID, orders each partition by the quantity, and assigns a percent rank to each row:
+This example executes the `percent_rank()` function with `ORDER BY` keyword and `PARTITION BY` clause, partitions the table by seller ID, orders each partition by the quantity, and assigns a percent rank to each row:
 
 [source,sql]
 ----

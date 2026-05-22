@@ -1,8 +1,8 @@
 = rank
-:description: The RANK() window function determines the rank of a value in a group of values, based on the ORDER BY expression in the OVER clause.
+:description: The `rank()` window function determines the rank of a value in a group of values, based on the ORDER BY expression in the OVER clause.
 :page-topic-type: reference
 
-The `RANK()` window function determines the rank of a value in a group of values, based on the `ORDER BY` expression in the `OVER` clause. It can be used with all xref:reference:sql/sql-data-types/index.adoc[data types supported by Redpanda SQL].
+The `rank()` window function determines the rank of a value in a group of values, based on the `ORDER BY` expression in the `OVER` clause. It can be used with all xref:reference:sql/sql-data-types/index.adoc[data types supported by Redpanda SQL].
 
 == Syntax
 
@@ -16,7 +16,7 @@ RANK() OVER (
 )
 ----
 
-Rows with equal values for the ranking criteria receive the same rank. The output type for this function is `BIGINT` and it indicates the rank of values in a table, regardles of the input types.
+Rows with equal values for the ranking criteria receive the same rank. The output type for this function is `bigint` and it indicates the rank of values in a table, regardles of the input types.
 
 * If the optional `PARTITION BY` expression is present, the rankings are reset for each group of rows
 * If the `ORDER BY` expression is omitted then all ranks are equal to 1
@@ -52,9 +52,9 @@ INSERT INTO winsales VALUES
     (30007, '9/7/2004', 3, 'c', 30, null);
 ----
 
-=== RANK() with ORDER BY
+=== `rank()` with ORDER BY
 
-This example executes the `RANK()` function with `ORDER BY` keyword and calculates the rank of all rows based on the quantity sold:
+This example executes the `rank()` function with `ORDER BY` keyword and calculates the rank of all rows based on the quantity sold:
 
 [source,sql]
 ----
@@ -84,9 +84,9 @@ Output that includes the sales ID along with the quantity sold and regular ranks
 (11 rows)
 ----
 
-=== RANK() with ORDER BY and PARTITION BY
+=== `rank()` with ORDER BY and PARTITION BY
 
-This example executes the `RANK()` function with `ORDER BY` keyword and `PARTITION BY` clause, partitions the table by seller ID, orders each partition by the quantity, and assigns a rank to each row:
+This example executes the `rank()` function with `ORDER BY` keyword and `PARTITION BY` clause, partitions the table by seller ID, orders each partition by the quantity, and assigns a rank to each row:
 
 [source,sql]
 ----

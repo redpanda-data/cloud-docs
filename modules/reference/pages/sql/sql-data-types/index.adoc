@@ -24,16 +24,16 @@ The following table summarizes the data types supported by Redpanda SQL:
 |xref:reference:sql/sql-data-types/json.adoc[`json`] |A value in JSON standard format |`variable_name JSON`
 |xref:reference:sql/sql-data-types/array.adoc[`array`] |An array of a specific data type |`'{value1, value2, value3}'::data_type[]`
 |xref:reference:sql/sql-data-types/row.adoc[`row`] |A composite value containing fields of different types |`ROW(value1, value2, ...)`
-|xref:reference:sql/sql-data-types/geometry.adoc[GEOMETRY] |A spatial data type for planar (Cartesian) point values |`GEOMETRY 'POINT(x y)'`
-|xref:reference:sql/sql-data-types/geography.adoc[GEOGRAPHY] |A spatial data type for geodetic (spherical) point values using WGS84 |`GEOGRAPHY 'POINT(lon lat)'`
+|xref:reference:sql/sql-data-types/geometry.adoc[`geometry`] |A spatial data type for planar (Cartesian) point values |`GEOMETRY 'POINT(x y)'`
+|xref:reference:sql/sql-data-types/geography.adoc[`geography`] |A spatial data type for geodetic (spherical) point values using WGS84 |`GEOGRAPHY 'POINT(lon lat)'`
 |===
 
 [WARNING]
 ====
-When performing operations on numeric or temporal types, overflows can lead to undefined behavior, resulting in unexpected values or errors. Ensure input values are within the allowed range for each numeric type to prevent overflows. This can occur during arithmetic operations or function execution (for example, `AVG()`), where the result does not fit the result type. Using larger data types such as `BIGINT` can help mitigate overflow risks.
+When performing operations on numeric or temporal types, overflows can lead to undefined behavior, resulting in unexpected values or errors. Ensure input values are within the allowed range for each numeric type to prevent overflows. This can occur during arithmetic operations or function execution (for example, `avg()`), where the result does not fit the result type. Using larger data types such as `bigint` can help mitigate overflow risks.
 ====
 
 [NOTE]
 ====
-Explicit casting between types can cause data loss due to altered precision or magnitude, such as truncating fractional seconds in `TIME` or silently clipping out-of-range values. Verify input ranges to prevent unintended data loss.
+Explicit casting between types can cause data loss due to altered precision or magnitude, such as truncating fractional seconds in `time` or silently clipping out-of-range values. Verify input ranges to prevent unintended data loss.
 ====

@@ -1,17 +1,17 @@
 = replace
-:description: The REPLACE() function looks for and replaces a substring with a new one in a string.
+:description: The `replace()` function looks for and replaces a substring with a new one in a string.
 :page-topic-type: reference
 
-The `REPLACE()` function looks for and replaces a substring with a new one in a string. This function is often used to update the outdated or spelling mistakes in data that require an amendment.
+The `replace()` function looks for and replaces a substring with a new one in a string. This function is often used to update the outdated or spelling mistakes in data that require an amendment.
 
 [NOTE]
 ====
-Redpanda SQL also supports the xref:reference:sql/sql-functions/string-functions/regex/regexp-replace.adoc[`REGEXP_REPLACE()`] function. It searches and replaces a substring that matches with a POSIX regular expression
+Redpanda SQL also supports the xref:reference:sql/sql-functions/string-functions/regex/regexp-replace.adoc[`regexp_replace()`] function. It searches and replaces a substring that matches with a POSIX regular expression
 ====
 
 == Syntax
 
-The syntax for `REPLACE()` function is:
+The syntax for `replace()` function is:
 
 [source,sql]
 ----
@@ -20,7 +20,7 @@ REPLACE(string, old_substring, new_substring)
 
 [WARNING]
 ====
-The `REPLACE()` function performs a case-sensitive replacement
+The `replace()` function performs a case-sensitive replacement
 ====
 
 === Parameters
@@ -35,14 +35,14 @@ The syntax requires these parameters:
 
 === Basic usage
 
-This example demonstrates a basic usage of the `REPLACE()` function.
+This example demonstrates a basic usage of the `replace()` function.
 
 [source,sql]
 ----
 SELECT REPLACE ('NewDatabase', 'New', 'Redpanda');
 ----
 
-The `REPLACE()` function finds all occurrences of the '`New`' substring in the '`NewDatabase`' string and replaces it with the '`Redpanda`' substring, producing:
+The `replace()` function finds all occurrences of the '`New`' substring in the '`NewDatabase`' string and replaces it with the '`Redpanda`' substring, producing:
 
 [source,sql]
 ----
@@ -112,7 +112,7 @@ SELECT REPLACE(category, 'group', 'sports') from hobby;
 
 === Remove a substring from a string
 
-This example shows how to remove a substring from a string using the `REPLACE()` function. In this case, the goal is to find all occurrences of the '`Friends`' substring in the '`Hello Friends`' string and remove it:
+This example shows how to remove a substring from a string using the `replace()` function. In this case, the goal is to find all occurrences of the '`Friends`' substring in the '`Hello Friends`' string and remove it:
 
 [source,sql]
 ----
@@ -130,14 +130,14 @@ SELECT REPLACE('Hello Friends', 'Friends', '');
 
 === Replace multiple patterns
 
-This example uses the `REPLACE()` function to replace multiple patterns of the given string:
+This example uses the `replace()` function to replace multiple patterns of the given string:
 
 [source,sql]
 ----
 SELECT REPLACE(REPLACE(REPLACE(REPLACE('2*[9-5]/{4+8}', '[', '('), ']', ')'), '{', '('), '}', ')');
 ----
 
-The `REPLACE()` function is called multiple times to replace the corresponding string as specified:
+The `replace()` function is called multiple times to replace the corresponding string as specified:
 
 * *`[]`* into *`()`*
 * *`{}`* into *`()`*
