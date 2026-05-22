@@ -2,7 +2,7 @@
 :description: The ALTER REDPANDA CATALOG statement modifies connection properties of an existing Redpanda catalog, including the link to an Iceberg catalog.
 :page-topic-type: reference
 
-The `ALTER REDPANDA CATALOG` statement modifies connection properties of an existing Redpanda catalog. You can also use it to link the Redpanda catalog to an Iceberg catalog (or detach an existing link) so that queries against the Redpanda catalog return both live records and Iceberg-translated history.
+The `ALTER REDPANDA CATALOG` statement modifies connection properties of an existing Redpanda catalog. You can also use it to link the Redpanda catalog to an Iceberg catalog (or detach an existing link) so that queries against the Redpanda catalog return both live records and Iceberg-translated history (records previously written from the topic into the linked Iceberg catalog). See xref:sql:query-data/query-iceberg-topics.adoc[] for details.
 
 == Syntax
 
@@ -46,7 +46,7 @@ ALTER REDPANDA CATALOG production_redpanda
 USING CATALOG lakehouse_catalog;
 ----
 
-=== Retarget the linked Iceberg catalog
+=== Relink to a different Iceberg catalog
 
 To change which Iceberg catalog a Redpanda catalog is linked to, run `ALTER REDPANDA CATALOG ... USING CATALOG <new-iceberg-cat>`:
 

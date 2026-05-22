@@ -2,25 +2,53 @@
 :description: Information schema views in Redpanda SQL expose database object metadata and grants through SQL-standard views.
 :page-topic-type: reference
 
-The `information_schema` namespace provides SQL-standard views over database object metadata. Use these views to inspect catalogs, tables, schemas, columns, and privilege grants without querying the underlying PostgreSQL system catalogs directly. Redpanda SQL implements the standard views needed for tool compatibility, plus extension views for Redpanda-specific concepts that don't fit the standard shape.
+The `information_schema` namespace provides SQL-standard views over database object metadata. Use these views to inspect catalogs, tables, schemas, columns, and privilege grants without querying the underlying PostgreSQL system catalogs directly.
 
 == Available views
+
+Redpanda SQL implements the SQL-standard `information_schema` views needed for tool compatibility, plus one extension view for Redpanda-specific concepts that don't fit the standard shape. The standard views follow the SQL specification, so their semantics match PostgreSQL's implementation.
 
 [cols="<40%,<60%",options="header"]
 |===
 |View |Description
 
+|`information_schema.character_sets`
+|Character sets available in the current database. Standard view, see https://www.postgresql.org/docs/current/infoschema-character-sets.html[PostgreSQL documentation^].
+
+|`information_schema.columns`
+|Columns of tables and views visible to the current role. Standard view, see https://www.postgresql.org/docs/current/infoschema-columns.html[PostgreSQL documentation^].
+
+|`information_schema.key_column_usage`
+|Columns constrained as keys (primary keys, unique constraints, foreign keys). Standard view, see https://www.postgresql.org/docs/current/infoschema-key-column-usage.html[PostgreSQL documentation^].
+
+|`information_schema.referential_constraints`
+|Foreign-key constraints visible to the current role. Standard view, see https://www.postgresql.org/docs/current/infoschema-referential-constraints.html[PostgreSQL documentation^].
+
 |`information_schema.role_external_relation_grants`
-|Per-relation EXTERNAL SOURCE grants. Redpanda SQL extension that captures grants whose stored relation pattern is anything other than `\*` (catalog-level grants surface in `information_schema.role_table_grants` instead).
+|Per-relation EXTERNAL SOURCE grants. Redpanda SQL extension that captures grants whose stored relation pattern is anything other than `\*` (catalog-level grants surface in `information_schema.role_table_grants` instead). See <<information-schema-role-external-relation-grants,below>> for details.
+
+|`information_schema.role_table_grants`
+|Privileges granted on tables and table-like objects to the current role. Standard view, see https://www.postgresql.org/docs/current/infoschema-role-table-grants.html[PostgreSQL documentation^].
+
+|`information_schema.role_usage_grants`
+|USAGE privileges granted to the current role. Standard view, see https://www.postgresql.org/docs/current/infoschema-role-usage-grants.html[PostgreSQL documentation^].
+
+|`information_schema.table_constraints`
+|Table constraints (primary key, unique, foreign key, check) visible to the current role. Standard view, see https://www.postgresql.org/docs/current/infoschema-table-constraints.html[PostgreSQL documentation^].
+
+|`information_schema.tables`
+|Tables and views visible to the current role. Standard view, see https://www.postgresql.org/docs/current/infoschema-tables.html[PostgreSQL documentation^].
 |===
 
 == information_schema.role_external_relation_grants
 
 Per-relation EXTERNAL SOURCE grants. Rows whose stored relation pattern is anything other than `\*`. Catalog-level EXTERNAL SOURCE grants (stored pattern `\*`) surface in `information_schema.role_table_grants`, like foreign-table grants in PostgreSQL.
 
+When you `GRANT ... ON EXTERNAL SOURCE catalog_name => 'pattern'`, the pattern is stored verbatim. Redpanda SQL does not normalize or canonicalize it. Patterns are either a fully-qualified relation name like `ns1.ns2.my_table` or a name with a trailing wildcard like `ns1.public_tables*`. See xref:reference:sql/sql-statements/grant.adoc[GRANT] for the full grant syntax and xref:sql:manage/manage-access.adoc[Manage access to Redpanda SQL] for the access model.
+
 Visibility mirrors `information_schema.role_table_grants`. A regular role sees rows where it is the grantee. A superuser sees grants for every non-superuser.
 
-Use this view to find the exact stored relation pattern when you need to xref:reference:sql/sql-statements/revoke.adoc[revoke] a grant. `REVOKE` requires the pattern argument to match an existing stored grant exactly. Query this view first to see the patterns currently registered.
+Use this view to find the exact stored relation pattern when you need to xref:reference:sql/sql-statements/revoke.adoc[revoke] a grant. `REVOKE` requires the pattern argument to match a stored grant exactly. Revoking a pattern that was never granted returns an error, so query this view first to see what's currently registered.
 
 [cols="<30%,<15%,<10%,<45%",options="header"]
 |===
