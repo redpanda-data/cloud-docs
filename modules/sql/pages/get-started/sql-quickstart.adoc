@@ -139,13 +139,12 @@ Type "help" for help.
 
 When you enable Redpanda SQL, a Redpanda catalog named `default_redpanda_catalog` is created automatically and points at your cluster. To query a Redpanda topic, define a SQL table against the topic, then run standard SQL queries against the table.
 
-. Define a SQL table from the topic with `CREATE TABLE`. The following example uses the `orders` topic from the optional sample data section. To use your own topic, replace `orders` with your topic name and `orders-value` with the Schema Registry subject that holds the topic's value schema. Your topic must have a schema registered in Schema Registry.
+. Define a SQL table from the topic with `CREATE TABLE`. The following example uses the `orders` topic from the optional sample data section. To use your own topic, replace `orders` with your topic name. Your topic must have a schema registered in Schema Registry under the topic-name strategy default (schema subject `<topic>-value`).
 +
 [,sql]
 ----
 CREATE TABLE default_redpanda_catalog=>orders WITH (
   topic = 'orders',
-  schema_subject = 'orders-value',
   confluent_wire_protocol = 'false'
 );
 ----
