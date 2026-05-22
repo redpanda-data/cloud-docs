@@ -21,6 +21,11 @@ ALTER { USER | ROLE } user_name [WITH]
 * `NOSUPERUSER`: Optional. Removes superuser status from the user. The protected system superuser cannot be demoted.
 * `WITH`: Optional. Has no effect; provided for PostgreSQL compatibility.
 
+[NOTE]
+====
+On Redpanda Cloud BYOC, the Cloud operator synchronizes users from Redpanda Cloud's organization IAM. Changes from `ALTER USER` to attributes such as `SUPERUSER` may be reverted by the operator if they don't match the IAM-managed state. Manage user superuser status through Redpanda Cloud's data-plane RBAC roles instead. See xref:sql:manage/manage-access.adoc[Manage access to Redpanda SQL].
+====
+
 == Examples
 
 Change the password for an existing user:

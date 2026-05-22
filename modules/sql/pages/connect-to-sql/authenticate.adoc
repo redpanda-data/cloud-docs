@@ -39,21 +39,19 @@ Redpanda SQL supports three authentication modes, selected by the connection-str
 |Legacy clients that don't support bearer-token or client-credentials authentication. The username is the Redpanda Cloud account or service account email; the password is set by a *SQL: Manage* user with `ALTER USER`. See <<Connect with SCRAM for legacy clients>>.
 |===
 
-Redpanda SQL treats a glossterm:bearer token[] in the password field without `auth_method=bearer` as a SCRAM password, and the connection fails. To use a bearer token, you must set `options='-c auth_method=bearer'`.
-
-For OIDC tokens, the token must include the standard claims (`sub`, `aud`, `iss`, `exp`) and must use one of these signing algorithms: `RS256`, `RS384`, `RS512`, or `ES256`. Redpanda SQL rejects tokens signed with `alg: none`.
+Redpanda SQL treats a glossterm:bearer token[] in the password field without `auth_method=bearer` as a SCRAM password, and the connection fails. To use a bearer token, you must set `options='auth_method=bearer'`.
 
 == Connect with a bearer token
 
 Use bearer-token authentication for human users who hold a JWT issued by Redpanda Cloud. Run `rpk cloud auth token` to obtain a token you can pass directly; see xref:sql:get-started/sql-quickstart.adoc[Quickstart] for the end-to-end setup.
 
-Set `options='-c auth_method=bearer'` in the connection string and pass the token in the password field. Redpanda SQL ignores the `user=` field and takes the session identity from the principal claim in the token.
+Set `options='auth_method=bearer'` in the connection string and pass the token in the password field. Redpanda SQL ignores the `user=` field and takes the session identity from the principal claim in the token.
 
 .psql
 [source,bash]
 ----
-PGPASSWORD="$BEARER_TOKEN" \
-  psql "host=<sql-host> port=<sql-port> dbname=oxla user=ignored options='-c auth_method=bearer' sslmode=require"
+PGPASSWORD=$(rpk cloud auth token) \
+  psql "host=<sql-host> port=<sql-port> dbname=oxla user=ignored options='auth_method=bearer' sslmode=require"
 ----
 
 .Python (psycopg2)
@@ -68,7 +66,7 @@ conn = psycopg2.connect(
     dbname="oxla",
     user="ignored",
     password=os.environ["BEARER_TOKEN"],
-    options="-c auth_method=bearer",
+    options="auth_method=bearer",
     sslmode="require",
 )
 
@@ -79,38 +77,17 @@ cur.execute("SELECT current_user")
 
 For more language-client examples, see xref:sql:connect-to-sql/index.adoc[Connect to Redpanda SQL].
 
-// TODO: OXLA-9382 (concurrent first-time login via connection pool produces
-// duplicate role entries in the distributed catalog) is marked Done in Jira
-// but has no fixVersions set. Confirm with SME the fix is in the GA 2026-05-22
-// build before publishing this note. If confirmed in GA, delete this comment.
-// If NOT confirmed, restore the user-facing NOTE below:
-//
-// [NOTE]
-// ====
-// *Concurrent first-time logins.* First-time logins through a connection pool
-// can occasionally produce duplicate role entries in the distributed catalog,
-// after which DDL operations against the role fail. Track
-// https://redpandadata.atlassian.net/browse/OXLA-9382[OXLA-9382^]. As a
-// workaround, have each user log in once with a single connection before
-// using a connection pool against that account.
-// ====
-
 == Connect with client credentials
 
 Use client-credentials authentication for service-to-service connections: scheduled jobs, BI tools, or other automated clients that can't perform interactive sign-in. Each Redpanda Cloud service account has a client ID and client secret; Redpanda SQL exchanges those credentials for a token against Redpanda Cloud's token endpoint and validates it.
 
-Set `options='-c auth_method=client_secret'`, pass the Redpanda Cloud service account's client ID in `user=`, and the client secret in the password field. The resolved principal becomes the session identity.
+Set `options='auth_method=client_secret'`, pass the Redpanda Cloud service account's client ID in `user=`, and the client secret in the password field. The resolved principal becomes the session identity.
 
 [source,bash]
 ----
 PGPASSWORD="$CLIENT_SECRET" \
-  psql "host=<sql-host> port=<sql-port> dbname=oxla user=<client-id> options='-c auth_method=client_secret' sslmode=require"
+  psql "host=<sql-host> port=<sql-port> dbname=oxla user=<client-id> options='auth_method=client_secret' sslmode=require"
 ----
-
-// TODO: Reconcile token-endpoint timeout. The RFC says 5s
-// ("Token Endpoint Client — HTTP POST for client credentials exchange. 5s timeout.")
-// but oxla/src/net/http/http_client.h defaults to 10s. Confirm with SME which is
-// authoritative for GA, then document the correct value here.
 
 == Connect with SCRAM for legacy clients
 
@@ -141,9 +118,7 @@ PGPASSWORD='shared_secret' \
 
 Credentials travel in the password field of the PostgreSQL startup message, whether you authenticate with a bearer token, client credentials, or a SCRAM password. To protect them in transit, set `sslmode=require` on every connection.
 
-The cluster's SSL mode controls TLS on the `psql` connection to Redpanda SQL itself. To reject connections that aren't using TLS, configure the cluster to reject all non-TLS connections.
-
-// TODO: Confirm the correct cross-link for the cluster SSL mode setting in Redpanda Cloud.
+On Redpanda Cloud BYOC, the SQL endpoint requires TLS. Connections without TLS are rejected by the server.
 
 == Reconnect when a token expires
 

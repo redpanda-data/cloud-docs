@@ -50,8 +50,8 @@ The catalog-level form grants the privilege on every relation reachable through 
 
 [source,sql]
 ----
-GRANT { SELECT | ALL [PRIVILEGES] } ON EXTERNAL SOURCE source_name TO role_name;
-GRANT { SELECT | ALL [PRIVILEGES] } ON EXTERNAL SOURCE source_name => 'pattern' TO role_name;
+GRANT { SELECT | ALL [PRIVILEGES] } ON EXTERNAL SOURCE catalog_name TO role_name;
+GRANT { SELECT | ALL [PRIVILEGES] } ON EXTERNAL SOURCE catalog_name => 'pattern' TO role_name;
 ----
 
 * `pattern`: A string literal that matches a relation name. The wildcard `*` is only allowed at the end of the pattern (for example, `'orders_*'`).
@@ -73,6 +73,11 @@ Redpanda SQL exposes a single database, `oxla`.
 ----
 GRANT CONNECT ON DATABASE oxla TO role_name;
 ----
+
+[NOTE]
+====
+On Redpanda Cloud BYOC, `CONNECT` is managed automatically through the Cloud operator. Assigning the *SQL: Access* or *SQL: Manage* data-plane RBAC role grants `CONNECT`. Removing the role revokes it. Manual `GRANT CONNECT` may be reverted by the operator.
+====
 
 == Examples
 
