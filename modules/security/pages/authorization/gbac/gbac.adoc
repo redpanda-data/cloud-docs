@@ -1,0 +1,102 @@
+= Configure GBAC in the Control Plane
+:description: Configure GBAC to manage access to organization-level resources, like clusters, resource groups, and networks, using OIDC groups from your identity provider.
+:page-topic-type: how-to
+:learning-objective-1: Register an OIDC group in Redpanda Cloud
+:learning-objective-2: Assign a predefined or custom role to a group
+:learning-objective-3: Manage group-based access at the organization level
+
+NOTE: This feature is available for BYOC and Dedicated clusters.
+
+Use Redpanda Cloud group-based access control (GBAC) in the glossterm:control plane[] to manage access to organization resources based on OIDC groups from your identity provider (IdP). For example, you can grant one group access to development clusters while restricting production access to another group. You can also restrict access to geographically dispersed clusters to support data residency requirements. When a user's group membership changes in the IdP, their Redpanda access updates automatically.
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
+
+== GBAC terminology
+
+**Group**: A group is a collection of users defined in your IdP. With GBAC, you can assign groups to roles or ACLs in Redpanda Cloud, so that users inherit permissions based on their group membership in your IdP.
+
+**Role**: A role is a list of permissions. Permissions are attached to roles. Users assigned multiple roles receive the union of all permissions defined in those roles. Redpanda Cloud has several predefined roles that you cannot modify or delete, including Reader, Writer, and Admin. You can also create custom roles.
+
+**Role binding**: Role binding assigns a role to an account. Administrators can add, edit, or remove role bindings for a user. When you change the permissions for a given role, all users and service accounts with that role automatically get the modified permissions. 
+
+== Manage organization access
+
+In the Redpanda Cloud Console, the *Organization IAM* page lets you create groups. When you create a group, you define its permissions with role binding. When you edit a group, you can change its role bindings to update the group's permissions. When you change the permissions for a given role, all groups with that role automatically get the modified permissions.
+
+Various resources can be assigned as the scope of a role, including the following: 
+
+- Organization 	
+- Resource group
+- Network
+- Network peering
+- Cluster (Serverless clusters have a different set of permissions from BYOC and Dedicated clusters.) 
+- MCP server
+
+You can manage GBAC configurations with the https://cloud.redpanda.com[Redpanda Cloud Console^] or with the link:/api/doc/cloud-controlplane/[Control Plane API].
+
+== Configure group claim extraction
+
+Different identity providers structure group information differently in their OIDC tokens. Before you register groups, configure your SSO connection to tell Redpanda Cloud where to find group claims in the token.
+
+include::ROOT:manage:partial$gbac-token-claim-extraction.adoc[]
+
+== Register groups
+
+To assign an IdP group to a role or ACL, you must first register the group in Redpanda Cloud:
+
+[tabs]
+====
+Cloud UI::
++
+--
+. Navigate to *Organization IAM > Groups*.
+. Click *Create group*.
+. Enter a *Name* that matches the group in your IdP exactly (for example, `engineering`).
+. Optionally, enter a *Description*, and configure a *Role binding* to assign the group to a role with a specific scope and resource.
+. Click *Create*.
+--
+
+Control Plane API::
++
+--
+Make a link:/api/doc/cloud-controlplane/operation/operation-groupservice_creategroup[`POST /v1/groups`] request to the xref:redpanda-cloud:manage:api/cloud-byoc-controlplane-api.adoc[Control Plane API]:
+
+[,bash]
+----
+curl -X POST 'https://api.redpanda.com/v1/groups' \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer <token>' \
+  -d '{
+    "group": {
+      "name": "<group-name>",
+      "description": "<group-description>"
+    }
+  }'
+----
+
+Replace `<group-name>` with the name that matches the group in your IdP (for example, `engineering`). The name must match exactly for GBAC to map the group correctly.
+--
+====
+
+== Predefined roles
+
+include::security:partial$predefined-roles.adoc[]
+
+== Custom roles
+
+In addition to the predefined roles, administrators can create custom roles to mix and match permissions for specific use cases. Custom roles let you grant only the permissions a group needs, without the broad access of predefined roles.
+
+Custom roles are created on the *Roles* tab in *Organization IAM*. For steps to create a custom role, see xref:security:authorization/rbac/rbac.adoc#custom-roles[Custom roles in RBAC].
+
+When you register a group or edit a group's role binding, you can assign any predefined or custom role to the group.
+
+== Suggested reading
+
+* xref:security:authorization/gbac/gbac_dp.adoc[]
+* xref:security:authorization/rbac/rbac.adoc[]
+* xref:security:authorization/rbac/rbac_dp.adoc[]
+* xref:security:cloud-authentication.adoc#single-sign-on[Single sign-on]

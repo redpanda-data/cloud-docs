@@ -111,7 +111,7 @@ module "redpanda_byovpc" {
 
 [NOTE]
 ====
-* To send telemetry back to the Redpanda control plane, the cluster needs outbound internet access. You can provide this through at least one public subnet, or through network peering or a transit gateway to another VPC that routes traffic through a public subnet. The example configuration includes multiple public subnets to allow for future scaling.
+* To send telemetry back to the Redpanda control plane, the cluster needs outbound internet access. You can provide this through at least one public subnet, or through network peering or a transit gateway to another VPC that routes traffic through a public subnet. The example configuration includes multiple public subnets to allow for future scaling. Standard BYOC clusters can also route egress through a customer-owned hub VPC and Transit Gateway, eliminating the per-VPC NAT Gateway entirely. See xref:networking:byoc/aws/nat-free-egress.adoc[].
 * The example creates an Internet Gateway and an associated Route Table rule that routes traffic into the VPC, which allows the Redpanda control plane to access the cluster. To disable creation of the Internet Gateway, either remove the configuration and value for `create_internet_gateway` or set `"create_internet_gateway": false`.
 * When using a pre-existing VPC, at least one public subnet must already exist in that VPC. Setting `public_subnet_cidrs = []` only prevents the module from creating new ones.
 ====
