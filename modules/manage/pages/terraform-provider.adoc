@@ -103,7 +103,7 @@ The following functionality is supported in the Cloud API but not in the Redpand
 
 [WARNING]
 ====
-If `allow_deletion` is set to `true`, modifying `throughput_tier` allows Terraform to destroy the existing cluster and replace it, causing data loss.
+If `allow_deletion` is set to `true`, modifying `throughput_tier` causes Terraform to destroy and replace the existing cluster, causing data loss.
 
 To prevent this, apply one or both of the following:
 
@@ -557,7 +557,7 @@ variable "region" {
 
 === Manage an existing cluster
 
-To manage resources in an existing cluster, reference it by cluster ID using a `data` source.
+To manage resources in an existing cluster, reference it by cluster ID using a `data` source. The `data` source exposes a `cluster_api_url` attribute that other resources (such as `redpanda_topic`) reference to connect to the cluster.
 
 [source,hcl]
 ----
@@ -586,7 +586,7 @@ You can use the following Terraform resources:
 
 ==== Create a schema
 
-Each schema belongs to a subject, a logical name used for schema versioning. When you create or update a schema, Redpanda validates its compatibility level.
+The `redpanda_schema` resource registers a schema. Each schema belongs to a subject, a logical name used for schema versioning. When you create or update a schema, Redpanda validates its compatibility level.
 
 [source,hcl]
 ----
@@ -661,7 +661,7 @@ export TF_VAR_schema_password="schema-registry-password"
 
 ==== Manage Schema Registry ACLs
 
-Each ACL specifies which principal can perform which operations on a subject or the registry.
+The `redpanda_schema_registry_acl` resource configures fine-grained access control for Schema Registry subjects or registry-wide operations. Each ACL specifies which principal can perform which operations on a subject or the registry.
 
 [source,hcl]
 ----
