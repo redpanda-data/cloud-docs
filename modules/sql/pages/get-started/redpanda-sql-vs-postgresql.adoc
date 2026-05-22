@@ -20,25 +20,11 @@ Instead, Kafka-compatible producers write topics into Redpanda Streaming. From t
 
 Redpanda SQL is _semantically_ compatible with PostgreSQL but not _code_ compatible. It can't use common PostgreSQL extensions such as pgvector, PostGIS, or pg_cron.
 
-== Functions
+== JSON operators
 
-// TODO: SME confirmation — are there meaningful function-level differences
-// from PostgreSQL beyond the JSON operator? If not, remove this section
-// entirely. Open question on PR #573 review thread
-// (https://github.com/redpanda-data/cloud-docs/pull/573#discussion_r3228320300).
+Redpanda SQL supports operators for handling JSON data in a slightly different way than PostgreSQL.
 
-== Operators
-
-=== Mathematical operators
-
-// TODO: SME confirmation — same question as for Functions above. Remove this
-// subsection if there are no meaningful mathematical-operator differences.
-
-=== JSON operators
-
-Redpanda SQL's JSON `=` operator is order-sensitive, unlike PostgreSQL's.
-
-==== Equal operator (`=`)
+=== Equal operator (`=`)
 
 This operator checks if two JSON values are identical. In Redpanda SQL, two JSON objects are considered equal only when their key-value pairs appear in the exact same order.
 
@@ -57,7 +43,7 @@ Result:
 (1 row)
 ----
 
-NOTE: In PostgreSQL, the `=` operator is not order-sensitive, so the order of key-value pairs does not affect the comparison result.
+In PostgreSQL, the `=` operator is not order-sensitive, so the order of key-value pairs does not affect the comparison result.
 
 == Behavioral differences
 
