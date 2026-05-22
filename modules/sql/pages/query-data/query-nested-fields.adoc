@@ -18,8 +18,8 @@ Use this page to:
 
 Before you query a topic with nested fields:
 
-* Enable Redpanda SQL on your Redpanda Bring Your Own Cloud (BYOC) cluster. See xref:sql:get-started/deploy-sql-cluster.adoc[Enable Redpanda SQL].
-* Connect to Redpanda SQL with `psql` or another PostgreSQL client. See xref:sql:connect-to-sql/index.adoc[Connect to Redpanda SQL].
+* [Enable Redpanda SQL](xref:sql:get-started/deploy-sql-cluster.adoc[Enable Redpanda SQL]) on your Redpanda Bring Your Own Cloud (BYOC) cluster.
+* [Connect to Redpanda SQL](xref:sql:connect-to-sql/index.adoc[Connect to Redpanda SQL]) with `psql` or another PostgreSQL client.
 // TODO: Confirm TopicNameStrategy requirement
 * Register a schema for the topic in glossterm:schema-registry[Schema Registry], including one or more nested message types.
 * The topic's data is reachable through a Redpanda catalog. The `default_redpanda_catalog` is created and linked for you when Redpanda SQL is enabled.
@@ -31,14 +31,14 @@ Create the SQL table with `struct_mapping_policy = 'COMPOUND'` to surface each n
 [source,sql]
 ----
 CREATE TABLE default_redpanda_catalog=>orders WITH (
-  topic = 'orders',
-  schema_subject = 'orders-value',
-  struct_mapping_policy = 'COMPOUND'
+  topic = 'orders',                            <1>
+  schema_subject = 'orders-value',             <2>
+  struct_mapping_policy = 'COMPOUND'           <3>
 );
 ----
-
-* The `topic` option is required. 
-* The `struct_mapping_policy` option is optional and defaults to `'COMPOUND'`.
+<1> Required. The Redpanda topic to map.
+<2> Optional. The Schema Registry subject. Defaults to `<topic>-value` when omitted.
+<3> Optional. Defaults to `'COMPOUND'`, which surfaces nested structures as user-defined types.
 // TODO: Confirm schema_subject required when struct_mapping_policy=COMPOUND
 
 Replace `orders` with your topic name and `orders-value` with the Schema Registry subject that holds the topic's value schema.
@@ -131,9 +131,9 @@ Query JSON-mapped fields with standard JSON functions instead of ROW field acces
 | Recursive types supported; fields are untyped until extracted with JSON functions. Queries that span the Redpanda topic and its linked Iceberg table do not align cleanly, because Iceberg always exposes nested structures as typed columns.
 |===
 
-== Next steps
+== Related topics
 
-* xref:sql:query-data/query-streaming-topics.adoc[Query streaming topics]: query a topic without Iceberg history.
-* xref:sql:query-data/query-iceberg-topics.adoc[Query Iceberg-enabled topics]: query a topic with both its live streaming data and Iceberg history. Use `struct_mapping_policy = 'COMPOUND'` so nested fields align between the Redpanda topic and the linked Iceberg table.
-* xref:reference:sql/sql-data-types/row.adoc[ROW]: full reference for the `ROW` data type, including comparisons, NULL semantics, and conversion to text.
-* xref:reference:sql/sql-statements/create-table.adoc[CREATE TABLE]: complete option list for mapping a Redpanda topic to a SQL table.
+* xref:sql:query-data/query-streaming-topics.adoc[Query streaming topics]: Query a topic without Iceberg history.
+* xref:sql:query-data/query-iceberg-topics.adoc[Query Iceberg-enabled topics]: Query a topic with both its live streaming data and Iceberg history. Use `struct_mapping_policy = 'COMPOUND'` so nested fields align between the Redpanda topic and the linked Iceberg table.
+* xref:reference:sql/sql-data-types/row.adoc[ROW]: Full reference for the `ROW` data type, including comparisons, NULL semantics, and conversion to text.
+* xref:reference:sql/sql-statements/create-table.adoc[CREATE TABLE]: Complete option list for mapping a Redpanda topic to a SQL table.
