@@ -1,0 +1,244 @@
+= Enable Redpanda SQL on a BYOC Cluster
+:description: Enable the Redpanda SQL engine on a BYOC cluster so you can query streaming data with standard PostgreSQL syntax.
+:page-topic-type: how-to
+:personas: platform_admin, data_engineer
+:learning-objective-1: Enable Redpanda SQL on a new or existing BYOC cluster
+:learning-objective-2: Scale or disable the SQL engine
+:learning-objective-3: Verify that the SQL engine is running and ready to accept connections
+
+Enable Redpanda SQL on a Bring Your Own Cloud (BYOC) cluster so you can query streaming data in Redpanda topics using standard PostgreSQL syntax. For Iceberg-enabled topics, queries can span both the streaming topic and its Iceberg history. See xref:sql:query-data/query-iceberg-topics.adoc[Query Iceberg-enabled topics] for that workflow.
+
+Use this page to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
+
+NOTE: Redpanda SQL is currently available only on BYOC clusters running on AWS.
+
+== Prerequisites
+
+To enable Redpanda SQL, you need:
+
+* A Redpanda Cloud organization on xref:billing:billing.adoc[usage-based billing].
+* Admin permissions in your Redpanda Cloud organization.
+* If using the link:/api/doc/cloud-controlplane/topic/topic-cloud-api-overview[Cloud API] to enable SQL, a valid bearer token for the API. See link:/api/doc/cloud-controlplane/authentication[Authenticate to the Cloud API].
+
+== Enable Redpanda SQL
+
+You can enable Redpanda SQL on a new or existing BYOC cluster.
+
+=== On a new cluster
+
+[tabs]
+=====
+Cloud Console::
++
+--
+. Log in to https://cloud.redpanda.com[Redpanda Cloud^].
+. Start creating a new BYOC cluster on AWS. For details and prerequisites, see xref:get-started:cluster-types/byoc/aws/create-byoc-cluster-aws.adoc[].
+. In the cluster creation form, locate the *Redpanda SQL engine* card. Toggle the engine on and use the *RPU* slider to set the compute size.
++
+For more on RPUs, compute, and cost calculations, see xref:billing:billing.adoc#redpanda-sql-billing-metrics[Redpanda SQL billing metrics].
+. Complete the remaining cluster configuration and deploy.
+--
+
+Cloud API::
++
+--
+. Authenticate to the link:/api/doc/cloud-controlplane/topic/topic-cloud-api-overview[Cloud API]. For details, see link:/api/doc/cloud-controlplane/authentication[Authenticate to the Cloud API].
+// TODO: Is selecting capacity (currently node count, expected to change to RPUs)
+// available with this endpoint?
+. Make a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_createcluster[`POST /v1/clusters`] request with `rpsql.enabled` set to `true` in the cluster spec:
++
+[,bash]
+----
+curl -X POST "https://api.redpanda.com/v1/clusters" \
+  -H "Authorization: Bearer $AUTH_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "cluster": {
+      "name": "<cluster-name>",
+      "cloud_provider": "CLOUD_PROVIDER_AWS",
+      "type": "TYPE_BYOC",
+      "region": "<region>",
+      "zones": [ <zones> ],
+      "throughput_tier": "<tier>",
+      "resource_group_id": "<resource-group-id>",
+      "rpsql": {
+        "enabled": true
+      }
+    }
+  }'
+----
++
+For the full request body and field reference, see the link:/api/doc/cloud-controlplane/operation/operation-clusterservice_createcluster[Create Cluster API].
+. The request returns the ID of a long-running operation. Poll the link:/api/doc/cloud-controlplane/operation/operation-operationservice_getoperation[`GET /v1/operations/{operation.id}`] endpoint until the operation completes.
+--
+=====
+
+=== On an existing cluster
+
+[tabs]
+=====
+Cloud Console::
++
+--
+. Log in to https://cloud.redpanda.com[Redpanda Cloud^] and open your cluster.
+. From the left navigation, select *Dataplane settings*.
+. On the *Cluster* tab, find the *RP SQL* row and click *Edit*.
+. In the *Enable Redpanda SQL engine* dialog, use the *RPU* slider to set the compute size, then click *Enable Redpanda SQL engine*.
+--
+
+Cloud API::
++
+--
+. Authenticate to the link:/api/doc/cloud-controlplane/topic/topic-cloud-api-overview[Cloud API]. For details, see link:/api/doc/cloud-controlplane/authentication[Authenticate to the Cloud API].
+. Locate the cluster ID in the *Details* section of the cluster overview in the Cloud Console.
+. Make a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_updatecluster[`PATCH /v1/clusters/{cluster.id}`] request, replacing `{cluster.id}` with your cluster ID:
++
+[,bash]
+----
+curl -X PATCH "https://api.redpanda.com/v1/clusters/{cluster.id}" \
+  -H "Authorization: Bearer $AUTH_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"rpsql":{"enabled":true}}'
+----
++
+The request returns the ID of a long-running operation. Poll the link:/api/doc/cloud-controlplane/operation/operation-operationservice_getoperation[`GET /v1/operations/{operation.id}`] endpoint until the operation completes:
++
+[,bash]
+----
+curl -X GET "https://api.redpanda.com/v1/operations/{operation.id}" \
+  -H "Authorization: Bearer $AUTH_TOKEN" \
+  -H "Content-Type: application/json"
+----
++
+When the operation is complete, the response shows `"state": "STATE_COMPLETED"`.
+--
+=====
+
+== Scale Redpanda SQL
+
+Redpanda SQL scales horizontally by RPU. Adjust the compute size as your workload grows. To remove Redpanda SQL from a cluster, disable the SQL engine instead.
+
+[tabs]
+=====
+Cloud Console::
++
+--
+. Log in to https://cloud.redpanda.com[Redpanda Cloud^] and open your cluster.
+. From the left navigation, select *Dataplane settings*.
+. On the *Cluster* tab, find the *RP SQL* row and click *Edit*.
+. In the *Edit Redpanda SQL engine* dialog, drag the *RPU* slider to the desired compute size, then click *Save changes*.
+--
+
+Cloud API::
++
+--
+Make a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_updatecluster[`PATCH /v1/clusters/{cluster.id}`] request with the new replica count. Replace `{cluster.id}` with your cluster ID and `<n>` with the desired replica count. The `replicas` field is an integer node count with a minimum of 1:
+
+[,bash]
+----
+curl -X PATCH "https://api.redpanda.com/v1/clusters/{cluster.id}" \
+  -H "Authorization: Bearer $AUTH_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"rpsql":{"replicas":<n>}}'
+----
+
+The request returns the ID of a long-running operation. Poll link:/api/doc/cloud-controlplane/operation/operation-operationservice_getoperation[`GET /v1/operations/{operation.id}`] until the operation completes.
+--
+=====
+
+== Verify the SQL engine is running
+
+After you enable Redpanda SQL, the cluster overview page in the Cloud Console shows the *SQL* tab and the *Details* pane displays the number of SQL nodes deployed with the cluster.
+
+// TODO: Confirm UI changes for SQL engine ready indicator 
+The *SQL* tab appears as soon as you enable SQL, but you can't connect until the engine is fully provisioned. Provisioning can take up to 30 minutes.
+
+Wait for the node-ready status indicator on the overview page to show the engine is ready. For the API flow, poll the long-running operation until it returns `STATE_COMPLETED`.
+
+To verify the SQL engine is running, use the connection details on the *SQL* tab to connect with a PostgreSQL client, such as `psql` (v16 or later required).
+
+To connect using a bearer token (xref:manage:rpk/rpk-install.adoc[`rpk` v26.1.6+] required):
+
+. Log in to Redpanda Cloud with `rpk cloud login`:
++
+[,bash]
+----
+rpk cloud login
+----
+
+. Retrieve a temporary authentication token for the SQL engine:
++
+[,bash]
+----
+rpsql_token=$(rpk cloud auth token)
+----
+
+. Connect with `psql` using the bearer token:
++
+[,bash]
+----
+psql "host=<sql-external-endpoint> port=5432 dbname=oxla user=ignored password=$rpsql_token options='-c auth_method=bearer' sslmode=require"
+----
+
+== Inspect your SQL cluster
+
+Redpanda SQL provides built-in commands to inspect the state of your SQL cluster:
+
+[,sql]
+----
+SHOW NODES;              -- List SQL compute nodes and their status
+SHOW REDPANDA CATALOGS;  -- List Redpanda catalogs
+SHOW ICEBERG CATALOGS;   -- List Iceberg catalogs
+SHOW REDPANDA TABLES;    -- List SQL tables mapped to Redpanda topics
+SHOW QUERIES;            -- List currently running queries
+----
+
+== Disable Redpanda SQL
+
+[WARNING]
+====
+Disabling Redpanda SQL tears down the SQL compute engine and clears its catalog state (catalog metadata, table mappings, and role/grant data). In-flight queries fail when SQL is disabled.
+====
+
+Redpanda topic data, Schema Registry subjects, and any Iceberg-committed history for Iceberg-enabled topics are not affected. The Redpanda cluster itself continues to run normally; only the SQL engine and its associated state are removed.
+
+Re-enabling SQL on the same cluster provisions a fresh engine: no prior catalog state, table mappings, or grants are restored. You must re-create catalogs, tables, and grants after re-enabling.
+
+[tabs]
+=====
+Cloud Console::
++
+--
+. Log in to https://cloud.redpanda.com[Redpanda Cloud^] and open your cluster.
+. From the left navigation, select *Dataplane settings*.
+. On the *Cluster* tab, find the *RP SQL* row and click *Edit*.
+. In the *Edit Redpanda SQL engine* dialog, click *Disable*.
+--
+
+Cloud API::
++
+--
+Make a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_updatecluster[`PATCH /v1/clusters/{cluster.id}`] request with `rpsql.enabled` set to `false`. Replace `{cluster.id}` with your cluster ID:
+
+[,bash]
+----
+curl -X PATCH "https://api.redpanda.com/v1/clusters/{cluster.id}" \
+  -H "Authorization: Bearer $AUTH_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"rpsql":{"enabled":false}}'
+----
+
+The request returns the ID of a long-running operation. Poll link:/api/doc/cloud-controlplane/operation/operation-operationservice_getoperation[`GET /v1/operations/{operation.id}`] until the operation completes.
+--
+=====
+
+== Next steps
+
+* xref:sql:get-started/sql-quickstart.adoc[Quickstart]: Connect to Redpanda SQL with `psql` and run your first query.
+// TODO: Uncomment once DOC-1999 merges (target page is on that branch).
+// * xref:sql:connect-to-sql/authenticate.adoc[Authenticate to Redpanda SQL]: Connect with an OIDC bearer token, OIDC client credentials, or a SCRAM password for clients that don't support OIDC.
+* xref:reference:sql/index.adoc[Redpanda SQL reference]: Explore the full SQL syntax, data types, functions, and clauses.
