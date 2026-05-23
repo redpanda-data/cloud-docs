@@ -6,7 +6,7 @@
 :learning-objective-2: Query nested fields using ROW field-access syntax
 :learning-objective-3: Resolve cyclic-reference errors
 
-When a glossterm:topic[]'s schema includes nested Protobuf, Avro, or JSON message types, you can map those nested structures as user-defined types (UDTs) with named fields. UDT columns are queryable using SQL `ROW` field-access syntax instead of opaque JSON, so nested fields are queryable by name, includable in projections, and usable in `WHERE`, `GROUP BY`, and `ORDER BY` clauses without parsing JSON at query time.
+When a glossterm:topic[]'s schema includes nested Protobuf, Avro, or JSON message types, you can map those nested structures as user-defined types (UDTs) with named fields. UDT columns are queryable using SQL `row` field-access syntax instead of opaque JSON, so nested fields are queryable by name, includable in projections, and usable in `WHERE`, `GROUP BY`, and `ORDER BY` clauses without parsing JSON at query time.
 
 Use this page to:
 
@@ -89,7 +89,7 @@ For schemas with multiple levels of nesting, chain the parenthesized field acces
 SELECT ((customer).address).zip_code FROM default_redpanda_catalog=>orders;
 ----
 
-For the full `ROW` reference, including comparison operators, NULL handling, and `::text` casting, see xref:reference:sql/sql-data-types/row.adoc[ROW].
+For the full `row` reference, including comparison operators, NULL handling, and `::text` casting, see xref:reference:sql/sql-data-types/row.adoc[`row`].
 
 [[handle-recursive-cyclic-schemas]]
 == Handle recursive (cyclic) schemas
@@ -111,7 +111,7 @@ CREATE TABLE default_redpanda_catalog=>comments WITH (
 );
 ----
 
-Query JSON-mapped fields with standard JSON functions instead of ROW field access. See xref:reference:sql/sql-data-types/json.adoc[JSON].
+Query JSON-mapped fields with standard JSON functions instead of `row` field access. See xref:reference:sql/sql-data-types/json.adoc[`json`].
 
 == Choose between COMPOUND and JSON
 
@@ -132,5 +132,5 @@ Query JSON-mapped fields with standard JSON functions instead of ROW field acces
 
 * xref:sql:query-data/query-streaming-topics.adoc[Query streaming topics]: Query a topic without Iceberg history.
 * xref:sql:query-data/query-iceberg-topics.adoc[Query Iceberg-enabled topics]: Query a topic with both its live streaming data and Iceberg history. Use `struct_mapping_policy = 'COMPOUND'` so nested fields align between the Redpanda topic and the linked Iceberg table.
-* xref:reference:sql/sql-data-types/row.adoc[ROW]: Full reference for the `ROW` data type, including comparisons, NULL semantics, and conversion to text.
+* xref:reference:sql/sql-data-types/row.adoc[`row`]: Full reference for the `row` data type, including comparisons, NULL semantics, and conversion to text.
 * xref:reference:sql/sql-statements/create-table.adoc[CREATE TABLE]: Complete option list for mapping a Redpanda topic to a SQL table.

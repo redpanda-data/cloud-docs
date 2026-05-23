@@ -1,13 +1,13 @@
-= BOOL_AND
-:description: The BOOL_AND() function calculates all the boolean values in the aggregated group, which will have these results:
+= bool_and
+:description: The `bool_and()` function calculates all the boolean values in the aggregated group, which will have these results:
 :page-topic-type: reference
 
-The `BOOL_AND()` function calculates all the boolean values in the aggregated group, which will have these results:
+The `bool_and()` function calculates all the boolean values in the aggregated group, which will have these results:
 
 * `true` if all the values are `true` for every row.
 * `false` if at least one row in the group is `false`.
 
-The input and the return type must be in `BOOL`.
+The input and the return type must be in `bool`.
 
 [NOTE]
 ====
@@ -68,7 +68,7 @@ This query shows the following table:
 +----------+-----------+---------------+-------------+-------+
 ----
 
-=== `BOOL_AND` with a false result
+=== `bool_and` with a false result
 
 To find out if all customers have paid for their orders, run the query:
 
@@ -77,7 +77,7 @@ To find out if all customers have paid for their orders, run the query:
 SELECT BOOL_AND(paid) AS "final_result" FROM payment;
 ----
 
-In the `BOOL_AND` function, if there is at least one `FALSE` value, the overall result is `FALSE`. The output shows that there is an order that hasn't been paid.
+In the `bool_and` function, if there is at least one `FALSE` value, the overall result is `FALSE`. The output shows that there is an order that hasn't been paid.
 
 [source,sql]
 ----
@@ -88,7 +88,7 @@ In the `BOOL_AND` function, if there is at least one `FALSE` value, the overall 
 +--------------+
 ----
 
-=== `BOOL_AND` with a true result
+=== `bool_and` with a true result
 
 To find out if Maya has paid for her orders, run the query:
 
@@ -99,7 +99,7 @@ FROM payment
 WHERE custname ='Maya';
 ----
 
-In the `BOOL_AND` function, if all values are `TRUE`, then the overall result is `TRUE`. The output shows that Maya has paid all her orders.
+In the `bool_and` function, if all values are `TRUE`, then the overall result is `TRUE`. The output shows that Maya has paid all her orders.
 
 [source,sql]
 ----

@@ -14,7 +14,7 @@ To retrieve data from a table, use this syntax:
 
 [source,sql]
 ----
-SELECT * FROM table_name;
+SELECT * FROM default_redpanda_catalog=>table_name;
 ----
 
 To filter by specific columns, use:
@@ -22,7 +22,7 @@ To filter by specific columns, use:
 [source,sql]
 ----
 SELECT column1, column2, ...
-FROM table_name;
+FROM default_redpanda_catalog=>table_name;
 ----
 
 Where:
@@ -48,14 +48,14 @@ The following examples query a table named `student_data` that contains student 
 +
 [source,sql]
 ----
-SELECT * FROM table_name;
+SELECT * FROM default_redpanda_catalog=>table_name;
 ----
 
 . Run the following query:
 +
 [source,sql]
 ----
-SELECT * FROM student_data;
+SELECT * FROM default_redpanda_catalog=>student_data;
 ----
 
 . The query returns:
@@ -77,14 +77,14 @@ SELECT * FROM student_data;
 +
 [source,sql]
 ----
-SELECT column_1, column_2 FROM table_name;
+SELECT column_1, column_2 FROM default_redpanda_catalog=>table_name;
 ----
 
 . Run:
 +
 [source,sql]
 ----
-SELECT id, name FROM student_data;
+SELECT id, name FROM default_redpanda_catalog=>student_data;
 ----
 
 . The query returns:
@@ -106,14 +106,14 @@ SELECT id, name FROM student_data;
 +
 [source,sql]
 ----
-SELECT column_1 FROM table_name WHERE condition;
+SELECT column_1 FROM default_redpanda_catalog=>table_name WHERE condition;
 ----
 
 . To find the student who lives in Sydney, run:
 +
 [source,sql]
 ----
-SELECT name FROM student_data WHERE domicile='Sydney';
+SELECT name FROM default_redpanda_catalog=>student_data WHERE domicile='Sydney';
 ----
 
 . The query returns:
@@ -126,3 +126,20 @@ SELECT name FROM student_data WHERE domicile='Sydney';
 | Will     |
 +----------+
 ----
+
+== SELECT DISTINCT
+
+To return only unique rows from the result set, add the `DISTINCT` keyword after `SELECT`:
+
+[source,sql]
+----
+SELECT DISTINCT column1, column2, ...
+FROM default_redpanda_catalog=>table_name;
+----
+
+`DISTINCT` deduplicates rows based on the combined values of all listed columns.
+
+[NOTE]
+====
+Redpanda SQL does not support `SELECT DISTINCT ON (column_list) ...`, the PostgreSQL-specific form that keeps the first row for each combination of `ON` columns.
+====

@@ -1,17 +1,17 @@
-= JSON_EXTRACT_PATH_TEXT
-:description: The JSON_EXTRACT_PATH_TEXT() function extracts JSON nested value from a specified JSON value according to the defined path.
+= json_extract_path_text
+:description: The `json_extract_path_text()` function extracts JSON nested value from a specified JSON value according to the defined path.
 :page-topic-type: reference
 
-The `JSON_EXTRACT_PATH_TEXT()` function extracts JSON nested value from a specified JSON value according to the defined path.
+The `json_extract_path_text()` function extracts `json` nested value from a specified `json` value according to the defined path.
 
 [NOTE]
 ====
-This function may be similar to the `JSON_EXTRACT_PATH()`. This function returns a value of type text instead of type JSON.
+This function may be similar to the `json_extract_path()`. This function returns a value of type text instead of type `json`.
 ====
 
 == Syntax
 
-The `JSON_EXTRACT_PATH_TEXT()` syntax is as follows:
+The `json_extract_path_text()` syntax is as follows:
 
 [source,sql]
 ----
@@ -20,7 +20,7 @@ JSON_EXTRACT_PATH_TEXT(from_json JSON, path TEXT[])
 
 The required arguments are:
 
-* `from_json`: The JSON value to extract.
+* `from_json`: The `json` value to extract.
 * `path`: The path to extract.
 
 === Another option
@@ -32,13 +32,13 @@ Redpanda SQL also provides and supports the use of operators in queries. Here's 
 SELECT 'from_json'::JSON ->> 'path';
 ----
 
-* `from_json`: The JSON value from which to extract.
-* `::JSON`: A symbol that casts the text literal to a JSON type.
+* `from_json`: The `json` value from which to extract.
+* `::JSON`: A symbol that casts the text literal to a `json` type.
 * `path`: Key of the field to extract.
 
 == Examples
 
-. This example shows how to use the `JSON_EXTRACT_PATH_TEXT()` function to extract values ​​from a JSON object at a specified index.
+. This example shows how to use the `json_extract_path_text()` function to extract values ​​from a `json` object at a specified index.
 +
 Run the query:
 +
@@ -54,7 +54,7 @@ SELECT JSON_EXTRACT_PATH_TEXT('{"a": "Oxla", "b": {"x": 1.234, "y": 4.321}}', 'a
 SELECT '{"a": "Oxla", "b": {"x": 1.234, "y": 4.321}}'::JSON ->> 'a' AS "result a";
 ----
 
-. The `JSON_EXTRACT_PATH_TEXT()` function extracts the values and returns the output:
+. The `json_extract_path_text()` function extracts the values and returns the output:
 +
 [source,sql]
 ----

@@ -1,8 +1,8 @@
-= ROW_NUMBER
-:description: The ROW_NUMBER() window function returns the number of the current row within its partition (counting from 1), based on the ORDER BY expression in the
+= row_number
+:description: The `row_number()` window function returns the number of the current row within its partition (counting from 1), based on the ORDER BY expression in the
 :page-topic-type: reference
 
-The `ROW_NUMBER()` window function returns the number of the current row within its partition (counting from 1), based on the `ORDER BY` expression in the `OVER` clause. It can be used with all xref:reference:sql/sql-data-types/index.adoc[data types] supported by Redpanda SQL.
+The `row_number()` window function returns the number of the current row within its partition (counting from 1), based on the `ORDER BY` expression in the `OVER` clause. It can be used with all xref:reference:sql/sql-data-types/index.adoc[data types] supported by Redpanda SQL.
 
 == Syntax
 
@@ -16,7 +16,7 @@ ROW_NUMBER() OVER (
 )
 ----
 
-The function returns a value of type `BIGINT`. Rows with equal values for the `ORDER BY` expression receive different row numbers nondeterministically.
+The function returns a value of type `bigint`. Rows with equal values for the `ORDER BY` expression receive different row numbers nondeterministically.
 
 == Parameters
 
@@ -49,9 +49,9 @@ INSERT INTO winsales VALUES
     (30007, '9/7/2004', 3, 'c', 30, null);
 ----
 
-=== ROW_NUMBER() with ORDER BY
+=== `row_number()` with ORDER BY
 
-This example executes the `ROW_NUMBER()` function with `ORDER BY` keyword, assigns a row number to each row, and orders the table by the row number (the results are sorted after the window function results are applied):
+This example executes the `row_number()` function with `ORDER BY` keyword, assigns a row number to each row, and orders the table by the row number (the results are sorted after the window function results are applied):
 
 [source,sql]
 ----
@@ -81,9 +81,9 @@ The query returns:
 (11 rows)
 ----
 
-=== ROW_NUMBER() with ORDER BY and PARTITION BY
+=== `row_number()` with ORDER BY and PARTITION BY
 
-This example executes the `ROW_NUMBER()` function with `ORDER BY` keyword and `PARTITION BY` clause, partitions the table by seller ID, assigns a row number to each row, and orders the table by the sales ID and row number (the results are sorted after the window function results are applied):
+This example executes the `row_number()` function with `ORDER BY` keyword and `PARTITION BY` clause, partitions the table by seller ID, assigns a row number to each row, and orders the table by the sales ID and row number (the results are sorted after the window function results are applied):
 
 [source,sql]
 ----

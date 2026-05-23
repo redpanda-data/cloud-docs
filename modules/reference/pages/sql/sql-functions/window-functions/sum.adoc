@@ -1,8 +1,8 @@
-= SUM()
-:description: The SUM() window function returns the sum of the input column or expression values.
+= sum
+:description: The `sum()` window function returns the sum of the input column or expression values.
 :page-topic-type: reference
 
-The `SUM()` window function returns the sum of the input column or expression values. It can be used with a `RANGE` clause, that defines a logical frame of rows based on the values of the current row, rather than a fixed number of rows.
+The `sum()` window function returns the sum of the input column or expression values. It can be used with a `RANGE` clause, that defines a logical frame of rows based on the values of the current row, rather than a fixed number of rows.
 
 == Syntax
 
@@ -17,11 +17,11 @@ SUM(expression) OVER (
 )
 ----
 
-The expression's argument types supported by the `SUM` window function are `INTEGER`, `BIGINT`, `REAL` and `DOUBLE PRECISION`. The return types of the `SUM` function are: `BIGINT` for integer and `DOUBLE PRECISION` for floating-point arguments.
+The expression's argument types supported by the `sum` window function are `integer`, `bigint`, `real` and `double precision`. The return types of the `sum` function are: `bigint` for integer and `double precision` for floating-point arguments.
 
 [NOTE]
 ====
-The `SUM()` window function works with numeric values and ignores NULL ones
+The `sum()` window function works with numeric values and ignores NULL ones
 ====
 
 == Parameters
@@ -57,9 +57,9 @@ INSERT INTO winsales VALUES
     (30007, '9/7/2004', 3, 'c', 30, null);
 ----
 
-=== SUM() with ORDER BY
+=== `sum()` with ORDER BY
 
-This example executes the `SUM()` window function with `ORDER BY` keyword:
+This example executes the `sum()` window function with `ORDER BY` keyword:
 
 [source,sql]
 ----
@@ -89,7 +89,7 @@ The output from this query includes the sales ID, date ID, seller ID, quantity a
 (11 rows)
 ----
 
-=== SUM() with ORDER BY and ROWS frame
+=== `sum()` with ORDER BY and ROWS frame
 
 This example calculates the running total of `qty` ordered by dateid and salesid using a `ROWS UNBOUNDED PRECEDING` frame, which sums all rows from the start up to the current row:
 
@@ -123,9 +123,9 @@ The query returns:
 
 The `running_qty_sum` column shows the cumulative sum of `qty` ordered by `dateid` and `salesid`. For each row, it sums all `qty` values from the first row up to the current row in that order.
 
-=== SUM() with ORDER BY and PARTITION BY
+=== `sum()` with ORDER BY and PARTITION BY
 
-This example executes the `SUM()` function with `ORDER BY` keyword and `PARTITION BY` clause:
+This example executes the `sum()` function with `ORDER BY` keyword and `PARTITION BY` clause:
 
 [source,sql]
 ----
@@ -155,9 +155,9 @@ The query returns:
 (11 rows)
 ----
 
-=== Time series: SUM() with RANGE BETWEEN for last 30 days
+=== Time series: `sum()` with RANGE BETWEEN for last 30 days
 
-This example demonstrates a common time series use case: calculating the rolling sum of sales quantity over the last 30 days for each row, using the RANGE BETWEEN INTERVAL '`30 days`' PRECEDING AND CURRENT ROW frame:
+This example demonstrates a common time series use case: calculating the rolling sum of sales quantity over the last 30 days for each row, using the RANGE BETWEEN `interval` '`30 days`' PRECEDING AND CURRENT `row` frame:
 
 [source,sql]
 ----
