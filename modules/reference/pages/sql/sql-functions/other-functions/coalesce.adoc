@@ -1,12 +1,12 @@
-= coalesce
-:description: The `coalesce()` function returns the first non-NULL argument from a list of arguments.
+= COALESCE
+:description: The `COALESCE` function returns the first non-NULL argument from a list of arguments.
 :page-topic-type: reference
 
-The `coalesce()` function returns the first non-NULL argument from a list of arguments. After finding the first non-NULL argument, the function stops evaluating the remaining arguments.
+The `COALESCE` function returns the first non-NULL argument from a list of arguments. After finding the first non-NULL argument, the function stops evaluating the remaining arguments.
 
 [NOTE]
 ====
-If all arguments are NULL, `coalesce()` returns NULL.
+If all arguments are NULL, `COALESCE` returns NULL.
 ====
 
 == Syntax
@@ -20,17 +20,17 @@ COALESCE (argument_1, argument_2, …);
 
 Key points from the syntax:
 
-* `coalesce()` requires a minimum of two inputs.
+* `COALESCE` requires a minimum of two inputs.
 * It can take an unlimited number of arguments.
 * Evaluation occurs sequentially from left to right, stopping at the first non-null value.
 
 == Examples
 
-Here are some examples to illustrate the application of `coalesce()`:
+Here are some examples to illustrate the application of `COALESCE`:
 
 === Return the first non-null value
 
-In this example, a set of values is provided. The `coalesce()` function returns the first non-null value from this set.
+In this example, a set of values is provided. The `COALESCE` function returns the first non-null value from this set.
 
 [source,sql]
 ----
@@ -91,7 +91,7 @@ In this query, NULL appears in the first, second, fourth, and last positions:
 Select COALESCE(NULL, NULL ,3, NULL, 7,9,4,5, NULL);
 ----
 
-The `coalesce()` function ignores the first two NULLs and returns the first non-null value, `3`. It does not process the subsequent NULL values.
+The `COALESCE` function ignores the first two NULLs and returns the first non-null value, `3`. It does not process the subsequent NULL values.
 
 [source,sql]
 ----
@@ -109,7 +109,7 @@ Assume that the given values are entirely composed of nulls.
 Select COALESCE(NULL, NULL ,NULL, NULL);
 ----
 
-In this case, the `coalesce()` function returns an empty value (NULL).
+In this case, the `COALESCE` function returns an empty value (NULL).
 
 [source,sql]
 ----
@@ -117,7 +117,7 @@ In this case, the `coalesce()` function returns an empty value (NULL).
 ----------
 ----
 
-=== `coalesce()` with table data
+=== `COALESCE` with table data
 
 Consider the `employee_absent` table, which comprises a mix of NULL and non-null values:
 
@@ -156,7 +156,7 @@ SELECT * FROM employee_absent;
  Emily    | HR         |
 ----
 
-The following query uses the `coalesce()` function on the `absent` column. It retrieves names and absences (with `out of office` for NULL values) for each employee.
+The following query uses the `COALESCE` function on the `absent` column. It retrieves names and absences (with `out of office` for NULL values) for each employee.
 
 [source,sql]
 ----
@@ -174,7 +174,7 @@ SELECT emp_name, COALESCE(absent, 'out of office') AS DisplayAbsent FROM employe
  Emily    | out of office
 ----
 
-=== Error output in `coalesce()`
+=== Error output in `COALESCE`
 
 When specifying arguments with different datatypes, they should be convertible.
 
@@ -183,7 +183,7 @@ When specifying arguments with different datatypes, they should be convertible.
 Select Coalesce ('x',NULL,1);
 ----
 
-If the datatypes cannot be converted, the `coalesce()` function generates an error.
+If the datatypes cannot be converted, the `COALESCE` function generates an error.
 
 [source,sql]
 ----
