@@ -1,0 +1,210 @@
+= CREATE ICEBERG CATALOG
+:description: The CREATE ICEBERG CATALOG statement creates a named connection to an Iceberg REST catalog, enabling Redpanda SQL to query Iceberg-committed topic data.
+:page-topic-type: reference
+
+The `CREATE ICEBERG CATALOG` statement creates a named connection to an Iceberg REST catalog. Link the Iceberg catalog to a Redpanda catalog with `USING CATALOG` so that queries against the linked Redpanda catalog return both live and Iceberg-committed records. Standalone querying against an Iceberg catalog is not supported. See xref:sql:query-data/query-iceberg-topics.adoc[Query Iceberg-enabled Topics] for the end-to-end workflow.
+
+The statement requires an existing xref:reference:sql/sql-statements/create-storage.adoc[storage connection] that holds the object-storage credentials for the Iceberg warehouse.
+
+== Syntax
+
+[source,sql]
+----
+CREATE ICEBERG CATALOG [IF NOT EXISTS] catalog_name STORAGE storage_name
+  WITH (option = 'value' [, ...]);
+----
+
+* `catalog_name`: Name for the new Iceberg catalog.
+* `IF NOT EXISTS`: Optional. Prevents an error if an Iceberg catalog with the same name already exists.
+* `storage_name`: Name of an existing storage connection. Create it first with xref:reference:sql/sql-statements/create-storage.adoc[CREATE STORAGE].
+
+NOTE: Catalogs are created in the current schema (`public` by default). To create a catalog in a different schema, qualify the name as `schema.catalog_name`. The auto-created `default_iceberg_catalog` is in `public`.
+
+== Options
+
+[cols="<30%,<15%,<10%,<45%",options="header"]
+|===
+|Option |Type |Required |Description
+
+|`uri`
+|STRING
+|Yes
+|REST catalog endpoint URI.
+
+|`warehouse`
+|STRING
+|No
+|Iceberg warehouse identifier or location.
+
+|`auth_type`
+|STRING
+|No
+|Authentication type for the REST catalog. One of `oauth2`, `basic`, or `aws_sigv4`. If omitted, the catalog connects without authentication. Providing an auth-specific option (such as `username` or `aws_region`) without `auth_type` is rejected.
+
+|`oauth2_client_id`
+|STRING
+|Required when `auth_type = 'oauth2'`
+|OAuth2 client ID.
+
+|`oauth2_client_secret`
+|STRING
+|Required when `auth_type = 'oauth2'`
+|OAuth2 client secret.
+
+|`oauth2_scope`
+|STRING
+|No
+|OAuth2 scope to request.
+
+|`oauth2_token_endpoint_url`
+|STRING
+|No
+|OAuth2 token endpoint URL. Use to override the catalog's default token endpoint.
+
+|`oauth2_token_refresh_margin_seconds`
+|INTEGER
+|No
+|Number of seconds before token expiry to refresh. Must be between 0 and 2147483647.
+
+|`username`
+|STRING
+|Required when `auth_type = 'basic'`
+|Basic authentication username.
+
+|`password`
+|STRING
+|Required when `auth_type = 'basic'`
+|Basic authentication password.
+
+|`aws_region`
+|STRING
+|Required when `auth_type = 'aws_sigv4'`
+|AWS region for SigV4 request signing (for example, `us-west-2`).
+
+|`aws_access_key_id`
+|STRING
+|No
+|AWS access key ID for SigV4 signing. Must be set together with `aws_secret_access_key`. If both are omitted, the catalog uses the AWS default credential chain (environment variables, shared config, STS web identity, IMDSv2/ECS).
+
+|`aws_secret_access_key`
+|STRING
+|No
+|AWS secret access key for SigV4 signing. See `aws_access_key_id` for credential-chain behavior.
+
+|`ssl_verify`
+|STRING
+|No
+|`'true'` (default) or `'false'`. Whether to verify the REST catalog's TLS certificate.
+
+|`ssl_ca_info`
+|STRING
+|No
+|Path to a CA certificate file used to verify the REST catalog's TLS certificate.
+
+|`ssl_ca_path`
+|STRING
+|No
+|Path to a directory containing CA certificates.
+
+|`ssl_crl_file`
+|STRING
+|No
+|Path to a certificate revocation list (CRL) file.
+|===
+
+== Examples
+
+=== Create a basic Iceberg catalog
+
+Connect to a REST catalog without authentication. The catalog uses TLS verification by default.
+
+[source,sql]
+----
+CREATE ICEBERG CATALOG lakehouse_catalog STORAGE iceberg_storage
+  WITH (
+    uri = 'https://catalog.example.com',
+    warehouse = 's3://warehouse/'
+  );
+----
+
+=== Create an Iceberg catalog with OAuth2 authentication
+
+[source,sql]
+----
+CREATE ICEBERG CATALOG lakehouse_catalog STORAGE iceberg_storage
+  WITH (
+    uri = 'https://catalog.example.com',
+    warehouse = 's3://lakehouse-data/',
+    auth_type = 'oauth2',
+    oauth2_client_id = '<client-id>',
+    oauth2_client_secret = '<client-secret>',
+    oauth2_scope = 'PRINCIPAL_ROLE:ALL',
+    oauth2_token_endpoint_url = 'https://auth.example.com/token',
+    oauth2_token_refresh_margin_seconds = 300
+  );
+----
+
+=== Create an Iceberg catalog with basic authentication
+
+[source,sql]
+----
+CREATE ICEBERG CATALOG lakehouse_catalog STORAGE iceberg_storage
+  WITH (
+    uri = 'https://catalog.example.com',
+    warehouse = 's3://warehouse/',
+    auth_type = 'basic',
+    username = '<username>',
+    password = '<password>'
+  );
+----
+
+=== Create an Iceberg catalog with AWS SigV4 authentication
+
+Use for REST catalogs fronted by AWS services (such as AWS Glue).
+
+[source,sql]
+----
+CREATE ICEBERG CATALOG lakehouse_catalog STORAGE iceberg_storage
+  WITH (
+    uri = 'https://catalog.example.com',
+    warehouse = 's3://warehouse/',
+    auth_type = 'aws_sigv4',
+    aws_region = 'us-west-2',
+    aws_access_key_id = '<access-key-id>',
+    aws_secret_access_key = '<secret-access-key>'
+  );
+----
+
+To use the AWS default credential chain (for example, an EC2 instance-profile role), omit `aws_access_key_id` and `aws_secret_access_key`. They must be set together or omitted together.
+
+=== Create an Iceberg catalog with custom TLS settings
+
+[source,sql]
+----
+CREATE ICEBERG CATALOG lakehouse_catalog STORAGE iceberg_storage
+  WITH (
+    uri = 'https://catalog.example.com',
+    warehouse = 's3://warehouse/',
+    ssl_verify = 'true',
+    ssl_ca_info = '/etc/ssl/certs/catalog-ca.pem'
+  );
+----
+
+== Related statements
+
+[cols="<40%,<60%",options="header"]
+|===
+|Statement |Description
+
+|xref:reference:sql/sql-statements/alter-iceberg-catalog.adoc[ALTER ICEBERG CATALOG]
+|Modify connection properties of an existing Iceberg catalog.
+
+|xref:reference:sql/sql-statements/drop-iceberg-catalog.adoc[DROP ICEBERG CATALOG]
+|Remove an Iceberg catalog.
+
+|xref:reference:sql/sql-statements/create-storage.adoc[CREATE STORAGE]
+|Create the storage connection that backs the Iceberg catalog.
+
+|xref:reference:sql/sql-statements/create-redpanda-catalog.adoc[CREATE REDPANDA CATALOG]
+|Create a Redpanda catalog. Use `USING CATALOG` to link a Redpanda catalog to an Iceberg catalog so that queries return both live and Iceberg-committed records.
+|===
