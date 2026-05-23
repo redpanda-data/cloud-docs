@@ -1,126 +1,32 @@
 = Redpanda SQL vs PostgreSQL
 :description: Comparison of Redpanda SQL and PostgreSQL covering supported functions, operators, and behavioral differences.
-:page-topic-type: concept
+:page-topic-type: reference
 
-Redpanda SQL aims for close compatibility with PostgreSQL but differs in some functions, operators, and behaviors. Use this page to check which features are supported and where Redpanda SQL diverges from PostgreSQL.
+// TODO: Expand the comparison with engineering input on:
+// - Data-type coverage gaps relative to PostgreSQL
+// - System-catalog coverage and divergences
+// - Authn/authz model differences (e.g., GBAC in Redpanda SQL)
+// - Stored procedures and triggers (not yet documented as supported or not)
+// - Connection-protocol and session-semantics limitations beyond no-transactions
+// - Any other significant differences in supported SQL syntax, functions, or behavior that impact users migrating from PostgreSQL or using both systems in parallel
 
-== Functions
+Redpanda SQL aims for close compatibility with PostgreSQL syntax and semantics, yet differs significantly in design and function. Use this page to check which features are supported and where Redpanda SQL diverges from PostgreSQL.
 
-=== Mathematical
+PostgreSQL is an online transactional processing (OLTP) database by default, whereas Redpanda SQL is an online analytical processing (OLAP) query engine. For more on the distinction, see xref:sql:get-started/oltp-vs-olap.adoc[].
 
-A mathematical function operates on input values provided as arguments and returns a numeric value as the operation's output.
+Redpanda SQL doesn't support common PostgreSQL transaction-processing operations like direct writes or upserts.
 
-[cols="1,3,2,1",options="header"]
-|===
-|Function |Description |Example |Available in Redpanda SQL
+Instead, Kafka-compatible producers write topics into Redpanda Streaming. From there, Redpanda SQL queries topics in log form using local or object storage (the "hot" tier), as well as corresponding Apache Iceberg tables in columnar form (the "cold" tier). A single query against a linked Redpanda catalog returns records from both tiers in one result, with no overlap between the live tail and the topic's history in Iceberg, including records older than your topic retention.
 
-|ABS
-|Returns the absolute value of a number.
-|`SELECT ABS(-11);`
-|Yes
+Redpanda SQL is _semantically_ compatible with PostgreSQL but not _code_ compatible. It can't use common PostgreSQL extensions such as pgvector, PostGIS, or pg_cron.
 
-|CEIL
-|Returns the value after rounding up any positive or negative value to the nearest largest integer.
-|`SELECT CEIL(53.7);`
-|Yes
+== JSON operators
 
-|FLOOR
-|Returns the value after rounding down any positive or negative decimal value to the nearest integer.
-|`SELECT FLOOR(53.6);`
-|Yes
+Redpanda SQL supports operators for handling JSON data in a slightly different way than PostgreSQL.
 
-|LN
-|Returns the natural logarithm of a given number.
-|`SELECT LN(3);`
-|Yes
+=== Equal operator (`=`)
 
-|RANDOM
-|Returns a random value between 0 and 1.
-|`SELECT RANDOM();`
-|Yes
-
-|SQRT
-|Returns the square root of a given positive number.
-|`SELECT SQRT(225);`
-|Yes
-|===
-
-=== Trigonometric
-
-[cols="1,3,2,1",options="header"]
-|===
-|Function |Description |Example |Available in Redpanda SQL
-
-|SIN
-|Returns the sine of the specified radian.
-|`SELECT sin(0.2);`
-|Yes
-|===
-
-== Operators
-
-=== Mathematical operators
-
-[cols="1,1,2,1,1",options="header"]
-|===
-|Operator |Description |Example |Result |Available in Redpanda SQL
-
-|`+`
-|Addition
-|`SELECT 5 + 8;`
-|`13`
-|Yes
-
-|`-`
-|Subtraction
-|`SELECT 2 - 3;`
-|`-1`
-|Yes
-
-|`-`
-|Negation
-|`SELECT -4;`
-|`-4`
-|Yes
-
-|`*`
-|Multiplication
-|`SELECT 3 * 3;`
-|`9`
-|Yes
-
-|`/`
-|Division
-|`SELECT 10 / 2;`
-|`5`
-|Yes
-
-|`%`
-|Modulo
-|`SELECT 20 % 3;`
-|`2`
-|Yes
-
-|`&`
-|Bitwise AND
-|`SELECT 91 & 15;`
-|`11`
-|Yes
-
-|`#`
-|Bitwise XOR
-|`SELECT 17 # 5;`
-|`20`
-|Yes
-|===
-
-=== JSON operators
-
-Redpanda SQL supports operators for handling JSON data.
-
-==== Equal operator (`=`)
-
-This operator checks if two JSON values are identical. In Redpanda SQL, this operator is order-sensitive: for two JSON objects to be considered equal, their key-value pairs must appear in the exact same order.
+This operator checks if two JSON values are identical. In Redpanda SQL, two JSON objects are considered equal only when their key-value pairs appear in the exact same order.
 
 [source,sql]
 ----
@@ -137,7 +43,7 @@ Result:
 (1 row)
 ----
 
-NOTE: In PostgreSQL, the `=` operator is not order-sensitive, so the order of key-value pairs does not affect the comparison result.
+In PostgreSQL, the `=` operator is not order-sensitive, so the order of key-value pairs does not affect the comparison result.
 
 == Behavioral differences
 
@@ -183,11 +89,11 @@ SELECT ABS(-1.0);
 * Redpanda SQL returns `1`
 * PostgreSQL returns `1.0`
 
-== Error differences
+== Error-handling differences
 
 [cols="1,2,2,2",options="header"]
 |===
-|Function |Input |Output — Redpanda SQL |Output — PostgreSQL
+|Function |Input |Output (Redpanda SQL) |Output (PostgreSQL)
 
 |LN
 |`LN(0)`
@@ -214,3 +120,9 @@ SELECT ABS(-1.0);
 |_unknown function pi_
 |working as expected
 |===
+
+== Suggested reading
+
+* xref:sql:get-started/overview.adoc[Redpanda SQL Overview]
+* xref:sql:get-started/oltp-vs-olap.adoc[OLTP vs OLAP]
+* xref:reference:sql/index.adoc[Redpanda SQL Reference]

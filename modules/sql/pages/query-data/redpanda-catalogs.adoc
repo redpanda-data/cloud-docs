@@ -1,43 +1,52 @@
 = Redpanda Catalogs
-:description: Redpanda catalogs are named connections that map Redpanda topics to queryable SQL tables.
-:page-topic-type: reference
+:description: A Redpanda catalog is a named collection of source data that exposes Redpanda topics as queryable SQL tables.
+:page-topic-type: concept
+:personas: app_developer, data_engineer, platform_admin
+:learning-objective-1: Explain the components of the Redpanda catalog model
+:learning-objective-2: Recognize when the default Redpanda catalog is auto-created
 
-Redpanda catalogs are named connections that let you query Redpanda topics using standard SQL. The catalog model consists of three core concepts:
+A Redpanda catalog is a named collection of source data, typically the data in your Redpanda glossterm:cluster[], that Redpanda SQL exposes as queryable SQL tables.
 
-* Catalogs: Named connections to a Redpanda cluster, created with xref:reference:sql/sql-statements/create-redpanda-catalog.adoc[CREATE REDPANDA CATALOG].
-* Tables: Redpanda topics mapped as queryable SQL tables using the `catalog_name\=>table_name` syntax, created with xref:reference:sql/sql-statements/create-table.adoc[CREATE TABLE].
-* Storage connections: Named connections to external object storage such as Amazon S3, created with xref:reference:sql/sql-statements/create-storage.adoc[CREATE STORAGE].
+When Redpanda SQL is enabled on your cluster, a default Redpanda catalog named `default_redpanda_catalog` is created automatically. Use this catalog to map your Redpanda glossterm:topic[,topics] as SQL tables and query them.
 
-NOTE: Redpanda SQL operates in read-only mode. Data mutation operations such as `INSERT`, `UPDATE`, and `DELETE` are not available. Data is ingested into Redpanda topics and made queryable through catalog mappings.
+After reading this page, you will be able to:
 
-== Typical workflow
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
 
-To query Redpanda topic data with SQL:
+NOTE: Redpanda SQL operates in read-only mode. Data Manipulation Language (DML) operations such as `INSERT`, `UPDATE`, and `DELETE` are not available. Data is ingested into Redpanda topics and made queryable through catalog mappings.
 
-. Create a catalog connection:
-+
+== Catalog model
+
+// TODO: consider adding a diagram to illustrate the catalog hierarchy.
+
+The Redpanda catalog model has three components:
+
+* Storage connection: A named connection to an object storage bucket or container that backs the catalog. The default Redpanda catalog's storage connection is automatically defined using your cluster's object storage.
+* Catalog: A named collection of source data, typically containing your Redpanda cluster's topics.
+* Tables: Redpanda topics mapped as queryable SQL tables using the `catalog_name=>table_name` syntax.
+
+=== Layered catalogs for Iceberg-enabled topics
+
+To query an Iceberg-enabled topic alongside its history in Apache Iceberg, a Redpanda catalog is layered over an Iceberg catalog using the `USING CATALOG` clause of `CREATE REDPANDA CATALOG`. The layered Redpanda catalog reads live records from the topic and historical records from the linked Iceberg catalog, returning both in a single query.
+
+In Redpanda BYOC, both catalogs are created and linked for you when Redpanda SQL is enabled, so you can query an Iceberg-enabled topic with a simple `CREATE TABLE` against `default_redpanda_catalog`. No manual `CREATE ICEBERG CATALOG` or `CREATE REDPANDA CATALOG ... USING CATALOG` is required. To inspect the layered relationship, run `DESCRIBE REDPANDA CATALOG default_redpanda_catalog`.
+
+== Example
+
+Map a Redpanda topic as a SQL table through `default_redpanda_catalog`:
+
 [source,sql]
 ----
-CREATE REDPANDA CATALOG production_redpanda
-WITH (
-  initial_brokers = 'broker1:9092',
-  schema_registry_url = 'http://schema-registry:8081'
-);
-----
-
-. Map a topic as a table:
-+
-[source,sql]
-----
-CREATE TABLE production_redpanda=>user_events
+CREATE TABLE default_redpanda_catalog=>user_events
 WITH (topic = 'user-events');
 ----
 
-. Query the data:
-+
+Query the table:
+
 [source,sql]
 ----
-SELECT * FROM production_redpanda=>user_events LIMIT 10;
+SELECT * FROM default_redpanda_catalog=>user_events LIMIT 10;
 ----
 
 == Related statements
