@@ -12,11 +12,13 @@ DESCRIBE DATABASE;
 DESCRIBE TABLE table_name;
 DESCRIBE TABLE catalog_name=>table_name;
 DESCRIBE REDPANDA CATALOG catalog_name;
+DESCRIBE ICEBERG CATALOG catalog_name;
 ----
 
 * `table_name`: Name of the table to describe.
 * `catalog_name=>table_name`: Describes a table that is mapped to a Redpanda topic through a catalog.
-* `catalog_name`: Name of a Redpanda catalog. Lists the tables and topic mappings in that catalog.
+* `catalog_name` (after `REDPANDA CATALOG`): Name of a Redpanda catalog. Lists the tables and topic mappings in that catalog.
+* `catalog_name` (after `ICEBERG CATALOG`): Name of an Iceberg catalog. Lists the catalog's connection details, including its REST endpoint and warehouse.
 
 [NOTE]
 ====
@@ -126,3 +128,14 @@ The query returns:
 | user_events    | user-events  |
 +----------------+--------------+
 ----
+
+=== Describe an Iceberg catalog
+
+To list connection details for an Iceberg catalog, run:
+
+[source,sql]
+----
+DESCRIBE ICEBERG CATALOG lakehouse_catalog;
+----
+
+The query returns the catalog's REST endpoint, warehouse, and authentication type.

@@ -1,23 +1,43 @@
 = System Virtual Tables
-:description: System virtual tables in Redpanda SQL expose cluster runtime information and provide SQL-queryable alternatives to SHOW statements.
+:description: System virtual tables in Redpanda SQL expose cluster runtime information and external-source metadata, providing SQL-queryable alternatives to SHOW statements.
 :page-topic-type: reference
 
-System virtual tables in the `system` schema expose cluster runtime information. They provide SQL-queryable alternatives to `SHOW` statements, with support for `WHERE`, `ORDER BY`, and `LIMIT` clauses.
+System virtual tables in the `system` schema expose cluster runtime information and external-source metadata. They provide SQL-queryable alternatives to `SHOW` statements, with support for `WHERE`, `ORDER BY`, and `LIMIT` clauses.
 
-NOTE: System virtual tables are only available to the superuser.
+NOTE: System virtual tables filter rows by the caller's privileges. Cluster runtime tables (`system.nodes`, `system.queries`, `system.execs`) are visible only to a superuser. Tables that expose catalog and connection metadata filter rows by the caller's grants on the database, namespace (also called schema), and metadata.
 
 == Available tables
 
-[cols="<30%,<30%,<40%",options="header"]
+[cols="<35%,<30%,<35%",options="header"]
 |===
 |Table |Equivalent statement |Description
+
+|`system.catalogs`
+|xref:reference:sql/sql-statements/show-catalogs.adoc[SHOW CATALOGS]
+|All catalogs (both Redpanda and Iceberg) visible to the caller.
+
+|`system.iceberg_catalogs`
+|xref:reference:sql/sql-statements/show-catalogs.adoc[SHOW ICEBERG CATALOGS]
+|Iceberg catalogs with their REST endpoint, warehouse, and authentication type.
+
+|`system.iceberg_tables`
+|xref:reference:sql/sql-statements/show-tables.adoc[SHOW ICEBERG TABLES]
+|Iceberg tables whose schema has been loaded into the local catalog.
+
+|`system.kafka_connections`
+|xref:reference:sql/sql-statements/show-catalogs.adoc[SHOW REDPANDA/KAFKA CATALOGS]
+|Redpanda catalog connections, including any linked Iceberg catalog.
+
+|`system.kafka_sources`
+|xref:reference:sql/sql-statements/show-tables.adoc[SHOW REDPANDA/KAFKA TABLES]
+|Tables mapped to Redpanda topics through a Redpanda catalog.
 
 |`system.nodes`
 |xref:reference:sql/sql-statements/show-nodes.adoc[SHOW NODES]
 |Current state of all nodes in the cluster.
 
 |`system.queries`
-|SHOW QUERIES
+|xref:reference:sql/sql-statements/show-queries.adoc[SHOW QUERIES]
 |Currently running queries.
 
 |`system.execs`
@@ -25,25 +45,169 @@ NOTE: System virtual tables are only available to the superuser.
 |Currently running execution tasks.
 |===
 
-== Examples
+== system.catalogs
 
-=== Query all nodes
+All catalogs in the cluster (both Redpanda and Iceberg), across databases and schemas visible to the caller.
+
+[cols="<30%,<15%,<10%,<45%",options="header"]
+|===
+|Column |Type |Nullable |Description
+
+|`name` |`text` |No |Catalog name.
+|`namespace_name` |`text` |No |Schema containing the catalog.
+|`type` |`text` |No |Catalog type: `REDPANDA` or `ICEBERG`.
+|===
+
+[source,sql]
+----
+SELECT * FROM system.catalogs;
+----
+
+For per-catalog detail, query `system.iceberg_catalogs` or `system.kafka_connections`.
+
+== system.iceberg_catalogs
+
+Iceberg catalog connections, with their REST endpoint and authentication details.
+
+[cols="<30%,<15%,<10%,<45%",options="header"]
+|===
+|Column |Type |Nullable |Description
+
+|`name` |`text` |No |Iceberg catalog name.
+|`uri` |`text` |No |REST catalog endpoint URI.
+|`warehouse` |`text` |No |Iceberg warehouse identifier or location.
+|`auth_type` |`text` |No |Authentication type for the REST catalog. One of `oauth2`, `basic`, `aws_sigv4`, or empty if the catalog connects without authentication.
+|`namespace_name` |`text` |No |Schema containing the catalog.
+|`database_name` |`text` |No |Database containing the catalog.
+|===
+
+[source,sql]
+----
+SELECT name, uri, auth_type FROM system.iceberg_catalogs;
+----
+
+== system.iceberg_tables
+
+Iceberg tables whose schema has been loaded into the local catalog. Schemas are loaded by an explicit `REFRESH` statement or auto-loaded when you `CREATE TABLE` against an Iceberg catalog. See xref:sql:query-data/query-iceberg-topics.adoc[] for details on when to refresh. Each row represents one root Iceberg table.
+
+[cols="<30%,<15%,<10%,<45%",options="header"]
+|===
+|Column |Type |Nullable |Description
+
+|`database_name` |`text` |No |Database containing the registered table.
+|`namespace_name` |`text` |No |Schema containing the registered table.
+|`catalog_name` |`text` |No |Iceberg catalog the table belongs to.
+|`name` |`text` |No |Qualified Iceberg table path (for example, `ns1.ns2.tbl`).
+|`oid` |`int` |No |Object identifier of the table type. Joinable with `pg_type.oid`.
+|===
+
+[NOTE]
+====
+Stale entries: dropping an Iceberg table from the REST catalog leaves its registration in Oxla's catalog until you drop it explicitly. The view continues to list it. This mirrors `system.kafka_sources` behavior.
+====
+
+[source,sql]
+----
+SELECT * FROM system.iceberg_tables WHERE catalog_name = 'lakehouse_catalog';
+----
+
+== system.kafka_connections
+
+Redpanda catalog connections, including any linked Iceberg catalog for queries that span live records and Iceberg-translated history. For details on linking and Iceberg-translated history, see xref:reference:sql/sql-statements/alter-redpanda-catalog.adoc[ALTER REDPANDA CATALOG].
+
+[cols="<30%,<15%,<10%,<45%",options="header"]
+|===
+|Column |Type |Nullable |Description
+
+|`database_name` |`text` |No |Database containing the connection.
+|`namespace_name` |`text` |No |Schema containing the connection.
+|`name` |`text` |No |Catalog (connection) name.
+|`options` |`text` |No |Connection options as a comma-separated string of `key: value` pairs. Includes broker addresses, Kafka timeout, Schema Registry endpoint, Schema Registry timeout, and a nested librdkafka configuration list in `[key=value, ...]` form. Pandaproxy options are included when configured.
+|`iceberg_catalog` |`text` |Yes |Linked Iceberg catalog as `schema.name`, or NULL if no link is configured. Returns NULL when the caller doesn't have `CONNECT` on the linked catalog's database and `USAGE` on its schema (or an `ANY` grant on the metadata).
+|===
+
+[source,sql]
+----
+SELECT name, iceberg_catalog FROM system.kafka_connections;
+----
+
+== system.kafka_sources
+
+Tables mapped to Redpanda topics through a Redpanda catalog. One row per `CREATE TABLE catalog=>name WITH (...)` mapping.
+
+[cols="<30%,<15%,<10%,<45%",options="header"]
+|===
+|Column |Type |Nullable |Description
+
+|`database_name` |`text` |No |Database containing the source table.
+|`namespace_name` |`text` |No |Schema containing the source table.
+|`name` |`text` |No |Table name.
+|`connection_name` |`text` |No |Redpanda catalog (connection) the table belongs to.
+|`topic_name` |`text` |No |Source topic name.
+|`subject_name` |`text` |No |Schema Registry subject name. Empty if not configured.
+|`lookup_policy` |`text` |No |Schema lookup policy. See xref:reference:sql/sql-statements/create-table.adoc[CREATE TABLE].
+|`error_handling_policy` |`text` |No |Deserialization error-handling policy. See xref:reference:sql/sql-statements/create-table.adoc[CREATE TABLE].
+|`struct_mapping_policy` |`text` |No |Nested-struct mapping policy. See xref:reference:sql/sql-statements/create-table.adoc[CREATE TABLE].
+|`output_schema_full_message_name` |`text` |No |Full Protobuf message name. Empty if not configured.
+|===
+
+[source,sql]
+----
+SELECT name, topic_name, subject_name FROM system.kafka_sources
+WHERE connection_name = 'production_redpanda';
+----
+
+== system.nodes
+
+Current state of each node in the cluster. Visible only to a superuser. For the column reference, see xref:reference:sql/sql-statements/show-nodes.adoc[SHOW NODES].
 
 [source,sql]
 ----
 SELECT * FROM system.nodes;
 ----
 
-=== Query running queries
+== system.queries
+
+Currently running queries on the cluster. Visible only to a superuser.
+
+[cols="<30%,<15%,<10%,<45%",options="header"]
+|===
+|Column |Type |Nullable |Description
+
+|`qid` |`text` |No |Query identifier.
+|`requester` |`text` |No |Identifier of the node that received the query from the client.
+|`scheduler` |`text` |No |Identifier of the node scheduling the query's execution tasks.
+|`workers` |`bigint` |No |Number of worker tasks assigned to the query.
+|`state` |`text` |No |Current state of the query.
+|`created` |`timestamp` |No |Time the query was received.
+|`accepted` |`timestamp` |Yes |Time the query was accepted for execution. `NULL` until accepted.
+|`scheduled` |`timestamp` |Yes |Time the query's execution tasks were scheduled. `NULL` until scheduled.
+|`executed` |`timestamp` |Yes |Time execution started. `NULL` until execution starts.
+|`finished` |`timestamp` |Yes |Time execution finished. `NULL` while the query is still running.
+|===
 
 [source,sql]
 ----
-SELECT * FROM system.queries;
+SELECT qid, state, created FROM system.queries WHERE state <> 'FINISHED';
 ----
 
-=== Query execution tasks
+== system.execs
+
+Currently running execution tasks across the cluster. Visible only to a superuser. Each query in `system.queries` typically corresponds to one or more rows in this table.
+
+[cols="<30%,<15%,<10%,<45%",options="header"]
+|===
+|Column |Type |Nullable |Description
+
+|`node` |`text` |No |Node executing the task.
+|`qid` |`text` |No |Identifier of the parent query. Join with `system.queries.qid`.
+|`data_task_id` |`bigint` |Yes |Identifier of the data task within the query.
+|`state` |`text` |No |Current state of the execution task.
+|`memory` |`bigint` |No |Memory consumed by the task, in bytes.
+|`privileged` |`boolean` |No |`TRUE` if the task runs with privileged access.
+|===
 
 [source,sql]
 ----
-SELECT * FROM system.execs;
+SELECT node, qid, state, memory FROM system.execs ORDER BY memory DESC;
 ----
