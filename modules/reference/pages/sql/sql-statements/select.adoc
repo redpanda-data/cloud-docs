@@ -126,3 +126,20 @@ SELECT name FROM default_redpanda_catalog=>student_data WHERE domicile='Sydney';
 | Will     |
 +----------+
 ----
+
+== SELECT DISTINCT
+
+To return only unique rows from the result set, add the `DISTINCT` keyword after `SELECT`:
+
+[source,sql]
+----
+SELECT DISTINCT column1, column2, ...
+FROM default_redpanda_catalog=>table_name;
+----
+
+`DISTINCT` deduplicates rows based on the combined values of all listed columns.
+
+[NOTE]
+====
+Redpanda SQL does not support `SELECT DISTINCT ON (column_list) ...`, the PostgreSQL-specific form that keeps the first row for each combination of `ON` columns.
+====
