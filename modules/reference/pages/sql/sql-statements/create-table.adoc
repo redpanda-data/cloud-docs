@@ -53,7 +53,7 @@ a|How to handle records that fail deserialization.
 |No
 a|How to map nested structures from the topic schema to SQL columns.
 
-* `COMPOUND` (default): Maps each nested structure to a user-defined type with named fields, queryable using `(column).field_name` syntax. Cyclic types are not supported in `COMPOUND` mode. Use `JSON` for recursive schemas. See xref:reference:sql/sql-data-types/row.adoc[ROW] for the field-access syntax.
+* `COMPOUND` (default): Maps each nested structure to a user-defined type with named fields, queryable using `(column).field_name` syntax. Cyclic types are not supported in `COMPOUND` mode. Use `JSON` for recursive schemas. See xref:reference:sql/sql-data-types/row.adoc[`row`] for the field-access syntax.
 * `JSON`: Stores each nested structure as a JSON value. Required for recursive (cyclic) types.
 
 |`output_schema_message_full_name`
@@ -86,17 +86,17 @@ Contains Kafka record metadata. Always present on every row.
 |Field |Type |Nullable |Description
 
 |`partition`
-|`INT`
+|`int`
 |No
 |Partition the record was read from.
 
 |`offset`
-|`BIGINT`
+|`bigint`
 |No
 |Offset of the record within its partition.
 
 |`timestamp`
-|`TIMESTAMP WITH TIME ZONE`
+|`timestamp with time zone`
 |Yes
 |Record timestamp.
 
@@ -106,12 +106,12 @@ Contains Kafka record metadata. Always present on every row.
 |Record headers, as an array where each element is a struct of header name and value bytes.
 
 |`key`
-|`BYTEA`
+|`bytea`
 |Yes
 |Record key bytes.
 
 |`timestamp_type`
-|`INT`
+|`int`
 |Yes
 |Kafka timestamp type code. `0` for `CreateTime`, `1` for `LogAppendTime`. `NULL` when not available.
 |===
@@ -127,12 +127,12 @@ Use `redpanda_raw` as a dead-letter pattern. Rows whose value fails schema deser
 |Field |Type |Nullable |Description
 
 |`key`
-|`BYTEA`
+|`bytea`
 |Yes
 |Raw record key bytes.
 
 |`value`
-|`BYTEA`
+|`bytea`
 |Yes
 |Raw record value bytes that failed to decode.
 |===
