@@ -1,8 +1,8 @@
 = CREATE TABLE
-:description: The CREATE TABLE statement maps a Redpanda topic to a SQL table through a catalog, making topic data queryable with SQL.
+:description: The CREATE TABLE statement maps a Redpanda topic to a SQL table through a catalog, making the topic queryable with SQL.
 :page-topic-type: reference
 
-The `CREATE TABLE` statement maps a Redpanda topic to a SQL table through a catalog. After creating the table, you can query topic data using standard SQL.
+The `CREATE TABLE` statement maps a Redpanda topic to a SQL table through a catalog. After creating the table, you can query the topic using standard SQL.
 
 NOTE: You must first xref:reference:sql/sql-statements/create-redpanda-catalog.adoc[create a Redpanda catalog connection] before creating tables. `CREATE TABLE` in Redpanda SQL maps Redpanda topics to SQL tables and does not create standalone tables with user-defined schemas.
 
@@ -53,7 +53,7 @@ a|How to handle records that fail deserialization.
 |No
 a|How to map nested structures from the topic schema to SQL columns.
 
-* `COMPOUND` (default): Maps each nested structure to a SQL xref:reference:sql/sql-data-types/row.adoc[ROW] value with named fields, queryable using `(column).field_name` syntax. Cyclic types are not supported in `COMPOUND` mode. Use `JSON` for recursive schemas.
+* `COMPOUND` (default): Maps each nested structure to a user-defined type with named fields, queryable using `(column).field_name` syntax. Cyclic types are not supported in `COMPOUND` mode. Use `JSON` for recursive schemas. See xref:reference:sql/sql-data-types/row.adoc[ROW] for the field-access syntax.
 * `JSON`: Stores each nested structure as a JSON value. Required for recursive (cyclic) types.
 
 |`output_schema_message_full_name`

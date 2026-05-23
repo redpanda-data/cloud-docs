@@ -2,7 +2,7 @@
 :description: The ROW data type represents a composite value containing one or more fields of different types.
 :page-topic-type: reference
 
-The `ROW` data type represents a composite value (also known as a struct or record) containing one or more fields of different types.
+The `ROW` data type represents a composite value (also known as a struct or record) containing one or more fields of different types. `ROW` values support field access, lexicographic comparison, NULL checks, conversion to text, and use in `GROUP BY`, `ORDER BY`, and `JOIN` clauses.
 
 == Syntax
 
@@ -75,3 +75,167 @@ SELECT ROW();
  ()
 (1 row)
 ----
+
+== Access fields
+
+=== Access by position
+
+For anonymous ROW expressions, fields are accessed by the positional names `f1`, `f2`, and so on, in declaration order:
+
+[source,sql]
+----
+SELECT (ROW(1, 'hello', 3.14)).f1, (ROW(1, 'hello', 3.14)).f2;
+----
+
+[source,sql]
+----
+ f1 |  f2
+----+-------
+  1 | hello
+(1 row)
+----
+
+The parentheses around the ROW expression are required when accessing a field.
+
+=== Access by name
+
+For composite columns with declared field names, for example, columns mapped from a topic with `struct_mapping_policy = 'COMPOUND'` (see xref:reference:sql/sql-statements/create-table.adoc[CREATE TABLE]), access fields by their declared names:
+
+[source,sql]
+----
+SELECT (record).customer_id, (record).order_total FROM orders;
+----
+
+=== Expand all fields with a wildcard
+
+To project every field of a ROW value as a separate result column, use the `.*` form:
+
+[source,sql]
+----
+SELECT (ROW(1, 'hello', 3.14)).*;
+----
+
+[source,sql]
+----
+ f1 |  f2   |  f3
+----+-------+------
+  1 | hello | 3.14
+(1 row)
+----
+
+The wildcard form also works inside a `ROW(...)` constructor to copy fields from one composite into another.
+
+== Compare ROW values
+
+ROW values support the standard comparison operators `=`, `<>`, `<`, `<=`, `>`, and `>=`. Comparison is *lexicographic*: fields are compared in order, left to right, and the first differing field determines the result.
+
+[source,sql]
+----
+SELECT ROW(1, 'a') < ROW(1, 'b');
+----
+
+[source,sql]
+----
+ ?column?
+----------
+ t
+(1 row)
+----
+
+Both ROW values must have the same number of fields, and corresponding fields must have comparable types.
+
+== Check for NULL
+
+ROW values support `IS NULL` and `IS NOT NULL`, but with semantics that differ from scalar columns:
+
+* `expression IS NULL` returns `true` when the expression itself is NULL, *or* when all of the row's fields are NULL.
+* `expression IS NOT NULL` returns `true` when the expression itself is non-NULL *and* all of the row's fields are non-NULL.
+
+Because of this, `IS NULL` and `IS NOT NULL` are not always inverses for ROW values. Both can return `false` for the same input, such as a ROW with a mix of NULL and non-NULL fields.
+
+[source,sql]
+----
+SELECT ROW(1, 'a') IS NULL    AS is_null,
+       ROW(1, 'a') IS NOT NULL AS is_not_null;
+----
+
+[source,sql]
+----
+ is_null | is_not_null
+---------+-------------
+ f       | t
+(1 row)
+----
+
+For a ROW with at least one NULL field and at least one non-NULL field, both checks return `false`:
+
+[source,sql]
+----
+SELECT ROW(NULL, 'a') IS NULL    AS is_null,
+       ROW(NULL, 'a') IS NOT NULL AS is_not_null;
+----
+
+[source,sql]
+----
+ is_null | is_not_null
+---------+-------------
+ f       | f
+(1 row)
+----
+
+NOTE: These checks do not recurse into nested ROW values. A nested ROW with all-NULL fields counts as a value (not NULL) at the outer level, so the outer `IS NULL` returns `false`. To check a specific nested field directly, access the field and test that.
+
+== Convert to text
+
+Cast a ROW value to `text` to produce the standard PostgreSQL composite literal form:
+
+[source,sql]
+----
+SELECT ROW(1, 'hello', 3.14)::text;
+----
+
+[source,sql]
+----
+       row
+-----------------
+ (1,"hello",3.14)
+(1 row)
+----
+
+== Use ROW in queries
+
+ROW values can be used in `GROUP BY`, `ORDER BY`, and `JOIN` clauses with lexicographic comparison semantics.
+
+=== Group by a ROW field
+
+[source,sql]
+----
+SELECT (customer).region, COUNT(*)
+FROM orders
+GROUP BY (customer).region;
+----
+
+=== Order by a whole ROW
+
+[source,sql]
+----
+SELECT * FROM orders ORDER BY customer;
+----
+
+The rows are sorted lexicographically by the fields of the `customer` composite column, in their declared order.
+
+=== Join on a multi-column key
+
+Compare implicit tuples to match multi-column keys without spelling out each field in a `WHERE` clause:
+
+[source,sql]
+----
+SELECT *
+FROM table_a a
+JOIN table_b b
+ON (a.col1, a.col2) = (b.col1, b.col2);
+----
+
+== Suggested reading
+
+* xref:reference:sql/sql-statements/create-table.adoc[CREATE TABLE]: Maps a Redpanda topic to a SQL table. Use `struct_mapping_policy = 'COMPOUND'` to surface nested topic fields as user-defined types accessible with ROW field-access syntax.
