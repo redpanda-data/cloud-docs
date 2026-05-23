@@ -6,38 +6,38 @@ The `information_schema` namespace provides SQL-standard views over database obj
 
 == Available views
 
-Redpanda SQL implements the SQL-standard `information_schema` views needed for tool compatibility, plus one extension view for Redpanda-specific concepts that don't fit the standard shape. The standard views follow the SQL specification, so their semantics match PostgreSQL's implementation.
+Standard views follow the SQL specification, with semantics consistent with https://www.postgresql.org/docs/current/information-schema.html[PostgreSQL's `information_schema`^]. Redpanda SQL also adds one extension view for per-relation EXTERNAL SOURCE grants.
 
 [cols="<40%,<60%",options="header"]
 |===
 |View |Description
 
 |`information_schema.character_sets`
-|Character sets available in the current database. Standard view, see https://www.postgresql.org/docs/current/infoschema-character-sets.html[PostgreSQL documentation^].
+|Character sets available in the current database.
 
 |`information_schema.columns`
-|Columns of tables and views visible to the current role. Standard view, see https://www.postgresql.org/docs/current/infoschema-columns.html[PostgreSQL documentation^].
+|Columns of tables and views visible to the current role.
 
 |`information_schema.key_column_usage`
-|Columns constrained as keys (primary keys, unique constraints, foreign keys). Standard view, see https://www.postgresql.org/docs/current/infoschema-key-column-usage.html[PostgreSQL documentation^].
+|Columns constrained as keys (primary keys, unique constraints, foreign keys).
 
 |`information_schema.referential_constraints`
-|Foreign-key constraints visible to the current role. Standard view, see https://www.postgresql.org/docs/current/infoschema-referential-constraints.html[PostgreSQL documentation^].
+|Foreign-key constraints visible to the current role.
 
 |`information_schema.role_external_relation_grants`
-|Per-relation EXTERNAL SOURCE grants. Redpanda SQL extension that captures grants whose stored relation pattern is anything other than `\*` (catalog-level grants surface in `information_schema.role_table_grants` instead). See <<information-schema-role-external-relation-grants,below>> for details.
+|Per-relation EXTERNAL SOURCE grants. Redpanda SQL extension that captures grants whose stored relation pattern is anything other than `\*` (catalog-level grants surface in `information_schema.role_table_grants` instead).
 
 |`information_schema.role_table_grants`
-|Privileges granted on tables and table-like objects to the current role. Standard view, see https://www.postgresql.org/docs/current/infoschema-role-table-grants.html[PostgreSQL documentation^].
+|Privileges granted on tables and table-like objects to the current role.
 
 |`information_schema.role_usage_grants`
-|USAGE privileges granted to the current role. Standard view, see https://www.postgresql.org/docs/current/infoschema-role-usage-grants.html[PostgreSQL documentation^].
+|USAGE privileges granted to the current role.
 
 |`information_schema.table_constraints`
-|Table constraints (primary key, unique, foreign key, check) visible to the current role. Standard view, see https://www.postgresql.org/docs/current/infoschema-table-constraints.html[PostgreSQL documentation^].
+|Table constraints (primary key, unique, foreign key, check) visible to the current role.
 
 |`information_schema.tables`
-|Tables and views visible to the current role. Standard view, see https://www.postgresql.org/docs/current/infoschema-tables.html[PostgreSQL documentation^].
+|Tables and views visible to the current role.
 |===
 
 == information_schema.role_external_relation_grants
