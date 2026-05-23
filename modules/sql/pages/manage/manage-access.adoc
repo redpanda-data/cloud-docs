@@ -1,0 +1,105 @@
+= Manage Access to Redpanda SQL
+:description: Authentication and authorization model for Redpanda SQL: OIDC authentication and admin GRANT for per-user access to topics and catalogs.
+:page-topic-type: concept
+:personas: platform_admin
+:learning-objective-1: Distinguish between the SQL: Manage and SQL: Access data-plane RBAC permissions
+:learning-objective-2: Choose the right privilege level when granting access to a Redpanda topic, catalog, or schema
+:learning-objective-3: Recognize how grants on Redpanda catalogs differ from grants on native SQL tables
+
+Access to Redpanda SQL is controlled through authentication (Redpanda Cloud glossterm:OpenID Connect (OIDC)[,OIDC], or SCRAM for legacy clients) and authorization (xref:security:authorization/rbac/rbac_dp.adoc[data-plane RBAC roles] plus per-resource `GRANT` statements).
+
+* *Authentication*: Redpanda Cloud validates the user with OIDC (default) or SCRAM password (for legacy clients), against the engine's preconfigured OIDC settings. For the client-side guide, see xref:sql:connect-to-sql/authenticate.adoc[].
+* *Authorization*: Two roles control what a user can do once they authenticate:
+** *SQL: Manage*: SQL engine superuser. Can read every topic, create catalogs and tables, and grant access to other users.
+** *SQL: Access*: Regular user. Can connect to the SQL engine but cannot read any catalog or table they don't own. By default, a *SQL: Access* user owns nothing; a *SQL: Manage* user grants `SELECT` on specific resources to give them access.
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
+
+== Authentication
+
+Redpanda Cloud preconfigures the SQL engine's OIDC settings when SQL is enabled on the cluster, so you do not need to configure an external identity provider for the SQL engine. The engine validates bearer tokens minted by Redpanda Cloud, regardless of whether you sign in to Redpanda Cloud with email and password or SSO.
+
+When a user is assigned a role with the *SQL: Access* or *SQL: Manage* permission in Redpanda Cloud's data-plane RBAC, Redpanda Cloud provisions a corresponding user in the SQL engine. No manual `CREATE USER` is required. To assign roles, go to *Organization IAM > Roles*. SQL permissions are under the *Data Plane* tab when you create or edit a role. See xref:security:authorization/rbac/rbac_dp.adoc[].
+
+== How queries reach the underlying topics
+
+All Redpanda SQL queries connect to the underlying Redpanda cluster as a single internal SASL credential associated with the default Redpanda catalog (`default_redpanda_catalog`), regardless of which SQL user issued the query. The internal credential is provisioned automatically when Redpanda SQL is enabled and is not a user-facing role.
+
+This means:
+
+* Kafka ACLs do not gate query-time access. Every query reaches the topics under the internal SASL credential.
+* The boundary that prevents users from reading data they should not see is enforced inside Redpanda SQL by `GRANT` and `REVOKE` against the SQL-level roles.
+
+== Authorization
+
+A *SQL: Manage* user uses standard SQL xref:reference:sql/sql-statements/grant.adoc[GRANT] statements to give a *SQL: Access* user access to specific topics, catalogs, or schemas. The user identifier is the email on the user's Redpanda Cloud account.
+
+. Assign the user a role with the *SQL: Access* permission (see <<Authentication>>).
+
+. As a *SQL: Manage* user, grant `SELECT` on a topic surfaced through a Redpanda catalog:
++
+[source,sql]
+----
+GRANT SELECT ON EXTERNAL SOURCE default_redpanda_catalog => 'orders' TO "alice@example.com";
+----
++
+Or grant `SELECT` on multiple topics that match a wildcard pattern. The wildcard `*` is only allowed at the end of the pattern:
++
+[source,sql]
+----
+GRANT SELECT ON EXTERNAL SOURCE default_redpanda_catalog => 'orders_*' TO "alice@example.com";
+----
++
+To grant `SELECT` on every topic in a catalog, omit the relation pattern:
++
+[source,sql]
+----
+GRANT SELECT ON EXTERNAL SOURCE default_redpanda_catalog TO "alice@example.com";
+----
+
+. To remove access, revoke the privilege:
++
+[source,sql]
+----
+REVOKE SELECT ON EXTERNAL SOURCE default_redpanda_catalog => 'orders' FROM "alice@example.com";
+----
+
+=== Grant behavior for Redpanda catalogs
+
+A few details affect how grants on Redpanda catalogs behave:
+
+* Privilege type: `SELECT` is the only privilege type that has effect on a Redpanda catalog. `GRANT ALL PRIVILEGES` on a catalog resolves to `SELECT` only.
+* `REVOKE` on a non-matching pattern: `REVOKE SELECT ... \=> 'pattern'` errors if the pattern matches no existing grant for the role. The catalog-level form (no pattern) is idempotent and silently no-ops if no grants exist, so cleanup scripts can safely run it.
+* Inspecting current grants: To see which roles have grants on which catalogs and relations, query `information_schema.role_external_relation_grants`. Catalog-level grants also appear as rows in `information_schema.role_table_grants`, where `table_name` is the catalog name.
+
+=== Schema-level privileges for Redpanda catalogs and SQL storage
+
+Redpanda catalogs and SQL storage definitions live in a schema (`public` by default). To work with them, a user needs schema-level privileges in addition to any per-relation grants:
+
+* `USAGE` on the schema: required to see catalogs in `system.catalogs` and `SHOW CATALOGS`, and to reference any object in the schema by name. Without `USAGE`, the catalog is hidden from the user.
+* `CREATE` on the schema: required for a non-superuser to run `CREATE REDPANDA CATALOG` or `CREATE STORAGE` in that schema.
+
+Grant schema-level privileges with the `ON SCHEMA` form:
+
+[source,sql]
+----
+GRANT USAGE ON SCHEMA public TO "alice@example.com";
+GRANT CREATE ON SCHEMA public TO "alice@example.com";
+----
+
+== Next steps
+
+* xref:sql:connect-to-sql/authenticate.adoc[Authenticate to Redpanda SQL]: how a user connects with a bearer token, client credentials, or a SCRAM password.
+* xref:security:authorization/rbac/rbac_dp.adoc[Configure RBAC in the Data Plane]: assign the data-plane RBAC roles that gate SQL engine access.
+
+== Suggested reading
+
+* xref:reference:sql/sql-statements/grant.adoc[GRANT]
+* xref:reference:sql/sql-statements/revoke.adoc[REVOKE]
+* xref:reference:sql/sql-statements/create-user.adoc[CREATE USER]
+* xref:reference:sql/sql-statements/alter-user.adoc[ALTER USER]
+* xref:reference:sql/sql-statements/drop-user.adoc[DROP USER]
