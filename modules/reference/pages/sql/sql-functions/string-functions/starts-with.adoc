@@ -17,7 +17,7 @@ The input type will be `STRING`, and the return type is `bool`, shown as `true` 
 Special case:
 
 * Returns `NULL` for the `NULL` record.
-* Returns `true` (including the `NULL` record) if the `second_argument` is not specified.
+* Returns `true` for any non-`NULL` string when the `second_argument` is an empty string (`''`).
 
 == Examples
 
@@ -87,9 +87,9 @@ This returns `true` to the pet with a pet starting with the letter J. Otherwise,
 +---------------+--------------+
 ----
 
-=== `starts_with()` function with no specified argument
+=== `starts_with()` function with an empty second argument
 
-The *petsData* table has a `NULL` value in the breed column.
+The *petsData* table has a row with an empty string (`''`) in the breed column.
 
 [source,sql]
 ----
@@ -131,14 +131,14 @@ SELECT * FROM petsData;
 +----------+--------------+------------+---------------------+------+------+
 ----
 
-For example, run the `starts_with` function but with no specified `second_argument:`
+Run the `starts_with` function with an empty string (`''`) as the `second_argument`:
 
 [source,sql]
 ----
 SELECT breed, STARTS_WITH(breed, '') FROM petsData;
 ----
 
-This result shows that `starts_with` returns true for all records (even the `NULL` one):
+This result shows that `starts_with` returns `true` for all records, including the row with an empty string for `breed`:
 
 [source,sql]
 ----
@@ -150,6 +150,6 @@ This result shows that `starts_with` returns true for all records (even the `NUL
 | dzungarian          | true         |
 | dobberman           | true         |
 | american shorthair  | true         |
-| null                | true         |
+|                     | true         |
 +---------------------+--------------+
 ----
