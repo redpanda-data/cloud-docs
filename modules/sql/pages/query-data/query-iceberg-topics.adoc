@@ -6,7 +6,7 @@
 :learning-objective-2: Query both the live records and the Iceberg-committed history of a topic in a single result
 :learning-objective-3: Handle schema differences between a Redpanda topic and its Iceberg table
 
-With Iceberg-enabled topics, you can retain streaming data in your lakehouse beyond your Redpanda topic retention window and continue to query it with SQL. A single query returns both the live records still in the topic and the Iceberg-committed history that has aged out under topic retention, in one result.
+With glossterm:Iceberg topic[,Iceberg-enabled topics], you can retain streaming data in your lakehouse beyond your Redpanda topic retention window and continue to query it with SQL. A single query returns both the live records still in the topic and the Iceberg-committed history that has aged out under topic retention, in one result.
 
 For the streaming-only query path (live records only, without Iceberg history), see xref:sql:query-data/query-streaming-topics.adoc[].
 
@@ -26,7 +26,7 @@ After reading this page, you will be able to:
 
 == How the query catalogs are set up
 
-When you enable Redpanda SQL on a BYOC cluster with the Iceberg REST catalog configured, Cloud runs the following statements under the hood so you don't have to. The result is a `default_redpanda_catalog` already linked to an Iceberg catalog, ready for `CREATE TABLE` against an Iceberg-enabled topic. The storage and Iceberg-catalog options match the cluster's xref:manage:iceberg/rest-catalog/index.adoc[REST catalog configuration] (endpoint, credentials, region).
+When you enable Redpanda SQL on a BYOC cluster with the Iceberg REST catalog configured, Cloud runs the following statements under the hood so you don't have to. The result is a `default_redpanda_catalog` already linked to an glossterm:Iceberg catalog[], ready for `CREATE TABLE` against an Iceberg-enabled topic. The storage and Iceberg-catalog options match the cluster's xref:manage:iceberg/rest-catalog/index.adoc[REST catalog configuration] (endpoint, credentials, region).
 
 . A storage connection holds the object-storage credentials your cluster's REST catalog uses:
 +
