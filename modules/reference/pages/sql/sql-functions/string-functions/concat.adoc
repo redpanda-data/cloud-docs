@@ -4,13 +4,13 @@
 
 Use the `concat()` function to concatenate one or more input values into a single result. It supports all data types in Redpanda SQL, except `TIMESTAMPTZ`. The output is returned as a concatenation of the input values.
 
-*Special cases:* Returns `NULL` if there are no input rows or `NULL` values.
+*Special cases:* Skips `NULL` values and returns the concatenation of non-`NULL` inputs. Returns `NULL` only when there are no input rows.
 
 == Examples
 
 === Basic `concat()` function
 
-This example uses the `concat()` function to concatenate three values = into a single result:
+This example uses the `concat()` function to concatenate three values into a single result:
 
 [source,sql]
 ----

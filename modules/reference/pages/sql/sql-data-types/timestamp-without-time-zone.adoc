@@ -145,7 +145,7 @@ The seconds are displayed as `00` because `60` adds 1 minute to the minutes' val
 
 == AT TIME ZONE operator
 
-The `AT TIME ZONE` operator converts the input timestamp to the target time zone specified in the query. Additionally, the timestamp you inputted will always be presented in the user's local timezone (currently set as UTC).
+When applied to a `TIMESTAMP` (without time zone), the `AT TIME ZONE` operator interprets the input as being in the specified time zone and returns the equivalent instant as a `TIMESTAMP WITH TIME ZONE`. The result is rendered in the session's display time zone, which is fixed to UTC.
 
 [WARNING]
 ====
@@ -163,19 +163,19 @@ SELECT TIMESTAMP 'input_timestamp' AT TIME ZONE 'TIME_ZONE';
 
 Here's what each element means:
 
-* `input_timestamp`: This represents the date and time value you want to convert. The user's time zone is fixed to UTC.
-* `TIME_ZONE`: The target time zone to which Redpanda SQL converts the timestamp.
+* `input_timestamp`: The `TIMESTAMP` (without time zone) value to interpret.
+* `TIME_ZONE`: The time zone that `input_timestamp` is assumed to be in. Redpanda SQL converts the value to the equivalent UTC `TIMESTAMP WITH TIME ZONE`.
 
 === Example 1
 
-Suppose you have a timestamp and want to convert it into the MST time zone:
+Suppose you have a `TIMESTAMP` value that was recorded in MST and you want to convert it to a `TIMESTAMP WITH TIME ZONE` in UTC. Applying `AT TIME ZONE 'MST'` interprets the input as being in MST and returns the equivalent UTC instant:
 
 [source,sql]
 ----
 SELECT TIMESTAMP '2001-02-16 10:28:30' AT TIME ZONE 'MST';
 ----
 
-The result is a timestamp with the time zone adjusted to MST:
+The result is a `TIMESTAMP WITH TIME ZONE` in UTC. The input `10:28:30` is treated as MST (UTC−7), which corresponds to `17:28:30` UTC:
 
 [source,sql]
 ----
@@ -187,14 +187,14 @@ The result is a timestamp with the time zone adjusted to MST:
 
 === Example 2
 
-Using the xref:reference:sql/sql-data-types/timestamp-without-time-zone.adoc[visitors] table, the following query retrieves a list of visit dates in the MST time zone:
+Using the xref:reference:sql/sql-data-types/timestamp-without-time-zone.adoc[visitors] table, the following query treats each `visitDate` as MST and returns the equivalent UTC `TIMESTAMP WITH TIME ZONE`:
 
 [source,sql]
 ----
 SELECT visitDate, visitDate AT TIME ZONE 'MST' as "visitDateMST" FROM visitors;
 ----
 
-This query returns a list of two columns: `visitDate` displays the timestamps without a time zone, and `visitDateMST` stores the timestamps converted to the MST time zone.
+This query returns two columns: `visitDate` shows the original `TIMESTAMP` values (with no zone), and `visitDateMST` shows the UTC `TIMESTAMP WITH TIME ZONE` produced by interpreting each input as MST. Each UTC value is 7 hours ahead of the corresponding MST input.
 
 [source,sql]
 ----

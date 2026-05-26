@@ -1,5 +1,5 @@
 = lead
-:description: The `lead()` window function takes a column and an integer offset as arguments and returns the value of the cell in that column that is located at the s
+:description: The `lead()` window function takes a column and an integer offset as arguments, and returns the value of the cell in the column located at the specified number of rows after the current row.
 :page-topic-type: reference
 
 The `lead()` window function takes a column and an integer offset as arguments, and returns the value of the cell in the column located at the specified number of rows after the current row. It can be used with all xref:reference:sql/sql-data-types/index.adoc[data types supported by Redpanda SQL]
@@ -58,7 +58,7 @@ This example executes the `lead()` function with expression and offset parameter
 
 [source,sql]
 ----
-SELECT buyerid, dateid, qty
+SELECT buyerid, dateid, qty,
   LEAD(qty,1) OVER (ORDER BY buyerid, dateid) AS next_qty
 FROM winsales WHERE buyerid = 'c'
 ORDER BY buyerid, dateid;

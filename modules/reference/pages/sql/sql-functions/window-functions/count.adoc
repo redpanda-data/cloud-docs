@@ -63,7 +63,7 @@ This example executes the variant of this function that counts all rows in the t
 
 [source,sql]
 ----
-SELECT salesid, qty
+SELECT salesid, qty,
   COUNT(*) OVER (ORDER BY salesid rows unbounded preceding) AS count
 FROM winsales
 ORDER BY salesid;

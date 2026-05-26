@@ -69,8 +69,8 @@ This example executes the `percent_rank()` function with `ORDER BY` keyword and 
 
 [source,sql]
 ----
-SELECT salesid, qty
-   PERCENT_RANK() OVER (ORDER BY qty DESC) AS p_rnk
+SELECT salesid, qty,
+   PERCENT_RANK() OVER (ORDER BY qty DESC) AS p_rnk,
    RANK() OVER (ORDER BY qty DESC) AS rnk
 FROM winsales
 ORDER BY 2,1;
@@ -101,7 +101,7 @@ This example executes the `percent_rank()` function with `ORDER BY` keyword and 
 
 [source,sql]
 ----
-SELECT salesid, sellerid, qty
+SELECT salesid, sellerid, qty,
    PERCENT_RANK() OVER (PARTITION BY sellerid ORDER BY qty DESC) AS p_rnk
 FROM winsales
 ORDER BY 2,3,1;

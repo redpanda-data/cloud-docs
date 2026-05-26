@@ -4,7 +4,7 @@
 
 Bitwise shift operators in Redpanda SQL manipulate the bits of integer value by shifting them left or right. These operations are fundamental in low-level data processing and optimization.
 
-The bitwise *right shift (`>>`)* operator shifts the bits of an integer to the right by the specified number of positions. For *integers*, this operation is equivalent to dividing the integer value by 2 raised to the power of the shift amount, discarding any remainder. Unlike a logical shift, the right shift in Redpanda SQL is an *arithmetic* shift, meaning that the vacant leftmost bits are filled with the original sign bits (the most significant bit) rather than zeros. This preserves the sign of the integer after the shift, ensuring correct behavior for signed values. During the shift, low-order bits that move beyond the size limit are permanently lost. However, the overall length of the bit string is preserved, with zeros padding on the left side to maintain the length.
+The bitwise *right shift (`>>`)* operator shifts the bits of an integer to the right by the specified number of positions. For *integers*, this operation is equivalent to dividing the integer value by 2 raised to the power of the shift amount, discarding any remainder. Unlike a logical shift, the right shift in Redpanda SQL is an *arithmetic* shift, meaning that the vacant leftmost bits are filled with the original sign bits (the most significant bit) rather than zeros. This preserves the sign of the integer after the shift, ensuring correct behavior for signed values. During the shift, low-order bits that move beyond the size limit are permanently lost, but the overall bit width remains constant.
 
 == Syntax
 
@@ -34,7 +34,7 @@ which may lead to unexpected results if not carefully considered.
 
 == Examples
 
-This section uses a simplified version of the `film` table from the Pagila database, containing only the `title`, `rating` and `privilegs` columns. The complete schema for the `film` table can be found on the link:https://www.postgresql.org/ftp/projects/pgFoundry/dbsamples/pagila/pagila/[Pagila^] database website.
+This section uses a simplified version of the `film` table from the Pagila database, containing only the `title`, `rating` and `privileges` columns. The complete schema for the `film` table can be found on the link:https://www.postgresql.org/ftp/projects/pgFoundry/dbsamples/pagila/pagila/[Pagila^] database website.
 
 [source,sql]
 ----

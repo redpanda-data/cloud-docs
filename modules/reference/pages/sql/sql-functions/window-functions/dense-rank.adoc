@@ -62,8 +62,8 @@ This example executes the `dense_rank()` function with `ORDER BY` keyword and ca
 
 [source,sql]
 ----
-SELECT salesid, qty
-  Dense_RANK() OVER (ORDER BY qty DESC) AS d_rnk
+SELECT salesid, qty,
+  Dense_RANK() OVER (ORDER BY qty DESC) AS d_rnk,
   RANK() OVER (ORDER BY qty DESC) AS rnk
 FROM winsales
 ORDER BY 2,1;

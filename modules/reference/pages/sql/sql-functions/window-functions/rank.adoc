@@ -16,7 +16,7 @@ RANK() OVER (
 )
 ----
 
-Rows with equal values for the ranking criteria receive the same rank. The output type for this function is `bigint` and it indicates the rank of values in a table, regardles of the input types.
+Rows with equal values for the ranking criteria receive the same rank. The output type for this function is `bigint` and it indicates the rank of values in a table, regardless of the input types.
 
 * If the optional `PARTITION BY` expression is present, the rankings are reset for each group of rows
 * If the `ORDER BY` expression is omitted then all ranks are equal to 1
@@ -58,7 +58,7 @@ This example executes the `rank()` function with `ORDER BY` keyword and calculat
 
 [source,sql]
 ----
-SELECT salesid, qty
+SELECT salesid, qty,
     RANK() OVER (ORDER BY qty)
 FROM winsales
 ORDER BY 2,1;
@@ -90,7 +90,7 @@ This example executes the `rank()` function with `ORDER BY` keyword and `PARTITI
 
 [source,sql]
 ----
-SELECT salesid, sellerid, qty
+SELECT salesid, sellerid, qty,
     RANK() OVER (PARTITION BY sellerid ORDER BY qty)
 FROM winsales
 ORDER BY 2,3,1;

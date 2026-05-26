@@ -55,7 +55,7 @@ This example executes the `row_number()` function with `ORDER BY` keyword, assig
 
 [source,sql]
 ----
-SELECT salesid, qty
+SELECT salesid, qty,
   ROW_NUMBER() OVER (ORDER BY salesid)
 FROM winsales
 ORDER BY 3;
@@ -87,7 +87,7 @@ This example executes the `row_number()` function with `ORDER BY` keyword and `P
 
 [source,sql]
 ----
-SELECT salesid, sellerid, qty
+SELECT salesid, sellerid, qty,
   ROW_NUMBER() OVER (PARTITION BY sellerid ORDER BY salesid)
 FROM winsales
 ORDER BY 1;

@@ -58,7 +58,7 @@ This example executes the `lag()` function with expression and offset parameters
 
 [source,sql]
 ----
-SELECT buyerid, dateid, qty
+SELECT buyerid, dateid, qty,
     LAG(qty,1) OVER (ORDER BY buyerid, dateid) AS prev_qty
 FROM winsales WHERE buyerid = 'c'
 ORDER BY buyerid, dateid;

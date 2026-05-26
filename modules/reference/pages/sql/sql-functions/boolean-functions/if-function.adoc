@@ -61,7 +61,7 @@ The query returns:
 +
 [source,sql]
 ----
-SELECT name, IF(score>=500, 'PASSED', 'NOT PASSED') FROM test_result;
+SELECT name, IF(score>=500, 'PASSED', 'NOT PASSED') AS result FROM test_result;
 ----
 
 . The query returns:
@@ -69,7 +69,7 @@ SELECT name, IF(score>=500, 'PASSED', 'NOT PASSED') FROM test_result;
 [source,sql]
 ----
 +--------------------+-------------+
-| name               | case        |
+| name               | result      |
 +--------------------+-------------+
 | Mike Aoki          | PASSED      |
 | Julie Grahams      | PASSED      |
@@ -125,20 +125,20 @@ The query returns:
 +
 [source,sql]
 ----
-SELECT dept, IF(actual < budget, budget - actual, 0) FROM deptcost;
+SELECT dept, IF(actual < budget, budget - actual, 0) AS budget_remaining FROM deptcost;
 ----
 
 . The query returns:
 +
 [source,sql]
 ----
-+-----------+-----+
-|   dept    |  f  |
-+-----------+-----+
-| Finance   | 123 |
-| HR        |   0 |
-| Marketing |   0 |
-| Project   |  20 |
-| Sales     |  50 |
-+-----------+-----+
++-----------+------------------+
+|   dept    | budget_remaining |
++-----------+------------------+
+| Finance   |              123 |
+| HR        |                0 |
+| Marketing |                0 |
+| Project   |               20 |
+| Sales     |               50 |
++-----------+------------------+
 ----
