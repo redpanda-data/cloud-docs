@@ -24,17 +24,17 @@ The `flags` parameter is an optional string that controls how the function opera
 
 * `g`: Global replacement. This flag ensures that all occurrences of the pattern are replaced.
 * `i`: Use this flag for case-insensitive matching.
-* `c`: `regexp_replace()` function is case-sensitive by default, using the `c` flag has the same effect as using no flags.
+* `c`: Force case-sensitive matching (the default). Including `c` has the same effect as omitting all flags.
 
 == Examples
 
-=== Basic function usage
+=== Basic usage
 
 This example uses the `regexp_replace()` function with a basic POSIX regular expression pattern:
 
 [source,sql]
 ----
-SELECT REGEXP_REPLACE('The SQL ENGINE supports various data types', 'T[^ ]*', 'The') AS "Replaced_String";
+SELECT REGEXP_REPLACE('The SQL ENGINE supports various data types', 'T[^ ]*', 'A') AS "Replaced_String";
 ----
 
 The query returns:
@@ -43,10 +43,10 @@ The query returns:
 ----
  Replaced_String
 -----------------------------------------
- The SQL ENGINE supports various data types
+ A SQL ENGINE supports various data types
 ----
 
-The pattern used was *"`T[^ ]*`"*, which matches any substring that starts with a '`T`' character, followed by any number of non-space characters. The function replaces the matched substring with the specified replacement string *"`The`"*.
+The pattern `T[^ ]*` matches any substring starting with `T` followed by non-space characters. The function replaces the first match (`The`) with the replacement string `A`.
 
 === Replace special characters
 
@@ -57,7 +57,7 @@ This example demonstrates how to replace a non-alphanumeric character in a strin
 SELECT REGEXP_REPLACE('Hello World!', '[^A-Za-z0-9 ]', '~') AS "Replaced_String";
 ----
 
-In this query, the second parameter is a regular expression *"[^A-Za-z0-9 ]"* that matches any characters that are not uppercase / lowercase letters, digits or spaces. Output:
+In this query, the second parameter is a regular expression `[^A-Za-z0-9 ]` that matches any character that is not an uppercase or lowercase letter, digit, or space. Output:
 
 [source,sql]
 ----
@@ -85,7 +85,7 @@ SELECT quotes_text FROM quotes;
 
 The query returns:
 
-[source,bash]
+[source,sql]
 ----
                               quotes_text
 -----------------------------------------------------------------------
@@ -104,7 +104,7 @@ SELECT quotes_text, REGEXP_REPLACE(quotes_text, 'lazy', 'active', 'i') AS "New q
 
 In this case, all occurrences of the word `lazy` have been replaced with `active`:
 
-[source,bash]
+[source,sql]
 ----
                               quotes_text                              |                               New quotes
 -----------------------------------------------------------------------+-------------------------------------------------------------------------
@@ -146,7 +146,7 @@ SELECT REGEXP_REPLACE('ab12c', '[0-9]', 'X', 'g');
 
 [NOTE]
 ====
-If using multiple flags, the last one takes precedence. If using the `ci` flags, the regex will be case-insensitive, while using the `ic` flags it will be case-sensitive
+If you specify multiple flags, the last one takes precedence. With `ci` the match is case-insensitive; with `ic` it is case-sensitive.
 ====
 
 == Restrictions

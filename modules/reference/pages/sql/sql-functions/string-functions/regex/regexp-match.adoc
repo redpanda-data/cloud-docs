@@ -22,16 +22,16 @@ REGEXP_MATCH(source_string, pattern, [flags])
 The `flags` parameter is an optional string that controls how the function operates. Here is a list of flags that are supported by Redpanda SQL:
 
 * `i`: Use this flag for case-insensitive matching.
-* `c`: `regexp_match()` function is case-sensitive by default, using the `c` flag has the same effect as having no flags at all.
+* `c`: Force case-sensitive matching (the default). Including `c` has the same effect as omitting all flags.
 
 [NOTE]
 ====
-If using multiple flags, the last one takes precedence. If using the `ci` flags, the regex will be case-insensitive, while using the `ic` flags it will be case-sensitive.
+If you specify multiple flags, the last one takes precedence. With `ci` the match is case-insensitive; with `ic` it is case-sensitive.
 ====
 
 == Examples
 
-=== Basic Usage
+=== Basic usage
 
 These examples demonstrate how to find the first occurrence of an email address in the input string:
 
