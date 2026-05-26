@@ -1,0 +1,92 @@
+= SQL Schemas
+:description: SQL schemas are namespaces in Redpanda SQL. Use them to organize user-defined types and to navigate the PostgreSQL-compatible system catalogs.
+:page-topic-type: reference
+
+[NOTE]
+====
+On this page, "schema" means a SQL namespace in the PostgreSQL sense. It is not the same as a topic's serialization schema (Protobuf, Avro, or JSON) registered in xref:manage:schema-reg/schema-reg-overview.adoc[Schema Registry]. To map a topic with a Schema Registry schema to a SQL table, see xref:reference:sql/sql-statements/create-table.adoc[CREATE TABLE].
+====
+
+A SQL schema is a namespace that groups database objects so their names do not collide. Redpanda SQL supports schemas for PostgreSQL compatibility and uses them primarily for organizing user-defined types (UDTs) and exposing the PostgreSQL system catalogs.
+
+User tables in Redpanda SQL are scoped to xref:reference:sql/sql-statements/create-redpanda-catalog.adoc[catalogs], not directly to SQL schemas. To define a table over a Redpanda topic, use the catalog-qualified `CREATE TABLE` form documented in the xref:reference:sql/sql-statements/create-table.adoc[CREATE TABLE] reference.
+
+== Built-in schemas
+
+Redpanda SQL provides these built-in SQL schemas:
+
+* `public`: The default schema for user-defined types and other user-created objects that are not catalog-scoped.
+* `pg_catalog`: The xref:reference:sql/system-catalogs/index.adoc[PostgreSQL system catalogs] (`pg_class`, `pg_attribute`, `pg_type`, and so on). Available without qualification through the implicit search path.
+* `information_schema`: The xref:reference:sql/information-schema.adoc[ANSI INFORMATION_SCHEMA] views over the system catalogs.
+
+== Create a schema
+
+[source,sql]
+----
+CREATE SCHEMA [IF NOT EXISTS] schema_name;
+----
+
+* `schema_name`: Name of the schema to create.
+* `IF NOT EXISTS`: Optional. Prevents an error if the schema already exists.
+
+For example:
+
+[source,sql]
+----
+CREATE SCHEMA app_types;
+----
+
+== Drop a schema
+
+To drop an empty schema:
+
+[source,sql]
+----
+DROP SCHEMA [IF EXISTS] schema_name;
+----
+
+* `schema_name`: Name of the schema to drop.
+* `IF EXISTS`: Optional. Prevents an error if the schema does not exist.
+
+To drop a schema and all the objects it contains, use `CASCADE`:
+
+[source,sql]
+----
+DROP SCHEMA schema_name CASCADE;
+----
+
+== Use IF NOT EXISTS
+
+The `IF NOT EXISTS` option lets `CREATE SCHEMA` succeed without error when the schema already exists. The existing schema is not modified.
+
+Without `IF NOT EXISTS`, repeating `CREATE SCHEMA analytics` fails:
+
+[source,sql]
+----
+ERROR:  Schema: analytics already exists
+----
+
+With `IF NOT EXISTS`, the same statement succeeds:
+
+[source,sql]
+----
+CREATE SCHEMA IF NOT EXISTS analytics;
+----
+
+== Use IF EXISTS
+
+The `IF EXISTS` option lets `DROP SCHEMA` succeed without error when the schema does not exist.
+
+Without `IF EXISTS`, dropping a non-existent schema fails:
+
+[source,sql]
+----
+ERROR:  schema "analytics" does not exist
+----
+
+With `IF EXISTS`, the same statement succeeds:
+
+[source,sql]
+----
+DROP SCHEMA IF EXISTS analytics;
+----

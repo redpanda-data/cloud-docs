@@ -1,0 +1,128 @@
+= Redpanda SQL vs PostgreSQL
+:description: Comparison of Redpanda SQL and PostgreSQL covering supported functions, operators, and behavioral differences.
+:page-topic-type: reference
+
+// TODO: Expand the comparison with engineering input on:
+// - Data-type coverage gaps relative to PostgreSQL
+// - System-catalog coverage and divergences
+// - Authn/authz model differences (e.g., GBAC in Redpanda SQL)
+// - Stored procedures and triggers (not yet documented as supported or not)
+// - Connection-protocol and session-semantics limitations beyond no-transactions
+// - Any other significant differences in supported SQL syntax, functions, or behavior that impact users migrating from PostgreSQL or using both systems in parallel
+
+Redpanda SQL aims for close compatibility with PostgreSQL syntax and semantics, yet differs significantly in design and function. Use this page to check which features are supported and where Redpanda SQL diverges from PostgreSQL.
+
+PostgreSQL is an online transactional processing (OLTP) database by default, whereas Redpanda SQL is an online analytical processing (OLAP) query engine. For more on the distinction, see xref:sql:get-started/oltp-vs-olap.adoc[].
+
+Redpanda SQL doesn't support common PostgreSQL transaction-processing operations like direct writes or upserts.
+
+Instead, Kafka-compatible producers write topics into Redpanda Streaming. From there, Redpanda SQL queries topics in log form using local or object storage (the "hot" tier), as well as corresponding Apache Iceberg tables in columnar form (the "cold" tier). A single query against a linked Redpanda catalog returns records from both tiers in one result, with no overlap between the live tail and the topic's history in Iceberg, including records older than your topic retention.
+
+Redpanda SQL is _semantically_ compatible with PostgreSQL but not _code_ compatible. It can't use common PostgreSQL extensions such as pgvector, PostGIS, or pg_cron.
+
+== JSON operators
+
+Redpanda SQL supports operators for handling JSON data in a slightly different way than PostgreSQL.
+
+=== Equal operator (`=`)
+
+This operator checks if two JSON values are identical. In Redpanda SQL, two JSON objects are considered equal only when their key-value pairs appear in the exact same order.
+
+[source,sql]
+----
+SELECT '{"a":1, "b":"c"}'::json = '{"b":"c", "a":1}'::json;
+----
+
+Result:
+
+[source,sql]
+----
+ ?column?
+----------
+ f
+(1 row)
+----
+
+In PostgreSQL, the `=` operator is not order-sensitive, so the order of key-value pairs does not affect the comparison result.
+
+== Behavioral differences
+
+=== Output header
+
+PostgreSQL includes the function name in the output header:
+
+[source,sql]
+----
+SELECT COS(0), LN(1);
+----
+
+[source,sql]
+----
+ cos | ln
+-----+----
+   1 |  0
+----
+
+Redpanda SQL uses generic column names instead:
+
+[source,sql]
+----
+SELECT COS(0), LN(1);
+----
+
+[source,sql]
+----
+ f | f_1
+---+-----
+ 1 |   0
+----
+
+=== ABS output
+
+The `abs` function returns different results for decimal inputs:
+
+[source,sql]
+----
+SELECT ABS(-1.0);
+----
+
+* Redpanda SQL returns `1`
+* PostgreSQL returns `1.0`
+
+== Error-handling differences
+
+[cols="1,2,2,2",options="header"]
+|===
+|Function |Input |Output (Redpanda SQL) |Output (PostgreSQL)
+
+|LN
+|`LN(0)`
+|_Infinity_
+|`ERROR: cannot take the logarithm of zero`
+
+|LN
+|`LN(0.0)`
+|_Infinity_
+|`ERROR: cannot take the logarithm of zero`
+
+|LOG10
+|`LOG10(-1)`
+|_NaN_
+|`ERROR: cannot take logarithm of a negative number`
+
+|SQRT
+|`SQRT(-1)`
+|_input is out of range_
+|`ERROR: cannot take the square root of a negative number`
+
+|SIN
+|`SELECT sin(pi()/2);`
+|_unknown function pi_
+|working as expected
+|===
+
+== Suggested reading
+
+* xref:sql:get-started/overview.adoc[Redpanda SQL Overview]
+* xref:sql:get-started/oltp-vs-olap.adoc[OLTP vs OLAP]
+* xref:reference:sql/index.adoc[Redpanda SQL Reference]

@@ -1,0 +1,53 @@
+= DROP USER
+:description: The DROP USER statement removes an existing user. The user cannot own objects or hold grants when dropped.
+:page-topic-type: reference
+
+The `DROP USER` statement removes an existing user from Redpanda SQL. `DROP ROLE` is a synonym for `DROP USER`, provided for PostgreSQL compatibility. Only a superuser can run this statement.
+
+A user cannot be dropped while they own objects (for example, a catalog or table created by that user) or hold privilege grants. Reassign or drop the owned objects and revoke the grants first, then drop the user.
+
+[NOTE]
+====
+On Redpanda Cloud BYOC, the Cloud operator synchronizes users from Redpanda Cloud's organization IAM. If you `DROP USER` for an identity that still exists in Redpanda Cloud IAM, the operator can re-provision the user on the next sync. Remove the user from Redpanda Cloud IAM first, or use the data-plane RBAC role to revoke their SQL access. See xref:sql:manage/manage-access.adoc[Manage access to Redpanda SQL].
+====
+
+== Syntax
+
+[source,sql]
+----
+DROP { USER | ROLE } [IF EXISTS] user_name;
+----
+
+* `user_name`: Name of the user to drop. Cannot be `CURRENT_USER` or `CURRENT_ROLE`. The user running the statement cannot drop themselves, and the protected system superuser cannot be dropped.
+* `IF EXISTS`: Optional. Prevents an error if the user does not exist.
+
+== Examples
+
+Drop an existing user:
+
+[source,sql]
+----
+DROP USER "alice@example.com";
+----
+
+Drop a user only if it exists:
+
+[source,sql]
+----
+DROP USER IF EXISTS "legacy-account@example.com";
+----
+
+If the user has dependent grants or owned objects, the statement fails with an error listing the objects. Revoke the grants and reassign or drop owned objects first:
+
+[source,sql]
+----
+REVOKE SELECT ON EXTERNAL SOURCE default_redpanda_catalog FROM "alice@example.com";
+DROP USER "alice@example.com";
+----
+
+== Suggested reading
+
+* xref:reference:sql/sql-statements/create-user.adoc[CREATE USER]
+* xref:reference:sql/sql-statements/alter-user.adoc[ALTER USER]
+* xref:reference:sql/sql-statements/revoke.adoc[REVOKE]
+* xref:sql:manage/manage-access.adoc[Manage access to Redpanda SQL]

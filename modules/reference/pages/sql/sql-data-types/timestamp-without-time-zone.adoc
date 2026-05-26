@@ -1,0 +1,210 @@
+= timestamp without time zone
+:description: The timestamp data type stores time and date values without a time zone.
+:page-topic-type: reference
+
+== Overview
+
+The timestamp data type stores time and date values without a time zone. It represents a fixed time, independent of any time zone or applied globally.
+
+== Format
+
+[source,sql]
+----
+YYYY-MM-DD [HH:MM:SS[.SSSSSS]]
+----
+
+* `YYYY`: Four-digit year.
+* `MM`: One / two-digit month.
+* `DD`: One / two-digit day.
+* `HH`: One / two-digit hour (valid values from 00 to 23).
+* `MM`: One / two-digit minutes (valid values from 00 to 59).
+* `SS`: One / two-digit seconds (valid values from 00 to 59).
+* `[.SSSSSS]`: Up to six fractional digits (microsecond precision).
+
+[NOTE]
+====
+Fractional digits are the digits after the decimal point ( . )
+====
+
+== Examples
+
+=== Create a table
+
+The following example creates a `visitor` table to store visitor data in an office building. It consists of the visitor's name, the purpose of the visit, company, time, and date, which uses the `Timestamp` data type.
+
+[source,sql]
+----
+CREATE TABLE visitors  (
+   visitorName TEXT,
+   visitPurp TEXT,
+   visitComp TEXT,
+   visitDate TIMESTAMP WITHOUT TIME ZONE
+);
+INSERT INTO visitors (visitorName, visitPurp, visitComp, visitDate)
+VALUES
+    ('Peter', 'Interview', 'Apple', '2022-01-10 09:12:40'),
+    ('Will', 'Meeting', 'McKesson', '2022-01-29 11:28:02'),
+    ('Max', 'Meeting', 'McKesson', '2022-02-11 10:19:10'),
+    ('Dustin', 'Meeting', 'CVS Health', '2022-03-18 14:24:08'),
+    ('Lizzy', 'Meeting', 'CVS Health', '2022-04-23 13:10:09'),
+    ('Evy', 'Interview', 'Apple', '2022-05-01 08:45:50');
+----
+
+The `visitors` table has been successfully created after executing the query:
+
+[source,sql]
+----
+COMPLETE
+INSERT 0 6
+----
+
+=== Display the table
+
+Run the `SELECT` statement to get all records of the `visitors` table:
+
+[source,sql]
+----
+SELECT * FROM visitors;
+----
+
+This returns the following result:
+
+[source,sql]
+----
++--------------+--------------+---------------+-----------------------+
+| visitorName  | visitPurp    | visitComp     | visitDate             |
++--------------+--------------+---------------+-----------------------+
+| Peter        | Interview    | Apple         | 2022-01-10 09:12:40   |
+| Will         | Meeting      | McKesson      | 2022-01-29 11:28:02   |
+| Max          | Meeting      | McKesson      | 2022-02-11 10:19:10   |
+| Dustin       | Meeting      | CVS Health    | 2022-03-18 14:24:08   |
+| Lizzy        | Meeting      | CVS Health    | 2022-04-23 13:10:09   |
+| Evy          | Interview    | Apple         | 2022-05-01 08:45:50   |
++--------------+--------------+---------------+-----------------------+
+----
+
+=== Look for a specific timestamp
+
+The following example retrieves records with a specified timestamp:
+
+[source,sql]
+----
+SELECT * FROM visitors
+WHERE visitDate = '2022-04-23 13:10:09';
+----
+
+The query returns the following results:
+
+[source,sql]
+----
++--------------+--------------+---------------+-----------------------+
+| visitorName  | visitPurp    | visitComp     | visitDate             |
++--------------+--------------+---------------+-----------------------+
+| Lizzy        | Meeting      | CVS Health    | 2022-04-23 13:10:09   |
++--------------+--------------+---------------+-----------------------+
+----
+
+=== Insert a value that exceeds the standard format
+
+The time in timestamp has a standard format; that is, for minutes only valid for values from 00 to 59.
+
+The following example inserts a new record into the visitors table with a value of `60`, which exceeds the standard seconds format.
+
+[source,sql]
+----
+INSERT INTO visitors (visitorName, visitPurp, visitComp, visitDate)
+VALUES
+    ('Jolly', 'Survey', 'Apple', '2022-01-10 09:12:60');
+----
+
+[source,sql]
+----
+INSERT 0 1
+
+Query returned successfully in 135 msec.
+----
+
+Verify the result by running the following `select` statement:
+
+[source,sql]
+----
+SELECT * FROM visitors
+WHERE visitorName = 'Jolly';
+----
+
+The seconds are displayed as `00` because `60` adds 1 minute to the minutes' value.
+
+[source,sql]
+----
++--------------+--------------+---------------+-----------------------+
+| visitorName  | visitPurp    | visitComp     | visitDate             |
++--------------+--------------+---------------+-----------------------+
+| Jolly        | Survey       | Apple         | 2022-01-10 09:13:00   |
++--------------+--------------+---------------+-----------------------+
+----
+
+== AT TIME ZONE operator
+
+When applied to a `TIMESTAMP` (without time zone), the `AT TIME ZONE` operator interprets the input as being in the specified time zone and returns the equivalent instant as a `TIMESTAMP WITH TIME ZONE`. The result is rendered in the session's display time zone, which is fixed to UTC.
+
+[WARNING]
+====
+The result type of this operator differs from the input: it produces a timestamp with a time zone.
+====
+
+=== Syntax
+
+To use the `AT TIME ZONE` operator, you can follow this syntax:
+
+[source,sql]
+----
+SELECT TIMESTAMP 'input_timestamp' AT TIME ZONE 'TIME_ZONE';
+----
+
+Here's what each element means:
+
+* `input_timestamp`: The `TIMESTAMP` (without time zone) value to interpret.
+* `TIME_ZONE`: The time zone that `input_timestamp` is assumed to be in. Redpanda SQL converts the value to the equivalent UTC `TIMESTAMP WITH TIME ZONE`.
+
+=== Example 1
+
+Suppose you have a `TIMESTAMP` value that was recorded in MST and you want to convert it to a `TIMESTAMP WITH TIME ZONE` in UTC. Applying `AT TIME ZONE 'MST'` interprets the input as being in MST and returns the equivalent UTC instant:
+
+[source,sql]
+----
+SELECT TIMESTAMP '2001-02-16 10:28:30' AT TIME ZONE 'MST';
+----
+
+The result is a `TIMESTAMP WITH TIME ZONE` in UTC. The input `10:28:30` is treated as MST (UTC−7), which corresponds to `17:28:30` UTC:
+
+[source,sql]
+----
+                f
+---------------------------------
+ 2001-02-16 17:28:30.000000+0000
+(1 row)
+----
+
+=== Example 2
+
+Using the xref:reference:sql/sql-data-types/timestamp-without-time-zone.adoc[visitors] table, the following query treats each `visitDate` as MST and returns the equivalent UTC `TIMESTAMP WITH TIME ZONE`:
+
+[source,sql]
+----
+SELECT visitDate, visitDate AT TIME ZONE 'MST' as "visitDateMST" FROM visitors;
+----
+
+This query returns two columns: `visitDate` shows the original `TIMESTAMP` values (with no zone), and `visitDateMST` shows the UTC `TIMESTAMP WITH TIME ZONE` produced by interpreting each input as MST. Each UTC value is 7 hours ahead of the corresponding MST input.
+
+[source,sql]
+----
+         visitdate          |          visitDateMST
+----------------------------+---------------------------------
+ 2022-01-10 09:12:40.000000 | 2022-01-10 16:12:40.000000+0000
+ 2022-01-29 11:28:02.000000 | 2022-01-29 18:28:02.000000+0000
+ 2022-02-11 10:19:10.000000 | 2022-02-11 17:19:10.000000+0000
+ 2022-03-18 14:24:08.000000 | 2022-03-18 21:24:08.000000+0000
+ 2022-04-23 13:10:09.000000 | 2022-04-23 20:10:09.000000+0000
+ 2022-05-01 08:45:50.000000 | 2022-05-01 15:45:50.000000+0000
+(6 rows)
+----

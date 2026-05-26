@@ -1,0 +1,84 @@
+= REVOKE
+:description: The REVOKE statement removes privileges that were previously granted to a role. Only a superuser can revoke privileges.
+:page-topic-type: reference
+
+The `REVOKE` statement removes privileges that were previously granted to a role with xref:reference:sql/sql-statements/grant.adoc[GRANT]. Only a superuser can revoke privileges.
+
+For the privilege levels and types that apply to each object, see xref:reference:sql/sql-statements/grant.adoc#privilege-levels[Privilege levels].
+
+== Syntax
+
+=== Revoke on a table
+
+[source,sql]
+----
+REVOKE { privilege [, ...] | ALL [PRIVILEGES] } ON TABLE table_name FROM role_name;
+----
+
+=== Revoke on an external source
+
+[source,sql]
+----
+REVOKE { SELECT | ALL [PRIVILEGES] } ON EXTERNAL SOURCE catalog_name FROM role_name;
+REVOKE { SELECT | ALL [PRIVILEGES] } ON EXTERNAL SOURCE catalog_name => 'pattern' FROM role_name;
+----
+
+* `pattern`: A string literal that matches a relation name. The wildcard `*` is only allowed at the end of the pattern.
+
+=== Revoke on a schema
+
+[source,sql]
+----
+REVOKE { privilege [, ...] | ALL [PRIVILEGES] } ON SCHEMA schema_name FROM role_name;
+----
+
+=== Revoke on the database
+
+Redpanda SQL exposes a single database, `oxla`.
+
+[source,sql]
+----
+REVOKE CONNECT ON DATABASE oxla FROM role_name;
+----
+
+== Behavior
+
+* *Pattern that matches no existing grant.* When revoking on an external source with a non-wildcard pattern, the statement errors if the pattern does not match any existing grant for the role. List current grants with `SELECT * FROM information_schema.role_external_relation_grants`.
+* *Catalog-level revoke is idempotent.* The catalog-level form (no pattern) is idempotent and silently no-ops if no grants exist for the role on that source. Cleanup scripts can safely run it.
+* *Wildcard grants cannot be partially revoked.* If a role has a wildcard grant (for example `'*'` or `'orders_*'`), you cannot punch a hole in it. Revoke the wildcard grant in full, then re-grant the narrower pattern you want.
+
+== Examples
+
+Revoke `SELECT` on a single topic:
+
+[source,sql]
+----
+REVOKE SELECT ON EXTERNAL SOURCE default_redpanda_catalog => 'orders' FROM "alice@example.com";
+----
+
+Revoke a wildcard grant:
+
+[source,sql]
+----
+REVOKE SELECT ON EXTERNAL SOURCE default_redpanda_catalog => 'orders_*' FROM "alice@example.com";
+----
+
+Revoke all grants on a catalog:
+
+[source,sql]
+----
+REVOKE SELECT ON EXTERNAL SOURCE default_redpanda_catalog FROM "alice@example.com";
+----
+
+Revoke `USAGE` on a schema:
+
+[source,sql]
+----
+REVOKE USAGE ON SCHEMA public FROM "alice@example.com";
+----
+
+== Suggested reading
+
+* xref:reference:sql/sql-statements/grant.adoc[GRANT]
+* xref:reference:sql/sql-statements/drop-user.adoc[DROP USER]
+* xref:sql:manage/manage-access.adoc[Manage access to Redpanda SQL]

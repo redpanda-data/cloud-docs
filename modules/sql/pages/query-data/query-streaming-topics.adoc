@@ -1,0 +1,87 @@
+= Query Streaming Topics
+:description: Map a Redpanda topic to a SQL table and run analytical queries directly against live streaming data.
+:page-topic-type: how-to
+:personas: app_developer, data_engineer
+:learning-objective-1: Map a Redpanda topic to a SQL table using the default Redpanda catalog
+:learning-objective-2: Run analytical SQL queries against live topic data
+
+Map a Redpanda topic to a SQL table to run analytical queries directly against live streaming data without building ETL pipelines. Redpanda SQL reads each record's fields from the topic's registered schema.
+
+To extend queries past your Redpanda retention window by reading the Iceberg history of Iceberg-enabled topics, see xref:sql:query-data/query-iceberg-topics.adoc[Query Iceberg-enabled Topics].
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+
+== Prerequisites
+
+Before you query a topic with SQL:
+
+* Enable the Redpanda SQL engine on your Redpanda Bring Your Own Cloud (BYOC) cluster. See xref:sql:get-started/deploy-sql-cluster.adoc[Enable Redpanda SQL].
+* Have a Redpanda Cloud user with the *SQL: Access* (or *SQL: Manage*) data-plane RBAC permission. For a *SQL: Access* user to query a topic, a *SQL: Manage* user must first `GRANT SELECT` on the topic to that user. See xref:sql:manage/manage-access.adoc[Manage access to Redpanda SQL].
+* Connect to Redpanda SQL with `psql` or another PostgreSQL client. See xref:sql:get-started/sql-quickstart.adoc[] for a `psql` example, or xref:sql:connect-to-sql/index.adoc[Connect to Redpanda SQL].
+* Confirm that the Redpanda topic you want to query has a schema registered in Schema Registry. Redpanda SQL supports Protobuf, JSON, and Avro schemas.
+
+== Map the topic to a SQL table
+
+Each Redpanda topic appears as a SQL table inside a Redpanda catalog. When Redpanda SQL is enabled, a catalog named `default_redpanda_catalog` is created automatically and points at your cluster.
+
+Define a table against the topic with `CREATE TABLE`:
+
+[source,sql]
+----
+CREATE TABLE default_redpanda_catalog=>orders WITH (
+  topic = 'orders',
+  schema_subject = 'orders-value'
+);
+----
+
+Replace `orders` with your topic name and `orders-value` with the Schema Registry subject that holds the topic's value schema. `schema_subject` is optional. If omitted, Redpanda SQL uses the topic-name strategy default (`<topic>-value`).
+
+If the topic uses a Protobuf schema that defines more than one message, also set `output_schema_message_full_name` to the fully-qualified name of the message to use:
+
+[source,sql]
+----
+CREATE TABLE default_redpanda_catalog=>orders WITH (
+  topic = 'orders',
+  schema_subject = 'orders-value',
+  output_schema_message_full_name = 'com.example.orders.Order'
+);
+----
+
+The table inherits its column definitions from the registered schema. Each top-level field in the schema becomes a SQL column. For querying nested fields in struct types, see xref:sql:query-data/query-nested-fields.adoc[].
+
+In addition to the columns derived from your topic's schema, Redpanda SQL adds two struct columns to every catalog-mapped table:
+
+* `redpanda`: Kafka record metadata such as partition, offset, and timestamp.
+* `redpanda_raw`: Populated only when `error_handling_policy = 'FILL_NULL'` and a record fails to decode.
+
+For details, see xref:reference:sql/sql-statements/create-table.adoc#auto-added-columns[Auto-added columns].
+
+== Run queries
+
+Query the table with standard `SELECT` syntax. The following query returns the first 10 records:
+
+[source,sql]
+----
+SELECT * FROM default_redpanda_catalog=>orders LIMIT 10;
+----
+
+Aggregate and filter records using familiar PostgreSQL constructs:
+
+[source,sql]
+----
+SELECT customer_id, SUM(amount) AS total
+FROM default_redpanda_catalog=>orders
+WHERE status = 'completed'
+GROUP BY customer_id
+ORDER BY total DESC
+LIMIT 10;
+----
+
+== Next steps
+
+* xref:sql:query-data/query-iceberg-topics.adoc[Query Iceberg-enabled Topics]: run queries against historical data retained beyond your Redpanda retention window.
+* xref:reference:sql/sql-statements/create-table.adoc[CREATE TABLE]: full reference for the table-against-topic syntax, including all options.
+* xref:reference:sql/index.adoc[Redpanda SQL Reference]: supported SQL statements, clauses, data types, and functions.

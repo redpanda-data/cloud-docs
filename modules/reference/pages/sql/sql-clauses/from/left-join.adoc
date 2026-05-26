@@ -1,0 +1,171 @@
+= LEFT JOIN
+:description: The LEFT JOIN returns all matching records from the left table combined with the right table.
+:page-topic-type: reference
+
+The `LEFT JOIN` returns all matching records from the left table combined with the right table. Even if there are no matching records in the right table, the `LEFT JOIN` still returns a row in the result, with `NULL` in each column from the right table.
+
+[NOTE]
+====
+`LEFT JOIN` is also known as `LEFT OUTER JOIN`.
+====
+
+== Syntax
+
+[source,sql]
+----
+SELECT column_1, column_2...
+FROM table_1
+LEFT JOIN table_2
+ON table_1.matching_field = table_2.matching_field;
+----
+
+In this syntax:
+
+. `SELECT column_1, column_2...` defines the columns from both tables where the data is to be selected.
+. `FROM table_1` defines the left table as the main table in the `FROM` clause.
+. `LEFT JOIN table_2` defines the right table as the table the main table joins.
+. `ON table_1.matching_field = table_2.matching_field` sets the join condition after the `ON` keyword with the matching field between the two tables.
+
+=== Table alias
+
+A table alias is a temporary name given to a table in a query. Aliases don't change the result; they make queries easier to read.
+
+[source,sql]
+----
+SELECT A.column_1, B.column_2...
+FROM table_1 A
+LEFT JOIN table_2 B
+ON A.matching_field = B.matching_field;
+----
+
+== Examples
+
+Create the `item` table:
+
+[source,sql]
+----
+CREATE TABLE item (
+  item_no int NOT NULL,
+  item_name text
+);
+
+INSERT INTO item
+    (item_no,item_name)
+VALUES
+    (111,'Butter'),
+    (113,'Tea'),
+    (116,'Bread'),
+    (119,'Coffee');
+----
+
+[source,sql]
+----
+SELECT * FROM item;
+----
+
+This returns:
+
+[source,sql]
+----
++-----------+----------------+
+| item_no   | item_name      |
++-----------+----------------+
+| 111       | Butter         |
+| 113       | Tea            |
+| 116       | Bread          |
+| 119       | Coffee         |
++-----------+----------------+
+----
+
+Create the `invoice` table:
+
+[source,sql]
+----
+CREATE TABLE invoice (
+  inv_no int NOT NULL,
+  item int,
+  sold_qty int,
+  sold_price int
+);
+
+INSERT INTO invoice
+    (inv_no, item, sold_qty, sold_price)
+VALUES
+    (020219,111,3,9000),
+    (020220,116,6,30000),
+    (020221,116,2,10000),
+    (020222,116,1,5000),
+    (020223,119,5,20000),
+    (020224,119,4,16000);
+----
+
+[source,sql]
+----
+SELECT * FROM invoice;
+----
+
+This returns:
+
+[source,sql]
+----
++----------+---------+-----------+-------------+
+| inv_no   | item    | sold_qty  | sold_price  |
++----------+---------+-----------+-------------+
+| 20219    | 111     | 3         | 9000        |
+| 20220    | 116     | 6         | 30000       |
+| 20221    | 116     | 2         | 10000       |
+| 20222    | 116     | 1         | 5000        |
+| 20223    | 119     | 5         | 20000       |
+| 20224    | 119     | 4         | 16000       |
++----------+---------+-----------+-------------+
+----
+
+A `LEFT JOIN` query against these tables:
+
+[source,sql]
+----
+SELECT item_no, item_name, sold_qty, sold_price
+FROM item
+LEFT JOIN invoice
+ON item.item_no = invoice.item;
+----
+
+* The `item` table is the left table, and the `invoice` table is the right table.
+* The query combines values from the `item` table using `item_no` and matches records using the `item` column from the `invoice` table.
+* When records match, Redpanda SQL creates a new row with `item_no`, `item_name`, `sold_qty`, and `sold_price` columns as defined in the `SELECT` clause.
+* Otherwise, a new row is created with `NULL` values from the right table (`invoice`).
+
+The query returns:
+
+[source,sql]
+----
++-----------+-------------+------------+---------------+
+| item_no   | item_name   | sold_qty   | sold_price    |
++-----------+-------------+------------+---------------+
+| 111       | Butter      | 3          | 9000          |
+| 113       | Tea         | null       | null          |
+| 116       | Bread       | 6          | 30000         |
+| 116       | Bread       | 2          | 10000         |
+| 116       | Bread       | 1          | 5000          |
+| 119       | Coffee      | 5          | 20000         |
+| 119       | Coffee      | 4          | 16000         |
++-----------+-------------+------------+---------------+
+----
+
+Based on the data from the `item` and `invoice` tables:
+
+* The result matches the total items in the `item` table: four items.
+* The result displays all items from the left table (`item`), even if one item has not been sold.
+* Item id `111` (`Butter`) has been sold once for 3 pieces at 9000.
+* Item id `113` (`Tea`) has never been sold, so the `sold_qty` and `sold_price` columns are `NULL`.
+* Item id `116` (`Bread`) has been sold three times: 6 pieces at 30000, 2 pieces at 10000, and 1 piece at 5000.
+* Item id `119` (`Coffee`) has been sold twice: 5 pieces at 20000 and 4 pieces at 16000.
+
+[TIP]
+====
+An `item` can have zero or many invoices. An `invoice` belongs to zero or one `item`.
+====
+
+The following Venn diagram illustrates the `LEFT JOIN`:
+
+image::sql/left-join-venn.png[Venn diagram showing a left join between the Item and Invoice tables]
