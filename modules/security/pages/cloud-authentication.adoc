@@ -297,6 +297,22 @@ Make sure to replace the following variables:
 |Client secret.
 |===
 
+=== Service account token rate limits
+
+Redpanda Cloud enforces a daily limit on service account access token requests to `\https://auth.prd.cloud.redpanda.com/oauth/token` for each organization. When you exceed the limit, the token endpoint returns `HTTP 429` with the following response body:
+
+[,json]
+----
+{
+  "error": "too_many_requests",
+  "error_description": "Organization quota exceeded"
+}
+----
+
+Most workloads do not approach this limit. Access tokens are valid for several hours, so cache the token returned by the `/oauth/token` endpoint and reuse it until close to expiry rather than requesting a new token for each API call.
+
+If your workload requires a higher daily limit, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda Support^] with your organization ID and your expected token issuance rate.
+
 [[mtls]]
 === Enable mTLS authentication
 :description: Use the Cloud API to enable mTLS for Kafka API, HTTP Proxy, and Schema Registry connections on your Redpanda cluster.
