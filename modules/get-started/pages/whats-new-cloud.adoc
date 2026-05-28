@@ -24,6 +24,28 @@ Schema Registry Authorization is now enabled automatically on all new BYOC and D
 
 xref:security:cloud-authentication.adoc#account-impersonation[Account impersonation] now supports Schema Registry in addition to the Kafka API. With Schema Registry impersonation enabled, the schemas and subjects users see in the Redpanda Cloud UI match exactly what they can access with the Cloud API or `rpk`. You can enable impersonation independently for each subsystem from the *Dataplane settings* page.
 
+=== Redpanda Connect updates
+
+* Inputs:
+** xref:develop:connect/components/inputs/salesforce.adoc[salesforce]: Executes a SOQL query against Salesforce and emits one message per record.
+** xref:develop:connect/components/inputs/salesforce_cdc.adoc[salesforce_cdc]: Captures change data from Salesforce objects using the Pub/Sub API.
+** xref:develop:connect/components/inputs/salesforce_graphql.adoc[salesforce_graphql]: Executes GraphQL queries against Salesforce.
+* Outputs:
+** xref:develop:connect/components/outputs/gcp_bigquery_write_api.adoc[gcp_bigquery_write_api]: Writes records to BigQuery using the Storage Write API for higher throughput and lower latency than the streaming insert API.
+* Metrics:
+** xref:develop:connect/components/metrics/open_telemetry_collector.adoc[open_telemetry_collector]: Pushes metrics using the OpenTelemetry Protocol (OTLP) over HTTP or gRPC.
+* Tracers:
+** xref:develop:connect/components/tracers/open_telemetry_collector.adoc[open_telemetry_collector]: Pushes tracing data using the OpenTelemetry Protocol (OTLP) over HTTP or gRPC.
+
+* Behavior changes:
+** xref:develop:connect/components/outputs/gcp_bigquery_write_api.adoc[`gcp_bigquery_write_api`] output: The default value of `max_in_flight` has been reduced from `64` to `4`. If you rely on the previous behavior for throughput, set `max_in_flight` explicitly in your pipeline configuration. The output also gained new fields for tuning Storage Write API behavior: `max_cached_streams`, `schema_resolve_timeout`, and `schema_evolution_timeout`.
+
+* New field support:
+** Kafka producer tuning fields on the xref:develop:connect/components/outputs/kafka_franz.adoc[`kafka_franz`] and xref:develop:connect/components/outputs/redpanda.adoc[`redpanda`] outputs: `acks`, `max_in_flight_requests`, `max_buffered_records`, `max_buffered_bytes`, `record_retries`, and `record_delivery_timeout`. Use these to align pipeline producers with broker durability and back-pressure requirements.
+
+* Removed components:
+** `salesforce` processor (introduced in April 2026): Replaced with the dedicated xref:develop:connect/components/inputs/salesforce.adoc[`salesforce`], xref:develop:connect/components/inputs/salesforce_cdc.adoc[`salesforce_cdc`], and xref:develop:connect/components/inputs/salesforce_graphql.adoc[`salesforce_graphql`] inputs. The xref:develop:connect/components/outputs/salesforce_sink.adoc[`salesforce_sink`] output remains available.
+
 === Extended Serverless free trial
 
 The free trial for Redpanda Serverless now lasts 30 days, up from 14 days. The $100 (USD) credit allowance and 7-day grace period are unchanged. Sign up at https://www.redpanda.com/try-data-streaming[redpanda.com^]. See xref:get-started:cluster-types/serverless.adoc[Serverless clusters].
@@ -65,7 +87,7 @@ The Redpanda Terraform provider (v1.6.0+) now supports https://developer.hashico
 ** xref:develop:connect/components/outputs/salesforce_sink.adoc[salesforce_sink]: Write messages to Salesforce, routing each Kafka topic to its own sObject configuration. Supports both realtime (sObject Collections REST API) and bulk modes (Bulk API 2.0).
 * Processors:
 ** xref:develop:connect/components/processors/string_split.adoc[string_split]: Splits strings into multiple parts using a delimiter, creating new messages or fields for each part.
-** xref:develop:connect/components/processors/salesforce.adoc[salesforce]: Fetch data from Salesforce based on input messages. Supports sObject REST snapshots, SOQL queries via REST or GraphQL, Change Data Capture (CDC) streaming, and Platform Events via the Pub/Sub gRPC API.
+** `salesforce` (deprecated May 2026): Replaced with dedicated xref:develop:connect/components/inputs/salesforce.adoc[salesforce], xref:develop:connect/components/inputs/salesforce_cdc.adoc[salesforce_cdc], and xref:develop:connect/components/inputs/salesforce_graphql.adoc[salesforce_graphql] inputs.
 
 == March 2026
 
