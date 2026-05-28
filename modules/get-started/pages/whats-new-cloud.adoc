@@ -24,34 +24,27 @@ Schema Registry Authorization is now enabled automatically on all new BYOC and D
 
 xref:security:cloud-authentication.adoc#account-impersonation[Account impersonation] now supports Schema Registry in addition to the Kafka API. With Schema Registry impersonation enabled, the schemas and subjects users see in the Redpanda Cloud UI match exactly what they can access with the Cloud API or `rpk`. You can enable impersonation independently for each subsystem from the *Dataplane settings* page.
 
-=== New Redpanda Connect component pages
+=== Redpanda Connect updates
 
-Added documentation for the following Redpanda Connect components:
+* Inputs:
+** xref:develop:connect/components/inputs/salesforce.adoc[salesforce]: Executes a SOQL query against Salesforce and emits one message per record.
+** xref:develop:connect/components/inputs/salesforce_cdc.adoc[salesforce_cdc]: Captures change data from Salesforce objects using the Pub/Sub API.
+** xref:develop:connect/components/inputs/salesforce_graphql.adoc[salesforce_graphql]: Executes GraphQL queries against Salesforce.
+* Outputs:
+** xref:develop:connect/components/outputs/gcp_bigquery_write_api.adoc[gcp_bigquery_write_api]: Writes records to BigQuery using the Storage Write API for higher throughput and lower latency than the streaming insert API.
+* Metrics:
+** xref:develop:connect/components/metrics/open_telemetry_collector.adoc[open_telemetry_collector]: Pushes metrics using the OpenTelemetry Protocol (OTLP) over HTTP or gRPC.
+* Tracers:
+** xref:develop:connect/components/tracers/open_telemetry_collector.adoc[open_telemetry_collector]: Pushes tracing data using the OpenTelemetry Protocol (OTLP) over HTTP or gRPC.
 
-* xref:develop:connect/components/inputs/salesforce.adoc[salesforce input]: Executes a SOQL query against Salesforce and emits one message per record.
-* xref:develop:connect/components/outputs/gcp_bigquery_write_api.adoc[gcp_bigquery_write_api output]: Writes records to BigQuery using the Storage Write API.
-* xref:develop:connect/components/metrics/open_telemetry_collector.adoc[open_telemetry_collector metrics]: Pushes metrics using the OpenTelemetry Protocol.
-* xref:develop:connect/components/tracers/open_telemetry_collector.adoc[open_telemetry_collector tracer]: Pushes tracing data using the OpenTelemetry Protocol.
+* Behavior changes:
+** xref:develop:connect/components/outputs/gcp_bigquery_write_api.adoc[`gcp_bigquery_write_api`] output: The default value of `max_in_flight` has been reduced from `64` to `4`. If you rely on the previous behavior for throughput, set `max_in_flight` explicitly in your pipeline configuration. The output also gained new fields for tuning Storage Write API behavior: `max_cached_streams`, `schema_resolve_timeout`, and `schema_evolution_timeout`.
 
-=== Salesforce connector refactoring
+* New field support:
+** Kafka producer tuning fields on the xref:develop:connect/components/outputs/kafka_franz.adoc[`kafka_franz`] and xref:develop:connect/components/outputs/redpanda.adoc[`redpanda`] outputs: `acks`, `max_in_flight_requests`, `max_buffered_records`, `max_buffered_bytes`, `record_retries`, and `record_delivery_timeout`. Use these to align pipeline producers with broker durability and back-pressure requirements.
 
-The `salesforce` processor (introduced in April 2026) has been removed and replaced with dedicated input components that provide the same functionality with better separation of concerns:
-
-[cols="1,2"]
-|===
-|New component |Use case
-
-|xref:develop:connect/components/inputs/salesforce.adoc[salesforce input]
-|Executes SOQL queries against Salesforce.
-
-|xref:develop:connect/components/inputs/salesforce_cdc.adoc[salesforce_cdc input]
-|Captures change data from Salesforce objects using the Pub/Sub API.
-
-|xref:develop:connect/components/inputs/salesforce_graphql.adoc[salesforce_graphql input]
-|Executes GraphQL queries against Salesforce.
-|===
-
-The xref:develop:connect/components/outputs/salesforce_sink.adoc[salesforce_sink output] remains available.
+* Removed components:
+** `salesforce` processor (introduced in April 2026): Replaced with the dedicated xref:develop:connect/components/inputs/salesforce.adoc[`salesforce`], xref:develop:connect/components/inputs/salesforce_cdc.adoc[`salesforce_cdc`], and xref:develop:connect/components/inputs/salesforce_graphql.adoc[`salesforce_graphql`] inputs. The xref:develop:connect/components/outputs/salesforce_sink.adoc[`salesforce_sink`] output remains available.
 
 === Extended Serverless free trial
 
