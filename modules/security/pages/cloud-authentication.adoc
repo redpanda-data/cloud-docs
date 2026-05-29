@@ -311,10 +311,10 @@ Redpanda Cloud enforces a daily limit on service account access token requests t
 
 Most workloads do not approach this limit. Access tokens are valid for several hours, so cache the token returned by the `/oauth/token` endpoint and reuse it until close to expiry rather than requesting a new token for each API call.
 
-Every response from the token endpoint, including responses that return `HTTP 429`, includes an `Auth0-Organization-Quota-Limit` header that reports your organization's current quota usage. The header carries one or more comma-separated buckets in the form `b=<window>;q=<limit>;r=<remaining>;t=<seconds-to-reset>`. For example:
+Every response from the token endpoint, including responses that return `HTTP 429`, includes an `Auth0-Organization-Quota-Limit` header that reports your organization's current daily quota usage. The header value has the form `b=<window>;q=<limit>;r=<remaining>;t=<seconds-to-reset>`. For example:
 
 ----
-Auth0-Organization-Quota-Limit: b=per_hour;q=50;r=47;t=3540,b=per_day;q=250;r=247;t=43200
+Auth0-Organization-Quota-Limit: b=per_day;q=100;r=83;t=43200
 ----
 
 [cols="1,3"]
@@ -322,10 +322,10 @@ Auth0-Organization-Quota-Limit: b=per_hour;q=50;r=47;t=3540,b=per_day;q=250;r=24
 |Field |Description
 
 |`b`
-|Bucket window. For example, `per_hour` or `per_day`.
+|Quota window. Redpanda Cloud uses `per_day`.
 
 |`q`
-|The bucket's token-issuance limit.
+|The token-issuance limit for the window.
 
 |`r`
 |Tokens remaining in the current window.
@@ -334,7 +334,7 @@ Auth0-Organization-Quota-Limit: b=per_hour;q=50;r=47;t=3540,b=per_day;q=250;r=24
 |Seconds until the current window resets.
 |===
 
-When the token endpoint returns `HTTP 429`, find the bucket whose `r` is `0` and back off for that bucket's `t` seconds before retrying.
+When the token endpoint returns `HTTP 429`, back off for `t` seconds before retrying.
 
 If your workload requires a higher daily limit, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda Support^] with your organization ID and your expected token issuance rate.
 
