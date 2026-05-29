@@ -1,0 +1,113 @@
+= Monitor Redpanda SQL
+:description: Scrape Prometheus metrics from your Redpanda SQL engine to monitor query throughput, latency, node health, and resource use.
+:page-topic-type: how-to
+:personas: platform_admin
+:learning-objective-1: Identify Redpanda SQL metrics in your Cloud Prometheus scrape
+:learning-objective-2: Write PromQL queries against the most operationally useful SQL metrics
+
+Redpanda SQL exports Prometheus metrics that you can scrape alongside your broker metrics to track query load, latency, error rates, node health, and resource consumption. These metrics flow through the same Cloud OpenMetrics endpoint you already use for broker metrics, so you don't need additional scrape configuration.
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+
+== Prerequisites
+
+* A BYOC cluster with Redpanda SQL enabled. See xref:sql:get-started/deploy-sql-cluster.adoc[Deploy a Redpanda SQL cluster].
+* Prometheus, or a Prometheus-compatible scraper, configured against your Cloud cluster. See xref:manage:monitor-cloud.adoc[Monitor Redpanda Cloud].
+
+== Where SQL metrics appear
+
+Redpanda SQL metrics are named with the `oxla_` prefix (for example, `oxla_query_duration_seconds`, `oxla_node_is_ready_bool`) and are surfaced through the same `/api/cloud/prometheus/public_metrics` endpoint that exposes broker metrics. After you configure scraping as described in xref:manage:monitor-cloud.adoc#configure-redpanda-monitoring[Monitor Redpanda Cloud], SQL metrics appear in your time-series database without additional configuration.
+
+To see the full set of names and what each one means, see xref:reference:public-metrics-reference.adoc#redpanda-sql-metrics[Redpanda SQL metrics reference].
+
+== Useful PromQL queries
+
+The following examples cover the most common operational signals. SQL metrics use three Prometheus types: counter (monotonic total), gauge (current value), and histogram (latency distribution).
+
+=== Node health
+
+Alert when any SQL node reports itself not ready or degraded:
+
+[,promql]
+----
+max by (pod) (oxla_node_is_ready_bool) < 1
+max by (pod) (oxla_node_is_degraded_bool) > 0
+----
+
+=== Query throughput and errors
+
+Query rate per second, by statement type:
+
+[,promql]
+----
+sum by (stmt_type) (rate(oxla_query_duration_seconds_count[5m]))
+----
+
+Query error rate by error category:
+
+* `parse_error`
+* `plan_error`
+* `execution_error`
+* `oom`
+* `cancelled`
+* `other`
+
+[,promql]
+----
+sum by (error_type) (rate(oxla_query_errors_total[5m]))
+----
+
+=== Query latency
+
+p95 end-to-end query latency by statement type:
+
+[,promql]
+----
+histogram_quantile(0.95, sum by (stmt_type, le) (rate(oxla_query_duration_seconds_bucket[5m])))
+----
+
+To break down latency by phase, apply the same `histogram_quantile` pattern to `oxla_query_parse_duration_seconds`, `oxla_query_plan_duration_seconds`, and `oxla_query_execute_duration_seconds`:
+
+[,promql]
+----
+histogram_quantile(0.95, sum by (le) (rate(oxla_query_parse_duration_seconds_bucket[5m])))
+histogram_quantile(0.95, sum by (le) (rate(oxla_query_plan_duration_seconds_bucket[5m])))
+histogram_quantile(0.95, sum by (le) (rate(oxla_query_execute_duration_seconds_bucket[5m])))
+----
+
+=== Admission control
+
+Currently admitted and enqueued queries, and the rate of admission timeouts:
+
+[,promql]
+----
+oxla_admission_active_queries
+oxla_admission_enqueued_queries
+rate(oxla_admission_timeout_queries_failed_total[5m])
+----
+
+=== Resource use
+
+Resident memory per pod:
+
+[,promql]
+----
+oxla_process_memory_total
+----
+
+Open client connections:
+
+[,promql]
+----
+oxla_num_open_connections
+----
+
+== Suggested reading
+
+* xref:reference:public-metrics-reference.adoc#redpanda-sql-metrics[Redpanda SQL metrics reference]
+* xref:manage:monitor-cloud.adoc[Monitor Redpanda Cloud]
+* xref:sql:troubleshoot/degraded-state-handling.adoc[]
+* xref:sql:troubleshoot/query-out-of-memory.adoc[]
