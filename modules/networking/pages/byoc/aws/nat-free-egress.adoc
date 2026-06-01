@@ -1,0 +1,232 @@
+= Configure Centralized Egress with AWS Transit Gateway
+:description: Route all BYOC cluster egress through your own AWS Transit Gateway and hub VPC instead of a per-VPC NAT Gateway.
+:page-beta: true
+:page-topic-type: how-to
+:personas: platform_admin
+:learning-objective-1: Enable centralized egress on a new BYOC cluster using the Redpanda Cloud UI
+:learning-objective-2: Identify the shared responsibility boundaries between Redpanda and your hub account
+:learning-objective-3: Troubleshoot egress failures caused by misconfigured hub routes or firewall rules
+
+[IMPORTANT]
+====
+This feature is in beta and is available only on AWS BYOC clusters with private networking. Availability is controlled per organization. Contact your account team to request access to centralized egress.
+====
+
+Centralized egress lets your BYOC cluster send all internet-bound traffic through your own AWS Transit Gateway and hub VPC instead of a Redpanda-managed NAT Gateway in the Redpanda VPC. When centralized egress is enabled, the Redpanda spoke VPC attaches to your Transit Gateway, all outbound traffic exits through the NAT Gateway or firewall in your hub, and no per-VPC NAT Gateway is created in the spoke.
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
+
+== When to use centralized egress
+
+Use centralized egress when:
+
+* Your security policy prohibits per-VPC NAT Gateways and requires all internet-bound traffic to traverse a centralized inspection point such as an AWS Network Firewall, NVA, or third-party firewall appliance.
+* You already operate a hub-and-spoke network in AWS and want Redpanda to fit into that topology.
+* You want to consolidate egress through a single, predictable public IP for outbound allowlisting on external services.
+* You want to reduce NAT Gateway data-processing fees on high-throughput Redpanda workloads.
+
+If none of these apply, the default NAT Gateway egress used by standard BYOC clusters is simpler and requires no extra customer-managed infrastructure.
+
+== How it works
+
+Without centralized egress, the Redpanda agent creates a NAT Gateway and Internet Gateway inside the Redpanda VPC. With centralized egress enabled, the agent attaches the Redpanda VPC to your existing Transit Gateway instead, routes all `0.0.0.0/0` traffic through it, and provisions Interface VPC Endpoints in the Redpanda VPC so critical AWS API calls (ECR, STS, CloudWatch Logs) do not need to traverse your hub.
+
+The following diagram shows the connectivity model:
+
+----
++----------------------------------+         +-----------+         +----------------------------------+
+| Redpanda VPC                     |         | Transit   |         | Customer Hub VPC                 |
+| (Redpanda account)               |         | Gateway   |         | (Customer account)               |
+|                                  |         |           |         |                                  |
+| Transit Gateway VPC Attachment   +-------->+ Shared    +-------->+ Transit Gateway VPC Attachment   |
+| 0.0.0.0/0 -> Transit Gateway     |         | via AWS   |         | 0.0.0.0/0 -> NAT GW              |
+| VPC Endpoints                    |         | RAM       |         | NAT Gateway -> IGW               |
+| EKS Worker Nodes                 |         |           |         | Internet Gateway                 |
+| No NAT / No IGW                  |         |           |         |                                  |
++----------------------------------+         +-----------+         +-----------+----------------------+
+                                                                               |
+                                                                               v
+                                                                           Internet
+                                                               (Cloudsmith, public.ecr.aws,
+                                                                         NTP, Helm)
+----
+
+=== Outbound traffic flow
+
+. An EKS node in a Redpanda private subnet sends a packet destined for the internet.
+. The private route table forwards `0.0.0.0/0` to the Transit Gateway VPC attachment in the Redpanda VPC.
+. The Transit Gateway's default route table forwards `0.0.0.0/0` to your hub VPC attachment (static route).
+. The hub private route table forwards `0.0.0.0/0` to your NAT Gateway.
+. The NAT Gateway forwards traffic to your Internet Gateway and out to the internet.
+
+=== Return traffic flow
+
+. The internet response arrives at the Internet Gateway in your hub VPC.
+. The hub public route table forwards the Redpanda spoke CIDR to the Transit Gateway.
+. The Transit Gateway forwards traffic back to the Redpanda spoke attachment through a propagated route.
+. The packet arrives at the originating EKS node.
+
+The Redpanda spoke CIDR route on the hub public route table is your responsibility. It is added when you provision your hub. See xref:networking:byoc/aws/aws-hub-egress.adoc[Create an AWS Hub for Centralized Egress] for the full procedure.
+
+[#prerequisites]
+== Prerequisites
+
+Before you configure centralized egress, confirm all of the following:
+
+* Centralized egress is enabled on your Redpanda Cloud organization. Contact your account team to request access.
+* Your BYOC cluster uses private networking (connection type *Private*). Centralized egress is not available on clusters with a public connection type.
+* You have an existing AWS Transit Gateway in the same region as the Redpanda BYOC cluster, and you know whether it auto-accepts cross-account attachments. Check the setting on your Transit Gateway before you create the cluster:
++
+[,bash]
+----
+aws ec2 describe-transit-gateways \
+  --transit-gateway-ids <tgw-id> \
+  --query 'TransitGateways[0].Options.AutoAcceptSharedAttachments'
+----
++
+** If the value is `enable`, the Redpanda spoke attachment is accepted automatically when the BYOC cluster provisions. No action is required from you during cluster creation.
+** If the value is `disable`, you must manually accept the spoke attachment during cluster provisioning. In the AWS account that owns the Transit Gateway, open *VPC > Transit Gateway Attachments*, select the pending attachment from the Redpanda BYOC account, and choose *Actions > Accept transit gateway attachment*. Cluster provisioning pauses until you accept the attachment.
++
+[NOTE]
+====
+Enabling `AutoAcceptSharedAttachments` causes the Transit Gateway to accept attachments from any AWS account it is shared with through AWS Resource Access Manager. Share the Transit Gateway only with accounts you trust to attach VPCs.
+====
+* Your hub VPC has a NAT Gateway, AWS Network Firewall, or other NVA providing internet egress. See xref:networking:byoc/aws/aws-hub-egress.adoc[Create an AWS Hub for Centralized Egress] if you need to provision a hub.
+* If the hub Transit Gateway is in a different AWS account than the account where you deploy your BYOC cluster, you have created an AWS Resource Access Manager (RAM) share in the hub account and accepted the invitation in the BYOC account before creating the cluster. Within an AWS Organization, the share is auto-accepted and no manual acceptance step is needed.
+* Your hub VPC CIDR and the planned Redpanda spoke VPC CIDR do not overlap.
++
+[WARNING]
+====
+Terraform and AWS do not enforce CIDR uniqueness across Transit Gateway attachments, but overlapping CIDRs cause silent return-route failures. The hub VPC's local route always wins over a Redpanda-spoke-CIDR route on the public route table, blackholing reply traffic.
+
+Use a non-overlapping range for your hub. The `100.64.0.0/16` CGNAT range is a safe default because it rarely conflicts with typical RFC 1918 workload CIDRs.
+====
+* The Transit Gateway ID, in the form `tgw-` followed by at least 8 hexadecimal characters (for example, `tgw-0b629c5b4fb6e364b`).
+
+== Shared responsibility model
+
+[cols="2,1"]
+|===
+| Component | Owner
+
+| Redpanda spoke VPC, subnets, and EKS cluster | Redpanda
+| Spoke route table entry: `0.0.0.0/0` -> Transit Gateway | Redpanda
+| Interface VPC Endpoints (ECR, STS, CloudWatch Logs) in spoke | Redpanda
+| Accepting the AWS RAM share invitation (cross-account) | Customer
+| Transit Gateway | Customer
+| Hub VPC | Customer
+| Hub NAT Gateway, firewall, or NVA | Customer
+| Hub route table entry: Redpanda spoke CIDR -> Transit Gateway | Customer
+| Transit Gateway route tables | Customer
+| AWS RAM resource share (cross-account) | Customer
+| Egress path availability and HA | Customer
+|===
+
+Redpanda does not manage the availability of the egress path. Plan for multi-AZ NAT or redundant firewall instances in your hub if you need high availability.
+
+== Limitations
+
+Centralized egress is currently limited to setting the Transit Gateway ID at network creation. The field is immutable after the network is created.
+
+== Configure egress at network creation
+
+Centralized egress is set at network creation. You cannot change it on an existing network. Complete all hub-side setup, including your decision on Transit Gateway attachment acceptance (see <<prerequisites,Prerequisites>>), before you start the cluster creation flow.
+
+[IMPORTANT]
+====
+To switch back to NAT Gateway egress, create a new network and a new cluster on it, then migrate your data.
+====
+
+To enable centralized egress, use the Redpanda Cloud UI:
+
+. Log in to https://cloud.redpanda.com[Redpanda Cloud^].
+. On the Clusters page, click *Create cluster*, then click *Create* for BYOC.
+. Complete the cluster details. See xref:get-started:cluster-types/byoc/aws/create-byoc-cluster-aws.adoc[Create a BYOC Cluster on AWS] for the full create flow.
+. On the *Network* page, in the *Transit Gateway ID* field, enter your Transit Gateway ID. This field is only visible if centralized egress is enabled for your organization.
+. Click *Next* and complete the remaining steps.
+
+[NOTE]
+====
+The CIDR block you enter on the *Network* page is the Redpanda spoke CIDR. Your hub public route table must include a static route for this CIDR with the Transit Gateway as the target so reply traffic from the internet routes back to the cluster. Add this route when you provision the hub. See xref:networking:byoc/aws/aws-hub-egress.adoc[Create an AWS Hub for Centralized Egress]. The Transit Gateway's own route table picks up the spoke CIDR automatically through route propagation when the spoke attaches.
+====
+
+// The Cloud API path for centralized egress is intentionally hidden while the
+// `egress_spec` field is in PREVIEW. To re-enable the section when the field
+// graduates, set the :show-preview-api: attribute (either in this page's
+// header as `:show-preview-api:` or as a build-time attribute in the playbook).
+ifdef::show-preview-api[]
+=== Use the Cloud API
+
+[IMPORTANT]
+====
+The `egress_spec` field is in preview. Its shape and validation rules may change. Pin a specific API version when scripting against this field, and revisit your integration when the field graduates to general availability.
+====
+
+Set `egress_spec.aws.transit_gateway_id` on the Network resource when you create a network. The field is required when `egress_spec` is set, and the value must match the pattern `tgw-` followed by hexadecimal characters.
+
+[,bash]
+----
+curl -X POST https://api.redpanda.com/v1/networks \
+  -H "Authorization: Bearer $REDPANDA_CLOUD_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "prod-us-east-2",
+    "cloud_provider": "CLOUD_PROVIDER_AWS",
+    "region": "us-east-2",
+    "cidr_block": "10.10.0.0/20",
+    "cluster_type": "TYPE_BYOC",
+    "egress_spec": {
+      "aws": { "transit_gateway_id": "tgw-0b629c5b4fb6e364b" }
+    }
+  }'
+----
+
+For the surrounding workflow (authenticating to the Cloud API, creating the resource group, creating the cluster against this network, and running `rpk cloud byoc aws apply`) see xref:manage:api/cloud-byoc-controlplane-api.adoc[Use the BYOC Control Plane API]. After the network is created, you can create the cluster against it through the UI or by calling the Cluster create endpoint with the new network ID.
+endif::[]
+
+[#internet-endpoints]
+== Internet endpoints required from your hub
+
+The Redpanda VPC uses Interface VPC Endpoints for ECR (`ecr.api` and `ecr.dkr`), STS, and CloudWatch Logs, so traffic to those AWS services does not leave the Redpanda VPC. Your hub VPC must still provide internet egress for the following non-AWS endpoints:
+
+[cols="1,1,2"]
+|===
+| Endpoint | Protocol and port | Purpose
+
+| `docker.cloudsmith.io` | TCP/443 | Redpanda container images
+| `public.ecr.aws` | TCP/443 | EKS public CNI and network policy agent images
+| NTP servers | UDP/123 | Time sync
+| `prometheus-community.github.io` and similar Helm repositories | TCP/443 | Monitoring stack Helm charts
+|===
+
+If your hub firewall enforces an allowlist, allow outbound traffic to these endpoints from the Redpanda spoke CIDR.
+
+== DNS resolution
+
+Centralized egress does not affect DNS resolution. The Redpanda VPC uses AmazonProvidedDNS at `VPC_CIDR + 2`, which resolves both internal and external hostnames as long as `0.0.0.0/0` is routable through your hub. You do not need a separate DNS path or DNS resolver endpoint in your hub.
+
+== Troubleshooting
+
+[cols="1,1"]
+|===
+| Symptom | Likely cause
+
+| A new Transit Gateway VPC attachment from the Redpanda BYOC account appears in your hub AWS account with state `pendingAcceptance`, and cluster provisioning is stuck
+| Your Transit Gateway has `AutoAcceptSharedAttachments` set to `disable`. In the AWS account that owns the Transit Gateway, open *VPC > Transit Gateway Attachments*, select the pending attachment, and choose *Actions > Accept transit gateway attachment*. To remove this manual step on future BYOC cluster provisions, set `AutoAcceptSharedAttachments=enable` on the Transit Gateway, but only if you trust every account the Transit Gateway is shared with through AWS RAM.
+
+| The Transit Gateway resource share does not appear in the BYOC AWS account, or cluster creation rejects the Transit Gateway ID
+| The BYOC AWS account has not accepted the AWS RAM share invitation, so Redpanda cannot see the Transit Gateway. In that account, open AWS RAM and accept the pending invitation under *Resource share invitations*. Within an AWS Organization, shares are auto-accepted.
+
+| Cluster creation does not complete
+| The cluster cannot reach the external services it needs during bootstrap. On the hub side, verify all of the following: the Transit Gateway default route table has `0.0.0.0/0` to the hub VPC attachment; the hub public route table has a static route for the Redpanda spoke CIDR to the Transit Gateway; the hub firewall allowlist includes the endpoints in <<internet-endpoints,Internet endpoints required from your hub>>; and the hub VPC CIDR and the Redpanda spoke CIDR do not overlap. If these all look correct, contact Redpanda Support.
+|===
+
+== Next steps
+
+* xref:networking:byoc/aws/aws-hub-egress.adoc[Create an AWS Hub for Centralized Egress]
+* xref:get-started:cluster-types/byoc/aws/create-byoc-cluster-aws.adoc[Create a BYOC Cluster on AWS]
+* xref:networking:byoc/aws/transit-gateway.adoc[Add a Transit Gateway] (for routing client traffic, not egress)

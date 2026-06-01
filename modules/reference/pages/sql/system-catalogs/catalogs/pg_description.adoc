@@ -1,0 +1,18 @@
+= pg_description
+:description: The pg_description stores descriptions (comments) for each database object.
+:page-topic-type: reference
+
+The `pg_description` stores descriptions (comments) for each database object. It mimics the https://www.postgresql.org/docs/current/catalog-pg-description.html[pg_description^] PostgreSQL system catalog.
+
+== Columns
+
+The following columns are available for querying in `pg_description`:
+
+[width="100%",cols="11%,4%,85%",options="header",]
+|===
+|Column |Type |Description
+|`objoid` |`int` |This column represents the OID (Object ID) of the object for which the description is stored
+|`classoid` |`int` |This column represents the OID of the table that the object belongs to
+|`objsubid` |`int` |If an object has multiple parts (for example, columns in a table), `objsubid` specifies the column number. If not used, this is set to 0
+|`description` |`text` |This column represents the description for the specified object
+|===

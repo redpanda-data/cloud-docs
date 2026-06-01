@@ -6,13 +6,98 @@
 
 This page lists new features added to Redpanda Cloud.
 
+== May 2026
+
+=== Redpanda SQL
+
+Redpanda SQL is available on BYOC clusters running on AWS. Run real-time SQL queries on Redpanda topic data, including the Iceberg history of Iceberg-enabled topics, using standard PostgreSQL syntax. Connect with `psql` or any PostgreSQL driver. See the xref:sql:get-started/sql-quickstart.adoc[Quickstart] and xref:sql:get-started/overview.adoc[Overview].
+
+=== Centralized egress for BYOC on AWS: beta
+
+You can route all BYOC cluster egress through your own AWS Transit Gateway and hub VPC instead of a per-VPC NAT Gateway, so outbound traffic exits through your centralized inspection point. This is useful for regulated environments that prohibit per-VPC NAT Gateways and for consolidating egress behind a single, predictable public IP for outbound allowlisting. Centralized egress is in a glossterm:beta[] release and is enabled per organization. Contact your account team for access. See xref:networking:byoc/aws/nat-free-egress.adoc[Configure Centralized Egress with AWS Transit Gateway].
+
+=== Schema Registry Authorization enabled by default
+
+Schema Registry Authorization is now enabled automatically on all new BYOC and Dedicated clusters. The xref:reference:properties/cluster-properties.adoc#schema_registry_enable_authorization[`schema_registry_enable_authorization`] cluster property is set to `true` at provisioning, and the predefined Admin, Writer, and Reader roles include Schema Registry permissions for the `subject` and `registry` ACL resource types. You can use ACLs and RBAC roles to grant fine-grained access to schemas and subjects without any additional setup. See xref:manage:schema-reg/schema-reg-authorization.adoc[Schema Registry Authorization] and xref:security:authorization/rbac/rbac.adoc#predefined-roles[Predefined roles].
+
+=== Account impersonation: Schema Registry support
+
+xref:security:cloud-authentication.adoc#account-impersonation[Account impersonation] now supports Schema Registry in addition to the Kafka API. With Schema Registry impersonation enabled, the schemas and subjects users see in the Redpanda Cloud UI match exactly what they can access with the Cloud API or `rpk`. You can enable impersonation independently for each subsystem from the *Dataplane settings* page.
+
+=== Redpanda Connect updates
+
+* Inputs:
+** xref:develop:connect/components/inputs/salesforce.adoc[salesforce]: Executes a SOQL query against Salesforce and emits one message per record.
+** xref:develop:connect/components/inputs/salesforce_cdc.adoc[salesforce_cdc]: Captures change data from Salesforce objects using the Pub/Sub API.
+** xref:develop:connect/components/inputs/salesforce_graphql.adoc[salesforce_graphql]: Executes GraphQL queries against Salesforce.
+* Outputs:
+** xref:develop:connect/components/outputs/gcp_bigquery_write_api.adoc[gcp_bigquery_write_api]: Writes records to BigQuery using the Storage Write API for higher throughput and lower latency than the streaming insert API.
+* Metrics:
+** xref:develop:connect/components/metrics/open_telemetry_collector.adoc[open_telemetry_collector]: Pushes metrics using the OpenTelemetry Protocol (OTLP) over HTTP or gRPC.
+* Tracers:
+** xref:develop:connect/components/tracers/open_telemetry_collector.adoc[open_telemetry_collector]: Pushes tracing data using the OpenTelemetry Protocol (OTLP) over HTTP or gRPC.
+
+* Behavior changes:
+** xref:develop:connect/components/outputs/gcp_bigquery_write_api.adoc[`gcp_bigquery_write_api`] output: The default value of `max_in_flight` has been reduced from `64` to `4`. If you rely on the previous behavior for throughput, set `max_in_flight` explicitly in your pipeline configuration. The output also gained new fields for tuning Storage Write API behavior: `max_cached_streams`, `schema_resolve_timeout`, and `schema_evolution_timeout`.
+
+* New field support:
+** Kafka producer tuning fields on the xref:develop:connect/components/outputs/kafka_franz.adoc[`kafka_franz`] and xref:develop:connect/components/outputs/redpanda.adoc[`redpanda`] outputs: `acks`, `max_in_flight_requests`, `max_buffered_records`, `max_buffered_bytes`, `record_retries`, and `record_delivery_timeout`. Use these to align pipeline producers with broker durability and back-pressure requirements.
+
+* Removed components:
+** `salesforce` processor (introduced in April 2026): Replaced with the dedicated xref:develop:connect/components/inputs/salesforce.adoc[`salesforce`], xref:develop:connect/components/inputs/salesforce_cdc.adoc[`salesforce_cdc`], and xref:develop:connect/components/inputs/salesforce_graphql.adoc[`salesforce_graphql`] inputs. The xref:develop:connect/components/outputs/salesforce_sink.adoc[`salesforce_sink`] output remains available.
+
+=== Extended Serverless free trial
+
+The free trial for Redpanda Serverless now lasts 30 days, up from 14 days. The $100 (USD) credit allowance and 7-day grace period are unchanged. Sign up at https://www.redpanda.com/try-data-streaming[redpanda.com^]. See xref:get-started:cluster-types/serverless.adoc[Serverless clusters].
+
+=== Service account token rate limits
+
+A daily limit now applies to service account access token requests for each organization. Clients that exceed the limit receive `HTTP 429` responses. Cache tokens until close to expiry to stay within the limit, and contact Redpanda Support if your workload requires a higher daily limit. See xref:security:cloud-authentication.adoc#service-account-token-rate-limits[Service account token rate limits].
+
 == April 2026
+
+=== Self-service sign-up through Google Cloud Marketplace
+
+You can now subscribe to Redpanda Cloud directly through Google Cloud Marketplace with pay-as-you-go billing, with no sales contact required. Self-service sign-up provisions Serverless and Dedicated clusters only. New subscriptions receive $300 (USD) in free credits to spend in the first 30 days. See xref:billing:gcp-pay-as-you-go.adoc[Use GCP Pay As You Go].
+
+=== Iceberg: Configurable table namespace
+
+You can now set a custom namespace for Iceberg tables instead of the default `redpanda` namespace, using the `iceberg_default_catalog_namespace` cluster property. A custom namespace is useful when multiple clusters write to the same catalog provider (such as AWS Glue), because each cluster must use a distinct namespace to avoid table name collisions. This property must be set when you first enable Iceberg and cannot be changed afterward. See xref:manage:iceberg/about-iceberg-topics.adoc#enable-iceberg-integration[Enable Iceberg integration].
+
+=== Group-based access control (GBAC)
+
+* With xref:security:authorization/gbac/gbac.adoc[GBAC in the control plane], you can manage access to organization-level resources using OIDC groups from your identity provider. Assign OIDC groups to roles so that users inherit access based on their group membership. 
+* With xref:security:authorization/gbac/gbac_dp.adoc[GBAC in the data plane], you can configure cluster-level permissions for provisioned users at scale using OIDC groups. Because group membership is managed by your identity provider, onboarding and offboarding require no changes in Redpanda. 
+
+GBAC is available for BYOC and Dedicated clusters. In addition to the predefined roles (including Reader, Writer, and Admin) that you cannot modify or delete, you can now create custom roles.
+
+=== Remote MCP: Deprecated
+
+Remote MCP has been deprecated and removed from Redpanda Cloud.
 
 === Increased Serverless limits for Redpanda Connect pipelines and MCP servers
 
-Serverless clusters now support up to 100 Redpanda Connect pipelines and 100 MCP servers. See xref:get-started:cluster-types/serverless.adoc#_serverless_usage_limits[Serverless usage limits].
+Serverless clusters now support up to 100 Redpanda Connect pipelines and MCP servers. See xref:get-started:cluster-types/serverless.adoc#_serverless_usage_limits[Serverless usage limits].
+
+=== Terraform provider: Write-only attributes for sensitive fields
+
+The Redpanda Terraform provider (v1.6.0+) now supports https://developer.hashicorp.com/terraform/plugin/framework/resources/write-only-arguments[Terraform 1.11+ write-only attributes^] for sensitive fields such as user passwords and pipeline client secrets. Use the new `password_wo` and `password_wo_version` attributes (and equivalents for other sensitive fields) to keep credentials out of your `.tfstate` file. See xref:manage:terraform-provider.adoc#manage-sensitive-attributes-with-write-only-fields[Manage sensitive attributes with write-only fields].
+
+=== Redpanda Connect updates
+
+* The Redpanda Connect pipeline creation and editing workflow has been simplified. The new UI replaces the previous multi-page wizard with a visual pipeline diagram, an IDE-like configuration editor, slash commands for inserting variables, and inline links to component documentation. See the xref:develop:connect/connect-quickstart.adoc[Redpanda Connect quickstart] to try it out.
+* Outputs:
+** xref:develop:connect/components/outputs/arc.adoc[arc]: Send data to an Arc columnar analytical database using its high-performance MessagePack ingestion endpoint.
+** xref:develop:connect/components/outputs/salesforce_sink.adoc[salesforce_sink]: Write messages to Salesforce, routing each Kafka topic to its own sObject configuration. Supports both realtime (sObject Collections REST API) and bulk modes (Bulk API 2.0).
+* Processors:
+** xref:develop:connect/components/processors/string_split.adoc[string_split]: Splits strings into multiple parts using a delimiter, creating new messages or fields for each part.
+** `salesforce` (deprecated May 2026): Replaced with dedicated xref:develop:connect/components/inputs/salesforce.adoc[salesforce], xref:develop:connect/components/inputs/salesforce_cdc.adoc[salesforce_cdc], and xref:develop:connect/components/inputs/salesforce_graphql.adoc[salesforce_graphql] inputs.
 
 == March 2026
+
+=== Redpanda Console: unlimited pagination for messages
+
+Redpanda Console now supports paginating past the previous 500-record cap when you browse topic messages, so you can inspect large topics without being limited to the initial result set. See xref:develop:consume-data/paginate-messages-events.adoc[].
 
 === Redpanda Connect updates
 
@@ -41,6 +126,16 @@ Use the unified xref:develop:connect/components/inputs/redpanda_migrator.adoc[`r
 xref:develop:topics/cloud-topics.adoc[Cloud Topics] are now available, making it possible to use durable cloud storage (S3, ADLS, GCS) as the primary backing store instead of local disk, eliminating over 90% of cross-AZ replication costs. This makes them ideal for latency-tolerant, high-throughput workloads such as observability streams, analytics pipelines, and AI/ML training data feeds, where cross-AZ networking charges are the dominant cost driver.
 
 You can use Cloud Topics exclusively or in combination with standard topics on a cluster supporting low-latency workloads.
+
+=== Schema Registry metadata properties
+
+xref:manage:schema-reg/schema-reg-overview.adoc#metadata-properties[Schema Registry metadata properties] let you store and retrieve arbitrary key-value pairs alongside schemas. Properties such as `owner`, `team`, or `application.version` travel with the schema through its lifecycle, making it easier to track ownership and lineage without modifying the schema itself. You can set metadata when registering a schema using the `POST /subjects/\{subject\}/versions` endpoint or with the `--metadata-properties` flag in `rpk registry schema create`. Metadata is returned in API responses and viewable with `rpk registry schema get --print-metadata` or in Redpanda Cloud Console.
+
+=== Schema Registry Contexts
+
+xref:manage:schema-reg/schema-reg-contexts.adoc[Schema Registry contexts] provide isolated namespaces that separate schemas, subjects, and configuration within a single Schema Registry instance. Each context maintains its own schema ID counter, mode settings, and compatibility settings. 
+
+On Serverless clusters, Redpanda uses contexts internally for per-tenant isolation. Contexts are not exposed to end users on Serverless. On BYOC and Dedicated clusters, contexts are available and user-configurable.
 
 === User-based throughput quotas
 
@@ -114,13 +209,9 @@ The xref:manage:terraform-provider.adoc[Redpanda Terraform provider] now support
 
 == December 2025
 
-=== Remote MCP: GA
-
-You can now deploy managed MCP servers directly inside your Redpanda Cloud cluster with xref:ai-agents:mcp/remote/overview.adoc[Remote MCP]. Remote MCP servers give AI assistants streaming data capabilities, enabling use cases like real-time data generation, stream processing, and event publishing.
-
 === Shadowing
 
-Redpanda Cloud now supports xref:manage:disaster-recovery/shadowing/overview.adoc[Shadowing], a disaster recovery solution that provides asynchronous, offset-preserving replication between distinct Redpanda clusters. Shadowing enables cross-region data protection by replicating topic data, configurations, consumer group offsets, ACLs, and Schema Registry data with byte-level fidelity.The shadow cluster operates in read-only mode while continuously receiving updates from the source cluster. During a disaster, you can failover individual topics or an entire shadow link to make resources fully writable for production traffic.
+Redpanda Cloud now supports xref:manage:disaster-recovery/shadowing/overview.adoc[Shadowing], a disaster recovery solution that provides asynchronous, offset-preserving replication between distinct Redpanda clusters. Shadowing enables cross-region data protection by replicating topic data, configurations, consumer group offsets, ACLs, and Schema Registry data with byte-level fidelity. The shadow cluster operates in read-only mode while continuously receiving updates from the source cluster. During a disaster, you can failover individual topics or an entire shadow link to make resources fully writable for production traffic.
 
 Shadowing is supported on BYOC and Dedicated clusters running Redpanda version 25.3 and later. 
 
@@ -128,11 +219,11 @@ Shadowing is supported on BYOC and Dedicated clusters running Redpanda version 2
 
 You can now view and export metrics from Serverless clusters to third-party monitoring systems like Prometheus and Grafana. See xref:manage:monitor-cloud.adoc[Monitor Redpanda Cloud] for details on configuring monitoring for your Serverless cluster and xref:reference:public-metrics-reference.adoc[Metrics Reference] for a list of metrics available in Serverless.
 
-=== User impersonation
+=== Account impersonation
 
-BYOC and Dedicated clusters now support unified authentication and authorization between the Redpanda Cloud UI and Redpanda with xref:security:cloud-authentication.adoc#user-impersonation[user impersonation]. This means you can authenticate to fine-grained access within Redpanda using the same credentials you use to authenticate to Redpanda Cloud. 
+BYOC and Dedicated clusters now support unified authentication and authorization between the Redpanda Cloud UI and Redpanda with xref:security:cloud-authentication.adoc#account-impersonation[account impersonation]. This means you can authenticate to fine-grained access within Redpanda using the same credentials you use to authenticate to Redpanda Cloud. 
 
-With user impersonation, the topics users see in the UI are identical to what they can access with the Cloud API or `rpk`, ensuring consistent permissions across all interfaces and clear auditing of data plane user actions.
+With account impersonation (originally called user impersonation), the topics users see in the UI are identical to what they can access with the Cloud API or `rpk`, ensuring consistent permissions across all interfaces and clear auditing of data plane user actions.
 
 === Redpanda Connect updates
 
@@ -161,11 +252,11 @@ The message size setting on existing topics is not changed, but the message size
 
 === Redpanda Connect updates
 
-Redpanda Connect provides a simplified xref:develop:connect/connect-quickstart.adoc[quickstart] experience in the UI that helps you to start building data pipelines. The quickstart wizard creates pipelines to stream data into and out of Redpanda, populating the required YAML configuration automatically.
+Redpanda Connect provides a simplified xref:develop:connect/connect-quickstart.adoc[quickstart] experience in the UI that helps you to start building data pipelines. The quickstart creates pipelines to stream data into and out of Redpanda using the pipeline editor.
 
 === Get Started with Serverless
 
-A Serverless cluster's *Overview* page now provides a *Get Started* wizard to help you start streaming your own data with a xref:develop:connect/connect-quickstart.adoc[Redpanda Connect] pipeline. The wizard lets you stream data into and out of Redpanda without writing producer/consumer code. 
+A Serverless cluster's *Overview* page now provides a *Get Started* guide to help you start streaming your own data with a xref:develop:connect/connect-quickstart.adoc[Redpanda Connect] pipeline. It lets you stream data into and out of Redpanda without writing producer/consumer code.
 
 === Remote read replicas: GA
 
@@ -177,14 +268,6 @@ The xref:manage:terraform-provider.adoc[Redpanda Terraform provider] now support
 
 == October 2025
 
-=== Remote MCP: beta
-
-Deploy managed MCP servers directly inside your Redpanda Cloud cluster with xref:ai-agents:mcp/remote/overview.adoc[Remote MCP]. Unlike the Redpanda Cloud Management MCP Server, Remote MCP servers run within your cluster and can process data streams, generate synthetic data, and publish directly to Redpanda topics.
-
-Create custom AI tools using templates or write your own Redpanda Connect configurations to build event-driven workflows. Remote MCP servers provide AI assistants with streaming data capabilities, enabling use cases like real-time data generation, stream processing, and event publishing.
-
-Get started with the xref:ai-agents:mcp/remote/quickstart.adoc[quickstart guide] or learn xref:ai-agents:mcp/remote/best-practices.adoc[best practices] for building robust tools.
-
 === API Gateway access
 
 BYOC and Dedicated clusters with private networking now allow control of API Gateway network access, independent of the Redpanda cluster. When you create a cluster, you can choose either public or private access for the API Gateway:
@@ -192,7 +275,7 @@ BYOC and Dedicated clusters with private networking now allow control of API Gat
 * Public access exposes Redpanda Console, Data Plane API, and MCP Server API endpoints over the internet, although they remain protected by your authentication and authorization controls.
 * Private access restricts endpoint access to your private network (VPC or VNet) only.
 
-After the cluster is created, you can change the API Gateway access on the cluster settings page. If you change from public to private access, users without VPN access to the Redpanda VPC will lose access to these services.
+After the cluster is created, you can change the API Gateway access on the Dataplane settings page. If you change from public to private access, users without VPN access to the Redpanda VPC will lose access to these services.
 
 === Redpanda Connect updates
 
@@ -200,7 +283,7 @@ After the cluster is created, you can change the API Gateway access on the clust
 ** xref:components:inputs/microsoft_sql_server_cdc.adoc[Microsoft SQL Server CDC]: Streams change data from a Microsoft SQL Server database into Redpanda Connect using Change Data Capture (CDC).
 
 * Outputs:
-** xref:develop:connect/components/outputs/cyborgdb.adoc[CyborgDB]: Wite vectors to a CyborgDB encrypted index. CyborgDB provides
+** xref:develop:connect/components/outputs/cyborgdb.adoc[CyborgDB]: Write vectors to a CyborgDB encrypted index. CyborgDB provides
 end-to-end encrypted vector storage with automatic dimension detection and index optimization.
 
 * Processors:
@@ -217,7 +300,7 @@ Migrate from these deprecated components to the new unified `redpanda_migrator` 
 +
 These components have been consolidated into the unified `redpanda` input and output components. Migrate existing configurations to use the new `redpanda` components for continued support and access to the latest features.
 
-For detailed information about recent component updates, see xref:redpanda-connect:ROOT:whats_new_rpcn.adoc[What's New in Redpanda Connect].
+For detailed information about recent component updates, see xref:connect:streaming:whats_new_rpcn.adoc[What's New in Redpanda Connect].
 
 == September 2025
 
@@ -227,9 +310,9 @@ Enable multi-factor authentication (MFA) to add an extra layer of security to yo
 
 === Redpanda Cloud Management MCP Server: beta
 
-Connect AI assistants like Claude directly to your Redpanda Cloud account with the new xref:ai-agents:mcp/local/overview.adoc[Redpanda Cloud Management MCP Server]. This server runs on your computer and provides AI tools for managing clusters, topics, and other cloud resources through natural language commands.
+Connect AI assistants like Claude directly to your Redpanda Cloud account with the new xref:ai-agents:mcp/overview.adoc[Redpanda Cloud Management MCP Server]. This server runs on your computer and provides AI tools for managing clusters, topics, and other cloud resources through natural language commands.
 
-Ask your AI assistant to "Create a new topic called user-events" or "List all clusters in my account" and it will handle the technical details automatically. Get started with the xref:ai-agents:mcp/local/quickstart.adoc[quickstart guide].
+Ask your AI assistant to "Create a new topic called user-events" or "List all clusters in my account" and it will handle the technical details automatically. Get started with the xref:ai-agents:mcp/quickstart.adoc[quickstart guide].
 
 The Redpanda Cloud Management MCP Server uses the Model Context Protocol (MCP) to extend AI assistants with Redpanda-specific capabilities, making cloud operations more accessible through conversational interfaces.
 
@@ -300,7 +383,7 @@ Redpanda Connect includes the following updates:
 * The xref:develop:connect/components/outputs/slack_reaction.adoc[Slack Reaction] component lets you send messages to a Slack channel in response to events in Redpanda. You can use it to create alerts, notifications, or other automated responses based on data changes in Redpanda. 
 * The xref:develop:connect/components/caches/redpanda.adoc[Redpanda Cache] component lets you cache data in Redpanda, improving performance and reducing latency for data access. You can use it to store frequently accessed data, such as configuration settings or user profiles, in Redpanda. 
 
-For more detailed information about recent component updates, see xref:redpanda-connect:ROOT:whats_new_rpcn.adoc[What's New in Redpanda Connect].
+For more detailed information about recent component updates, see xref:connect:streaming:whats_new_rpcn.adoc[What's New in Redpanda Connect].
 
 === Serverless client connections
 
@@ -358,7 +441,7 @@ See the link:/api/doc/cloud-controlplane/topic/topic-deprecation-policy[Cloud AP
 
 You can now xref:manage:cluster-maintenance/config-cluster.adoc#view-cluster-property-values[view the value of read-only cluster configuration properties] with `rpk cluster config` or with the Cloud API. Available properties are listed in xref:reference:properties/cluster-properties.adoc[Cluster Properties] and xref:reference:properties/object-storage-properties.adoc[Object Storage Properties].
 
-=== Iceberg topics in Azure (beta)
+=== Iceberg topics in Azure: beta
 
 xref:manage:iceberg/about-iceberg-topics.adoc[Iceberg topics] are now supported for BYOC clusters in Azure.
 
@@ -528,7 +611,7 @@ Redpanda Cloud now offers greater flexibility to schedule upgrades to your clust
 
 xref:develop:connect/about.adoc[Redpanda Connect] is now integrated into Redpanda Cloud and available as a fully-managed service. This is a limited availability (LA) release for BYOC and a beta release for Serverless. xref:develop:connect/components/about.adoc[Choose from a range of connectors, processors, and other components] to quickly build and deploy streaming data pipelines or AI applications from the xref:develop:connect/connect-quickstart.adoc[Cloud UI] or using the link:/api/doc/cloud-dataplane/group/endpoint-redpanda-connect-pipeline[Data Plane API]. Comprehensive metrics, monitoring, and per pipeline scaling are also available. To start using Redpanda Connect, xref:develop:connect/connect-quickstart.adoc[try this quickstart].
 
-For more detailed information about recent component updates, see xref:redpanda-connect:ROOT:whats_new_rpcn.adoc[What's New in Redpanda Connect].
+For more detailed information about recent component updates, see xref:connect:streaming:whats_new_rpcn.adoc[What's New in Redpanda Connect].
 
 === Dedicated on Azure: LA
 
@@ -588,7 +671,7 @@ mTLS authentication is now available for Kafka API clients. You can xref:securit
 
 === Manage private connectivity in the UI
 
-You can now manage GCP Private Service Connect and AWS PrivateLink connections to your BYOC or Dedicated cluster on the *Cluster settings* page in Redpanda Cloud. See the steps for xref:networking:configure-privatelink-in-cloud-ui.adoc[PrivateLink] and xref:networking:configure-private-service-connect-in-cloud-ui.adoc[Private Service Connect].
+You can now manage GCP Private Service Connect and AWS PrivateLink connections to your BYOC or Dedicated cluster on the *Dataplane settings* page in Redpanda Cloud. See the steps for xref:networking:configure-privatelink-in-cloud-ui.adoc[PrivateLink] and xref:networking:configure-private-service-connect-in-cloud-ui.adoc[Private Service Connect].
 
 === Single message transforms
 
@@ -658,4 +741,4 @@ In the Redpanda Console UI, you can xref:manage:schema-reg/schema-reg-ui.adoc[pe
 
 === Maintenance windows
 
-With maintenance windows, you have greater flexibility to plan upgrades to your cluster. By default, Redpanda Cloud upgrades take place on Tuesdays. Optionally, on the **Cluster settings** page, you can select a window of specific off-hours for your business for Redpanda to apply updates. All times are in Coordinated Universal Time (UTC). Updates may start at any time during that window. 
+With maintenance windows, you have greater flexibility to plan upgrades to your cluster. By default, Redpanda Cloud upgrades take place on Tuesdays. Optionally, on the **Dataplane settings** page, you can select a window of specific off-hours for your business for Redpanda to apply updates. All times are in Coordinated Universal Time (UTC). Updates may start at any time during that window. 

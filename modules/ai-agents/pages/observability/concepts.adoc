@@ -70,7 +70,7 @@ Agent transcripts contain these span types:
 | Identify which model was called, measure LLM response time, and debug LLM API errors.
 
 | `rpcn-mcp`
-| MCP tool invocation representing calls to Remote MCP servers. Shows tool execution time, including network latency and tool processing. Child spans with `instrumentationScope.name` set to `redpanda-connect` represent internal Redpanda Connect processing.
+| MCP tool invocation representing calls to MCP servers. Shows tool execution time, including network latency and tool processing.
 | Measure tool execution time and identify slow MCP tool calls.
 |===
 
@@ -99,7 +99,7 @@ MCP server transcripts contain these span types:
 |===
 | Span Type | Description | Use To
 
-| `mcp-{server-id}`
+| `mcp-\{server-id\}`
 | Top-level span representing the entire MCP server invocation. The server ID uniquely identifies the MCP server instance. This span encompasses all tool execution from request receipt to response completion.
 | Measure total MCP server response time and identify slow tool invocations.
 
@@ -203,7 +203,7 @@ The request flow demonstrates:
 When agents call MCP tools, the transcript spans multiple services. Each service has a different `service.name` in the resource attributes:
 
 * Agent spans: `"service.name": "ai-agent"`
-* MCP server spans: `"service.name": "mcp-{server-id}"`
+* MCP server spans: `"service.name": "mcp-\{server-id\}"`
 
 Both use the same `traceId`, allowing you to follow a request across service boundaries.
 
@@ -337,8 +337,3 @@ Transcripts provide:
 
 Transcripts are optimized for execution-level observability and governance. For user-level accountability tracking ("who initiated what"), use the session and task topics for agents, which provide records of agent conversations and task execution.
 
-== Next steps
-
-* xref:ai-agents:observability/transcripts.adoc[]
-* xref:ai-agents:agents/monitor-agents.adoc[]
-* xref:ai-agents:mcp/remote/monitor-mcp-servers.adoc[]

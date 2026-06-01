@@ -1,15 +1,20 @@
 = Serverless
 :description: Learn how to create a Serverless cluster and start streaming.
-:page-aliases: get-started:cluster-types/serverless-pro.adoc, ROOT:deploy:deployment-option/cloud/serverless.adoc 
+:page-aliases: get-started:cluster-types/serverless-pro.adoc, streaming:deploy:deployment-option/cloud/serverless.adoc, ROOT:deploy:deployment-option/cloud/serverless.adoc
+:page-topic-type: overview
+:personas: evaluator, app_developer, platform_admin
+:learning-objective-1: Identify the use cases and usage limits for Serverless clusters
+:learning-objective-2: Describe how to create a Serverless cluster and connect a client
+:learning-objective-3: Recognize which features are supported and unsupported on Serverless
 
 
-Serverless is the fastest and easiest way to start data streaming. With Serverless clusters, you host your data in Redpanda's VPC, and Redpanda handles automatic scaling, provisioning, operations, and maintenance. This is a production-ready deployment option with a cluster available instantly, and you only pay for what you consume. You can view detailed billing activity for each cluster and edit payment methods on the *Billing* page. 
+Serverless is the fastest and easiest way to start data streaming. With Serverless clusters, you host your data in Redpanda's VPC, and Redpanda handles automatic scaling, provisioning, operations, and maintenance. This is a production-ready deployment option with a cluster available instantly, and you only pay for what you consume. You can view detailed billing activity for each cluster and edit payment methods on the *Billing* page.
 
-[NOTE]
-====
-Serverless on GCP is currently in a glossterm:beta[] release. 
+After reading this page, you will be able to:
 
-====
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
 
 == Serverless usage limits
 
@@ -43,6 +48,12 @@ Make sure you have the latest version of `rpk`, the Redpanda CLI. See xref:get-s
 
 == Get started with Serverless
 
+[NOTE]
+====
+Serverless on GCP is currently in a glossterm:beta[] release.
+
+====
+
 Choose the option that fits how you want to subscribe:
 
 include::get-started:partial$get-started-serverless.adoc[]
@@ -57,13 +68,15 @@ To create a Serverless cluster:
 +
 If you don't have an existing resource group, you can create one. Refresh the page to see newly-created resource groups. 
 
-. Select a cloud provider and xref:reference:tiers/serverless-regions.adoc[region]. For best performance, select the region closest to your applications. Redpanda expects your applications to be deployed in the same cloud provider and region as your Serverless cluster. 
-+
-Clusters on AWS can enable private access between their VPC and Redpanda, so data does not traverse the public internet. Private connectivity is implemented using AWS PrivateLink for secure traffic.
+. Select a cloud provider: AWS or GCP. (GCP is currently in a glossterm:beta[] release.)
+
+. Select a xref:reference:tiers/serverless-regions.adoc[region]. For best performance, select the region closest to your applications. Redpanda expects your applications to be deployed in the same cloud provider and region as your Serverless cluster. 
+
+. *AWS only*: Clusters on AWS can enable private access between their VPC and Redpanda, so data does not traverse the public internet. Private connectivity is implemented using AWS PrivateLink for secure traffic.
 +
 ** When you enable both public access and private access on the cluster, you can choose between the public address or the private address. When the public address is used the data flows over the public internet.
 ** You can either create a new PrivateLink or use an existing one from the same resource group.
-** You can enable or disable private access at any time on the cluster's *Settings* page. 
+** You can enable or disable private access at any time on the cluster's *Dataplane settings* page. 
 ** Enabling private access incurs additional charges.
 +
 NOTE: After private access is disabled, attempts to reach the private endpoints will fail. However, the PrivateLink endpoint in your AWS account and the PrivateLink resource in Redpanda Cloud both remain provisioned and continue to incur charges until you explicitly delete them.     
@@ -100,8 +113,19 @@ Not all features included in BYOC clusters are available in Serverless. For exam
 
 * HTTP Proxy API
 * Multiple availability zones (AZs)
-* RBAC in the data plane and mTLS authentication for Kafka API clients
-* Kafka Connect 
+* Role-based access control (RBAC) in the data plane and mTLS authentication for Kafka API clients
+* Group-based access control (GBAC)
+* Kafka Connect
+* Configurable maintenance windows
+
+[[maintenance-and-upgrades]]
+== Maintenance and upgrades
+
+Redpanda manages all maintenance for Serverless clusters. Because Serverless runs on shared, multi-tenant infrastructure, you cannot configure a maintenance window or schedule upgrades for an individual cluster. Redpanda may run maintenance operations on Serverless clusters at any time. Continuous operations are integral to keeping Serverless clusters up to date and secure. Operations run in a rolling fashion and are designed to be non-disruptive. Mainstream Kafka client libraries reconnect automatically when broker connections restart.
+
+If you need control over when maintenance runs on your cluster, use a Dedicated or BYOC cluster, both of which support configurable maintenance windows.
+
+For more information, see xref:manage:maintenance.adoc[].
 
 == Next steps
 
