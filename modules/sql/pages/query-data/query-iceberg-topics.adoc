@@ -115,7 +115,7 @@ Redpanda SQL handles this divergence by treating the topic's Schema Registry sub
 When Redpanda SQL maps an Iceberg-enabled topic as a SQL table, it reads the Iceberg schema and converts each column type to a SQL type. The following column types currently have no valid Redpanda SQL type mapping and cause `CREATE TABLE` or `REFRESH` to fail with an error.
 
 * Columns of type `map` are not supported, whether at the top level or nested inside a struct.
-* Decimal columns with precision greater than 18 cannot be mapped. Iceberg allows decimal precision up to 38, but Redpanda SQL stores decimals as 64-bit integers with a maximum precision of 18. Decimals with precision 18 or lower work as expected.
+* `decimal` columns with precision greater than 18 cannot be mapped. Iceberg allows decimal precision up to 38, but Redpanda SQL stores decimals as 64-bit integers with a maximum precision of 18. Decimals with precision 18 or lower work as expected.
 * A `list` whose element type is also a `list` is not supported. Simple lists (list of primitives or list of structs) work as expected.
 
 These schema-mapping constraints apply only to columns in the Iceberg schema. Columns sourced from live topic records are not subject to these type restrictions.

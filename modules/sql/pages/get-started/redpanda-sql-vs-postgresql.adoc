@@ -121,9 +121,15 @@ SELECT ABS(-1.0);
 |working as expected
 |===
 
-== Data-type limitations
+== Data type limitations
 
-Some Iceberg column types have no valid Redpanda SQL type mapping and cause `CREATE TABLE` or `REFRESH` to fail: map, decimal with precision greater than 18, and nested lists. For details, see xref:sql:query-data/query-iceberg-topics.adoc#iceberg-type-limitations[Iceberg type limitations].
+The following Iceberg column types have no valid Redpanda SQL type mapping and cause `CREATE TABLE` or `REFRESH` to fail:
+
+* `map`
+* `decimal` with precision greater than 18
+* nested `list` types
+
+For details, see xref:sql:query-data/query-iceberg-topics.adoc#iceberg-type-limitations[Iceberg type limitations].
 
 == Suggested reading
 
