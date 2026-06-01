@@ -2,7 +2,7 @@
 :description: Query the history of a Redpanda topic in Iceberg, and run a single SQL query that spans live records and historical Iceberg-committed records.
 :page-topic-type: how-to
 :personas: app_developer, data_engineer
-:learning-objective-1: Identify the storage and catalog objects Cloud sets up for querying Iceberg-enabled topics
+:learning-objective-1: Describe the storage and catalog objects that Redpanda Cloud configures for Iceberg-enabled topic queries
 :learning-objective-2: Query both the live records and the Iceberg-committed history of a topic in a single result
 :learning-objective-3: Handle schema differences between a Redpanda topic and its Iceberg table
 
@@ -109,6 +109,16 @@ Redpanda SQL handles this divergence by treating the topic's Schema Registry sub
 * The result's column order, count, and types come from the topic schema.
 * If the Iceberg table is missing a column that the topic schema has, Redpanda SQL returns `NULL` for that column on Iceberg-side rows. This is common after adding a new column to the topic schema, since earlier records already in Iceberg don't have it.
 * If the Iceberg table has columns the topic schema does not, the query fails at planning time with the error `Kafka schema must be a name-superset of Iceberg schema`. This happens when a column is removed from the topic's Schema Registry subject. To resolve, re-add the column to the topic's Schema Registry subject so the topic schema covers every column present in the Iceberg table.
+
+== Iceberg type limitations
+
+When Redpanda SQL maps an Iceberg-enabled topic as a SQL table, it reads the Iceberg schema and converts each column type to a SQL type. The following column types currently have no valid Redpanda SQL type mapping and cause `CREATE TABLE` or `REFRESH` to fail with an error.
+
+* Columns of type `map` are not supported, whether at the top level or nested inside a struct.
+* `decimal` columns with precision greater than 18 cannot be mapped. Iceberg allows decimal precision up to 38, but Redpanda SQL stores decimals as 64-bit integers with a maximum precision of 18. Decimals with precision 18 or lower work as expected.
+* A `list` whose element type is also a `list` is not supported. Simple lists (list of primitives or list of structs) work as expected.
+
+These schema-mapping constraints apply only to columns in the Iceberg schema. Columns sourced from live topic records are not subject to these type restrictions.
 
 == Next steps
 

@@ -47,8 +47,6 @@ Cloud API::
 +
 --
 . Authenticate to the link:/api/doc/cloud-controlplane/topic/topic-cloud-api-overview[Cloud API]. For details, see link:/api/doc/cloud-controlplane/authentication[Authenticate to the Cloud API].
-// TODO: Is selecting capacity (currently node count, expected to change to RPUs)
-// available with this endpoint?
 . Make a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_createcluster[`POST /v1/clusters`] request with `rpsql.enabled` set to `true` in the cluster spec:
 +
 [,bash]
@@ -66,18 +64,21 @@ curl -X POST "https://api.redpanda.com/v1/clusters" \
       "throughput_tier": "<tier>",
       "resource_group_id": "<resource-group-id>",
       "rpsql": {
-        "enabled": true
+        "enabled": true,
+        "replicas": <n>
       }
     }
   }'
 ----
 +
-For the full request body and field reference, see the link:/api/doc/cloud-controlplane/operation/operation-clusterservice_createcluster[Create Cluster API].
+For the full request body and field reference, see the link:/api/doc/cloud-controlplane/operation/operation-clusterservice_createcluster[Create Cluster API]. Use the `replicas` field to set the initial number of SQL compute nodes (minimum 1).
 . The request returns the ID of a long-running operation. Poll the link:/api/doc/cloud-controlplane/operation/operation-operationservice_getoperation[`GET /v1/operations/{operation.id}`] endpoint until the operation completes.
 --
 =====
 
 === On an existing cluster
+
+NOTE: If your BYOC cluster on AWS was created before May 28, 2026, rerun `rpk cloud byoc aws apply --redpanda-id=<cluster-id>` to update the agent's IAM permissions before enabling Redpanda SQL.
 
 [tabs]
 =====
@@ -102,7 +103,7 @@ Cloud API::
 curl -X PATCH "https://api.redpanda.com/v1/clusters/{cluster.id}" \
   -H "Authorization: Bearer $AUTH_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"rpsql":{"enabled":true}}'
+  -d '{"rpsql":{"enabled":true,"replicas":<n>}}'
 ----
 +
 The request returns the ID of a long-running operation. Poll the link:/api/doc/cloud-controlplane/operation/operation-operationservice_getoperation[`GET /v1/operations/{operation.id}`] endpoint until the operation completes:
