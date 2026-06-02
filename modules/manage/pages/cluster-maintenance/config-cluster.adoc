@@ -124,12 +124,42 @@ You can set cluster-wide defaults that apply to new topics on BYOC and Dedicated
 | Default maximum size per partition before the oldest data becomes eligible for deletion. Applies when a topic doesn't set its own `retention.bytes`.
 |===
 
-Set these properties using `rpk` or the Cloud API, as described in <<set-cluster-configuration-properties>>. For example, to set the default topic retention period to 24 hours with `rpk`:
+Set these properties using `rpk` or the Cloud API. For example, to set the default topic retention period to 24 hours:
 
+[tabs]
+====
+`rpk`::
++
+--
 [source,bash]
 ----
 rpk cluster config set log_retention_ms 86400000
 ----
+--
+Cloud API::
++
+--
+[source,bash]
+----
+# Store your cluster ID in a variable.
+export RP_CLUSTER_ID=<cluster-id>
+
+# Retrieve a Redpanda Cloud access token.
+export RP_CLOUD_TOKEN=`curl -X POST "https://auth.prd.cloud.redpanda.com/oauth/token" \
+    -H "content-type: application/x-www-form-urlencoded" \
+    -d "grant_type=client_credentials" \
+    -d "client_id=<client-id>" \
+    -d "client_secret=<client-secret>"`
+
+# Set the default topic retention period to 24 hours.
+curl -H "Authorization: Bearer ${RP_CLOUD_TOKEN}" -X PATCH \
+  "https://api.cloud.redpanda.com/v1/clusters/${RP_CLUSTER_ID}" \
+ -H 'accept: application/json'\
+ -H 'content-type: application/json' \
+ -d '{"cluster_configuration":{"custom_properties": {"log_retention_ms":86400000}}}'
+----
+--
+====
 
 == View cluster property values
 
