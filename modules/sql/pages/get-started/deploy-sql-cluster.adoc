@@ -46,7 +46,7 @@ For more on RPUs, compute, and cost calculations, see xref:billing:billing.adoc#
 Cloud API::
 +
 --
-. Authenticate to the link:/api/doc/cloud-controlplane/topic/topic-cloud-api-overview[Cloud API]. For details, see link:/api/doc/cloud-controlplane/authentication[Authenticate to the Cloud API].
+. link:/api/doc/cloud-controlplane/authentication[Authenticate to the Cloud API].
 . Make a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_createcluster[`POST /v1/clusters`] request with `rpsql.enabled` set to `true` in the cluster spec:
 +
 [,bash]
@@ -65,13 +65,18 @@ curl -X POST "https://api.redpanda.com/v1/clusters" \
       "resource_group_id": "<resource-group-id>",
       "rpsql": {
         "enabled": true,
-        "replicas": <n>
+        "replicas": <compute-nodes>,
+        "zones": ["<sql-az>"]
       }
     }
   }'
 ----
 +
-For the full request body and field reference, see the link:/api/doc/cloud-controlplane/operation/operation-clusterservice_createcluster[Create Cluster API]. Use the `replicas` field to set the initial number of SQL compute nodes (minimum 1).
+Replace the `rpsql` placeholders with your own values:
++
+* `<compute-nodes>`: Set the initial number of SQL compute nodes (minimum 1).
+* `<sql-az>` (optional): For multi-AZ clusters, specify which of the cluster's availability zones to deploy for the SQL engine. Provide a single zone string from the cluster's `zones` list.
++
 . The request returns the ID of a long-running operation. Poll the link:/api/doc/cloud-controlplane/operation/operation-operationservice_getoperation[`GET /v1/operations/{operation.id}`] endpoint until the operation completes.
 --
 =====
@@ -94,7 +99,7 @@ Cloud Console::
 Cloud API::
 +
 --
-. Authenticate to the link:/api/doc/cloud-controlplane/topic/topic-cloud-api-overview[Cloud API]. For details, see link:/api/doc/cloud-controlplane/authentication[Authenticate to the Cloud API].
+. link:/api/doc/cloud-controlplane/authentication[Authenticate to the Cloud API].
 . Locate the cluster ID in the *Details* section of the cluster overview in the Cloud Console.
 . Make a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_updatecluster[`PATCH /v1/clusters/{cluster.id}`] request, replacing `{cluster.id}` with your cluster ID:
 +
@@ -103,10 +108,15 @@ Cloud API::
 curl -X PATCH "https://api.redpanda.com/v1/clusters/{cluster.id}" \
   -H "Authorization: Bearer $AUTH_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"rpsql":{"enabled":true,"replicas":<n>}}'
+  -d '{"rpsql":{"enabled":true,"replicas":<compute-nodes>,"zones":["<sql-az>"]}}'
 ----
 +
-The request returns the ID of a long-running operation. Poll the link:/api/doc/cloud-controlplane/operation/operation-operationservice_getoperation[`GET /v1/operations/{operation.id}`] endpoint until the operation completes:
+Replace the `rpsql` placeholders with your own values:
++
+* `<compute-nodes>`: Set the initial number of SQL compute nodes (minimum 1).
+* `<sql-az>` (optional): For multi-AZ clusters, specify which of the cluster's availability zones to deploy for the SQL engine. Provide a single zone string from the cluster's `zones` list.
++
+. The request returns the ID of a long-running operation. Poll the link:/api/doc/cloud-controlplane/operation/operation-operationservice_getoperation[`GET /v1/operations/{operation.id}`] endpoint until the operation completes:
 +
 [,bash]
 ----
@@ -118,6 +128,17 @@ curl -X GET "https://api.redpanda.com/v1/operations/{operation.id}" \
 When the operation is complete, the response shows `"state": "STATE_COMPLETED"`.
 --
 =====
+
+=== Redpanda SQL availability zones
+
+Redpanda SQL deploys as a single availability zone (AZ) service within your Redpanda data plane, even if the Redpanda cluster spans multiple AZs.
+
+For multi-AZ Redpanda clusters, you can specify the availability zone using the Cloud API `zones` field in the `rpsql` configuration:
+
+* If you specify a zone, Redpanda SQL deploys into that zone. The zone must be one of the Redpanda cluster's zones.
+* If you omit the `zones` field, a zone is chosen automatically.
+
+Redpanda locks in the SQL availability zone when you first enable Redpanda SQL. You cannot change it afterward.
 
 == Scale Redpanda SQL
 
@@ -137,17 +158,27 @@ Cloud Console::
 Cloud API::
 +
 --
-Make a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_updatecluster[`PATCH /v1/clusters/{cluster.id}`] request with the new replica count. Replace `{cluster.id}` with your cluster ID and `<n>` with the desired replica count. The `replicas` field is an integer node count with a minimum of 1:
-
+. Make a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_updatecluster[`PATCH /v1/clusters/{cluster.id}`] request, replacing `{cluster.id}` with your cluster ID:
++
 [,bash]
 ----
 curl -X PATCH "https://api.redpanda.com/v1/clusters/{cluster.id}" \
   -H "Authorization: Bearer $AUTH_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"rpsql":{"replicas":<n>}}'
+  -d '{"rpsql":{"replicas":<compute-nodes>}}'
 ----
-
-The request returns the ID of a long-running operation. Poll link:/api/doc/cloud-controlplane/operation/operation-operationservice_getoperation[`GET /v1/operations/{operation.id}`] until the operation completes.
++
+Replace `<compute-nodes>` with the desired number of SQL compute nodes (minimum 1).
+. The request returns the ID of a long-running operation. Poll link:/api/doc/cloud-controlplane/operation/operation-operationservice_getoperation[`GET /v1/operations/{operation.id}`] until the operation completes:
++
+[,bash]
+----
+curl -X GET "https://api.redpanda.com/v1/operations/{operation.id}" \
+  -H "Authorization: Bearer $AUTH_TOKEN" \
+  -H "Content-Type: application/json"
+----
++
+When the operation is complete, the response shows `"state": "STATE_COMPLETED"`.
 --
 =====
 
