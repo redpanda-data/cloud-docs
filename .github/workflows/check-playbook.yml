@@ -1,13 +1,12 @@
 ---
 name: Check playbook branches
+# Runs on every PR (no paths filter) so it can be a required status check:
+# a required check that is skipped by a paths filter leaves PRs stuck pending.
+# It passes fast when the playbook is unchanged or standard.
 on:
   pull_request:
-    paths:
-      - local-antora-playbook.yml
   push:
     branches: [main]
-    paths:
-      - local-antora-playbook.yml
 
 jobs:
   check-branches:
