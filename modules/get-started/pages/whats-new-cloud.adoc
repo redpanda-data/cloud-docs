@@ -8,6 +8,10 @@ This page lists new features added to Redpanda Cloud.
 
 == June 2026
 
+=== Connect to Amazon Aurora with IAM roles
+
+A new guide walks Cloud customers through configuring IAM Roles for Service Accounts (IRSA) so Redpanda Connect pipelines can authenticate to Amazon Aurora without storing static database credentials. The setup uses a two-hop role chain: the Connect pipeline role assumes a customer-owned database connect role in the Aurora account, which generates a short-lived RDS IAM authentication token. Applies to `postgres_cdc`, `pg_stream`, and `mysql_cdc` inputs. See xref:develop:connect/guides/cloud/aws-iam-aurora.adoc[Authenticate to Amazon Aurora using IAM roles].
+
 === Customer-managed default topic settings
 
 You can now set cluster-wide defaults for new topics on BYOC and Dedicated clusters. The xref:reference:properties/cluster-properties.adoc#default_topic_partitions[`default_topic_partitions`], xref:reference:properties/cluster-properties.adoc#log_retention_ms[`log_retention_ms`], and xref:reference:properties/cluster-properties.adoc#retention_bytes[`retention_bytes`] cluster properties are now customer-managed. The default topic retention period (`log_retention_ms`) previously could only be changed by Redpanda support. See xref:manage:cluster-maintenance/config-cluster.adoc[Configure Cluster Properties].
