@@ -1,13 +1,14 @@
-You can access Redpanda services such as Schema Registry and HTTP Proxy from the client VPC or virtual network; for example, from a compute instance in the VPC or network.
+You can access Redpanda services such as Redpanda Console, Schema Registry, and HTTP Proxy from the client VPC or virtual network; for example, from a compute instance in the VPC or network.
 
 The bootstrap server hostname is unique to each cluster. The service attachment exposes a set of bootstrap ports for access to Redpanda services. These ports load balance requests among brokers. Make sure you use the following ports for initiating a connection from a consumer:
 
-|=== 
-| Redpanda service | Default bootstrap port 
+|===
+| Redpanda service | Default port
 
-| Kafka API | 30292 
-| HTTP Proxy | 30282 
-| Schema Registry | 30081 
+| Kafka API | 30292
+| HTTP Proxy | 30282
+| Schema Registry | 30081
+| Redpanda Console | 443
 |===
 
 === Access Kafka API seed service
@@ -53,3 +54,45 @@ Use port `30282` to access the Redpanda HTTP Proxy seed service.
 ----
 curl -vv -u <user>:<password> -H "Content-Type: application/vnd.kafka.json.v2+json" --sslv2 --http2 <http-proxy-bootstrap-server-hostname>:30282/topics
 ----
+
+=== Verify the Redpanda Console network path
+
+When you configure private connectivity through the Cloud API, set `connect_console: true` on the network configuration to enable Console access through the cluster's private endpoint. The Cloud UI sets this for you when you enable private connectivity.
+
+The Redpanda Console URL is served on port `443` (HTTPS) and follows the form `https://console-<id>.<cluster_domain>`. The `<id>` is a per-cluster suffix assigned by the Redpanda control plane and is opaque to you; the full URL is shown in the *How to Connect* section of the cluster overview in the Redpanda Cloud Console.
+
+To verify that the network path to Redpanda Console is open, run the following commands from a host in the client network. First, confirm DNS resolves the hostname to a private IP on the cluster's private endpoint:
+
+[,bash]
+----
+dig +short console-<id>.<cluster_domain>
+----
+
+The response is a private IP from your client network's address range, for example:
+
+[,bash,role=no-copy]
+----
+10.0.0.42
+----
+
+Then confirm Redpanda Console responds over HTTPS through the endpoint:
+
+[,bash]
+----
+curl -sS -o /dev/null -w "%{http_code}\n" https://console-<id>.<cluster_domain>/
+----
+
+Expected output:
+
+[,bash,role=no-copy]
+----
+200
+----
+
+A 200 response confirms the network path. The Console UI itself does not expose a standalone login form: sign in to https://cloud.redpanda.com[cloud.redpanda.com^], navigate to the cluster, and use the cluster's left navigation (*Topics*, *Brokers*, *Consumer groups*) to interact with Redpanda Console.
+
+[NOTE]
+====
+* DNS resolution for the Redpanda Console hostname is handled automatically by the cluster's private endpoint. You don't need to create a private hosted zone or override DNS in the client network.
+* Ensure your network access rules (for example, AWS security groups, Azure NSGs, or GCP firewall rules) on the private endpoint allow inbound TCP on port `443` from your client workload sources only (for example, the client network's CIDR or specific client access groups). Avoid broad source ranges such as `0.0.0.0/0`.
+====

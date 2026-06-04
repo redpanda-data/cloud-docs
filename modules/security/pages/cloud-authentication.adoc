@@ -115,27 +115,33 @@ Administrators can require MFA for all users in an organization.
 
 === Account impersonation
 
-include::shared:partial$feature-flag.adoc[]
-
-BYOC and Dedicated clusters support unified authentication and authorization between the Redpanda Cloud UI and Redpanda with account impersonation. With account impersonation enabled, the topics and resources users see in the UI match exactly what they can access with the Cloud API or `rpk`. You can use the same credentials to authenticate to both Redpanda Cloud and the underlying Redpanda cluster, with consistent permissions across all interfaces. This ensures accurate audit logs and unified identity enforcement across all client applications, including the Cloud UI. 
+BYOC and Dedicated clusters support unified authentication and authorization between the Redpanda Cloud UI and Redpanda with account impersonation. With account impersonation enabled, the topics, schemas, and other resources users see in the UI match exactly what they can access with the Cloud API or `rpk`. You can use the same credentials to authenticate to both Redpanda Cloud and the underlying Redpanda cluster, with consistent permissions across all interfaces. This ensures accurate audit logs and unified identity enforcement across all client applications, including the Cloud UI.
 
 * *Without account impersonation*: Redpanda Cloud uses a static service account to access your cluster. All UI requests appear to come from this generic admin user.
-* *With account impersonation*: Redpanda Cloud uses your individual user credentials and evaluates permissions using glossterm:ACL[,access control lists (ACLs)] and glossterm:RBAC[,role-based access control (RBAC)] in the data plane. Each user sees only the resources they have permission to access.  
+* *With account impersonation*: Redpanda Cloud uses your individual user credentials and evaluates permissions using glossterm:ACL[,access control lists (ACLs)] and glossterm:RBAC[,role-based access control (RBAC)] in the data plane. Each user sees only the resources they have permission to access.
+
+You can enable account impersonation independently for each subsystem:
+
+* *Kafka API*: Impersonate users for topic, consumer group, and transaction operations.
+* *Schema Registry*: Impersonate users for schema and subject operations. Enabling Schema Registry impersonation also enables xref:manage:schema-reg/schema-reg-authorization.adoc[Schema Registry Authorization] on the cluster, and seeds Schema Registry permissions into the predefined Admin, Writer, and Reader roles. See xref:security:authorization/rbac/rbac.adoc#predefined-roles[Predefined roles].
 
 To enable account impersonation:
 
-. Go to the *Dataplane settings* page and select the option to enable account impersonation.
+. Go to the *Dataplane settings* page.
+. Enable impersonation for *Kafka API*, *Schema Registry*, or both.
 . Configure permissions for your users on the cluster *Security* page: open a user under *Users* (or a role under *Roles*) and add ACLs or assign roles from the detail page.
 
 [IMPORTANT]
 ====
 After enabling account impersonation:
 
-* *Admin users* continue to have full access as before
-* *Reader and Writer users* will lose access to the cluster until you explicitly grant them permissions through ACLs or roles on the *Security* page
+* *Admin users* continue to have full Kafka and Schema Registry access through the predefined Admin role.
+* *Writer users* continue to have read and write permissions for Kafka topics and Schema Registry subjects through the predefined Writer role.
+* *Reader users* keep read access to topics, consumer groups, and Schema Registry subjects through the predefined Reader role.
+* *Custom roles or users without role bindings* will lose access until you explicitly grant them permissions through ACLs or RBAC roles on the *Security* page.
 
 Plan to configure user permissions before or immediately after enabling this feature to avoid access disruption.
-==== 
+====
 
 == Service authentication
 
@@ -291,6 +297,47 @@ Make sure to replace the following variables:
 |Client secret.
 |===
 
+=== Service account token rate limits
+
+Redpanda Cloud enforces a daily limit on service account access token requests to `\https://auth.prd.cloud.redpanda.com/oauth/token` for each organization. When you exceed the limit, the token endpoint returns `HTTP 429` with the following response body:
+
+[,json]
+----
+{
+  "error": "too_many_requests",
+  "error_description": "Organization quota exceeded"
+}
+----
+
+Most workloads do not approach this limit. Access tokens are valid for several hours, so cache the token returned by the `/oauth/token` endpoint and reuse it until close to expiry rather than requesting a new token for each API call.
+
+Every response from the token endpoint, including responses that return `HTTP 429`, includes an `Auth0-Organization-Quota-Limit` header that reports your organization's current daily quota usage. The header value has the form `b=<window>;q=<limit>;r=<remaining>;t=<seconds-to-reset>`. For example:
+
+----
+Auth0-Organization-Quota-Limit: b=per_day;q=100;r=83;t=43200
+----
+
+[cols="1,3"]
+|===
+|Field |Description
+
+|`b`
+|Quota window. Redpanda Cloud uses `per_day`.
+
+|`q`
+|The token-issuance limit for the window.
+
+|`r`
+|Tokens remaining in the current window.
+
+|`t`
+|Seconds until the current window resets.
+|===
+
+When the token endpoint returns `HTTP 429`, back off for `t` seconds before retrying.
+
+If your workload requires a higher daily limit, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda Support^] with your organization ID and your expected token issuance rate.
+
 [[mtls]]
 === Enable mTLS authentication
 :description: Use the Cloud API to enable mTLS for Kafka API, HTTP Proxy, and Schema Registry connections on your Redpanda cluster.
@@ -389,7 +436,7 @@ For example, the mapping rule `RULE:.\*CN=([^,]+).*/\\$1/` maps the following ce
 
 `Subject: C=US, ST=IL, L=Chicago, O=redpanda, OU=cloud, CN=test, emailAddress=test123@redpanda.com`
 
-See xref:ROOT:manage:security/authentication.adoc#mtls[Configure Authentication] for more details on principal mapping rules. The `principal_mapping_rules` field accepts a list of rules.
+See xref:streaming:manage:security/authentication.adoc#mtls[Configure Authentication] for more details on principal mapping rules. The `principal_mapping_rules` field accepts a list of rules.
 |===
 ====
 
@@ -449,7 +496,7 @@ For example, the mapping rule `RULE:.\*CN=([^,]+).*/\\$1/` maps the following ce
 
 `Subject: C=US, ST=IL, L=Chicago, O=redpanda, OU=cloud, CN=test, emailAddress=test123@redpanda.com`
 
-See xref:ROOT:manage:security/authentication.adoc#mtls[Configure Authentication] for more details on principal mapping rules. The `principal_mapping_rules` field accepts a list of rules.
+See xref:streaming:manage:security/authentication.adoc#mtls[Configure Authentication] for more details on principal mapping rules. The `principal_mapping_rules` field accepts a list of rules.
 |===
 ====
 
@@ -573,7 +620,7 @@ For example, the mapping rule `RULE:.\*CN=([^,]+).*/\\$1/` maps the following ce
 
 `Subject: C=US, ST=IL, L=Chicago, O=redpanda, OU=cloud, CN=test, emailAddress=test123@redpanda.com`
 
-See xref:ROOT:manage:security/authentication.adoc#mtls[Configure Authentication] for more details on principal mapping rules. The `principal_mapping_rules` field accepts a list of rules.
+See xref:streaming:manage:security/authentication.adoc#mtls[Configure Authentication] for more details on principal mapping rules. The `principal_mapping_rules` field accepts a list of rules.
 |===
 ====
 
@@ -654,7 +701,7 @@ For example, the mapping rule `RULE:.\*CN=([^,]+).*/\\$1/` maps the following ce
 
 `Subject: C=US, ST=IL, L=Chicago, O=redpanda, OU=cloud, CN=test, emailAddress=test123@redpanda.com`
 
-See xref:ROOT:manage:security/authentication.adoc#mtls[Configure Authentication] for more details on principal mapping rules. The `principal_mapping_rules` field accepts a list of rules.
+See xref:streaming:manage:security/authentication.adoc#mtls[Configure Authentication] for more details on principal mapping rules. The `principal_mapping_rules` field accepts a list of rules.
 |===
 ====
 
@@ -746,7 +793,7 @@ unable to request metadata: remote error: tls: certificate required
 ```
 
 [[consume-produce-mtls]]
-When you consume, produce to, or manage topics using xref:ROOT:reference:rpk/rpk-topic/rpk-topic.adoc[`rpk`], you must provide a client certificate and private key. You may use the `--tls-cert` and `--tls-key` options, or xref:ROOT:reference:rpk/rpk-x-options.adoc[environment variables] with `rpk`.
+When you consume, produce to, or manage topics using xref:streaming:reference:rpk/rpk-topic/rpk-topic.adoc[`rpk`], you must provide a client certificate and private key. You may use the `--tls-cert` and `--tls-key` options, or xref:streaming:reference:rpk/rpk-x-options.adoc[environment variables] with `rpk`.
 
 [,bash]
 ----

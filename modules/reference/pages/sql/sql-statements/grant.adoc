@@ -1,0 +1,123 @@
+= GRANT
+:description: The GRANT statement assigns privileges on a database object to a role. Only a superuser can grant privileges.
+:page-topic-type: reference
+
+The `GRANT` statement assigns privileges on a database object to a role. Only a superuser can grant privileges.
+
+Redpanda SQL is deny-all by default. A role has no access to any object until a superuser grants it. For the broader access model, see xref:sql:manage/manage-access.adoc[].
+
+== Privilege levels
+
+A privilege is associated with a level. Each level supports a specific set of privilege types:
+
+[cols="<25%,<40%,<35%",options="header"]
+|===
+|Level |Object |Privilege types
+
+|Database
+|The Redpanda SQL database
+|`CONNECT`
+
+|Schema
+|A schema in the database
+|`USAGE`, `CREATE`
+
+|Table
+|A native SQL table
+|`SELECT`, `INSERT`, `UPDATE`, `DELETE`
+
+|External source
+|A Redpanda catalog or SQL storage definition
+|`SELECT`
+|===
+
+`ALL PRIVILEGES` resolves to the full set of privilege types at the given level. For external sources, `ALL PRIVILEGES` resolves to `SELECT` only.
+
+== Syntax
+
+=== Grant on a table
+
+[source,sql]
+----
+GRANT { privilege [, ...] | ALL [PRIVILEGES] } ON TABLE table_name TO role_name;
+----
+
+=== Grant on an external source
+
+A Redpanda catalog (the object created by `CREATE REDPANDA CATALOG`) and a SQL storage definition (the object created by `CREATE STORAGE`) are both external sources.
+
+The catalog-level form grants the privilege on every relation reachable through the source. The pattern form scopes the grant to relations whose name matches the pattern.
+
+[source,sql]
+----
+GRANT { SELECT | ALL [PRIVILEGES] } ON EXTERNAL SOURCE catalog_name TO role_name;
+GRANT { SELECT | ALL [PRIVILEGES] } ON EXTERNAL SOURCE catalog_name => 'pattern' TO role_name;
+----
+
+* `pattern`: A string literal that matches a relation name. The wildcard `*` is only allowed at the end of the pattern (for example, `'orders_*'`).
+
+=== Grant on a schema
+
+[source,sql]
+----
+GRANT { privilege [, ...] | ALL [PRIVILEGES] } ON SCHEMA schema_name TO role_name;
+----
+
+Schema-level privileges affect visibility and creation rights for objects in the schema. Without `USAGE` on a schema, a user cannot see catalogs in that schema or reference objects in it by name.
+
+=== Grant on the database
+
+Redpanda SQL exposes a single database, `oxla`.
+
+[source,sql]
+----
+GRANT CONNECT ON DATABASE oxla TO role_name;
+----
+
+[NOTE]
+====
+On Redpanda Cloud BYOC, `CONNECT` is managed automatically through the Cloud operator. Assigning the *SQL: Access* or *SQL: Manage* data-plane RBAC role grants `CONNECT`. Removing the role revokes it. Manual `GRANT CONNECT` may be reverted by the operator.
+====
+
+== Examples
+
+Grant `SELECT` on a topic surfaced through a Redpanda catalog:
+
+[source,sql]
+----
+GRANT SELECT ON EXTERNAL SOURCE default_redpanda_catalog => 'orders' TO "alice@example.com";
+----
+
+Grant `SELECT` on every topic in a Redpanda catalog:
+
+[source,sql]
+----
+GRANT SELECT ON EXTERNAL SOURCE default_redpanda_catalog TO "alice@example.com";
+----
+
+Grant `SELECT` on every topic whose name starts with `orders_`:
+
+[source,sql]
+----
+GRANT SELECT ON EXTERNAL SOURCE default_redpanda_catalog => 'orders_*' TO "alice@example.com";
+----
+
+Grant `USAGE` on a schema so the user can see the catalogs and storage in it:
+
+[source,sql]
+----
+GRANT USAGE ON SCHEMA public TO "alice@example.com";
+----
+
+Grant `SELECT` and `INSERT` on a native SQL table:
+
+[source,sql]
+----
+GRANT SELECT, INSERT ON TABLE summary_data TO "alice@example.com";
+----
+
+== Suggested reading
+
+* xref:reference:sql/sql-statements/revoke.adoc[REVOKE]
+* xref:reference:sql/sql-statements/create-user.adoc[CREATE USER]
+* xref:sql:manage/manage-access.adoc[Manage access to Redpanda SQL]

@@ -1,0 +1,77 @@
+= geometry
+:description: The `geometry` data type stores planar (Cartesian) spatial point values as two double-precision coordinates.
+:page-topic-type: reference
+
+The `geometry` data type stores planar (Cartesian) spatial point values as two double-precision coordinates. It uses https://en.wikipedia.org/wiki/Well-known_text_representation_of_geometry[Well-Known Text (WKT)^] and https://en.wikipedia.org/wiki/Well-known_text_representation_of_geometry#Well-known_binary[Well-Known Binary (WKB)^] formats for input and output.
+
+[NOTE]
+====
+Redpanda SQL supports only `POINT` geometries. Multi-part geometries such as `POLYGON`, `LINESTRING`, and `MULTIPOINT` are not supported.
+====
+
+== Format
+
+`geometry` values can be specified in the following formats:
+
+* WKT: `POINT(x y)` (space-separated coordinates)
+* EWKT: `SRID=4326;POINT(x y)` (SRID is accepted but ignored for `geometry`)
+* EWKB: A hex-encoded binary string (42 hex characters)
+
+[source,sql]
+----
+SELECT GEOMETRY 'POINT(0.1234 5.6789)';
+----
+
+== Differences between `geometry` and `geography`
+
+[cols="1,1",options="header"]
+|===
+|`geometry` |`geography`
+|Uses a Cartesian (planar) coordinate system |Uses a geodetic (spherical) coordinate system
+|SRID is ignored |SRID is always 4326 (WGS84)
+|`st_distance` returns Euclidean distance |`st_distance` returns distance in meters
+|===
+
+== Casting
+
+`geometry` supports the following casts:
+
+* `geometry` -> `text`: Returns WKB hex string
+* `text` -> `geometry`: Parses WKT or EWKB string
+* `geometry` -> `geography`: Adds SRID=4326
+* `geography` -> `geometry`: Removes SRID
+* `geometry` -> `point`: Converts to `(x,y)` format
+* `point` -> `geometry`: Converts to WKB format
+
+== Functions
+
+The following functions work with `geometry` values:
+
+[cols="1,2,1",options="header"]
+|===
+|Function |Description |Return type
+|`st_astext(geometry)` |Returns the WKT representation of the geometry |`text`
+|`st_astext(geometry, max_digits)` |Returns the WKT representation with limited decimal digits |`text`
+|`st_asewkt(geometry)` |Returns the Extended WKT representation |`text`
+|`st_asewkt(geometry, max_digits)` |Returns the Extended WKT representation with limited decimal digits |`text`
+|`st_distance(geometry, geometry)` |Returns the Euclidean distance between two `geometry` points |`double precision`
+|===
+
+== Examples
+
+[source,sql]
+----
+SELECT
+  ST_ASTEXT(GEOMETRY 'POINT(1.5 2.5)') AS wkt,
+  ST_DISTANCE(
+    GEOMETRY 'POINT(0 0)',
+    GEOMETRY 'POINT(3 4)'
+  ) AS distance;
+----
+
+[source,sql]
+----
+      wkt       | distance
+----------------+----------
+ POINT(1.5 2.5) |        5
+----

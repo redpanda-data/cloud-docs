@@ -1,0 +1,133 @@
+= CREATE REDPANDA CATALOG
+:description: The CREATE REDPANDA CATALOG statement creates a named connection to a Redpanda cluster, enabling you to map topics as SQL tables.
+:page-topic-type: reference
+
+The `CREATE REDPANDA CATALOG` statement creates a named connection to a Redpanda cluster. After creating a catalog, you can map Redpanda topics as queryable SQL tables using xref:reference:sql/sql-statements/create-table.adoc[CREATE TABLE].
+
+== Syntax
+
+[source,sql]
+----
+CREATE REDPANDA CATALOG [IF NOT EXISTS] catalog_name
+  [USING CATALOG [schema.]iceberg_catalog_name]
+  WITH (option = 'value' [, ...]);
+----
+
+* `catalog_name`: Name for the new catalog connection.
+* `IF NOT EXISTS`: Optional. Prevents an error if a catalog with the same name already exists.
+* `USING CATALOG iceberg_catalog_name`: Optional. Links the Redpanda catalog to an existing Iceberg catalog so that queries against tables in this catalog can return data from both the Redpanda topic and its corresponding Iceberg table in a single result. The Iceberg catalog must already exist. You can qualify the Iceberg catalog name with a schema prefix.
+
+NOTE: Catalogs are created in the current schema (`public` by default). To create a catalog in a different schema, qualify the name as `schema.catalog_name`. The auto-created `default_redpanda_catalog` is in `public`.
+
+== Options
+
+[cols="<30%,<15%,<10%,<45%",options="header"]
+|===
+|Option |Type |Required |Description
+
+|`initial_brokers`
+|STRING
+|Yes
+|Bootstrap broker address(es) for the Redpanda cluster.
+
+|`schema_registry_url`
+|STRING
+|Yes
+|URL of the Schema Registry endpoint.
+
+|`sasl_mechanism`
+|STRING
+|No
+|SASL authentication mechanism. Only `SCRAM-SHA-256` and `SCRAM-SHA-512` are accepted.
+
+|`sasl_user`
+|STRING
+|No
+|SASL username. Also used as the basic-authentication username for Schema Registry (and, when present, the HTTP Proxy endpoint set by `pandaproxy_url`).
+
+|`sasl_password`
+|STRING
+|No
+|SASL password. Also used as the basic-authentication password for Schema Registry (and, when present, the HTTP Proxy endpoint set by `pandaproxy_url`).
+
+|`truststore`
+|STRING
+|No
+|PEM-encoded CA certificate used to verify the TLS certificates presented by the Redpanda brokers, the Schema Registry, and (when set) the HTTP Proxy. Use TLS by specifying an `https://` URL for `schema_registry_url` and `pandaproxy_url`.
+
+|`key_store_key`
+|STRING
+|No
+|PEM-encoded client private key for mutual TLS (mTLS) to the Redpanda brokers. Must be set together with `key_store_cert`.
+
+|`key_store_cert`
+|STRING
+|No
+|PEM-encoded client certificate for mutual TLS (mTLS) to the Redpanda brokers. Must be set together with `key_store_key`.
+
+|`pandaproxy_url`
+|STRING
+|Conditional
+|Base URL of the Redpanda HTTP Proxy REST API. Required when the catalog includes a `USING CATALOG` clause; Redpanda SQL uses this endpoint to fetch Iceberg translation state for queries that span the topic and its Iceberg table.
+|===
+
+== Examples
+
+=== Create a basic catalog
+
+[source,sql]
+----
+CREATE REDPANDA CATALOG production_redpanda
+WITH (
+  initial_brokers = 'broker1:9092',
+  schema_registry_url = 'http://schema-registry:8081'
+);
+----
+
+=== Create a catalog with SASL authentication and TLS
+
+The `sasl_user` and `sasl_password` values are used as the basic-authentication credentials for Schema Registry as well as the SASL credentials for the brokers. Use an `https://` URL for `schema_registry_url` and provide `truststore` (PEM-encoded CA) to verify the TLS certificate.
+
+[source,sql]
+----
+CREATE REDPANDA CATALOG production_redpanda_secure
+WITH (
+  initial_brokers = 'broker1:9092',
+  schema_registry_url = 'https://schema-registry:8081',
+  sasl_mechanism = 'SCRAM-SHA-256',
+  sasl_user = 'admin',
+  sasl_password = 'secret',
+  truststore = '-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----'
+);
+----
+
+=== Create a catalog with mutual TLS
+
+Provide a client certificate and key for mTLS to the brokers in addition to the truststore.
+
+[source,sql]
+----
+CREATE REDPANDA CATALOG production_redpanda_mtls
+WITH (
+  initial_brokers = 'broker1:9092',
+  schema_registry_url = 'https://schema-registry:8081',
+  truststore = '-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----',
+  key_store_cert = '-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----',
+  key_store_key = '-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----'
+);
+----
+
+=== Create a catalog linked to an Iceberg catalog
+
+Use the `USING CATALOG` clause to link a Redpanda catalog to an existing Iceberg catalog. Queries against tables in the linked Redpanda catalog can then return both live records from the Redpanda topic and Iceberg-translated records from its corresponding Iceberg table in a single result, with no overlap between them.
+
+[source,sql]
+----
+CREATE REDPANDA CATALOG redpanda_with_iceberg
+  USING CATALOG lakehouse_catalog
+  WITH (
+    initial_brokers = 'broker1:9092',
+    schema_registry_url = 'http://schema-registry:8081',
+    pandaproxy_url = 'http://redpanda:8082'
+  );
+----
