@@ -28,6 +28,11 @@ To enable Redpanda SQL, you need:
 
 You can enable Redpanda SQL on a new or existing BYOC cluster.
 
+[NOTE]
+====
+Redpanda SQL deploys as a single availability zone (AZ) service, even if the cluster spans multiple AZs. For multi-AZ clusters, use the Cloud API `zones` field in the `rpsql` configuration to specify which zone to deploy into. If omitted, a zone is chosen automatically. The AZ is locked when you first enable Redpanda SQL and cannot be changed afterward.
+====
+
 === On a new cluster
 
 [tabs]
@@ -128,17 +133,6 @@ curl -X GET "https://api.redpanda.com/v1/operations/{operation.id}" \
 When the operation is complete, the response shows `"state": "STATE_COMPLETED"`.
 --
 =====
-
-=== Redpanda SQL availability zones
-
-Redpanda SQL deploys as a single availability zone (AZ) service within your Redpanda data plane, even if the Redpanda cluster spans multiple AZs.
-
-For multi-AZ Redpanda clusters, you can specify the availability zone using the Cloud API `zones` field in the `rpsql` configuration:
-
-* If you specify a zone, Redpanda SQL deploys into that zone. The zone must be one of the Redpanda cluster's zones.
-* If you omit the `zones` field, a zone is chosen automatically.
-
-Redpanda locks in the SQL availability zone when you first enable Redpanda SQL. You cannot change it afterward.
 
 == Scale Redpanda SQL
 
