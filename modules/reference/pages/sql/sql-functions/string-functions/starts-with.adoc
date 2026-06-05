@@ -1,0 +1,155 @@
+= starts_with
+:description: The `starts_with()` function determines whether the first argument starts with a specified string in the second argument or not.
+:page-topic-type: reference
+
+The `starts_with()` function determines whether the first argument starts with a specified string in the second argument or not.
+
+[source,sql]
+----
+STARTS_WITH(first_argument, 'second_argument')
+----
+
+* `first_argument`: The search reference. Can be a string or a column name.
+* `second_argument`: The specified argument, which will have the search keywords.
+
+The input type will be `STRING`, and the return type is `bool`, shown as `true` or `false`.
+
+Special case:
+
+* Returns `NULL` for the `NULL` record.
+* Returns `true` for any non-`NULL` string when the `second_argument` is an empty string (`''`).
+
+== Examples
+
+=== `starts_with()` function using column
+
+Consider a table with the title *petsData*.
+
+[source,sql]
+----
+CREATE TABLE petsData (
+  petid int,
+  petname text,
+  species text,
+  breed text,
+  sex text,
+  age int
+);
+INSERT INTO petsData
+    (petid, petname, species, breed, sex, age)
+VALUES
+    (2021001,'Bartholomeow','cat','persian','m',2),
+    (2021004,'Jack','dog','boston terrier','m',1),
+    (2022001,'Jesse','hamster','dzungarian','m',1),
+    (2022010,'Bella','dog','dobberman','f',3),
+    (2022011,'June','cat','american shorthair','f',2);
+----
+
+[source,sql]
+----
+SELECT * FROM petsData;
+----
+
+This query shows the table:
+
+[source,sql]
+----
++----------+--------------+----------+---------------------+------+-----+
+| petid    | petname      | species  | breed               | sex  | age |
++----------+--------------+----------+---------------------+------+-----+
+| 2021001  | Bartholomeow | cat      | persian             | m    | 2   |
+| 2021004  | Jack         | dog      | boston terrier      | m    | 1   |
+| 2022001  | Jesse        | hamster  | dzungarian          | m    | 1   |
+| 2022010  | Bella        | dog      | dobberman           | f    | 3   |
+| 2022011  | June         | cat      | american shorthair  | f    | 2   |
++----------+--------------+----------+---------------------+------+-----+
+----
+
+From the table, this query retrieves the values of the *petname* column that start with "J":
+
+[source,sql]
+----
+SELECT petname, STARTS_WITH(petname, 'J') FROM petsData;
+----
+
+This returns `true` to the pet with a pet starting with the letter J. Otherwise, `false`.
+
+[source,sql]
+----
++--------------+---------------+
+|   petname     | starts_with  |
++---------------+--------------+
+| Bartholomeow  | false        |
+| Jack          | true         |
+| Jesse         | true         |
+| Bella         | false        |
+| June          | true         |
++---------------+--------------+
+----
+
+=== `starts_with()` function with an empty second argument
+
+The *petsData* table has a row with an empty string (`''`) in the breed column.
+
+[source,sql]
+----
+CREATE TABLE petsData (
+  petid int,
+  petname text,
+  species text,
+  breed text,
+  sex text,
+  age int
+);
+INSERT INTO petsData
+    (petid, petname, species, breed, sex, age)
+VALUES
+    (2021001,'Bartholomeow','cat','persian','m',2),
+    (2021004,'Jack','dog','boston terrier','m',1),
+    (2022001,'Jesse','hamster','dzungarian','m',1),
+    (2022010,'Bella','dog','dobberman','f',3),
+    (2022011,'June','cat','american shorthair','f',2),
+    (2022012,'Phoebe','gold fish','','f',1);
+----
+
+[source,sql]
+----
+SELECT * FROM petsData;
+----
+
+[source,sql]
+----
++----------+--------------+------------+---------------------+------+------+
+| petid    | petname      | species    | breed               | sex  | age  |
++----------+--------------+------------+---------------------+------+------+
+| 2021001  | Bartholomeow | cat        | persian             | m    | 2    |
+| 2021004  | Jack         | dog        | boston terrier      | m    | 1    |
+| 2022001  | Jesse        | hamster    | dzungarian          | m    | 1    |
+| 2022010  | Bella        | dog        | dobberman           | f    | 3    |
+| 2022011  | June         | cat        | american shorthair  | f    | 2    |
+| 2022012  | Phoebe       | gold fish  |                     | f    | 1    |
++----------+--------------+------------+---------------------+------+------+
+----
+
+Run the `starts_with` function with an empty string (`''`) as the `second_argument`:
+
+[source,sql]
+----
+SELECT breed, STARTS_WITH(breed, '') FROM petsData;
+----
+
+This result shows that `starts_with` returns `true` for all records, including the row with an empty string for `breed`:
+
+[source,sql]
+----
++---------------------+--------------+
+| breed               | starts_with  |
++---------------------+--------------+
+| persian             | true         |
+| boston terrier      | true         |
+| dzungarian          | true         |
+| dobberman           | true         |
+| american shorthair  | true         |
+|                     | true         |
++---------------------+--------------+
+----

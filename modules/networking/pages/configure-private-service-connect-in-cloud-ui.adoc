@@ -31,7 +31,7 @@ Consider using Private Service Connect if you have multiple VPC networks and cou
 
 == Enable Private Service Connect for existing clusters
 
-. In the Redpanda Cloud UI, open your https://cloud.redpanda.com/clusters[cluster^], and click **Cluster settings**.
+. In the Redpanda Cloud UI, open your https://cloud.redpanda.com/clusters[cluster^], and click **Dataplane settings**.
 . Under Private Service Connect, click **Enable**. 
 ifdef::env-byoc[]
 . For xref:get-started:cluster-types/byoc/gcp/vpc-byo-gcp.adoc[BYOVPC clusters], you need a PSC NAT subnet with `purpose` set to `PRIVATE_SERVICE_CONNECT`. You also need to create VPC network firewall rules to allow Private Service Connect traffic. You can use the `gcloud` CLI:
@@ -71,10 +71,10 @@ Provide your values for the following placeholders:
 See the GCP documentation for https://cloud.google.com/vpc/docs/configure-private-service-connect-producer#add-subnet-psc[creating a subnet for Private Service Connect^]. 
 endif::[]
 . For the accepted consumers list, you need the GCP project IDs from which incoming connections will be accepted.
-. It may take several minutes for your cluster to update. When the update is complete, the Private Service Connect status in **Cluster settings** changes from **In progress** to **Enabled**.
+. It may take several minutes for your cluster to update. When the update is complete, the Private Service Connect status in **Dataplane settings** changes from **In progress** to **Enabled**.
 
 include::networking:partial$psc-ui.adoc[]
 
 == Disable Private Service Connect
 
-In **Cluster settings**, click **Disable**. Existing connections are closed after it is disabled. To connect using Private Service Connect again, you must re-enable it.
+In **Dataplane settings**, click **Disable**. Existing connections are closed after it is disabled. To connect using Private Service Connect again, you must re-enable it.

@@ -29,12 +29,12 @@ include::networking:partial$dns_resolution.adoc[]
 
 == Enable endpoint service for existing clusters
 
-. In the Redpanda Cloud Console, select your https://cloud.redpanda.com/clusters[cluster^], and go to the *Cluster settings* page.
+. In the Redpanda Cloud Console, select your https://cloud.redpanda.com/clusters[cluster^], and go to the *Dataplane settings* page.
 . For AWS PrivateLink, click *Enable*.
 . On the Enable PrivateLink page, for Allowed principal ARNs, click *Add*, and enter the Amazon Resource Names (ARNs) for each AWS principal allowed to access the endpoint service. For example, for all principals in a specific account, use `arn:aws:iam::<account-id>:root`. See the AWS documentation on https://docs.aws.amazon.com/vpc/latest/privatelink/configure-endpoint-service.html#add-remove-permission[configuring an endpoint service^] for details.
 . Click *Add* after entering each ARN, and when finished, click *Enable*.
 . (Optional) To enable cross-region PrivateLink, add supported regions. See <<cross-region-privatelink>>.
-. It may take several minutes for your cluster to update. When the update is complete, the AWS PrivateLink status on the Cluster settings page changes from *In progress* to *Enabled*.
+. It may take several minutes for your cluster to update. When the update is complete, the AWS PrivateLink status on the Dataplane settings page changes from *In progress* to *Enabled*.
 
 NOTE: For help with issues when enabling PrivateLink, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda support^].
 
@@ -57,7 +57,7 @@ NOTE: Use `<cluster_domain>` as the domain you target with your DNS conditional 
 
 === Get name of PrivateLink endpoint service
 
-You need the service name to <<create-vpc-endpoint,create a VPC endpoint>>. You can find the service name on the *Cluster settings* page after PrivateLink is enabled, or in the *How to Connect* section of the cluster overview.
+You need the service name to <<create-vpc-endpoint,create a VPC endpoint>>. You can find the service name on the *Dataplane settings* page after PrivateLink is enabled, or in the *How to Connect* section of the cluster overview.
 
 [,bash]
 ----
@@ -70,9 +70,94 @@ include::networking:partial$private-links-aws-client-vpc-setup.adoc[]
 
 == Access Redpanda services through VPC endpoint
 
-After you have enabled PrivateLink for your cluster, your connection URLs are available in the *How to Connect* section of the cluster overview in the Redpanda Cloud Console.
+After you have enabled PrivateLink for your cluster, your connection URLs for the Kafka API, Schema Registry, HTTP Proxy, and Redpanda Console are available in the *How to Connect* section of the cluster overview in the Redpanda Cloud Console.
 
 include::networking:partial$private-links-access-rp-services-through-vpc.adoc[]
+
+If you are connecting from a workstation outside the client VPC, see <<access-redpanda-console-from-a-workstation>>.
+
+[#access-redpanda-console-from-a-workstation]
+== Access Redpanda Console from a workstation
+
+For a private BYOC cluster, Redpanda Console is exposed through the PrivateLink endpoint (or through another private route into the cluster VPC, such as VPC peering or a transit gateway), so a workstation outside the client VPC cannot resolve or reach the Console URL directly. To open Redpanda Console from a laptop, first connect the workstation to the client VPC over a VPN, then sign in to Redpanda Cloud Console and navigate to the cluster.
+
+Common VPN options:
+
+* AWS Client VPN attached to the client VPC (described below).
+* A corporate VPN configured with a DNS forwarder that resolves `<cluster_domain>` against the client VPC's DNS resolver.
+* An SSH SOCKS5 proxy through a bastion host in the client VPC.
+
+The following diagram shows the network path from a workstation, through the VPN, into the client VPC, and across PrivateLink to Redpanda Console:
+
+....
+Workstation
+  │  (public internet, OpenVPN tunnel, mutual TLS)
+  ▼
+AWS Client VPN endpoint        ← AWS-managed; not PrivateLink
+  │  (workstation is now logically inside the client VPC)
+  ▼
+client VPC subnet
+  │  (VPC routing; DNS resolved via VPC resolver to a private IP)
+  ▼
+PrivateLink VPC endpoint ENI   ← PrivateLink begins here
+  │  (AWS PrivateLink service network, not on the public internet)
+  ▼
+Redpanda cluster VPC → Console load balancer → Redpanda Console
+....
+
+The client VPN tunnel itself does not use PrivateLink. The VPN's role is to place the workstation logically inside the client VPC; the private connection to the cluster is always the PrivateLink endpoint. This is true regardless of how a client reaches the client VPC (client VPN, corporate VPN, peered network, transit gateway, SSH bastion, or an EC2 instance inside the VPC).
+
+=== Set up AWS Client VPN
+
+For full setup instructions, see the https://docs.aws.amazon.com/vpn/latest/clientvpn-admin/cvpn-getting-started.html[AWS Client VPN Administrator Guide^]. The settings specific to Redpanda PrivateLink are:
+
+* *Authentication*: mutual certificate authentication. Generate a CA, server certificate, and client certificate; upload the server certificate and the CA certificate to AWS Certificate Manager (ACM).
+* *Client IPv4 CIDR*: a CIDR between `/22` (minimum) and `/12` (maximum) that does not overlap the client VPC CIDR. For example: `10.100.0.0/22`.
+* *DNS server IP addresses*: the IP of the client VPC's DNS resolver (the second usable IP in the VPC CIDR). For a default VPC with CIDR `172.31.0.0/16`, use `172.31.0.2`. This is what makes PrivateLink hostnames resolve to the endpoint's ENI IPs from connected clients rather than to public DNS.
+* *Split-tunnel*: enabled. Only traffic destined for the client VPC CIDR is routed through the VPN; the rest stays on the local internet.
+* *VPC ID*: the client VPC where the PrivateLink endpoint lives.
+* *Target network association*: associate the endpoint with a subnet in the same VPC as the PrivateLink endpoint.
+* *Authorization rule*: allow your client CIDR to reach the client VPC CIDR.
+
+The client VPN endpoint takes several minutes to reach the *Available* state after the subnet association is created.
+
+Allow inbound from the client VPN security group on the PrivateLink endpoint's security group, on port `443` (Console / Schema Registry) and on the Kafka API and HTTP Proxy ports (`30000-35999`, covering both the seed and per-broker ports).
+
+=== Connect using AWS VPN Client
+
+. Install the https://aws.amazon.com/vpn/client-vpn-download/[AWS VPN Client^] for macOS or Windows.
+. From the AWS Console, download the client VPN endpoint configuration file (`.ovpn`). Add your client certificate and private key inside `<cert>...</cert>` and `<key>...</key>` blocks at the bottom of the file.
+. Open AWS VPN Client and choose *File* > *Manage Profiles* > *Add Profile*. Select the `.ovpn` file and give the profile a name.
+. Select the profile and click *Connect*. The connection establishes in a few seconds.
+
+To verify, run the following from the workstation:
+
+[,bash]
+----
+dig +short console-<id>.<cluster_domain>
+----
+
+The response should be a private IP from the client VPC's CIDR range. For example:
+
+[,bash,role=no-copy]
+----
+172.31.0.97
+----
+
+If the response shows a public address (for example, the cluster VPC's internal LB IPs such as `10.x.x.x`), the VPC's DNS resolver was not pushed to the client. Re-check the *DNS server IP addresses* setting on the client VPN endpoint.
+
+=== Open Redpanda Console through the Cloud Console left navigation
+
+With the VPN connected, sign in to the Redpanda Cloud Console at https://cloud.redpanda.com[cloud.redpanda.com^] and select your cluster.
+
+. The cluster *Overview* page loads as normal; it is served by the Redpanda Cloud control plane and does not depend on the VPN.
+. Click any item in the cluster's left navigation (*Topics*, *Brokers*, *Consumer groups*, and so on). These views are served by Redpanda Console at `https://console-<id>.<cluster_domain>`. With the VPN connected, your browser resolves the hostname to the PrivateLink endpoint's ENI in the client VPC and the views load.
+. If the left navigation does not load (the page hangs or returns a network error), confirm the VPN session is connected and that `dig` returns a private IP for the Console hostname. Without an active VPN session, only the cluster *Overview* page is reachable from a workstation outside the client VPC.
+
+[NOTE]
+====
+Redpanda Console does not provide a standalone login form. Do not open `https://console-<id>.<cluster_domain>` directly in a browser: the SPA loads but cannot complete authentication, because the authentication token is handed off from Redpanda Cloud Console. Always start from https://cloud.redpanda.com[cloud.redpanda.com^].
+====
 
 == Test the connection
 
@@ -94,20 +179,20 @@ For more information about AWS cross-region PrivateLink support, see the https:/
 
 NOTE: The *Supported regions* option only appears in the UI for multi-AZ clusters.
 
-. In the Redpanda Cloud Console, select your https://cloud.redpanda.com/clusters[cluster^], and go to the cluster settings page.
+. In the Redpanda Cloud Console, select your https://cloud.redpanda.com/clusters[cluster^], and go to the Dataplane settings page.
 . In the AWS PrivateLink section, click *Edit* (or *Enable* if PrivateLink is not yet enabled).
 . In the *Supported regions* section, click *Add* to add a region from which PrivateLink endpoints can connect to your cluster.
 . Select an AWS region from the dropdown. The cluster's home region is automatically included and not shown in the list.
 . Repeat to add additional regions as needed.
 . Click *Save* (or *Enable*) to apply the changes.
 
-After saving, the *Supported regions* row on the cluster settings page displays your configured regions.
+After saving, the *Supported regions* row on the Dataplane settings page displays your configured regions.
 
 Clients in VPCs located in the supported regions can now create PrivateLink endpoints that connect to your Redpanda cluster.
 
 == Disable endpoint service
 
-On the Cluster settings page for the cluster, click *Disable* for PrivateLink. Existing connections are closed after the AWS PrivateLink service is disabled. To connect using PrivateLink again, you must re-enable the service.
+On the Dataplane settings page for the cluster, click *Disable* for PrivateLink. Existing connections are closed after the AWS PrivateLink service is disabled. To connect using PrivateLink again, you must re-enable the service.
 
 include::shared:partial$suggested-reading.adoc[]
 

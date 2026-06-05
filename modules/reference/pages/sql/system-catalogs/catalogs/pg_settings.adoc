@@ -1,0 +1,49 @@
+= pg_settings
+:description: The pg_settings displays the configuration settings for the current session.
+:page-topic-type: reference
+
+The `pg_settings` displays the configuration settings for the current session. It mimics the https://www.postgresql.org/docs/current/catalog-pg-db-role-setting.html[pg_settings^] PostgreSQL system catalog.
+
+== Columns
+
+The following columns are available for querying in `pg_settings`:
+
+[width="100%",cols="16%,7%,77%",options="header",]
+|===
+|Column |Type |Description
+|`name` |`text` |This column represents the run-time configuration parameter name
+|`setting` |`text` |This column represents the current value of the parameter
+|`unit` |`text` |_Unused_.
+|`category` |`text` |_Unused_.
+|`short_desc` |`text` |_Unused_.
+|`extra_desc` |`text` |_Unused_.
+|`context` |`text` |_Unused_.
+|`vartype` |`text` |_Unused_.
+|`source` |`text` |_Unused_.
+|`min_val` |`text` |_Unused_.
+|`max_val` |`text` |_Unused_.
+|`enumvals` |`text` |_Unused_.
+|`boot_val` |`text` |_Unused_.
+|`reset_val` |`text` |_Unused_.
+|`sourcefile` |`text` |_Unused_.
+|`sourceline` |`int` |_Unused_.
+|`pending_restart` |`bool` |_Unused_.
+|===
+
+== Examples
+
+To retrieve information from the pg_settings catalog, you can execute a query like:
+
+[source,sql]
+----
+SELECT name, setting FROM pg_settings;
+----
+
+You get the following run-time configuration values.
+
+[source,sql]
+----
+     name      | setting
+----------------+---------
+ max_index_keys | 32
+----

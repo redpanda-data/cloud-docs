@@ -1,0 +1,78 @@
+= Information Schema
+:description: Information schema views in Redpanda SQL expose database object metadata and grants through SQL-standard views.
+:page-topic-type: reference
+
+The `information_schema` namespace provides SQL-standard views over database object metadata. Use these views to inspect catalogs, tables, schemas, columns, and privilege grants without querying the underlying PostgreSQL system catalogs directly.
+
+== Available views
+
+Standard views follow the SQL specification, with semantics consistent with https://www.postgresql.org/docs/current/information-schema.html[PostgreSQL's `information_schema`^]. Redpanda SQL also adds one extension view for per-relation EXTERNAL SOURCE grants.
+
+[cols="<40%,<60%",options="header"]
+|===
+|View |Description
+
+|`information_schema.character_sets`
+|Character sets available in the current database.
+
+|`information_schema.columns`
+|Columns of tables and views visible to the current role.
+
+|`information_schema.key_column_usage`
+|Columns constrained as keys (primary keys, unique constraints, foreign keys).
+
+|`information_schema.referential_constraints`
+|Foreign-key constraints visible to the current role.
+
+|`information_schema.role_external_relation_grants`
+|Per-relation EXTERNAL SOURCE grants. Redpanda SQL extension that captures grants whose stored relation pattern is anything other than `\*` (catalog-level grants surface in `information_schema.role_table_grants` instead).
+
+|`information_schema.role_table_grants`
+|Privileges granted on tables and table-like objects to the current role.
+
+|`information_schema.role_usage_grants`
+|USAGE privileges granted to the current role.
+
+|`information_schema.table_constraints`
+|Table constraints (primary key, unique, foreign key, check) visible to the current role.
+
+|`information_schema.tables`
+|Tables and views visible to the current role.
+|===
+
+== information_schema.role_external_relation_grants
+
+Per-relation EXTERNAL SOURCE grants. Rows whose stored relation pattern is anything other than `\*`. Catalog-level EXTERNAL SOURCE grants (stored pattern `\*`) surface in `information_schema.role_table_grants`, like foreign-table grants in PostgreSQL.
+
+When you `GRANT ... ON EXTERNAL SOURCE catalog_name => 'pattern'`, the pattern is stored verbatim. Redpanda SQL does not normalize or canonicalize it. Patterns are either a fully-qualified relation name like `ns1.ns2.my_table` or a name with a trailing wildcard like `ns1.public_tables*`. See xref:reference:sql/sql-statements/grant.adoc[GRANT] for the full grant syntax and xref:sql:manage/manage-access.adoc[Manage access to Redpanda SQL] for the access model.
+
+Visibility mirrors `information_schema.role_table_grants`. A regular role sees rows where it is the grantee. A superuser sees grants for every non-superuser.
+
+Use this view to find the exact stored relation pattern when you need to xref:reference:sql/sql-statements/revoke.adoc[revoke] a grant. `REVOKE` requires the pattern argument to match a stored grant exactly. Revoking a pattern that was never granted returns an error, so query this view first to see what's currently registered.
+
+[cols="<30%,<15%,<10%,<45%",options="header"]
+|===
+|Column |Type |Nullable |Description
+
+|`grantor` |`text` |No |Role that granted the privilege.
+|`grantee` |`text` |No |Role that holds the privilege.
+|`database_name` |`text` |No |Database the grant applies to.
+|`schema_name` |`text` |No |Schema the grant applies to.
+|`source_name` |`text` |No |External source (catalog or storage) the grant applies to.
+|`relation_pattern` |`text` |No |Relation-name pattern the grant matches. Wildcards (`\*`) are allowed in the pattern.
+|`privilege_type` |`text` |No |Privilege granted, such as `SELECT`.
+|`is_grantable` |`text` |No |`YES` if the grantee can grant this privilege to other roles; `NO` otherwise.
+|===
+
+[source,sql]
+----
+SELECT grantee, source_name, relation_pattern, privilege_type
+FROM information_schema.role_external_relation_grants
+WHERE grantee = 'analyst';
+----
+
+== Suggested reading
+
+* xref:reference:sql/sql-statements/grant.adoc[GRANT]
+* xref:reference:sql/sql-statements/revoke.adoc[REVOKE]
+* xref:sql:manage/manage-access.adoc[Manage access to Redpanda SQL]

@@ -1,6 +1,6 @@
 site:
   title: Redpanda Docs
-  start_page: redpanda-cloud:get-started:cloud-overview.adoc
+  start_page: cloud-data-platform:get-started:cloud-overview.adoc
   url: http://localhost:5002
   robots: disallow
   keys:
@@ -18,11 +18,13 @@ content:
     branches: [main, v/*, shared, site-search]
   - url: https://github.com/redpanda-data/docs-site
     branches: [main]
-    start_paths: [home]
+    start_paths: [home, data-platform, self-managed]
   - url: https://github.com/redpanda-data/redpanda-labs
     branches: main
     start_paths: [docs,'*/docs']
   - url: https://github.com/redpanda-data/rp-connect-docs
+    branches: main
+  - url: https://github.com/redpanda-data/adp-docs
     branches: main
 ui:
   bundle:
@@ -40,6 +42,12 @@ asciidoc:
   - '@redpanda-data/docs-extensions-and-macros/asciidoc-extensions/add-line-numbers-highlights'
 antora:
   extensions:
+  # Conditional home page redirect when agentic-data-plane component doesn't exist
+  - require: '@redpanda-data/docs-extensions-and-macros/extensions/conditional-home-redirect'
+  # Unified navigation extension (config-driven)
+  # Components with page-navigation attribute use that config
+  # Components without page-navigation use standard Antora navigation
+  - require: '@redpanda-data/docs-extensions-and-macros/extensions/unified-navigation'
   - require: '@redpanda-data/docs-extensions-and-macros/extensions/generate-rp-connect-info'
   - require: '@redpanda-data/docs-extensions-and-macros/extensions/unpublish-pages'
   - require: '@redpanda-data/docs-extensions-and-macros/extensions/collect-bloblang-samples'
@@ -52,8 +60,8 @@ antora:
     data:
       replacements:
         - components:
-            - 'ROOT'
-            - 'redpanda-labs'
+            - 'streaming'
+            - 'labs'
           file_patterns:
             - '**/docker-compose.yaml'
             - '**/docker-compose.yml'

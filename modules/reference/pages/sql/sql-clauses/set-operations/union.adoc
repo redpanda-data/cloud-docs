@@ -1,0 +1,188 @@
+= UNION
+:description: The UNION combines the result sets of two or more SELECT statements, removing duplicate rows between the tables.
+:page-topic-type: reference
+
+`UNION` combines the result sets of two or more `SELECT` statements, removing duplicate rows between the tables.
+
+== Syntax
+
+[source,sql]
+----
+SELECT value1, value2, ... value_n
+FROM table1
+UNION
+SELECT value1, value2, ... value_n
+FROM table2;
+----
+
+Where:
+
+* `value1, value2, ... value_n`: The columns to retrieve. You can also retrieve all columns using `SELECT * FROM`.
+* `table1, table2`: The tables to retrieve records from.
+
+== Examples
+
+Suppose there is a table called `employees` and another table called `contractors`. The goal is to retrieve a combined list of names from both tables, excluding duplicates:
+
+[source,sql]
+----
+CREATE TABLE employees (
+    emp_id INT,
+    emp_name TEXT
+);
+
+CREATE TABLE contractors (
+    contractor_id INT,
+    contractor_name TEXT
+);
+
+INSERT INTO employees VALUES
+(1, 'John'),
+(2, 'Alice'),
+(3, 'Bob');
+
+INSERT INTO contractors VALUES
+(101, 'Alice'),
+(102, 'Eve'),
+(103, 'Tom');
+----
+
+Verify the inserted values:
+
+[source,sql]
+----
+SELECT * FROM employees;
+SELECT * FROM contractors;
+----
+
+[source,sql]
+----
+emp_id | emp_name
+--------+----------
+      1 | John
+      2 | Alice
+      3 | Bob
+
+ contractor_id | contractor_name
+---------------+-----------------
+           101 | Alice
+           102 | Eve
+           103 | Tom
+----
+
+Combine the values from the tables:
+
+[source,sql]
+----
+SELECT emp_name FROM employees
+UNION
+SELECT contractor_name FROM contractors;
+----
+
+The query returns the values from both tables without duplicates:
+
+[source,sql]
+----
+emp_name
+----------
+ Alice
+ Bob
+ Eve
+ John
+ Tom
+----
+
+The duplicate name `Alice` appears only once in the output.
+
+== UNION ALL
+
+`UNION ALL` combines the result sets of two or more `SELECT` statements, returning all rows from the queries without removing duplicates.
+
+=== Syntax
+
+[source,sql]
+----
+SELECT value1, value2, ... value_n
+FROM table1
+UNION ALL
+SELECT value1, value2, ... value_n
+FROM table2;
+----
+
+Where:
+
+* `value1, value2, ... value_n`: The columns to retrieve. You can also retrieve all columns using `SELECT * FROM`.
+* `table1, table2`: The tables to retrieve records from.
+
+=== Example
+
+Suppose you have two separate tables, `sales_2022` and `sales_2023`, containing sales data for different years. To combine the sales data from both tables without removing duplicates:
+
+[source,sql]
+----
+CREATE TABLE sales_2022 (
+    transaction_id INT,
+    product_name TEXT,
+    sale_amount INT
+);
+
+CREATE TABLE sales_2023 (
+    transaction_id INT,
+    product_name TEXT,
+    sale_amount INT
+);
+
+INSERT INTO sales_2022 VALUES
+(1, 'Product A', 1000),
+(2, 'Product B', 500),
+(3, 'Product C', 750);
+
+INSERT INTO sales_2023 VALUES
+(4, 'Product A', 1200),
+(5, 'Product D', 800),
+(6, 'Product E', 950);
+----
+
+Verify the inserted values:
+
+[source,sql]
+----
+SELECT * FROM sales_2022;
+SELECT * FROM sales_2023;
+----
+
+[source,sql]
+----
+transaction_id | product_name | sale_amount
+----------------+--------------+-------------
+              1 | Product A    |        1000
+              2 | Product B    |         500
+              3 | Product C    |         750
+
+ transaction_id | product_name | sale_amount
+----------------+--------------+-------------
+              4 | Product A    |        1200
+              5 | Product D    |         800
+              6 | Product E    |         950
+----
+
+Combine all values from the tables using `UNION ALL`:
+
+[source,sql]
+----
+SELECT product_name, sale_amount FROM sales_2022 UNION ALL SELECT product_name, sale_amount FROM sales_2023;
+----
+
+The query returns all rows from the first table followed by all rows from the second table, including duplicates:
+
+[source,sql]
+----
+product_name | sale_amount
+--------------+-------------
+ Product A    |        1000
+ Product B    |         500
+ Product C    |         750
+ Product A    |        1200
+ Product D    |         800
+ Product E    |         950
+----

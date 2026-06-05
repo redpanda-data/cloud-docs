@@ -1,3 +1,27 @@
-Redpanda Cloud provides several predefined roles that you cannot modify or delete, including Reader, Writer, and Admin. 
+Redpanda Cloud provides several predefined roles that you cannot modify or delete, including Reader, Writer, and Admin.
 
-You can see all predefined roles along with their permissions on the *Roles* tab of *Organization IAM*.
+Before assigning a role to a user or service account, review the *Organization IAM* - *Roles* tab to compare the full list of predefined roles and their permissions.
+
+[NOTE]
+====
+On BYOC and Dedicated clusters, the Reader, Writer, and Admin roles include data plane permissions for the Schema Registry in addition to Kafka resources (topics, consumer groups, transactional IDs, and cluster operations). Permissions are scoped to the `subject` and `registry` ACL resource types.
+
+[cols="1,3,2"]
+|===
+| Role | `subject` operations (resource name `*`) | `registry` operations (global)
+
+| Reader
+| Read, Describe
+| Describe, DescribeConfigs
+
+| Writer
+| Read, Write, Delete, Describe, DescribeConfigs
+| Describe, DescribeConfigs
+
+| Admin
+| Read, Write, Delete, Describe, DescribeConfigs, AlterConfigs
+| Describe, DescribeConfigs, AlterConfigs
+|===
+
+For more information on Schema Registry ACLs, including resource types and supported operations, see xref:manage:schema-reg/schema-reg-authorization.adoc[].
+====

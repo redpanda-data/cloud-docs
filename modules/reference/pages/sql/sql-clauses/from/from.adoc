@@ -1,0 +1,240 @@
+= FROM
+:description: The FROM clause specifies the tables that a query reads data from.
+:page-topic-type: reference
+
+The `FROM` clause specifies the tables that a query reads data from.
+
+== Syntax
+
+A `FROM` clause must list at least one table:
+
+[source,sql]
+----
+query FROM table_name;
+----
+
+If two or more tables are listed, they are joined with one of: xref:reference:sql/sql-clauses/from/join.adoc[JOIN], xref:reference:sql/sql-clauses/from/right-join.adoc[RIGHT JOIN], xref:reference:sql/sql-clauses/from/left-join.adoc[LEFT JOIN], or xref:reference:sql/sql-clauses/from/outer-join.adoc[OUTER JOIN].
+
+[source,sql]
+----
+FROM table1_name
+[ { JOIN
+  | LEFT JOIN
+  | RIGHT JOIN
+  | OUTER JOIN } table2_name
+ON table1_name.column1 = table2_name.column1 ]
+----
+
+[NOTE]
+====
+These examples use the `public` schema, the default in Redpanda SQL. For information on creating or displaying tables in other schemas, see xref:reference:sql/schema.adoc[Schema].
+====
+
+== Examples
+
+This example uses the `FROM` clause with a single table. Given a `client` table, the goal is to retrieve the client's name and the city where the company is based.
+
+[source,sql]
+----
+CREATE TABLE client (
+  client_id int,
+  client_name text,
+  client_origin text
+);
+INSERT INTO client
+    (client_id, client_name, client_origin)
+VALUES
+    (181891,'Toyota','Japan'),
+    (181892,'Google','USA'),
+    (181893,'Samsung','South Korea');
+----
+
+[source,sql]
+----
+SELECT * FROM client;
+----
+
+This returns:
+
+[source,sql]
+----
++------------+--------------+------------------+
+| client_id  | client_name  | client_origin    |
++------------+--------------+------------------+
+| 181891     | Toyota       | Japan             |
+| 181892     | Google       | USA              |
+| 181893     | Samsung      | South Korea      |
++------------+--------------+------------------+
+----
+
+. Run the following query:
++
+[source,sql]
+----
+SELECT client_name, client_origin FROM client;
+----
+
+. The query returns:
++
+[source,sql]
+----
++--------------+------------------+
+| client_name  | client_origin    |
++--------------+------------------+
+| Toyota       | Japan             |
+| Google       | USA              |
+| Samsung      | South Korea      |
++--------------+------------------+
+----
+
+[TIP]
+====
+For multi-table queries, see: xref:reference:sql/sql-clauses/from/join.adoc[JOIN], xref:reference:sql/sql-clauses/from/right-join.adoc[RIGHT JOIN], xref:reference:sql/sql-clauses/from/left-join.adoc[LEFT JOIN], or xref:reference:sql/sql-clauses/from/outer-join.adoc[OUTER JOIN].
+====
+
+== Subqueries with FROM
+
+The `FROM` clause can also specify a subquery. The result of the subquery becomes a new relation that the outer query can reference.
+
+[NOTE]
+====
+You can list more than one table by separating them with a comma (`,`). This is an implicit (cross) join: `FROM t1, t2 WHERE t1.id = t2.id` is equivalent to `FROM t1 JOIN t2 ON t1.id = t2.id`. Without a `WHERE` clause, the result is the Cartesian product of all rows in both tables.
+====
+
+=== Syntax
+
+[source,sql]
+----
+SELECT X.column1, X.column2, X.column3
+FROM table_2 as X, table_1 as Y
+WHERE conditions (X.column, Y.column);
+----
+
+. The subquery in the first `FROM` clause selects the columns from the specific table using a new temporary relation (`SELECT X.column1, X.column2, X.column3 FROM`).
+. Set the tables into a new temporary relation (`table_2 as X, table_1 as Y`).
+. The query is evaluated, selecting only those rows from the temporary relation that fulfill the conditions stated in the `WHERE` clause.
+
+=== Example
+
+The following example finds a product whose price exceeds the average budget across all categories.
+
+[source,sql]
+----
+CREATE TABLE product (
+  id int,
+  product text,
+  category text,
+  price int
+);
+INSERT INTO product
+    (id, product, category, price)
+VALUES
+    (445747,'Court vision women''s shoes nike','Shoes', 8000),
+    (445641,'Disney kids h&m','Shirt', 6500),
+    (477278,'Defacto adidas','Hat', 8500),
+    (481427,'Sophie shopping bag','Bag', 6500),
+    (411547,'Candy skirt zara','Skirt', 6500),
+    (488198,'Slim cut skirt hush puppies','Skirt', 7600);
+----
+
+[source,sql]
+----
+SELECT * FROM product;
+----
+
+This returns:
+
+[source,sql]
+----
++---------+----------------------------------+-----------+--------+
+| id      | product                          | category  | price  |
++---------+----------------------------------+-----------+--------+
+| 445747  | Court vision women's shoes nike  | Shoes     | 8000   |
+| 445641  | Disney kids h&m                  | Shirt     | 6500   |
+| 477278  | Defacto adidas                   | Hat       | 8500   |
+| 481427  | Sophie shopping bag              | Bag       | 6500   |
+| 411547  | Candy skirt zara                 | Skirt     | 6500   |
+| 488198  | Slim cut skirt hush puppies      | Skirt     | 7600   |
++---------+----------------------------------+-----------+--------+
+----
+
+Create a `category` table:
+
+[source,sql]
+----
+CREATE TABLE category (
+  categoryName text,
+  budget int
+);
+INSERT INTO category
+    (categoryName, budget)
+VALUES
+    ('Shoes', 7000),
+    ('Shirt', 9000),
+    ('Bag', 8000),
+    ('Skirt', 7500),
+    ('Hat', 7000);
+----
+
+[source,sql]
+----
+SELECT * FROM category;
+----
+
+This returns:
+
+[source,sql]
+----
++---------------+----------+
+| categoryName  | budget   |
++---------------+----------+
+| Shoes         | 7000     |
+| Shirt         | 9000     |
+| Bag           | 8000     |
+| Skirt         | 7500     |
+| Hat           | 7000     |
++---------------+----------+
+----
+
+. Run the following query to find the average budget across all categories:
++
+[source,sql]
+----
+select avg(budget) as avgBudget from category;
+----
+
+. The query returns the average budget across all categories:
++
+[source,sql]
+----
++--------------------+
+| avgbudget          |
++--------------------+
+| 7700.000000000000  |
++--------------------+
+----
+
+. Run:
++
+* The `product` table is aliased as `P` and the budget's average value from the `category` table as `C`.
+* The query displays the product's name, category, and price.
+* The conditions are set where the product's price exceeds the budget's average value.
++
+[source,sql]
+----
+select P.product, P.category, P.price from
+(select avg(budget) as avgBudget from category) as C, product as P
+where P.price > C.avgBudget;
+----
+
+. The query returns the products with a price greater than 7700:
++
+[source,sql]
+----
++------------------------------------+-----------+----------+
+| product                            | category  | price    |
++------------------------------------+-----------+----------+
+| Court vision women's shoes nike    | Shoes     | 8000     |
+| Defacto adidas                     | Hat       | 8500     |
++------------------------------------+-----------+----------+
+----
