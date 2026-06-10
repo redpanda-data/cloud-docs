@@ -409,6 +409,71 @@ resource "redpanda_cluster" "test" {
 }
 ----
 
+=== Enable Redpanda SQL on a BYOC cluster
+
+Use the `rpsql` block on a `redpanda_cluster` resource to enable and manage Redpanda SQL on a BYOC cluster. You can add or change `rpsql` settings on an existing cluster without recreating it.
+
+This example requires provider version `>= 2.0.0`.
+
+[cols="<25%,<15%,<10%,<50%",options="header"]
+|===
+|Attribute |Type |Required |Description
+
+|`enabled`
+|Boolean
+|No
+|Whether Redpanda SQL is enabled. Default: `false`.
+
+|`replicas`
+|Number
+|No
+|Number of SQL compute replicas. Scalable in place. Default: `1`.
+
+|`url`
+|String
+|Read-only
+|SQL engine endpoint URL. Empty while disabled; populated by the server when SQL is enabled.
+|===
+
+[source,hcl]
+----
+terraform {
+  required_providers {
+    redpanda = {
+      source  = "redpanda-data/redpanda"
+      version = ">= 2.0.0"
+    }
+  }
+}
+
+provider "redpanda" {}
+
+resource "redpanda_cluster" "example" {
+  name              = var.cluster_name
+  resource_group_id = var.resource_group_id
+  network_id        = var.network_id
+  cloud_provider    = "aws"
+  region            = var.region
+  cluster_type      = "byoc"
+  connection_type   = "public"
+  throughput_tier   = var.throughput_tier
+  zones             = var.zones
+
+  rpsql = {
+    enabled  = true
+    replicas = 3
+  }
+}
+
+output "sql_url" {
+  value = redpanda_cluster.example.rpsql.url
+}
+----
+
+To scale Redpanda SQL, update `replicas` and run `terraform apply`. To disable it, set `enabled = false`. Both are in-place updates. Terraform applies the change without recreating the cluster.
+
+For the full enable workflow using the Cloud Console or Cloud API, see xref:sql:get-started/deploy-sql-cluster.adoc[Enable Redpanda SQL on a BYOC cluster].
+
 === Create a Dedicated cluster
 
 Redpanda fully manages Dedicated clusters for consistent performance. This example creates one on AWS with specific zones and a usage tier.
