@@ -446,6 +446,35 @@ terraform {
   }
 }
 
+variable "cluster_name" {
+  description = "Name of the Redpanda BYOC cluster"
+  default     = "sql-enabled-cluster"
+}
+
+variable "resource_group_id" {
+  description = "ID of the Redpanda resource group"
+}
+
+variable "network_id" {
+  description = "ID of the Redpanda network"
+}
+
+variable "region" {
+  description = "Region for the cluster"
+  default     = "us-east-2"
+}
+
+variable "throughput_tier" {
+  description = "Throughput tier for the cluster"
+  default     = "tier-1-aws-v2-x86"
+}
+
+variable "zones" {
+  description = "List of availability zones for the cluster"
+  type        = list(string)
+  default     = ["use2-az1", "use2-az2", "use2-az3"]
+}
+
 provider "redpanda" {}
 
 resource "redpanda_cluster" "example" {
