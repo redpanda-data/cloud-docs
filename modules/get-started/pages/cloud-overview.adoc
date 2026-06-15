@@ -15,10 +15,6 @@ Redpanda ADP includes the following key components:
 * *Transcripts*: End-to-end execution records built on an immutable log with formal correctness guarantees. Transcripts are the keystone of agent governance.
 * *AI Gateway*: High-availability model routing with fiscal controls and per-tenant cost attribution across LLM providers.
 
-For more information, see xref:ai-agents:adp-overview.adoc[Redpanda Agentic Data Plane Overview].
-
-include::ai-agents:partial$adp-la.adoc[]
-
 == Redpanda Cloud deployment options
 
 Redpanda Cloud applications are supported by three fully-managed deployment options:
@@ -43,7 +39,7 @@ Redpanda Cloud applications are supported by three fully-managed deployment opti
 
 | *Deployment*
 | Redpanda's cloud (AWS/GCP)
-| Redpanda's cloud (AWS/Azure/GCP)footnote:dedicated-azure-la[Dedicated on Azure is in glossterm:LA[, limited availability].]
+| Redpanda's cloud (AWS/Azure/GCP)
 | Your cloud account (AWS/Azure/GCP)
 
 | *Redpanda ADP*
@@ -141,7 +137,7 @@ Serverless is the fastest and easiest way to start data streaming. With Serverle
 
 [NOTE]
 ====
-* Serverless on GCP is in a glossterm:beta[] release.
+* Serverless on GCP is currently in a glossterm:beta[] release. 
 ====
 
 ==== Sign up for Serverless
@@ -166,16 +162,9 @@ Redpanda creates a cloud organization for you and sends you a welcome email. You
 AWS Marketplace::
 +
 --
-New subscriptions to Redpanda Cloud through xref:billing:aws-pay-as-you-go.adoc[AWS Marketplace] receive $300 (USD) in free credits to spend in the first 30 days. AWS Marketplace charges for anything beyond $300, unless you cancel the subscription. After your free credits have been used, you can continue using your cluster without any commitment, only paying for what you consume and canceling anytime.
+New subscriptions to Redpanda Cloud through xref:billing:aws-pay-as-you-go.adoc[AWS Marketplace] receive $300 (USD) in free credits to spend in the first 30 days. AWS Marketplace charges for anything beyond $300, unless you cancel the subscription. After your free credits have been used, you can continue using your cluster without any commitment, only paying for what you consume and canceling anytime. 
 
-Redpanda creates a cloud organization for you and sends you a welcome email.
---
-Google Cloud Marketplace::
-+
---
-New subscriptions to Redpanda Cloud through xref:billing:gcp-pay-as-you-go.adoc[Google Cloud Marketplace] receive $300 (USD) in free credits to spend in the first 30 days. Google Cloud Marketplace charges for anything beyond $300, unless you cancel the subscription. After your free credits have been used, you can continue using your cluster without any commitment, only paying for what you consume and canceling anytime.
-
-Redpanda creates a cloud organization for you and sends you a welcome email.
+Redpanda creates a cloud organization for you and sends you a welcome email. 
 --
 =====
 
@@ -384,7 +373,7 @@ Because Redpanda Cloud is a fully-managed service that provides maintenance, dat
 
 New clusters in Redpanda Cloud generally include functionality added in Self-Managed versions immediately. Existing clusters include new functionality when they get upgraded to the latest version. 
 
-Redpanda Cloud deployments do not support the following functionality available in Redpanda Streaming deployments:
+Redpanda Cloud deployments do not support the following functionality available in Redpanda Self-Managed deployments:
 
 - Kafka API OIDC authentication. However, Redpanda Cloud does support xref:security:cloud-authentication.adoc#single-sign-on[SSO to the Redpanda Cloud UI].
 - Admin API.
@@ -420,8 +409,8 @@ Features in limited availability are production-ready and are covered by Redpand
 
 The following features are currently in limited availability in Redpanda Cloud:
 
-* xref:ai-agents:adp-overview.adoc[Redpanda Agentic Data Plane (ADP)]
-* xref:get-started:cluster-types/create-dedicated-cloud-cluster.adoc[Dedicated for Azure]
+* Redpanda ADP including AI agents, AI Gateway, and transcripts
+* Dedicated for Azure
 
 == Features in beta
 
@@ -429,19 +418,15 @@ Features in beta are available for testing and feedback. They are not covered by
 
 The following features are currently in beta in Redpanda Cloud:
 
-* xref:get-started:cluster-types/serverless.adoc#get-started-with-serverless[Serverless on GCP]
-* xref:get-started:cluster-types/byoc/azure/vnet-azure.adoc[BYOVNet on Azure]
-* xref:get-started:cluster-types/byoc/gcp/enable-secrets-byovpc-gcp.adoc[Secrets management for BYOVPC on GCP]
-* xref:ai-agents:mcp/overview.adoc[Redpanda Cloud Management MCP Server]
-* xref:manage:iceberg/iceberg-topics-aws-glue.adoc[Querying Iceberg topics with AWS Glue]
-* xref:develop:managed-connectors/converters-and-serialization.adoc#protobuf-converter[Protobuf converter for managed connectors]
+* BYOVNet for Azure
+* Secrets management for BYOVPC on GCP
+* Several Redpanda Connect components 
 
 include::shared:partial$suggested-video.adoc[]
 
 * https://www.youtube.com/watch?v=gVlzsJAYT64&ab_channel=RedpandaData[YouTube - What is Redpanda BYOC? (3 mins)^]
 
 == Next steps
-* xref:ai-agents:index.adoc[Build AI agents with Redpanda ADP]
 * xref:manage:maintenance.adoc[Learn about upgrades and maintenance]
 * xref:get-started:cluster-types/serverless.adoc[Create a Serverless cluster]
 * xref:get-started:cluster-types/byoc/index.adoc[Create a BYOC cluster]
