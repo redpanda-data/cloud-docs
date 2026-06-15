@@ -110,6 +110,27 @@ NOTE: Catalogs are created in the current schema (`public` by default). To creat
 |STRING
 |No
 |Path to a certificate revocation list (CRL) file.
+
+|`flat_namespaces`
+|STRING
+|No
+a|`'true'` or `'false'`. Declares whether the backing catalog is flat (that is, it does not support nested or multi-level namespaces).
+
+* When `'true'`, Redpanda SQL skips recursive child-namespace calls for any non-root namespace.
+* If not set, Redpanda SQL auto-derives this as `true` when `auth_type = 'aws_sigv4'` and `aws_service_name` is `glue` (default) or `s3tables`, and `false` for all other auth types. Set it explicitly only if the auto-derived value does not match your backend's actual behavior.
+
+|`allowed_namespaces`
+|STRING
+|No
+a|Comma-separated list of dotted namespace paths (for example, `'analytics, logs.audit'`). Scopes catalog discovery to the listed namespaces, skipping the root-level namespace walk. SELECT and REFRESH are gated on the same list; tables outside it return a "namespace not allowed" error. When unset, Redpanda SQL discovers the entire catalog tree.
+
+Validation rules:
+
+* Surrounding whitespace is trimmed.
+* Dots denote namespace levels (`logs.audit` = namespace `audit` under `logs`).
+* Empty entries (trailing comma) are rejected at DDL time.
+* Overlapping entries (where one entry is a prefix of another) are rejected at DDL time.
+* On flat backends (`flat_namespaces = 'true'`), all entries must be single-segment.
 |===
 
 == Examples
@@ -176,6 +197,40 @@ CREATE ICEBERG CATALOG lakehouse_catalog STORAGE iceberg_storage
 ----
 
 To use the AWS default credential chain (for example, an EC2 instance-profile role), omit `aws_access_key_id` and `aws_secret_access_key`. They must be set together or omitted together.
+
+=== Create an Iceberg catalog for AWS Glue or S3 Tables
+
+AWS Glue and S3 Tables are flat-by-specification backends, meaning they do not support nested namespaces. Use `allowed_namespaces` to scope discovery to specific databases and avoid requiring the `glue:GetDatabases` IAM permission. The `flat_namespaces` option is auto-derived as `true` when `auth_type = 'aws_sigv4'` and `aws_service_name` is `glue` (default) or `s3tables`.
+
+[source,sql]
+----
+CREATE ICEBERG CATALOG glue_cat STORAGE iceberg_storage
+  WITH (
+    uri                = 'https://glue.us-east-1.amazonaws.com/iceberg',
+    warehouse          = 's3://my-warehouse/',
+    auth_type          = 'aws_sigv4',
+    aws_region         = 'us-east-1',
+    allowed_namespaces = 'analytics, sales'
+    -- flat_namespaces is auto-derived as true for Glue/S3 Tables
+  );
+----
+
+=== Create an Iceberg catalog scoped to specific namespaces (nested backend)
+
+For backends that support nested namespaces (such as Polaris), use multi-segment dotted paths in `allowed_namespaces`.
+
+[source,sql]
+----
+CREATE ICEBERG CATALOG polaris_cat STORAGE iceberg_storage
+  WITH (
+    uri                = 'https://polaris.example.com/api/catalog',
+    warehouse          = 'my_warehouse',
+    auth_type          = 'oauth2',
+    oauth2_client_id   = '<client-id>',
+    oauth2_client_secret = '<client-secret>',
+    allowed_namespaces = 'analytics, logs.audit, raw.ingestion.kafka'
+  );
+----
 
 === Create an Iceberg catalog with custom TLS settings
 
