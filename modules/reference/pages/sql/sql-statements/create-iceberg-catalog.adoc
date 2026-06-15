@@ -116,8 +116,8 @@ NOTE: Catalogs are created in the current schema (`public` by default). To creat
 |No
 a|`'true'` or `'false'`. Declares whether the backing catalog is flat (that is, it does not support nested or multi-level namespaces).
 
-* When `'true'`, Redpanda SQL skips recursive child-namespace calls for any non-root namespace. 
-* If not set, Redpanda SQL automatically sets this to `true` for AWS Glue and S3 Tables backends, and `false` for all others. Set it explicitly only if the auto-derived value does not match your backend's actual behavior.
+* When `'true'`, Redpanda SQL skips recursive child-namespace calls for any non-root namespace.
+* If not set, Redpanda SQL auto-derives this as `true` when `auth_type = 'aws_sigv4'` and `aws_service_name` is `glue` (default) or `s3tables`, and `false` for all other auth types. Set it explicitly only if the auto-derived value does not match your backend's actual behavior.
 
 |`allowed_namespaces`
 |STRING
@@ -200,7 +200,7 @@ To use the AWS default credential chain (for example, an EC2 instance-profile ro
 
 === Create an Iceberg catalog for AWS Glue or S3 Tables
 
-AWS Glue and S3 Tables are flat-by-specification backends, meaning they do not support nested namespaces. Use `allowed_namespaces` to scope discovery to specific databases and avoid requiring the `glue:GetDatabases` IAM permission. The `flat_namespaces` option is auto-derived as `true` when `auth_type = 'aws_sigv4'` and the service is Glue or S3 Tables.
+AWS Glue and S3 Tables are flat-by-specification backends, meaning they do not support nested namespaces. Use `allowed_namespaces` to scope discovery to specific databases and avoid requiring the `glue:GetDatabases` IAM permission. The `flat_namespaces` option is auto-derived as `true` when `auth_type = 'aws_sigv4'` and `aws_service_name` is `glue` (default) or `s3tables`.
 
 [source,sql]
 ----
