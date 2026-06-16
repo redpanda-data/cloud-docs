@@ -1,0 +1,140 @@
+= Enable Redpanda SQL on a BYOVPC Cluster
+:description: Enable the Redpanda SQL engine on an existing BYOVPC cluster on AWS by provisioning SQL-specific resources with Terraform and supplying them as customer-managed resources.
+:page-topic-type: how-to
+:personas: platform_admin
+:learning-objective-1: Provision SQL-specific AWS resources using the Redpanda BYOVPC Terraform module
+:learning-objective-2: Enable Redpanda SQL on a BYOVPC cluster by supplying customer-managed resources
+
+Enable Redpanda SQL on a Bring Your Own Virtual Private Cloud (BYOVPC) cluster on AWS so you can query streaming data in Redpanda topics using standard PostgreSQL syntax.
+
+Unlike standard BYOC clusters, Redpanda does not create resources in your AWS account for BYOVPC clusters. You must provision the SQL-specific AWS resources yourself and supply them to the cluster as customer-managed resources before enabling the SQL engine.
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+
+== Prerequisites
+
+* An existing xref:get-started:cluster-types/byoc/aws/vpc-byo-aws.adoc[BYOVPC cluster on AWS].
+* The https://registry.terraform.io/modules/redpanda-data/redpanda-byovpc/aws/latest[Redpanda BYOVPC Terraform module^] and https://developer.hashicorp.com/terraform[Terraform^] version 1.8.5 or later.
+* Admin permissions in your Redpanda Cloud organization on xref:billing:billing.adoc[usage-based billing].
+* If using the Cloud API, a valid glossterm:bearer token[]. See link:/api/doc/cloud-controlplane/authentication[Authenticate to the Cloud API].
+
+[NOTE]
+====
+The Redpanda Terraform provider does not support SQL customer-managed resource fields. Use the Cloud API or Cloud Console to supply these resources and enable SQL on a BYOVPC cluster.
+====
+
+== Provision SQL resources with Terraform
+
+In your `terraform-aws-redpanda-byovpc` module configuration, set `enable_redpanda_sql = true`:
+
+[,hcl]
+----
+module "redpanda_byovpc" {
+  source = "redpanda-data/redpanda-byovpc/aws"
+  # ... existing configuration ...
+  enable_redpanda_sql = true
+}
+----
+
+Apply the updated configuration:
+
+[,bash]
+----
+terraform apply
+----
+
+This creates three SQL-specific resources in your AWS account:
+
+* An IAM role and instance profile for SQL compute nodes
+* An S3 bucket for SQL data storage (versioning disabled)
+* A security group for SQL nodes
+
+After applying, note the following module outputs. You supply these ARNs to the cluster in the next step.
+
+[cols="1,3",options="header"]
+|===
+| Module output | Description
+| `rpsql_node_group_instance_profile_arn` | ARN of the IAM instance profile for SQL nodes
+| `rpsql_cloud_storage_bucket_arn` | ARN of the S3 bucket for SQL data storage
+| `rpsql_security_group_arn` | ARN of the security group for SQL nodes
+|===
+
+== Supply SQL resources and enable SQL
+
+[tabs]
+=====
+Cloud Console::
++
+--
+. Log in to https://cloud.redpanda.com[Redpanda Cloud^] and open your BYOVPC cluster.
+. From the left navigation, select *Dataplane settings*.
+. On the *Cluster* tab, find the *RP SQL* row and click *Edit*.
+. In the dialog, enter the ARNs from the Terraform module outputs, then use the *RPU* slider to set the compute size.
+. Click *Enable Redpanda SQL engine*.
+--
+
+Cloud API::
++
+--
+. link:/api/doc/cloud-controlplane/authentication[Authenticate to the Cloud API].
+. Locate the cluster ID in the *Details* section of the cluster overview in the Cloud Console.
+. Make a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_updatecluster[`PATCH /v1/clusters/{cluster.id}`] request with the SQL customer-managed resources and `rpsql.enabled` set to `true`. Replace `{cluster.id}` with your cluster ID:
++
+[,bash]
+----
+curl -X PATCH "https://api.redpanda.com/v1/clusters/{cluster.id}" \
+  -H "Authorization: Bearer $AUTH_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customer_managed_resources": {
+      "aws": {
+        "rpsql_node_group_instance_profile": {"arn": "<rpsql_node_group_instance_profile_arn>"},
+        "rpsql_cloud_storage_bucket": {"arn": "<rpsql_cloud_storage_bucket_arn>"},
+        "rpsql_security_group": {"arn": "<rpsql_security_group_arn>"}
+      }
+    },
+    "rpsql": {
+      "enabled": true,
+      "replicas": <compute-nodes>,
+      "zones": ["<sql-az>"]
+    }
+  }'
+----
++
+Replace the placeholders with your own values:
++
+* `<rpsql_node_group_instance_profile_arn>`, `<rpsql_cloud_storage_bucket_arn>`, `<rpsql_security_group_arn>`: The corresponding outputs from the Terraform module.
+* `<compute-nodes>`: Initial number of SQL compute nodes (minimum 1, maximum 9).
+* `<sql-az>` (optional): One of the cluster's glossterm:availability zones[]. The SQL engine deploys to a single AZ. If omitted, Redpanda selects a zone automatically. The AZ is locked when SQL is first enabled and cannot be changed afterward.
++
+. The request returns the ID of a long-running operation. Poll the link:/api/doc/cloud-controlplane/operation/operation-operationservice_getoperation[`GET /v1/operations/{operation.id}`] endpoint until the operation completes:
++
+[,bash]
+----
+curl -X GET "https://api.redpanda.com/v1/operations/{operation.id}" \
+  -H "Authorization: Bearer $AUTH_TOKEN" \
+  -H "Content-Type: application/json"
+----
++
+When the operation is complete, the response shows `"state": "STATE_COMPLETED"`.
+--
+=====
+
+[IMPORTANT]
+====
+The SQL customer-managed resources (`rpsql_node_group_instance_profile`, `rpsql_cloud_storage_bucket`, `rpsql_security_group`) are immutable while SQL is enabled. To change any of these resources, disable SQL first. See xref:sql:get-started/deploy-sql-cluster.adoc#disable-redpanda-sql[Disable Redpanda SQL].
+====
+
+[NOTE]
+====
+The SQL-specific AWS resources (IAM instance profile, Amazon S3 bucket, and security group) are not deleted when you disable SQL. They remain in your account and can be reused if you re-enable SQL. To remove them, set `enable_redpanda_sql = false` in the Terraform module and run `terraform apply`, or run `terraform destroy` to remove all BYOVPC resources.
+====
+
+== Next steps
+
+* xref:sql:get-started/deploy-sql-cluster.adoc[Scale, verify, and disable the SQL engine]: Adjust compute size, check engine status, and connect with `psql`.
+* xref:sql:get-started/sql-quickstart.adoc[Quickstart]: Connect to Redpanda SQL with `psql` and run your first query.
+* xref:sql:connect-to-sql/authenticate.adoc[Authenticate to Redpanda SQL]: Connect with an OIDC bearer token, OIDC client credentials, or a SCRAM password.
