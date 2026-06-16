@@ -4,6 +4,7 @@
 :personas: platform_admin
 :learning-objective-1: Provision SQL-specific AWS resources using the Redpanda BYOVPC Terraform module
 :learning-objective-2: Enable Redpanda SQL on a BYOVPC cluster by supplying customer-managed resources
+:learning-objective-3: Verify that the SQL engine is running and ready to accept connections
 
 Enable Redpanda SQL on a Bring Your Own Virtual Private Cloud (BYOVPC) cluster on AWS so you can query streaming data in Redpanda topics using standard PostgreSQL syntax.
 
@@ -13,6 +14,7 @@ After reading this page, you will be able to:
 
 * [ ] {learning-objective-1}
 * [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
 
 == Prerequisites
 
@@ -125,16 +127,63 @@ When the operation is complete, the response shows `"state": "STATE_COMPLETED"`.
 
 [IMPORTANT]
 ====
-The SQL customer-managed resources (`rpsql_node_group_instance_profile`, `rpsql_cloud_storage_bucket`, `rpsql_security_group`) are immutable while SQL is enabled. To change any of these resources, disable SQL first. See xref:sql:get-started/deploy-sql-cluster.adoc#disable-redpanda-sql[Disable Redpanda SQL].
+The SQL customer-managed resources (`rpsql_node_group_instance_profile`, `rpsql_cloud_storage_bucket`, `rpsql_security_group`) are immutable while SQL is enabled. To change any of these resources, disable SQL first.
 ====
+
+== Verify the SQL engine is running
+
+After you enable Redpanda SQL, a *Redpanda SQL* tile appears in the cluster overview under *Products*. The tile shows the engine status, active sessions, queries per minute, and node count. When the *Nodes* indicator shows all nodes as ready (for example, *1/1*), the engine is provisioned and accepting connections. Provisioning can take up to 30 minutes.
+
+For the API flow, poll the long-running operation until it returns `STATE_COMPLETED`.
+
+To verify the SQL engine is running, use the connection details on the *SQL* tab under *Connection details* to connect with a PostgreSQL client, such as `psql` (v16 or later required). You can also query data directly using the xref:sql:query-data/sql-editor.adoc[SQL editor] in the left navigation.
+
+== Disable Redpanda SQL
+
+[WARNING]
+====
+Disabling Redpanda SQL tears down the SQL compute engine and clears its catalog state (catalog metadata, table mappings, and role/grant data). In-flight queries fail when SQL is disabled.
+====
+
+Redpanda topic data, Schema Registry subjects, and any Iceberg-committed history for Iceberg-enabled topics are not affected. The Redpanda cluster itself continues to run normally; only the SQL engine and its associated state are removed.
+
+Re-enabling SQL on the same cluster provisions a fresh engine: no prior catalog state, table mappings, or grants are restored. You must re-create catalogs, tables, and grants after re-enabling.
 
 [NOTE]
 ====
 The SQL-specific AWS resources (IAM instance profile, Amazon S3 bucket, and security group) are not deleted when you disable SQL. They remain in your account and can be reused if you re-enable SQL. To remove them, set `enable_redpanda_sql = false` in the Terraform module and run `terraform apply`, or run `terraform destroy` to remove all BYOVPC resources.
 ====
 
+[tabs]
+=====
+Cloud Console::
++
+--
+. Log in to https://cloud.redpanda.com[Redpanda Cloud^] and open your cluster.
+. From the left navigation, select *Dataplane settings*.
+. On the *Cluster* tab, find the *RP SQL* row and click *Edit*.
+. In the *Edit Redpanda SQL engine* dialog, click *Disable*.
+--
+
+Cloud API::
++
+--
+Make a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_updatecluster[`PATCH /v1/clusters/{cluster.id}`] request with `rpsql.enabled` set to `false`. Replace `{cluster.id}` with your cluster ID:
+
+[,bash]
+----
+curl -X PATCH "https://api.redpanda.com/v1/clusters/{cluster.id}" \
+  -H "Authorization: Bearer $AUTH_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"rpsql":{"enabled":false}}'
+----
+
+The request returns the ID of a long-running operation. Poll link:/api/doc/cloud-controlplane/operation/operation-operationservice_getoperation[`GET /v1/operations/{operation.id}`] until the operation completes.
+--
+=====
+
 == Next steps
 
-* xref:sql:get-started/deploy-sql-cluster.adoc[Scale, verify, and disable the SQL engine]: Adjust compute size, check engine status, and connect with `psql`.
+* xref:sql:get-started/deploy-sql-cluster.adoc[Scale the SQL engine]: Adjust compute size after enabling SQL.
 * xref:sql:get-started/sql-quickstart.adoc[Quickstart]: Connect to Redpanda SQL with `psql` and run your first query.
 * xref:sql:connect-to-sql/authenticate.adoc[Authenticate to Redpanda SQL]: Connect with an OIDC bearer token, OIDC client credentials, or a SCRAM password.
