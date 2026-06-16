@@ -1,0 +1,122 @@
+= Use the SQL Editor
+:description: Write and run SQL queries against your Redpanda topics directly from Redpanda Cloud Console without a separate SQL client.
+:page-topic-type: how-to
+:personas: app_developer, data_engineer, platform_admin
+:learning-objective-1: Browse Redpanda SQL catalogs and tables from the Console SQL editor
+:learning-objective-2: Write and run a SELECT query and view the results
+:learning-objective-3: Export query results to CSV or JSON
+
+The Redpanda Cloud Console includes a built-in SQL editor. You can write and run queries against your Redpanda topics without installing a separate PostgreSQL client. The editor connects to your cluster's SQL engine using your existing Console session, so no separate credentials are required.
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
+
+== Prerequisites
+
+* A Redpanda BYOC cluster with the SQL engine enabled. See xref:sql:get-started/deploy-sql-cluster.adoc[Enable Redpanda SQL].
+* A Redpanda Cloud user with the *SQL: Access* or *SQL: Manage* RBAC permission. Users with *SQL: Access* also need a `GRANT SELECT` on each table to run queries against it. See xref:sql:manage/manage-access.adoc[Manage access to Redpanda SQL].
+* At least one topic mapped to a SQL table in the catalog. See xref:sql:query-data/query-streaming-topics.adoc[Query Streaming Topics], or use the <<add-topic,Add a topic wizard>> in the editor.
+
+== Open the SQL editor
+
+In Redpanda Cloud Console, navigate to your cluster and select *SQL* in the left sidebar. The SQL workspace opens with the catalog panel on the left and the editor and results panels on the right.
+
+== Browse the catalog tree
+
+The catalog panel lists every SQL catalog attached to your cluster.
+
+Each catalog is labeled by type:
+
+* Redpanda: Tables backed by Redpanda topics in the `default_redpanda_catalog`.
+* Iceberg: Tables backed by an external Iceberg catalog.
+
+Click a catalog to expand it, then expand a namespace to see its tables and their row counts. To view a table's columns and data types, click the chevron (>) next to the table name.
+
+Within the Redpanda catalog, tables backed by Iceberg-enabled topics display an *Iceberg* badge. When you query one of these tables, the SQL engine automatically bridges live topic data with the Iceberg history. See <<Query Iceberg topics>>.
+
+To filter tables by name, type in the *Search tables* box at the top of the catalog panel. The filter applies across all catalogs and namespaces.
+
+To open a `SELECT *` query for a table in the editor, click the run button (▶) beside the table name.
+
+If a table displays a lock icon, your account lacks a `SELECT` grant on it. Ask an admin to grant you access. See xref:sql:manage/manage-access.adoc[Manage access to Redpanda SQL].
+
+== Write and run a query
+
+=== Query tabs
+
+The editor supports multiple independent query tabs. To add a tab, click *+* in the tab bar. To close a tab, click the *×* on the tab.
+
+=== Syntax highlighting and autocomplete
+
+SQL keywords, functions, and string literals are highlighted as you type. Begin typing an identifier to see autocomplete suggestions for table names, column names, and SQL keywords. Use the arrow keys to navigate the suggestion list and press Tab or Enter to accept a suggestion. Press Escape to dismiss the list.
+
+=== Format and history
+
+Click *Format* to reformat the query in the active tab with consistent keyword casing and clause line breaks.
+
+Click *History* to see the last 40 queries run in this browser. Your browser stores query history locally. History does not sync across devices or user sessions.
+
+=== Run a query
+
+To run the query in the active tab, click *Run* or press kbd:[Cmd+Enter] (macOS) or kbd:[Ctrl+Enter] (Windows and Linux).
+
+To run a portion of the query, select the text you want to run, then click *Run selection*.
+
+The SQL editor supports only `SELECT` statements. `CREATE TABLE` and permission statements (`GRANT`, `REVOKE`) are not available in the editor. Use the <<add-topic,Add a topic wizard>> to create tables and xref:sql:manage/manage-access.adoc[Manage access] to manage grants.
+
+== View and sort results
+
+After a successful query, the results panel shows:
+
+* A status bar with a success indicator, the total row count, and the elapsed query time.
+* A results grid with one column per returned field.
+
+Each column header shows the column name and its data type. Click a column header to sort by that column. Click it again to reverse the sort order, or click it a third time to clear the sort.
+
+`NULL` values render as a distinct `NULL` label in each cell.
+
+Results load 100 rows at a time in the grid. To load the next batch, click *Load 100 more* at the bottom of the results. A single query returns a maximum of 10,000 rows.
+
+=== Query Iceberg topics
+
+When a query reads from an Iceberg-enabled topic in the Redpanda catalog, a *Bridge query* chip appears in the results status bar. This means the query returned data from both the live Redpanda topic and its Iceberg committed history.
+
+Click the chip to expand a timeline showing the Iceberg watermark and the approximate offset lag between the live topic and the Iceberg tier at the time the query ran.
+
+For details on querying across live and Iceberg-tiered data, see xref:sql:query-data/query-iceberg-topics.adoc[Query Iceberg-enabled Topics].
+
+== Export results
+
+To download the current result set, click the export buttons in the results status bar:
+
+* CSV: Downloads a comma-separated file named `query_result.csv`.
+* JSON: Downloads a JSON array named `query_result.json`.
+
+The download includes all rows loaded in the grid, up to the query's row cap.
+
+[#add-topic]
+== Add a topic to the catalog
+
+NOTE: This task requires the Admin role.
+
+To make a Redpanda topic queryable from the editor, add it to the `default_redpanda_catalog` with the *Add a topic* wizard:
+
+. In the catalog panel, click *+ Add a topic* at the bottom of the Redpanda catalog namespace.
+. In the *Choose a topic* step, select the Redpanda topic to expose as a SQL table. Topics with Iceberg tiering enabled show an *Iceberg* badge.
+. Click *Continue*.
+. In the *Name the table* step, confirm or edit the table name. Table names must start with a letter or underscore and can contain only lowercase letters, numbers, and underscores. The catalog and source topic are fixed.
+. Review the `CREATE TABLE` statement that will run, then click *Create table*.
+
+The table appears in the catalog panel immediately and is ready to query.
+
+To remove a table from the catalog, hover over the table name and click the trash icon. Dropping a table removes it from the SQL catalog only. The underlying Redpanda topic and its data are not affected.
+
+== Suggested reading
+
+* xref:sql:query-data/query-streaming-topics.adoc[Query Streaming Topics]: Map topics to SQL tables and run queries from a `psql` client.
+* xref:sql:query-data/query-iceberg-topics.adoc[Query Iceberg-enabled Topics]: How bridge queries mesh live and Iceberg-tiered data.
+* xref:sql:manage/manage-access.adoc[Manage access to Redpanda SQL]: Grant users `SELECT` access to tables.
+* xref:reference:sql/index.adoc[Redpanda SQL Reference]: Supported statements, clauses, functions, data types, and operators.
