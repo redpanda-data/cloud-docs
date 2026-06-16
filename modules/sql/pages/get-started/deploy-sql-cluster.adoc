@@ -178,14 +178,11 @@ When the operation is complete, the response shows `"state": "STATE_COMPLETED"`.
 
 == Verify the SQL engine is running
 
-After you enable Redpanda SQL, the cluster overview page in the Cloud Console shows the *SQL* tab and the *Details* pane displays the number of SQL nodes deployed with the cluster.
+After you enable Redpanda SQL, a *Redpanda SQL* tile appears in the cluster overview under *Products*. The tile shows the engine status, active sessions, queries per minute, and node count. When the *Nodes* indicator shows all nodes as ready (for example, *1/1*), the engine is provisioned and accepting connections. Provisioning can take up to 30 minutes.
 
-// TODO: Confirm UI changes for SQL engine ready indicator 
-The *SQL* tab appears as soon as you enable SQL, but you can't connect until the engine is fully provisioned. Provisioning can take up to 30 minutes.
+For the API flow, poll the long-running operation until it returns `STATE_COMPLETED`.
 
-Wait for the node-ready status indicator on the overview page to show the engine is ready. For the API flow, poll the long-running operation until it returns `STATE_COMPLETED`.
-
-To verify the SQL engine is running, use the connection details on the *SQL* tab to connect with a PostgreSQL client, such as `psql` (v16 or later required).
+To verify the SQL engine is running, use the connection details on the *SQL* tab under *Connection details* to connect with a PostgreSQL client, such as `psql` (v16 or later required). You can also query data directly using the xref:sql:query-data/sql-editor.adoc[SQL editor] in the left navigation.
 
 To connect using a bearer token (xref:manage:rpk/rpk-install.adoc[`rpk` v26.1.6+] required):
 
