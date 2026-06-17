@@ -1,14 +1,16 @@
 = Enable Redpanda SQL on a BYOVPC Cluster on AWS
-:description: Enable the Redpanda SQL engine on an existing BYOVPC cluster on AWS by provisioning SQL-specific resources with Terraform and supplying them as customer-managed resources.
+:description: Provision SQL-specific AWS resources with Terraform and enable the Redpanda SQL engine on a new or existing BYOVPC cluster on AWS.
 :page-topic-type: how-to
 :personas: platform_admin
 :learning-objective-1: Provision SQL-specific AWS resources using the Redpanda BYOVPC Terraform module
 :learning-objective-2: Enable Redpanda SQL on a new or existing BYOVPC cluster by supplying customer-managed resources
 :learning-objective-3: Verify that the SQL engine is running and ready to accept connections
 
+include::shared:partial$feature-flag-rpcn.adoc[]
+
 Enable Redpanda SQL on a Bring Your Own Virtual Private Cloud (BYOVPC) cluster on AWS so you can query streaming data in Redpanda topics using standard PostgreSQL syntax. You can enable SQL when creating a new BYOVPC cluster or on an existing one.
 
-Unlike standard BYOC clusters, Redpanda does not create resources in your AWS account for BYOVPC clusters. You must provision the SQL-specific AWS resources yourself and supply them to the cluster as customer-managed resources before enabling the SQL engine.
+Unlike standard BYOC clusters, Redpanda does not create resources in your AWS account for BYOVPC clusters. You must provision the SQL-specific AWS resources yourself and supply them to the cluster as customer-managed resources (CMRs) before enabling the SQL engine.
 
 After reading this page, you will be able to:
 
@@ -18,7 +20,7 @@ After reading this page, you will be able to:
 
 == Prerequisites
 
-* An existing xref:get-started:cluster-types/byoc/aws/vpc-byo-aws.adoc[BYOVPC cluster on AWS].
+* For a new cluster: a BYOVPC network on AWS. For an existing cluster: a deployed xref:get-started:cluster-types/byoc/aws/vpc-byo-aws.adoc[BYOVPC cluster on AWS].
 * The https://registry.terraform.io/modules/redpanda-data/redpanda-byovpc/aws/latest[Redpanda BYOVPC Terraform module^] and https://developer.hashicorp.com/terraform[Terraform^] version 1.8.5 or later.
 * Admin permissions in your Redpanda Cloud organization on xref:billing:billing.adoc[usage-based billing].
 * If using the Cloud API, a valid glossterm:bearer token[]. See link:/api/doc/cloud-controlplane/authentication[Authenticate to the Cloud API].
@@ -54,7 +56,7 @@ This creates three SQL-specific resources in your AWS account:
 * An S3 bucket for SQL data storage (versioning disabled)
 * A security group for SQL nodes
 
-After applying, note the following module outputs. You supply these ARNs to the cluster in the next step.
+After applying, note the following module outputs. You supply these ARNs to the cluster when you enable SQL.
 
 [cols="1,3",options="header"]
 |===
@@ -64,17 +66,21 @@ After applying, note the following module outputs. You supply these ARNs to the 
 | `rpsql_security_group_arn` | ARN of the security group for SQL nodes
 |===
 
-== Enable SQL on a new cluster
+== Enable Redpanda SQL
 
-When creating a new BYOVPC cluster, you can enable SQL in the same request by including the SQL CMR ARNs and the `rpsql` configuration in the link:/api/doc/cloud-controlplane/operation/operation-clusterservice_createcluster[`POST /v1/clusters`] payload alongside your existing BYOVPC CMRs. There is no Cloud Console path for this; BYOVPC cluster creation requires the Cloud API.
+=== On a new cluster
 
 [NOTE]
 ====
-Run the Terraform module with `enable_redpanda_sql = true` and collect the three SQL ARN outputs before creating the cluster.
+BYOVPC cluster creation requires the Cloud API.
+
+If you created your BYOVPC cluster using the Redpanda Terraform provider (as described in xref:get-started:cluster-types/byoc/aws/vpc-byo-aws.adoc[Create a BYOVPC Cluster on AWS]), your cluster already exists. Skip to <<On an existing cluster>>.
 ====
 
+When creating a new BYOVPC cluster via the Cloud API, include the SQL customer-managed resource ARNs and the `rpsql` configuration in the link:/api/doc/cloud-controlplane/operation/operation-clusterservice_createcluster[`POST /v1/clusters`] payload alongside your existing BYOVPC customer-managed resources.
+
 . link:/api/doc/cloud-controlplane/authentication[Authenticate to the Cloud API].
-. Make a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_createcluster[`POST /v1/clusters`] request. Add the SQL CMR fields and `rpsql` block to your existing BYOVPC cluster spec:
+. Make a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_createcluster[`POST /v1/clusters`] request. Add the SQL customer-managed resource fields and `rpsql` block to your BYOVPC cluster creation payload:
 +
 [,bash]
 ----
@@ -93,7 +99,7 @@ curl -X POST "https://api.redpanda.com/v1/clusters" \
       "resource_group_id": "<resource-group-id>",
       "customer_managed_resources": {
         "aws": {
-          "<existing-byovpc-cmr-fields>": "...",
+          // ... existing BYOVPC CMR fields ...
           "rpsql_node_group_instance_profile": {"arn": "<rpsql_node_group_instance_profile_arn>"},
           "rpsql_cloud_storage_bucket": {"arn": "<rpsql_cloud_storage_bucket_arn>"},
           "rpsql_security_group": {"arn": "<rpsql_security_group_arn>"}
@@ -126,7 +132,7 @@ curl -X GET "https://api.redpanda.com/v1/operations/{operation.id}" \
 +
 When the operation is complete, the response shows `"state": "STATE_COMPLETED"`.
 
-== Enable SQL on an existing cluster
+=== On an existing cluster
 
 [tabs]
 =====
@@ -207,7 +213,7 @@ To verify the SQL engine is running, use the connection details on the *SQL* tab
 Disabling Redpanda SQL tears down the SQL compute engine and clears its catalog state (catalog metadata, table mappings, and role/grant data). In-flight queries fail when SQL is disabled.
 ====
 
-Redpanda topic data, Schema Registry subjects, and any Iceberg-committed history for Iceberg-enabled topics are not affected. The Redpanda cluster itself continues to run normally; only the SQL engine and its associated state are removed.
+If you disable Redpanda SQL, Redpanda topic data, Schema Registry subjects, and any Iceberg-committed history for Iceberg-enabled topics are not affected. The Redpanda cluster itself continues to run normally and only the SQL engine and its associated state are removed.
 
 Re-enabling SQL on the same cluster provisions a fresh engine: no prior catalog state, table mappings, or grants are restored. You must re-create catalogs, tables, and grants after re-enabling.
 
