@@ -3,10 +3,10 @@
 :page-topic-type: how-to
 :personas: platform_admin
 :learning-objective-1: Provision SQL-specific AWS resources using the Redpanda BYOVPC Terraform module
-:learning-objective-2: Enable Redpanda SQL on a BYOVPC cluster by supplying customer-managed resources
+:learning-objective-2: Enable Redpanda SQL on a new or existing BYOVPC cluster by supplying customer-managed resources
 :learning-objective-3: Verify that the SQL engine is running and ready to accept connections
 
-Enable Redpanda SQL on a Bring Your Own Virtual Private Cloud (BYOVPC) cluster on AWS so you can query streaming data in Redpanda topics using standard PostgreSQL syntax.
+Enable Redpanda SQL on a Bring Your Own Virtual Private Cloud (BYOVPC) cluster on AWS so you can query streaming data in Redpanda topics using standard PostgreSQL syntax. You can enable SQL when creating a new BYOVPC cluster or on an existing one.
 
 Unlike standard BYOC clusters, Redpanda does not create resources in your AWS account for BYOVPC clusters. You must provision the SQL-specific AWS resources yourself and supply them to the cluster as customer-managed resources before enabling the SQL engine.
 
@@ -64,7 +64,69 @@ After applying, note the following module outputs. You supply these ARNs to the 
 | `rpsql_security_group_arn` | ARN of the security group for SQL nodes
 |===
 
-== Supply SQL resources and enable SQL
+== Enable SQL on a new cluster
+
+When creating a new BYOVPC cluster, you can enable SQL in the same request by including the SQL CMR ARNs and the `rpsql` configuration in the link:/api/doc/cloud-controlplane/operation/operation-clusterservice_createcluster[`POST /v1/clusters`] payload alongside your existing BYOVPC CMRs. There is no Cloud Console path for this; BYOVPC cluster creation requires the Cloud API.
+
+[NOTE]
+====
+Run the Terraform module with `enable_redpanda_sql = true` and collect the three SQL ARN outputs before creating the cluster.
+====
+
+. link:/api/doc/cloud-controlplane/authentication[Authenticate to the Cloud API].
+. Make a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_createcluster[`POST /v1/clusters`] request. Add the SQL CMR fields and `rpsql` block to your existing BYOVPC cluster spec:
++
+[,bash]
+----
+curl -X POST "https://api.redpanda.com/v1/clusters" \
+  -H "Authorization: Bearer $AUTH_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "cluster": {
+      "name": "<cluster-name>",
+      "type": "TYPE_BYOC",
+      "cloud_provider": "CLOUD_PROVIDER_AWS",
+      "region": "<region>",
+      "zones": ["<az-1>", "<az-2>", "<az-3>"],
+      "network_id": "<network-id>",
+      "throughput_tier": "<tier>",
+      "resource_group_id": "<resource-group-id>",
+      "customer_managed_resources": {
+        "aws": {
+          "<existing-byovpc-cmr-fields>": "...",
+          "rpsql_node_group_instance_profile": {"arn": "<rpsql_node_group_instance_profile_arn>"},
+          "rpsql_cloud_storage_bucket": {"arn": "<rpsql_cloud_storage_bucket_arn>"},
+          "rpsql_security_group": {"arn": "<rpsql_security_group_arn>"}
+        }
+      },
+      "rpsql": {
+        "enabled": true,
+        "replicas": <compute-nodes>,
+        "zones": ["<sql-az>"]
+      }
+    }
+  }'
+----
++
+Replace the placeholders with your own values:
++
+* `<existing-byovpc-cmr-fields>`: Your cluster's existing BYOVPC customer-managed resource fields. See xref:get-started:cluster-types/byoc/aws/vpc-byo-aws.adoc[Create a BYOVPC Cluster on AWS].
+* `<rpsql_node_group_instance_profile_arn>`, `<rpsql_cloud_storage_bucket_arn>`, `<rpsql_security_group_arn>`: The corresponding outputs from the Terraform module.
+* `<compute-nodes>`: Initial number of SQL compute nodes (minimum 1, maximum 9).
+* `<sql-az>` (optional): One of the cluster's glossterm:availability zones[]. The SQL engine deploys to a single AZ. If omitted, Redpanda selects a zone automatically. The AZ is locked when SQL is first enabled and cannot be changed afterward.
++
+. The request returns the ID of a long-running operation. Poll the link:/api/doc/cloud-controlplane/operation/operation-operationservice_getoperation[`GET /v1/operations/{operation.id}`] endpoint until the operation completes:
++
+[,bash]
+----
+curl -X GET "https://api.redpanda.com/v1/operations/{operation.id}" \
+  -H "Authorization: Bearer $AUTH_TOKEN" \
+  -H "Content-Type: application/json"
+----
++
+When the operation is complete, the response shows `"state": "STATE_COMPLETED"`.
+
+== Enable SQL on an existing cluster
 
 [tabs]
 =====
