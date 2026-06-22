@@ -429,6 +429,11 @@ This example requires provider version `>= 2.0.0`.
 |No
 |Number of SQL compute replicas. Scalable in place. Default: `1`.
 
+|`zones`
+|List of String
+|No
+|For multi-AZ clusters, the single availability zone to deploy the SQL engine into. Provide one zone from the cluster's `zones` list. If omitted, a zone is chosen automatically. The zone is locked when SQL is first enabled and cannot be changed afterward. See xref:sql:get-started/deploy-sql-cluster.adoc[Enable Redpanda SQL on a BYOC cluster].
+
 |`url`
 |String
 |Read-only
@@ -491,6 +496,7 @@ resource "redpanda_cluster" "example" {
   rpsql = {
     enabled  = true
     replicas = 3
+    zones    = ["use2-az1"]
   }
 }
 
