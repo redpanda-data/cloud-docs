@@ -2,9 +2,9 @@
 :description: Write and run SQL queries against your Redpanda topics directly from Redpanda Cloud Console without a separate SQL client.
 :page-topic-type: how-to
 :personas: app_developer, data_engineer, platform_admin
-:learning-objective-1: Browse Redpanda SQL catalogs and tables from the Console SQL editor
-:learning-objective-2: Write and run a SELECT query and view the results
-:learning-objective-3: Export query results to CSV or JSON
+:learning-objective-1: Add a topic to the SQL catalog using the wizard in the SQL editor
+:learning-objective-2: Navigate SQL catalogs and inspect table schemas from the Console SQL editor
+:learning-objective-3: Write and run a SELECT query and view the results
 
 The Redpanda Cloud Console includes a built-in SQL editor. You can write and run queries against your Redpanda topics without installing a separate PostgreSQL client. The editor connects to your cluster's SQL engine using your existing Console session, so no separate credentials are required.
 
@@ -22,16 +22,11 @@ After reading this page, you will be able to:
 
 == Open the SQL editor
 
-In Redpanda Cloud Console, navigate to your cluster and select *SQL* in the left sidebar. The SQL workspace opens with the catalog panel on the left and the editor and results panels on the right.
+In Redpanda Cloud Console, navigate to your cluster and select *SQL* in the left navigation menu. The SQL workspace opens with the catalog panel on the left and the editor and results panels on the right.
 
 == Browse the catalog tree
 
 The catalog panel lists every SQL catalog attached to your cluster.
-
-Each catalog is labeled by type:
-
-* Redpanda: Tables backed by Redpanda topics in the `default_redpanda_catalog`.
-* Iceberg: Tables backed by an external Iceberg catalog.
 
 Click a catalog to expand it, then expand a namespace to see its tables and their row counts. To view a table's columns and data types, click the chevron (>) next to the table name.
 
@@ -40,8 +35,6 @@ Within the Redpanda catalog, tables backed by glossterm:Iceberg topic[,Iceberg-e
 To filter tables by name, type in the *Search tables* box at the top of the catalog panel. The filter applies across all catalogs and namespaces.
 
 To open a `SELECT *` query for a table in the editor, click the run button (▶) beside the table name.
-
-If a table displays a lock icon, your account lacks a `SELECT` grant on it. Ask an admin to grant you access. See xref:sql:manage/manage-access.adoc[Manage access to Redpanda SQL].
 
 == Write and run a query
 
@@ -67,24 +60,26 @@ To run a portion of the query, select the text you want to run, then click *Run 
 
 The SQL editor supports only `SELECT` statements. `CREATE TABLE` and permission statements (`GRANT`, `REVOKE`) are not available in the editor. Use the <<add-topic,Add a topic wizard>> to create tables and xref:sql:manage/manage-access.adoc[Manage access] to manage grants.
 
-== View and sort results
+== View results
 
 After a successful query, the results panel shows:
 
 * A status bar with a success indicator, the total row count, and the elapsed query time.
 * A results grid with one column per returned field.
 
-Each column header shows the column name and its data type. Click a column header to sort by that column. Click it again to reverse the sort order, or click it a third time to clear the sort.
+Each column header shows the column name and its data type. To sort results, use `ORDER BY` in your query. The results grid does not support column sorting.
 
 `NULL` values render as a distinct `NULL` label in each cell.
 
-Results load 100 rows at a time in the grid. To load the next batch, click *Load 100 more* at the bottom of the results. A single query returns a maximum of 10,000 rows.
+To view structured data in full, click a cell that contains JSON or a nested value. The results panel displays the value formatted for readability.
+
+Scroll the results grid to view all rows. If the server's row limit is reached, a *Truncated* badge appears in the status bar.
 
 === Query Iceberg topics
 
 When a query reads from an Iceberg-enabled topic in the Redpanda catalog, a *Bridge query* chip appears in the results status bar. This means the query returned data from both the live Redpanda topic and its Iceberg committed history.
 
-Click the chip to expand a timeline showing the Iceberg watermark and the approximate offset lag between the live topic and the Iceberg tier at the time the query ran.
+If there are messages not yet committed to Iceberg, a message below the status bar shows the approximate offset lag at the time the query ran.
 
 For details on querying across live and Iceberg-tiered data, see xref:sql:query-data/query-iceberg-topics.adoc[Query Iceberg-enabled Topics].
 
@@ -95,7 +90,7 @@ To download the current result set, click the export buttons in the results stat
 * CSV: Downloads a comma-separated file named `query_result.csv`.
 * JSON: Downloads a JSON array named `query_result.json`.
 
-The download includes all rows loaded in the grid, up to the query's row cap.
+The download includes all returned rows.
 
 [#add-topic]
 == Add a topic to the catalog
