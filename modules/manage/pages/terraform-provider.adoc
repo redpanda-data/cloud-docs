@@ -1,5 +1,10 @@
 = Redpanda Terraform Provider
 :description: Use the Redpanda Terraform provider to create and manage Redpanda Cloud resources.
+:page-topic-type: how-to
+:personas: platform_admin
+:learning-objective-1: Configure and deploy Redpanda Cloud clusters using Terraform
+:learning-objective-2: Manage sensitive credentials using Terraform write-only attributes
+:learning-objective-3: Enable Redpanda SQL on a BYOC cluster using the rpsql block
 
 Use the https://registry.terraform.io/providers/redpanda-data/redpanda/latest[Redpanda Terraform provider^] to define, automate, and track changes to your Redpanda Cloud infrastructure as code.
 
@@ -18,6 +23,12 @@ With the Redpanda Terraform provider, you can manage:
 * link:https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs/resources/serverless_private_link[Serverless private links^]
 * link:https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs/resources/topic[Topics^]
 * link:https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs/resources/user[Users^]
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
 
 == Why use Terraform with Redpanda?
 
@@ -408,6 +419,104 @@ resource "redpanda_cluster" "test" {
   }
 }
 ----
+
+=== Enable Redpanda SQL on a BYOC cluster
+
+Use the `rpsql` block on a `redpanda_cluster` resource (requires provider version `>= 2.0.0`) to enable and manage Redpanda SQL on a BYOC cluster. You can add or change `rpsql` settings on an existing cluster without recreating it.
+
+[cols="<25%,<15%,<10%,<50%",options="header"]
+|===
+|Attribute |Type |Required |Description
+
+|`enabled`
+|Boolean
+|No
+|Whether Redpanda SQL is enabled. Default: `false`.
+
+|`replicas`
+|Number
+|No
+|Number of SQL compute replicas. Scalable in place. Default: `1`.
+
+|`zones`
+|List of String
+|No
+|For multi-AZ clusters, the single availability zone to deploy the SQL engine into. Provide one zone from the cluster's `zones` list. If omitted, a zone is chosen automatically. Redpanda locks the zone when SQL is first enabled; you cannot change it afterward. See xref:sql:get-started/deploy-sql-cluster.adoc[Enable Redpanda SQL on a BYOC cluster].
+
+|`url`
+|String
+|Read-only
+|SQL engine endpoint URL. Empty while disabled; populated by the server when SQL is enabled.
+|===
+
+[source,hcl]
+----
+terraform {
+  required_providers {
+    redpanda = {
+      source  = "redpanda-data/redpanda"
+      version = ">= 2.0.0"
+    }
+  }
+}
+
+variable "cluster_name" {
+  description = "Name of the Redpanda BYOC cluster"
+  default     = "sql-enabled-cluster"
+}
+
+variable "resource_group_id" {
+  description = "ID of the Redpanda resource group"
+}
+
+variable "network_id" {
+  description = "ID of the Redpanda network"
+}
+
+variable "region" {
+  description = "Region for the cluster"
+  default     = "us-east-2"
+}
+
+variable "throughput_tier" {
+  description = "Throughput tier for the cluster"
+  default     = "tier-1-aws-v2-x86"
+}
+
+variable "zones" {
+  description = "List of availability zones for the cluster"
+  type        = list(string)
+  default     = ["use2-az1", "use2-az2", "use2-az3"]
+}
+
+provider "redpanda" {}
+
+resource "redpanda_cluster" "example" {
+  name              = var.cluster_name
+  resource_group_id = var.resource_group_id
+  network_id        = var.network_id
+  cloud_provider    = "aws"
+  region            = var.region
+  cluster_type      = "byoc"
+  connection_type   = "public"
+  throughput_tier   = var.throughput_tier
+  zones             = var.zones
+
+  rpsql = {
+    enabled  = true
+    replicas = 3
+    zones    = ["use2-az1"]
+  }
+}
+
+output "sql_url" {
+  value = redpanda_cluster.example.rpsql.url
+}
+----
+
+To scale Redpanda SQL, update `replicas` and run `terraform apply`. To disable it, set `enabled = false`. Both operations update the cluster in place. Terraform does not recreate the cluster.
+
+For the full enable workflow using the Cloud Console or Cloud API, see xref:sql:get-started/deploy-sql-cluster.adoc[Enable Redpanda SQL on a BYOC cluster].
 
 === Create a Dedicated cluster
 
