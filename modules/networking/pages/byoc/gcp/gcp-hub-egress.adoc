@@ -369,10 +369,7 @@ gcloud compute instance-templates create hub-nat-template \
   --boot-disk-type=pd-balanced \
   --can-ip-forward \
   --tags=nat-direct \
-  --network=$VPC_NAME \
-  --subnet=$SUBNET_NAME \
-  --private-network-ip=$NAT_INTERNAL_IP \
-  --address=$NAT_PUBLIC_IP \
+  --network-interface=network=$VPC_NAME,subnet=$SUBNET_NAME,private-network-ip=$NAT_INTERNAL_IP,address=$NAT_PUBLIC_IP \
   --metadata-from-file=startup-script=/tmp/nat-startup.sh
 
 echo "Instance template created: hub-nat-template"
