@@ -152,6 +152,43 @@ curl -s https://api.ipify.org
 # Expected output: the NAT public IP you reserved in the hub setup
 ----
 
+// The Cloud API path for centralized egress is intentionally hidden while the
+// `egress_spec` field is in PREVIEW. To re-enable the section when the field
+// graduates, set the :show-preview-api: attribute (either in this page's
+// header as `:show-preview-api:` or as a build-time attribute in the playbook).
+ifdef::show-preview-api[]
+=== Use the Cloud API
+
+[IMPORTANT]
+====
+The `egress_spec` field is in preview. Its shape and validation rules may change. Pin a specific API version when scripting against this field, and revisit your integration when the field graduates to general availability.
+====
+
+Set `egress_spec.gcp.hub_vpc_project` and `egress_spec.gcp.hub_vpc_name` on the Network resource when you create a network. Both fields are required when `egress_spec.gcp` is set.
+
+[,bash]
+----
+curl -X POST https://api.redpanda.com/v1/networks \
+  -H "Authorization: Bearer $REDPANDA_CLOUD_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "prod-us-west1",
+    "cloud_provider": "CLOUD_PROVIDER_GCP",
+    "region": "us-west1",
+    "cidr_block": "10.0.0.0/20",
+    "cluster_type": "TYPE_BYOC",
+    "egress_spec": {
+      "gcp": {
+        "hub_vpc_project": "<hub-gcp-project-id>",
+        "hub_vpc_name": "<hub-vpc-name>"
+      }
+    }
+  }'
+----
+
+For the surrounding workflow (authenticating to the Cloud API, creating the resource group, creating the cluster against this network, and running `rpk byoc gcp apply`) see xref:manage:api/cloud-byoc-controlplane-api.adoc[Use the BYOC Control Plane API]. After the network is created, you can create the cluster against it through the UI or by calling the Cluster create endpoint with the new network ID.
+endif::[]
+
 [#internet-endpoints]
 == Internet endpoints required from your hub
 
