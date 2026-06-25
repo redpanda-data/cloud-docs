@@ -108,17 +108,12 @@ Redpanda does not manage the availability of the egress path. Size the NAT VM ap
 
 == Limitations
 
-* Centralized egress is set at network creation. The hub VPC name and project fields are immutable after the network is created.
+* Centralized egress is set at network creation through the Redpanda Cloud UI.
 * All clusters that peer to the same hub share a single public egress IP and the same NAT VM throughput capacity.
 
 == Configure egress at network creation
 
-Centralized egress is set at network creation. You cannot change it on an existing network. Complete all hub-side setup before you start the cluster creation flow. See xref:networking:byoc/gcp/gcp-hub-egress.adoc[Create a GCP Hub for Centralized Egress].
-
-[IMPORTANT]
-====
-To switch back to Cloud NAT egress, create a new network and a new cluster on it, then migrate your data.
-====
+Centralized egress is set at network creation. Complete all hub-side setup before you start the cluster creation flow. See xref:networking:byoc/gcp/gcp-hub-egress.adoc[Create a GCP Hub for Centralized Egress].
 
 To enable centralized egress, use the Redpanda Cloud UI:
 
@@ -151,6 +146,43 @@ After the cluster is running, confirm that traffic exits from the expected publi
 curl -s https://api.ipify.org
 # Expected output: the NAT public IP you reserved in the hub setup
 ----
+
+// The Cloud API path for centralized egress is intentionally hidden while the
+// `egress_spec` field is in PREVIEW. To re-enable the section when the field
+// graduates, set the :show-preview-api: attribute (either in this page's
+// header as `:show-preview-api:` or as a build-time attribute in the playbook).
+ifdef::show-preview-api[]
+=== Use the Cloud API
+
+[IMPORTANT]
+====
+The `egress_spec` field is in preview. Its shape and validation rules may change. Pin a specific API version when scripting against this field, and revisit your integration when the field graduates to general availability.
+====
+
+Set `egress_spec.gcp.hub_vpc_project` and `egress_spec.gcp.hub_vpc_name` on the Network resource when you create a network. Both fields are required when `egress_spec.gcp` is set.
+
+[,bash]
+----
+curl -X POST https://api.redpanda.com/v1/networks \
+  -H "Authorization: Bearer $REDPANDA_CLOUD_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "prod-us-west1",
+    "cloud_provider": "CLOUD_PROVIDER_GCP",
+    "region": "us-west1",
+    "cidr_block": "10.0.0.0/20",
+    "cluster_type": "TYPE_BYOC",
+    "egress_spec": {
+      "gcp": {
+        "hub_vpc_project": "<hub-gcp-project-id>",
+        "hub_vpc_name": "<hub-vpc-name>"
+      }
+    }
+  }'
+----
+
+For the surrounding workflow (authenticating to the Cloud API, creating the resource group, creating the cluster against this network, and running `rpk byoc gcp apply`) see xref:manage:api/cloud-byoc-controlplane-api.adoc[Use the BYOC Control Plane API]. After the network is created, you can create the cluster against it through the UI or by calling the Cluster create endpoint with the new network ID.
+endif::[]
 
 [#internet-endpoints]
 == Internet endpoints required from your hub
