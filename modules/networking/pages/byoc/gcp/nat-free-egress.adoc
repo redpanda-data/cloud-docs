@@ -1,0 +1,245 @@
+= Configure Centralized Egress with GCP VPC Peering
+:description: Route all BYOC cluster egress through your own GCP hub VPC instead of a per-cluster Cloud NAT, so outbound traffic exits through your centralized inspection point.
+:page-beta: true
+:page-topic-type: how-to
+:personas: platform_admin
+:learning-objective-1: Enable centralized egress on a new BYOC cluster using the Redpanda Cloud UI
+:learning-objective-2: Identify the shared responsibility boundaries between Redpanda and your hub project
+:learning-objective-3: Troubleshoot egress failures caused by misconfigured hub routes or VPC peering
+
+[IMPORTANT]
+====
+This feature is in beta and is available only on GCP BYOC clusters with private networking. Availability is controlled per organization. Contact your account team to request access to centralized egress.
+====
+
+Centralized egress lets your BYOC cluster send all internet-bound traffic through your own GCP hub VPC instead of a Redpanda-managed Cloud NAT, so outbound traffic exits through a single, predictable public IP that you control.
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
+
+== When to use centralized egress
+
+Use centralized egress when:
+
+* Your security policy prohibits per-VPC Cloud NAT and requires all internet-bound traffic to traverse a centralized inspection point such as a firewall appliance.
+* You already operate a hub-and-spoke network in GCP and want Redpanda to fit into that topology.
+* You want to consolidate egress through a single, predictable public IP for outbound allowlisting on external services.
+* You want to reduce Cloud NAT fees on high-throughput Redpanda workloads.
+
+If none of these apply, the default Cloud NAT egress used by standard BYOC clusters is simpler and requires no extra customer-managed infrastructure.
+
+== How it works
+
+Without centralized egress, the Redpanda agent creates a Cloud Router and Cloud NAT inside the Redpanda VPC. With centralized egress enabled, the agent creates the spoke VPC without a Cloud Router or Cloud NAT and establishes VPC Network Peering to your hub VPC with `import_custom_routes = true`. The hub VPC exports a `0.0.0.0/0` route pointing to the NAT VM's internal IP. The spoke VPC imports that route and uses it for all internet-bound traffic.
+
+The following diagram shows the connectivity model:
+
+----
++-------------------------------+         +-------------------------------+
+| Redpanda VPC                  |         | Customer Hub VPC              |
+| (Redpanda project)            |         | (Customer project)            |
+|                               |         |                               |
+| VPC Network Peering           +<------->+ VPC Network Peering           |
+| import_custom_routes=true     |         | export_custom_routes=true     |
+| 0.0.0.0/0 -> NAT VM IP (imp) |         | 0.0.0.0/0 -> NAT VM IP (exp) |
+| No Cloud Router / Cloud NAT   |         | NAT VM (e2-micro, MIG)        |
+| GKE Worker Nodes              |         | Static public IP              |
++-------------------------------+         +----------+--------------------+
+                                                      |
+                                                      v
+                                                  Internet
+                                      (Cloudsmith, public.ecr.aws,
+                                                NTP, Helm)
+----
+
+=== Outbound traffic flow
+
+. A GKE node in a Redpanda subnet sends a packet destined for the internet.
+. The spoke VPC has no local `0.0.0.0/0` route, so the imported peering route (`0.0.0.0/0` → NAT VM internal IP) applies.
+. The packet crosses the VPC peering to the hub VPC and arrives at the NAT VM.
+. The NAT VM performs IP masquerade and forwards the packet through its static public IP.
+
+=== Return traffic flow
+
+. The internet response arrives at the public IP on the NAT VM in the hub VPC.
+. The NAT VM forwards it back to the originating node through the VPC peering connection.
+. The packet arrives at the originating GKE node.
+
+[#prerequisites]
+== Prerequisites
+
+Before you configure centralized egress, confirm all of the following:
+
+* Centralized egress is enabled on your Redpanda Cloud organization. Contact your account team to request access.
+* Your BYOC cluster uses private networking (connection type *Private*). Centralized egress is not available on clusters with a public connection type.
+* You have provisioned a hub VPC in the same GCP region as the planned Redpanda BYOC cluster. See xref:networking:byoc/gcp/gcp-hub-egress.adoc[Create a GCP Hub for Centralized Egress] if you need to provision a hub.
+* The hub subnet CIDR and the planned Redpanda spoke VPC CIDR do not overlap.
++
+[WARNING]
+====
+GCP rejects VPC peering when CIDRs overlap. Even when peering succeeds, a local static `0.0.0.0/0` route in the spoke VPC silently wins over the imported peering route. The Redpanda provisioner does not create a local default route when centralized egress is enabled, but verify that no pre-existing local default route exists in the spoke before provisioning.
+
+Use a non-overlapping range for your hub subnet. The `100.64.0.0/20` CGNAT range is a safe default because it rarely conflicts with typical RFC 1918 workload CIDRs.
+====
+* You know the hub VPC name and the hub GCP project ID. These are collected at the end of xref:networking:byoc/gcp/gcp-hub-egress.adoc#collect-values[Create a GCP Hub for Centralized Egress].
+
+== Shared responsibility model
+
+[cols="2,1"]
+|===
+| Component | Owner
+
+| Redpanda spoke VPC, subnets, and GKE cluster | Redpanda
+| Spoke VPC peering with `import_custom_routes = true` | Redpanda
+| No Cloud Router or Cloud NAT in the spoke VPC | Redpanda
+| Hub VPC and hub subnet | Customer
+| Hub VPC peering with `export_custom_routes = true` | Customer
+| Untagged route `0.0.0.0/0` → NAT VM internal IP | Customer
+| NAT VM instance and Managed Instance Group | Customer
+| Static public IP for NAT | Customer
+| Firewall rules allowing spoke CIDR traffic to reach the NAT VM | Customer
+| Egress path availability and HA | Customer
+|===
+
+Redpanda does not manage the availability of the egress path. Size the NAT VM appropriately for your expected egress throughput. See xref:networking:byoc/gcp/gcp-hub-egress.adoc[Create a GCP Hub for Centralized Egress] for sizing guidance.
+
+== Limitations
+
+* Centralized egress is set at network creation. The hub VPC name and project fields are immutable after the network is created.
+* All clusters that peer to the same hub share a single public egress IP and the same NAT VM throughput capacity.
+
+== Configure egress at network creation
+
+Centralized egress is set at network creation. You cannot change it on an existing network. Complete all hub-side setup before you start the cluster creation flow. See xref:networking:byoc/gcp/gcp-hub-egress.adoc[Create a GCP Hub for Centralized Egress].
+
+[IMPORTANT]
+====
+To switch back to Cloud NAT egress, create a new network and a new cluster on it, then migrate your data.
+====
+
+To enable centralized egress, use the Redpanda Cloud UI:
+
+. Log in to https://cloud.redpanda.com[Redpanda Cloud^].
+. On the Clusters page, click *Create cluster*, then click *Create* for BYOC.
+. Complete the cluster details. See xref:get-started:cluster-types/byoc/gcp/create-byoc-cluster-gcp.adoc[Create a BYOC Cluster on GCP] for the full create flow.
+. On the *Network* page, enter the *Hub VPC name* and *Hub project ID* using the values you collected in xref:networking:byoc/gcp/gcp-hub-egress.adoc#collect-values[Collect the values to provide to Redpanda]. These fields are only visible if centralized egress is enabled for your organization.
+. Click *Next* and complete the remaining steps.
+
+[NOTE]
+====
+After you click *Create*, the Redpanda provisioner creates the spoke VPC without a Cloud Router or Cloud NAT, and establishes VPC Network Peering to the hub VPC with `import_custom_routes = true`. The hub-side peering you created earlier becomes *ACTIVE* when the reciprocal peering completes. Run `rpk byoc gcp apply` to finish cluster provisioning.
+====
+
+=== What Redpanda provisions automatically
+
+When you run `rpk byoc gcp apply`, the Redpanda provisioner:
+
+. Creates the cluster VPC without a Cloud Router, Cloud NAT, or local default route.
+. Creates the reciprocal VPC Network Peering from the Redpanda VPC to the hub VPC with `import_custom_routes = true`.
+. The `0.0.0.0/0` → NAT VM internal IP route exported from the hub is imported, and all internet-bound traffic flows through the hub NAT VM.
+
+=== Verify egress IP
+
+After the cluster is running, confirm that traffic exits from the expected public IP:
+
+[,bash]
+----
+# SSH into a Redpanda node and check the public egress IP
+curl -s https://api.ipify.org
+# Expected output: the NAT public IP you reserved in the hub setup
+----
+
+// The Cloud API path for centralized egress is intentionally hidden while the
+// `egress_spec` field is in PREVIEW. To re-enable the section when the field
+// graduates, set the :show-preview-api: attribute (either in this page's
+// header as `:show-preview-api:` or as a build-time attribute in the playbook).
+ifdef::show-preview-api[]
+=== Use the Cloud API
+
+[IMPORTANT]
+====
+The `egress_spec` field is in preview. Its shape and validation rules may change. Pin a specific API version when scripting against this field, and revisit your integration when the field graduates to general availability.
+====
+
+Set `egress_spec.gcp.hub_vpc_project` and `egress_spec.gcp.hub_vpc_name` on the Network resource when you create a network. Both fields are required when `egress_spec.gcp` is set.
+
+[,bash]
+----
+curl -X POST https://api.redpanda.com/v1/networks \
+  -H "Authorization: Bearer $REDPANDA_CLOUD_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "prod-us-west1",
+    "cloud_provider": "CLOUD_PROVIDER_GCP",
+    "region": "us-west1",
+    "cidr_block": "10.0.0.0/20",
+    "cluster_type": "TYPE_BYOC",
+    "egress_spec": {
+      "gcp": {
+        "hub_vpc_project": "<hub-gcp-project-id>",
+        "hub_vpc_name": "<hub-vpc-name>"
+      }
+    }
+  }'
+----
+
+For the surrounding workflow (authenticating to the Cloud API, creating the resource group, creating the cluster against this network, and running `rpk byoc gcp apply`) see xref:manage:api/cloud-byoc-controlplane-api.adoc[Use the BYOC Control Plane API]. After the network is created, you can create the cluster against it through the UI or by calling the Cluster create endpoint with the new network ID.
+endif::[]
+
+[#internet-endpoints]
+== Internet endpoints required from your hub
+
+The NAT VM in your hub VPC must provide internet egress for the following endpoints. If your hub firewall enforces an allowlist, allow outbound traffic to these endpoints from the Redpanda spoke CIDR:
+
+[cols="1,1,2"]
+|===
+| Endpoint | Protocol and port | Purpose
+
+| `docker.cloudsmith.io` | TCP/443 | Redpanda container images
+| `public.ecr.aws` | TCP/443 | GKE public CNI and network policy agent images
+| NTP servers | UDP/123 | Time sync
+| `prometheus-community.github.io` and similar Helm repositories | TCP/443 | Monitoring stack Helm charts
+|===
+
+== DNS resolution
+
+Centralized egress does not affect DNS resolution. The Redpanda VPC uses GCP's internal DNS resolver, which resolves both internal and external hostnames as long as the `0.0.0.0/0` route is importable from the hub peering. No additional DNS configuration is required.
+
+== Adding more clusters
+
+To connect an additional Redpanda cluster to the same hub, create a new hub-side peering connection for each cluster using a unique peering name (for example, `hub-to-redpanda-cluster-b`) and then configure centralized egress at cluster creation. All clusters share the same NAT VM and exit from the same public IP.
+
+[NOTE]
+====
+The NAT VM funnels all internet egress for all peered clusters through a single instance. If egress bandwidth becomes a bottleneck, recreate the instance template with a larger machine type (for example, `e2-standard-2`) and replace the MIG instance.
+====
+
+== Troubleshooting
+
+[cols="1,1"]
+|===
+| Symptom | Likely cause
+
+| Cluster creation does not complete | The cluster cannot reach the external endpoints it needs during bootstrap. Verify that the hub-side VPC peering has `export_custom_routes = true`; the `0.0.0.0/0 → NAT VM internal IP` route exists in the hub VPC and uses `next_hop_ip` (not `next_hop_gateway`); the NAT VM is running and healthy; and the firewall rule allows spoke CIDR traffic to reach the NAT VM. Also confirm the endpoints listed in <<internet-endpoints,Internet endpoints required from your hub>> are reachable.
+
+| The spoke VPC has no `0.0.0.0/0` route after peering is established | The hub-side peering does not have `export_custom_routes = true`, or the route uses `next_hop_gateway = default-internet-gateway` instead of `next_hop_ip`. GCP only exports routes with `next_hop_ip` or `next_hop_instance` through peering. Verify the route at *VPC Network > Routes* and update the hub-side peering if needed.
+
+| Peering is stuck in `INACTIVE` state | Both sides of the peering must be established for it to become `ACTIVE`. The hub-side peering remains `INACTIVE` until `rpk byoc gcp apply` creates the reciprocal spoke-side peering. If the cluster is already running, verify that `import_custom_routes = true` is set on the Redpanda-side peering.
+
+| Spoke VPC has a local `0.0.0.0/0` route that overrides the imported route | Local static routes always beat imported VPC peering routes in GCP regardless of priority. The Redpanda provisioner does not create a local default route when centralized egress is enabled. If an unexpected local default route appears, contact Redpanda Support.
+
+| Peering creation fails with a permissions error | The principal creating the hub-side peering needs `roles/compute.networkAdmin` in the hub project. If the hub and spoke are in different GCP projects, the principal also needs `roles/compute.networkPeer` in the Redpanda project.
+
+| Traffic exits from an unexpected IP | The NAT VM may have been replaced and the startup script did not run correctly. SSH into the NAT VM and run `iptables -t nat -L POSTROUTING` to verify the MASQUERADE rule, and `sysctl net.ipv4.ip_forward` to verify IP forwarding is enabled.
+
+| All traffic appears from one IP | Correct. This is the centralized egress design, and all peered clusters share the single public IP assigned to the NAT VM.
+|===
+
+== Next steps
+
+* xref:networking:byoc/gcp/gcp-hub-egress.adoc[Create a GCP Hub for Centralized Egress]
+* xref:get-started:cluster-types/byoc/gcp/create-byoc-cluster-gcp.adoc[Create a BYOC Cluster on GCP]
+* xref:networking:byoc/gcp/vpc-peering-gcp.adoc[Add a BYOC VPC Peering Connection on GCP] (for routing client traffic, not egress)

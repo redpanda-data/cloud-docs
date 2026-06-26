@@ -131,9 +131,12 @@ curl -d \
 // to route all cluster egress through a customer-owned Transit Gateway.
 // It is gated behind `:show-preview-api:` while the field is in preview.
 // To enable, set the attribute in the playbook or in this page header.
+// The GCP BYOC network example adds `egress_spec.gcp.hub_vpc_project` and
+// `egress_spec.gcp.hub_vpc_name` for centralized egress through a hub VPC.
+// Also gated behind `:show-preview-api:`.
 ifdef::show-preview-api[]
 
-To route all cluster egress through your own AWS Transit Gateway and hub VPC instead of a per-VPC NAT Gateway, set `egress_spec.aws.transit_gateway_id` on an AWS BYOC network. Centralized egress is in beta. The Transit Gateway ID is immutable after the network is created. Before calling this endpoint, provision the hub VPC and Transit Gateway and share the Transit Gateway with the Redpanda cluster account. See xref:networking:byoc/aws/aws-hub-egress.adoc[Create an AWS Hub for Centralized Egress] and xref:networking:byoc/aws/nat-free-egress.adoc[Configure Centralized Egress with AWS Transit Gateway].
+To route all cluster egress through your own AWS Transit Gateway and hub VPC instead of a per-VPC NAT Gateway, set `egress_spec.aws.transit_gateway_id` on an AWS BYOC network. Centralized egress is in beta. Before calling this endpoint, provision the hub VPC and Transit Gateway and share the Transit Gateway with the Redpanda cluster account. See xref:networking:byoc/aws/aws-hub-egress.adoc[Create an AWS Hub for Centralized Egress] and xref:networking:byoc/aws/nat-free-egress.adoc[Configure Centralized Egress with AWS Transit Gateway].
 
 [,bash]
 ----
@@ -149,6 +152,30 @@ curl -d \
     "egress_spec": {
       "aws": {
         "transit_gateway_id": "tgw-0b629c5b4fb6e364b"
+      }
+    }
+  }
+}' -H "Content-Type: application/json" \
+-H "Authorization: Bearer <token>" -X POST https://api.redpanda.com/v1/networks
+----
+
+To route all cluster egress through your own GCP hub VPC and NAT VM instead of a per-cluster Cloud NAT, set `egress_spec.gcp.hub_vpc_project` and `egress_spec.gcp.hub_vpc_name` on a GCP BYOC network. Centralized egress is in beta. Before calling this endpoint, provision the hub VPC and NAT VM. See xref:networking:byoc/gcp/gcp-hub-egress.adoc[Create a GCP Hub for Centralized Egress] and xref:networking:byoc/gcp/nat-free-egress.adoc[Configure Centralized Egress with GCP VPC Peering].
+
+[,bash]
+----
+curl -d \
+'{
+  "network": {
+    "cidr_block": "10.0.0.0/20",
+    "cloud_provider": "CLOUD_PROVIDER_GCP",
+    "cluster_type": "TYPE_BYOC",
+    "name": "<network-name>",
+    "resource_group_id": "<resource-group-id>",
+    "region": "us-west1",
+    "egress_spec": {
+      "gcp": {
+        "hub_vpc_project": "<hub-gcp-project-id>",
+        "hub_vpc_name": "<hub-vpc-name>"
       }
     }
   }
