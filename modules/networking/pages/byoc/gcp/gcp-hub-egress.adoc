@@ -1,0 +1,501 @@
+= Create a GCP Hub for Centralized Egress
+:description: Provision a hub VPC and NAT VM so one or more Redpanda BYOC clusters can route their internet egress through a single, predictable public IP.
+:page-beta: true
+:page-topic-type: how-to
+:personas: platform_admin
+:learning-objective-1: Provision a hub VPC with a NAT VM on GCP
+:learning-objective-2: Configure routes and VPC Network Peering to export the default route to Redpanda spoke VPCs
+:learning-objective-3: Collect the hub VPC name and project ID needed for BYOC cluster configuration
+
+Provision a hub VPC and NAT VM so one or more BYOC clusters route internet egress through a single public IP. After this procedure you have the hub VPC name and project ID needed to configure your BYOC network.
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
+
+== What this sets up
+
+A hub VPC with a NAT VM provides centralized internet egress for one or more Redpanda spoke VPCs. All outbound traffic from clusters is routed through the hub and exits from a single, predictable public IP.
+
+----
+Redpanda BYOC VPC ──► VPC Network Peering ──► Hub VPC ──► NAT VM ──► Internet
+ (import_custom_routes)   (export_custom_routes)
+----
+
+Traffic path:
+
+. Redpanda nodes send `0.0.0.0/0` traffic, which follows the imported peering route pointing to the NAT VM's internal IP.
+. The NAT VM in the hub VPC performs IP masquerade and forwards packets through its public IP.
+. The NAT VM uses a separate tagged route (`nat-direct`) to reach the internet directly, preventing a routing loop.
+
+[NOTE]
+====
+Local static routes in GCP always beat imported VPC peering routes, regardless of priority numbers. The Redpanda spoke VPC must not have a local `0.0.0.0/0` route. If one exists, it silently wins over the imported route and no traffic flows through the hub NAT.
+====
+
+[#automated-alternative]
+== Automated alternative
+
+If you prefer to provision this infrastructure with Terraform, the configuration used to produce the setup in this guide is published in the Redpanda Cloud Examples repository: link:https://github.com/redpanda-data/cloud-examples/tree/main/gcp-hub-egress[gcp-hub-egress^]
+
+The rest of this guide covers the equivalent steps using the GCP Console or gcloud CLI.
+
+== Prerequisites
+
+* The `gcloud` CLI, configured with credentials for the hub project.
+* Permissions: Compute Network Admin and Compute Instance Admin in the hub project.
+* If the hub and Redpanda cluster are in different GCP projects, the principal also needs `roles/compute.networkPeer` in the Redpanda project.
+* The hub subnet CIDR must not overlap with the Redpanda cluster VPC CIDR. VPC peering is rejected when CIDRs overlap.
+
+[WARNING]
+====
+Hub and spoke VPC CIDRs must not overlap. GCP rejects VPC peering when CIDRs conflict. Even when CIDRs do not overlap but a spoke has a local `0.0.0.0/0` route, that local route silently wins over the imported peering route. Plan your CIDRs before you start.
+====
+
+== Default values
+
+The procedure uses the values in the following table. Replace any value that does not match your environment.
+
+[cols="2,2,3"]
+|===
+| Parameter | Default | Notes
+
+| Hub project | `my-hub-project` | Replace with your GCP project ID
+| Hub VPC name | `hub-vpc` |
+| Hub subnet name | `hub-subnet` |
+| Hub subnet CIDR | `100.64.0.0/20` | CGNAT range, unlikely to conflict with typical workload CIDRs
+| Region | `us-central1` | Replace with your target region
+| Zone | `us-central1-a` | Replace with any zone in your region
+| NAT machine type | `e2-micro` | Size up if egress bandwidth becomes a bottleneck
+| Redpanda spoke VPC | `redpanda-<network_id>` | Visible in the Redpanda Cloud console
+| Redpanda project | `my-redpanda-project` | GCP project of your BYOC cluster
+|===
+
+== Set environment variables
+
+Set these variables once and reuse them throughout the guide.
+
+[,bash]
+----
+HUB_PROJECT="my-hub-project"
+REGION="us-central1"
+ZONE="us-central1-a"
+VPC_NAME="hub-vpc"
+SUBNET_NAME="hub-subnet"
+SUBNET_CIDR="100.64.0.0/20"
+
+# Fill in after the Redpanda cluster network is provisioned
+SPOKE_VPC="redpanda-<network_id>"
+SPOKE_PROJECT="my-redpanda-project"
+PEERING_NAME="hub-to-redpanda-cluster-a"
+----
+
+== Create the hub VPC
+
+[tabs]
+======
+Console::
++
+. Go to *VPC Network > VPC Networks > Create VPC Network*.
+. Set the name to `hub-vpc`.
+. Set *Subnet creation mode* to *Custom*.
+. Click *Create*. You add the subnet as a separate step.
+
+CLI::
++
+[,bash]
+----
+gcloud compute networks create $VPC_NAME \
+  --project=$HUB_PROJECT \
+  --subnet-mode=custom \
+  --bgp-routing-mode=regional
+
+echo "VPC created: $VPC_NAME"
+----
+======
+
+== Create the hub subnet
+
+[tabs]
+======
+Console::
++
+. Go to *VPC Network > Subnets > Add Subnet*.
+. Set the network to `hub-vpc`.
+. Set the name to `hub-subnet`, the region to `us-central1`, and the IPv4 range to `100.64.0.0/20`.
+. Click *Add*.
+
+CLI::
++
+[,bash]
+----
+gcloud compute networks subnets create $SUBNET_NAME \
+  --project=$HUB_PROJECT \
+  --network=$VPC_NAME \
+  --region=$REGION \
+  --range=$SUBNET_CIDR
+
+echo "Subnet created: $SUBNET_NAME ($SUBNET_CIDR)"
+----
+======
+
+== Reserve a static public IP
+
+This public IP becomes the single egress address for all Redpanda cluster traffic.
+
+[tabs]
+======
+Console::
++
+. Go to *VPC Network > IP Addresses > Reserve External Static Address*.
+. Set the name to `hub-nat-ip`, the network service tier to *Premium*, the IP version to *IPv4*, the type to *Regional*, and the region to `us-central1`.
+. Click *Reserve*.
+
+CLI::
++
+[,bash]
+----
+gcloud compute addresses create hub-nat-ip \
+  --project=$HUB_PROJECT \
+  --region=$REGION
+
+NAT_PUBLIC_IP=$(gcloud compute addresses describe hub-nat-ip \
+  --project=$HUB_PROJECT \
+  --region=$REGION \
+  --format='get(address)')
+
+echo "NAT public IP: $NAT_PUBLIC_IP"
+----
+======
+
+== Reserve a static internal IP
+
+The exportable peering route points to the NAT VM's internal IP. A reserved static internal IP ensures the route stays valid across MIG instance replacements.
+
+[tabs]
+======
+Console::
++
+. Go to *VPC Network > IP Addresses > Reserve Internal Static Address*.
+. Set the name to `hub-nat-internal-ip`, the network to `hub-vpc`, the subnetwork to `hub-subnet`, the region to `us-central1`, and the static IP address to *Assign automatically*.
+. Click *Reserve*.
+. Record the allocated IP address. You need it to create the spoke-to-NAT route and the NAT VM instance template.
+
+CLI::
++
+[,bash]
+----
+gcloud compute addresses create hub-nat-internal-ip \
+  --project=$HUB_PROJECT \
+  --region=$REGION \
+  --subnet=$SUBNET_NAME
+
+NAT_INTERNAL_IP=$(gcloud compute addresses describe hub-nat-internal-ip \
+  --project=$HUB_PROJECT \
+  --region=$REGION \
+  --format='get(address)')
+
+echo "NAT internal IP: $NAT_INTERNAL_IP"
+----
+======
+
+== Create the tagged route: NAT VM to internet
+
+This route lets the NAT VM reach the internet directly through the default internet gateway. The `nat-direct` network tag restricts it to the NAT VM only, preventing other VMs in the hub VPC from using it.
+
+[NOTE]
+====
+Priority `100` ensures the NAT VM uses this route rather than the untagged spoke-to-NAT route (`0.0.0.0/0 → NAT VM`), which would cause a routing loop.
+====
+
+[tabs]
+======
+Console::
++
+. Go to *VPC Network > Routes > Create Route*.
+. Set the name to `hub-nat-to-internet`, the network to `hub-vpc`, the destination IP range to `0.0.0.0/0`, the priority to `100`, and the next hop to *Default internet gateway*.
+. Under *Additional fields*, add the instance tag `nat-direct`.
+. Click *Create*.
+
+CLI::
++
+[,bash]
+----
+gcloud compute routes create hub-nat-to-internet \
+  --project=$HUB_PROJECT \
+  --network=$VPC_NAME \
+  --destination-range=0.0.0.0/0 \
+  --next-hop-gateway=default-internet-gateway \
+  --tags=nat-direct \
+  --priority=100
+
+echo "Tagged route created: hub-nat-to-internet (priority 100, tag: nat-direct)"
+----
+======
+
+== Create the untagged route: spoke traffic to NAT VM
+
+GCP exports routes with `next_hop_ip` through VPC peering. Routes with `next_hop_gateway = default-internet-gateway` are not exportable. This route is what the Redpanda spoke VPC imports to direct all outbound traffic through the hub.
+
+[NOTE]
+====
+Priority `900` ensures the imported copy in the Redpanda spoke VPC beats the spoke's own system default route (priority `1000`, if present).
+====
+
+[tabs]
+======
+Console::
++
+. Go to *VPC Network > Routes > Create Route*.
+. Set the name to `hub-spoke-to-nat`, the network to `hub-vpc`, the destination IP range to `0.0.0.0/0`, the priority to `900`, and the next hop to *Specify an IP address* with the static internal IP you reserved for the NAT VM.
+. Leave *Instance tags* empty.
+. Click *Create*.
+
+CLI::
++
+[,bash]
+----
+gcloud compute routes create hub-spoke-to-nat \
+  --project=$HUB_PROJECT \
+  --network=$VPC_NAME \
+  --destination-range=0.0.0.0/0 \
+  --next-hop-address=$NAT_INTERNAL_IP \
+  --priority=900
+
+echo "Untagged route created: hub-spoke-to-nat -> $NAT_INTERNAL_IP (priority 900)"
+----
+======
+
+== Create a firewall rule
+
+Allow traffic from Redpanda spoke VPCs to reach the NAT VM for forwarding. The `nat-direct` target tag restricts this rule to the NAT VM only.
+
+[tabs]
+======
+Console::
++
+. Go to *VPC Network > Firewall > Create Firewall Rule*.
+. Set the name to `hub-allow-nat-forward`, the network to `hub-vpc`, the direction to *Ingress*, and the action to *Allow*.
+. Set *Targets* to *Specified target tags* with the value `nat-direct`.
+. Set *Source filter* to *IPv4 ranges* with the value `10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 100.64.0.0/10`.
+. Set *Protocols and ports* to *Allow all*.
+. Click *Create*.
+
+CLI::
++
+[,bash]
+----
+gcloud compute firewall-rules create hub-allow-nat-forward \
+  --project=$HUB_PROJECT \
+  --network=$VPC_NAME \
+  --direction=INGRESS \
+  --action=ALLOW \
+  --rules=tcp,udp,icmp \
+  --source-ranges=10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,100.64.0.0/10 \
+  --target-tags=nat-direct
+
+echo "Firewall rule created: hub-allow-nat-forward"
+----
+======
+
+== Create the NAT VM instance template
+
+The NAT VM runs IP forwarding and iptables masquerade. It carries the `nat-direct` network tag so it picks up the tagged direct-to-internet route (`hub-nat-to-internet`).
+
+[NOTE]
+====
+The Console path for creating an instance template is complex. The CLI is recommended for this step.
+====
+
+[tabs]
+======
+Console::
++
+. Go to *Compute Engine > Instance Templates > Create Instance Template*.
+. Set the name to `hub-nat-template`.
+. Set the machine configuration to *E2 > e2-micro*.
+. Set the boot disk to *Debian GNU/Linux 13 (bookworm)*, *pd-balanced*, *10 GB*.
+. Under *Advanced options > Networking*:
+.. Add the network tag `nat-direct`.
+.. Enable *IP forwarding*.
+.. Set the network interface to `hub-vpc` / `hub-subnet`.
+.. Set the external IPv4 address to `hub-nat-ip` (the static public IP you reserved).
+.. Set the internal IPv4 address to `hub-nat-internal-ip` (the static internal IP you reserved).
+. Under *Advanced options > Management > Automation > Startup script*, paste the following script:
++
+[,bash]
+----
+#!/bin/bash
+set -e
+sysctl -w net.ipv4.ip_forward=1
+echo 'net.ipv4.ip_forward = 1' > /etc/sysctl.d/99-ip-forward.conf
+EXT_IF=$(ip route get 8.8.8.8 | awk '{for(i=1;i<=NF;i++) if($i=="dev") print $(i+1)}' | head -1)
+iptables -t nat -A POSTROUTING -o "$EXT_IF" -j MASQUERADE
+iptables -A FORWARD -i "$EXT_IF" -m state --state RELATED,ESTABLISHED -j ACCEPT
+iptables -A FORWARD -j ACCEPT
+apt-get update -qq && apt-get install -y -qq iptables-persistent
+netfilter-persistent save
+----
+. Click *Create*.
+
+CLI::
++
+Save the startup script to a temporary file first to avoid quoting issues:
++
+[,bash]
+----
+cat > /tmp/nat-startup.sh <<'SCRIPT'
+#!/bin/bash
+set -e
+sysctl -w net.ipv4.ip_forward=1
+echo 'net.ipv4.ip_forward = 1' > /etc/sysctl.d/99-ip-forward.conf
+EXT_IF=$(ip route get 8.8.8.8 | awk '{for(i=1;i<=NF;i++) if($i=="dev") print $(i+1)}' | head -1)
+iptables -t nat -A POSTROUTING -o "$EXT_IF" -j MASQUERADE
+iptables -A FORWARD -i "$EXT_IF" -m state --state RELATED,ESTABLISHED -j ACCEPT
+iptables -A FORWARD -j ACCEPT
+apt-get update -qq && apt-get install -y -qq iptables-persistent
+netfilter-persistent save
+SCRIPT
+
+gcloud compute instance-templates create hub-nat-template \
+  --project=$HUB_PROJECT \
+  --region=$REGION \
+  --machine-type=e2-micro \
+  --image-family=debian-13 \
+  --image-project=debian-cloud \
+  --boot-disk-size=10GB \
+  --boot-disk-type=pd-balanced \
+  --can-ip-forward \
+  --tags=nat-direct \
+  --network-interface=network=$VPC_NAME,subnet=$SUBNET_NAME,private-network-ip=$NAT_INTERNAL_IP,address=$NAT_PUBLIC_IP \
+  --metadata-from-file=startup-script=/tmp/nat-startup.sh
+
+echo "Instance template created: hub-nat-template"
+----
+======
+
+== Create the managed instance group
+
+A size-1 MIG ensures the NAT VM is automatically restarted if it crashes or is terminated.
+
+[tabs]
+======
+Console::
++
+. Go to *Compute Engine > Instance Groups > Create Instance Group*.
+. Select *New managed instance group (stateful)*.
+. Set the name to `hub-nat-mig`, the instance template to `hub-nat-template`, the location to *Single zone > us-central1-a*, and the number of instances to `1`.
+. Click *Create*.
+
+CLI::
++
+[,bash]
+----
+gcloud compute instance-groups managed create hub-nat-mig \
+  --project=$HUB_PROJECT \
+  --zone=$ZONE \
+  --template=hub-nat-template \
+  --size=1
+
+echo "Waiting for MIG instance to become stable..."
+gcloud compute instance-groups managed wait-until hub-nat-mig \
+  --project=$HUB_PROJECT \
+  --zone=$ZONE \
+  --stable
+
+echo "MIG created: hub-nat-mig"
+----
+======
+
+== Create VPC Network Peering (hub to Redpanda)
+
+Create the peering from the hub side. Redpanda creates the reciprocal peering from the spoke side during cluster provisioning.
+
+[NOTE]
+====
+Set `--export-custom-routes` so the `0.0.0.0/0 → NAT internal IP` route is visible to the Redpanda VPC. Do not set `--import-custom-routes`, because the hub does not need to import routes from the spoke.
+
+The peering shows as *INACTIVE* until the Redpanda cluster provisions the reciprocal peering. This is expected. Proceed to create the cluster.
+====
+
+[tabs]
+======
+Console::
++
+. Go to *VPC Network > VPC Network Peering > Create Peering Connection*.
+. Set the name to `hub-to-redpanda-cluster-a` and the VPC network to `hub-vpc`.
+. Under *Peered VPC network*, select *In another project* (or *In the same project* if applicable) and enter the Redpanda project ID and VPC name `redpanda-<network_id>`.
+. Under *Exchange custom routes*, enable *Export custom routes* and leave *Import custom routes* unchecked.
+. Click *Create*.
+
+CLI::
++
+[,bash]
+----
+gcloud compute networks peerings create $PEERING_NAME \
+  --project=$HUB_PROJECT \
+  --network=$VPC_NAME \
+  --peer-network=$SPOKE_VPC \
+  --peer-project=$SPOKE_PROJECT \
+  --export-custom-routes \
+  --no-import-custom-routes
+
+echo "Peering created: $PEERING_NAME (hub -> $SPOKE_VPC)"
+echo "Status is INACTIVE until Redpanda creates the reciprocal peering."
+----
+======
+
+[#collect-values]
+== Collect the values to provide to Redpanda
+
+Record these values. Provide the hub VPC name and hub project ID when you configure centralized egress on your BYOC network. See xref:networking:byoc/gcp/nat-free-egress.adoc[Configure Centralized Egress with GCP VPC Peering].
+
+[,bash]
+----
+echo "hub_vpc_name     = $VPC_NAME"
+echo "hub_project_id   = $HUB_PROJECT"
+echo "hub_subnet_name  = $SUBNET_NAME"
+echo "nat_internal_ip  = $NAT_INTERNAL_IP"
+echo "nat_public_ip    = $NAT_PUBLIC_IP"
+echo "peering_name     = $PEERING_NAME"
+----
+
+All outbound internet traffic from every BYOC spoke that peers to this hub exits from the same NAT VM public IP. Use that public IP for outbound IP allowlisting on external services.
+
+== Plan for high availability
+
+The procedure in this guide deploys a single NAT VM in one zone, which is not AZ-resilient. The `e2-micro` machine type also limits egress bandwidth. For production deployments:
+
+* Use a larger machine type such as `e2-standard-2` or `e2-standard-4` to increase throughput.
+* Consider multiple NAT VMs behind a load balancer or deploy per-zone MIGs if AZ resilience is required.
+* Monitor instance health through the MIG health check and set up alerting on the MIG's `instance_count` metric.
+
+The <<automated-alternative,Terraform reference>> deploys a single NAT VM. Extend it with per-zone MIGs if you need HA egress.
+
+== Troubleshooting
+
+[cols="2,2"]
+|===
+| Symptom | Likely cause
+
+| Redpanda cluster has no outbound internet connectivity | The spoke VPC CIDR overlaps with the hub subnet CIDR. GCP rejects the peering when CIDRs overlap. Assign a unique, non-overlapping CIDR to each spoke VPC.
+
+| Imported `0.0.0.0/0` route is not visible in the spoke VPC | The spoke VPC has a local static `0.0.0.0/0` route that wins over the imported peering route. Local static routes always beat imported peering routes in GCP regardless of priority. Remove the local default route from the spoke VPC, or contact Redpanda Support if it is Redpanda-managed.
+
+| Peering is stuck in `INACTIVE` state | The reciprocal peering from the Redpanda spoke VPC has not been created yet. This is expected until `rpk byoc gcp apply` completes. If the cluster is already running, verify that `import_custom_routes = true` is set on the Redpanda-side peering.
+
+| Peering creation fails with a permissions error | The principal lacks `roles/compute.networkPeer` in the Redpanda project. Grant that role to the hub identity at *IAM & Admin > IAM > Grant Access* in the Redpanda project.
+
+| Traffic exits from an unexpected IP | The NAT VM may have been replaced and the startup script did not run correctly. SSH into the NAT VM and run `iptables -t nat -L POSTROUTING` to verify the MASQUERADE rule and `sysctl net.ipv4.ip_forward` to verify IP forwarding is enabled.
+
+| NAT VM is not forwarding traffic | IP forwarding is not enabled on the instance template (`--can-ip-forward`), or the iptables MASQUERADE rule was not applied. Recreate the instance template with IP forwarding enabled and check the startup script output in the GCP serial console.
+
+| `hub-spoke-to-nat` route is not exported to the spoke | The route uses `next_hop_gateway = default-internet-gateway` instead of `next_hop_ip`. GCP exports only routes with `next_hop_ip` or `next_hop_instance` through peering. Verify the route in *VPC Network > Routes* shows a next-hop IP address, not the internet gateway.
+|===
+
+== Next steps
+
+* xref:networking:byoc/gcp/nat-free-egress.adoc[Configure Centralized Egress with GCP VPC Peering]
+* xref:get-started:cluster-types/byoc/gcp/create-byoc-cluster-gcp.adoc[Create a BYOC Cluster on GCP]
