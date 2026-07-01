@@ -22,7 +22,7 @@ Cluster properties are supported on BYOC and Dedicated clusters running on AWS a
 - They are not available on BYOC and Dedicated clusters running on Azure.
 - They are not available on Serverless clusters.
 
-Only the cluster properties listed in xref:reference:properties/cluster-properties.adoc[] and xref:reference:properties/object-storage-properties.adoc[] can be configured in Redpanda Cloud. Setting any other property through `rpk`, the Cloud API, or the xref:manage:terraform-provider.adoc[Redpanda Terraform provider] returns a `REASON_INVALID_INPUT` error indicating that the property is not allowed. To control the maximum message size, see <<max-message-size>>.
+Only the cluster properties listed in xref:reference:properties/cluster-properties.adoc[] and xref:reference:properties/object-storage-properties.adoc[] are configurable in Redpanda Cloud. Setting an unsupported property through the Cloud API or the xref:manage:terraform-provider.adoc[Redpanda Terraform provider] returns a `REASON_INVALID_INPUT` error indicating that the property is not allowed. To control the maximum message size, see <<max-message-size>>.
 
 
 == Set cluster configuration properties
@@ -168,7 +168,7 @@ curl -H "Authorization: Bearer ${RP_CLOUD_TOKEN}" -X PATCH \
 
 To control the maximum message size in Redpanda Cloud, set the `max.message.bytes` property on each topic. The default is 20 MiB for BYOC and Dedicated clusters and 8 MiB for Serverless clusters. You can increase it up to 32 MiB for BYOC and Dedicated clusters and 20 MiB for Serverless clusters. To set this property, see xref:develop:topics/create-topic.adoc[].
 
-The cluster property `kafka_batch_max_bytes` is not configurable in Redpanda Cloud. Setting it through `rpk`, the Cloud API, or the xref:manage:terraform-provider.adoc[Redpanda Terraform provider] returns `REASON_INVALID_INPUT` with the message `The properties [kafka_batch_max_bytes] are not allowed`.
+The cluster property `kafka_batch_max_bytes` cannot be set through the Cloud API or the xref:manage:terraform-provider.adoc[Redpanda Terraform provider]. Attempting to set it returns `REASON_INVALID_INPUT` with the message `The properties [kafka_batch_max_bytes] are not allowed`.
 
 == View cluster property values
 
