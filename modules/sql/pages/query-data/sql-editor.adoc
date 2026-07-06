@@ -18,7 +18,7 @@ After reading this page, you will be able to:
 
 * A Redpanda BYOC cluster with the SQL engine enabled. See xref:sql:get-started/deploy-sql-cluster.adoc[Enable Redpanda SQL].
 * A Redpanda Cloud user with the *SQL: Access* or *SQL: Manage* glossterm:RBAC[] permission. Users with *SQL: Access* also need a `GRANT SELECT` on each table to run queries against it. See xref:sql:manage/manage-access.adoc[Manage access to Redpanda SQL].
-* At least one topic mapped to a SQL table in the catalog. See xref:sql:query-data/query-streaming-topics.adoc[Query Streaming Topics], or use the <<add-topic,Add a topic wizard>> in the editor.
+* At least one topic mapped to a SQL table in the catalog. See xref:sql:query-data/query-streaming-topics.adoc[Query Streaming Topics], or use the <<add-topic,Add a topic>> wizard in the editor.
 
 == Open the SQL editor
 
@@ -28,7 +28,7 @@ In Redpanda Cloud Console, navigate to your cluster and select *SQL* in the left
 
 The catalog panel lists every SQL catalog attached to your cluster.
 
-Click a catalog to expand it, then expand a namespace to see its tables and their row counts. To view a table's columns and data types, click the chevron (>) next to the table name.
+Click a catalog to expand it, then expand a namespace to see its tables. To view a table's columns and data types, click the chevron (>) next to the table name.
 
 Within the Redpanda catalog, tables backed by glossterm:Iceberg topic[,Iceberg-enabled topics] display an *Iceberg* badge. When you query one of these tables, the SQL engine automatically bridges live topic data with the Iceberg history. See <<Query Iceberg topics>>.
 
@@ -99,15 +99,13 @@ NOTE: This task requires the Admin role.
 
 To make a Redpanda topic queryable from the editor, add it to the `default_redpanda_catalog` with the *Add a topic* wizard:
 
-. In the catalog panel, click *+ Add a topic* at the bottom of the Redpanda catalog namespace.
+. In the catalog panel, click *Add a topic* at the bottom of the Redpanda catalog namespace.
 . In the *Choose a topic* step, select the Redpanda topic to expose as a SQL table. Topics with Iceberg tiering enabled show an *Iceberg* badge.
 . Click *Continue*.
 . In the *Name the table* step, confirm or edit the table name. Table names must start with a letter or underscore and can contain only lowercase letters, numbers, and underscores. The catalog and source topic are fixed.
 . Review the `CREATE TABLE` statement that will run, then click *Create table*.
 
 The table appears in the catalog panel immediately and is ready to query.
-
-To remove a table from the catalog, hover over the table name and click the trash icon. Dropping a table removes it from the SQL catalog only. The underlying Redpanda topic and its data are not affected.
 
 == Suggested reading
 
