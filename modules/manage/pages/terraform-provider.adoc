@@ -462,11 +462,11 @@ Use the `rpsql` block on a `redpanda_cluster` resource (requires provider versio
 |`zones`
 |List of String
 |No
-|For multi-AZ clusters, the single availability zone to deploy the SQL engine into. Provide one zone from the cluster's `zones` list. If omitted, a zone is chosen automatically. Redpanda locks the zone when SQL is first enabled; you cannot change it afterward. See xref:sql:get-started/deploy-sql-cluster.adoc[Enable Redpanda SQL on a BYOC cluster].
+|For multi-AZ clusters, the single availability zone to deploy the SQL engine into. Provide one zone from the cluster's `zones` list. If omitted, a zone is chosen automatically. Redpanda locks the zone when SQL is first enabled. You cannot change it afterward. See xref:sql:get-started/deploy-sql-cluster.adoc[Enable Redpanda SQL on a BYOC cluster].
 
 |`url`
 |String
-|Read-only
+|No (computed)
 |SQL engine endpoint URL. Empty while disabled; populated by the server when SQL is enabled.
 |===
 
@@ -535,7 +535,7 @@ output "sql_url" {
 }
 ----
 
-To scale Redpanda SQL, update `replicas` and run `terraform apply`. To disable it, set `enabled = false`. Both operations update the cluster in place. Terraform does not recreate the cluster.
+To scale Redpanda SQL, update `replicas` and run `terraform apply`. To disable Redpanda SQL, set `enabled = false`. Both operations update the cluster in place. Terraform does not recreate the cluster.
 
 For the full enable workflow using the Cloud Console or Cloud API, see xref:sql:get-started/deploy-sql-cluster.adoc[Enable Redpanda SQL on a BYOC cluster].
 
