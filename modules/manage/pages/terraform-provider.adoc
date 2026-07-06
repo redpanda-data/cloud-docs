@@ -319,6 +319,27 @@ resource "redpanda_user" "schema_user" {
 
 After running `terraform apply`, the provider sends the new password to Redpanda Cloud. Neither the old nor the new value is written to state.
 
+== Configure cluster properties
+
+To set xref:reference:properties/cluster-properties.adoc[cluster configuration properties] on a BYOC or Dedicated cluster, add a `cluster_configuration` block to the `redpanda_cluster` resource and pass the properties as a JSON string with `custom_properties_json`:
+
+[source,hcl]
+----
+resource "redpanda_cluster" "test" {
+  # ... other cluster arguments ...
+
+  cluster_configuration = {
+    custom_properties_json = jsonencode({
+      "audit_enabled" = true
+    })
+  }
+}
+----
+
+Only the properties listed in xref:reference:properties/cluster-properties.adoc[] and xref:reference:properties/object-storage-properties.adoc[] can be configured through the provider. Setting an unsupported property returns a `REASON_INVALID_INPUT` error indicating that the property is not allowed. For example, `kafka_batch_max_bytes` cannot be set through the provider. To control the maximum message size, set the `max.message.bytes` property on each topic instead. For more information, see xref:manage:cluster-maintenance/config-cluster.adoc[].
+
+NOTE: Cluster properties are not available on Serverless clusters or on BYOC and Dedicated clusters running on Azure.
+
 == Examples
 
 The following examples use the Redpanda Terraform provider to create and manage clusters. For descriptions of resources and data sources, see the https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs[Redpanda Terraform Provider documentation^].
