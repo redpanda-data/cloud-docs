@@ -58,7 +58,7 @@ To run the query in the active tab, click *Run* or press kbd:[Cmd+Enter] (macOS)
 
 To run a portion of the query, select the text you want to run, then click *Run selection*.
 
-The SQL editor supports only `SELECT` statements. `CREATE TABLE` and permission statements (`GRANT`, `REVOKE`) are not available in the editor. Use the <<add-topic,Add a topic wizard>> to create tables and xref:sql:manage/manage-access.adoc[Manage access] to manage grants.
+Because Redpanda SQL is a read-only query engine, the SQL editor supports only `SELECT` statements. `CREATE TABLE` and permission statements (`GRANT`, `REVOKE`) are not available in the editor. Use the <<add-topic,Add a topic wizard>> to create tables and xref:sql:manage/manage-access.adoc[Manage access] to manage grants.
 
 == View results
 
@@ -79,7 +79,7 @@ Scroll the results grid to view all rows. If the server's row limit is reached, 
 
 When a query reads from an Iceberg-enabled topic in the Redpanda catalog, a *Bridge query* chip appears in the results status bar. This means the query returned data from both the live Redpanda topic and its Iceberg committed history.
 
-If there are messages not yet committed to Iceberg, a message below the status bar shows the approximate offset lag at the time the query ran.
+If there are messages not yet committed to Iceberg, a message below the status bar shows approximately how many offsets are not yet in Iceberg at the time the query ran.
 
 For details on querying across live and Iceberg-tiered data, see xref:sql:query-data/query-iceberg-topics.adoc[Query Iceberg-enabled Topics].
 
