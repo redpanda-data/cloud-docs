@@ -4,7 +4,7 @@ Your organization might require custom resource labels and network tags for cost
 ====
 Do not add labels or network tags directly to the GCP node pools of a BYOC cluster, either in the GCP console or with commands such as `gcloud container node-pools update`. Google Kubernetes Engine (GKE) treats a node pool label or tag update as a node replacement and aggressively replaces all nodes, rather than performing a controlled rolling upgrade. This bypasses the failover process that Redpanda requires for safe node cycling. It can leave persistent volume claims (PVCs) in a pending state and may require recovering the entire cluster.
 
-The Dataplane settings page and the Control Plane API are the supported methods. With both, Redpanda applies labels and network tags directly to the Google Compute Engine (GCE) instances and disks in your cluster, not to the node pools, so GKE does not replace any nodes.
+The Dataplane settings page and the Control Plane API are the supported methods. With both, Redpanda applies labels directly to the Google Compute Engine (GCE) instances and disks in your cluster, and network tags directly to the instances. Because nothing is applied to the node pools, GKE does not replace any nodes.
 ====
 
 include::shared:partial$feature-flag.adoc[]
