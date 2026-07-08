@@ -1,0 +1,58 @@
+= Manage Your Organization
+:description: View details about your Redpanda Cloud organization and delete your Serverless organization from the Manage organization page.
+:page-topic-type: how-to
+:personas: app_developer, platform_admin
+:learning-objective-1: Locate organization details, such as your plan and resource counts, in the Cloud UI
+:learning-objective-2: Complete the prerequisites to delete a Serverless organization
+:learning-objective-3: Permanently delete a Serverless organization
+
+Use the *Manage organization* page to see your plan and organization-wide resources at a glance, and to permanently delete your organization when you no longer need it.
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
+
+== View organization details
+
+To open the *Manage organization* page, sign in to https://cloud.redpanda.com[Redpanda Cloud^], click your profile icon, and select *Manage organization*.
+
+The page shows your plan (for example, *Free trial* or *Pay-as-you-go*) and the resources in your organization. Each resource count links to the page where you manage that resource.
+
+== Delete your organization
+
+You can delete Serverless organizations on the free trial and pay-as-you-go plans directly from the *Manage organization* page. Deleting your organization removes all of its resources, including clusters, users, service accounts, resource groups, networks, and Redpanda Connect pipelines.
+
+[WARNING]
+====
+Deleting an organization cannot be undone. Redpanda permanently deletes all organization data and resources.
+====
+
+To delete organizations on other plans, including Bring Your Own Cloud (BYOC) and Dedicated, contact https://support.redpanda.com/[Redpanda Support^].
+
+=== Prerequisites
+
+* Confirm that you have permission to delete the organization. If you do not have permission, the *Manage organization* page prompts you to contact an administrator in your organization. See xref:security:authorization/cloud-authorization.adoc[].
+* Delete all clusters in the organization.
+* Delete all private links. Private links incur charges even when they are not attached to a cluster. See xref:networking:serverless/index.adoc[].
+* Settle all invoices. You cannot delete an organization with pending usage or outstanding invoices. Pending usage settles automatically at the end of the billing period. Return to delete your organization after it settles. See xref:billing:view-billing-activity.adoc[].
+
+The *Manage organization* page shows each prerequisite in a checklist, with a link to resolve any that are unmet. The *Delete* button stays unavailable until all prerequisites are complete.
+
+=== Delete the organization
+
+. On the *Manage organization* page, confirm that all items in the prerequisites checklist are complete.
+. Click *Delete*.
+. In the confirmation dialog, type the name of your organization, and click *Confirm delete*.
+
+Redpanda Cloud signs you out and confirms that deletion has started. Redpanda usually removes all organization resources within two days. You do not need to take any further action.
+
+You can optionally answer a short exit survey to tell Redpanda why you deleted your organization.
+
+NOTE: Deleting your organization is not the same as a data privacy erasure request. For personal data requests, see the https://www.redpanda.com/legal/privacy-policy[Redpanda privacy policy^].
+
+== Next steps
+
+* xref:get-started:cluster-types/serverless.adoc[]
+* xref:billing:view-billing-activity.adoc[]
