@@ -1,11 +1,34 @@
-Your organization might require custom resource labels and network tags for cost allocation, audit compliance, or governance policies. After cluster creation, you can manage this with the xref:manage:api/cloud-byoc-controlplane-api.adoc[Cloud Control Plane API]. The Control Plane API allows up to 16 custom resource labels and network tags in GCP.
+Your organization might require custom resource labels and network tags for cost allocation, audit compliance, or governance policies. After cluster creation, you can manage labels and network tags on your cluster's *Dataplane settings* page in the Redpanda Cloud UI, or with the xref:manage:api/cloud-byoc-controlplane-api.adoc[Control Plane API].
+
+[CAUTION]
+====
+Do not add labels or network tags directly to the GCP node pools of a BYOC cluster, either in the GCP console or with commands such as `gcloud container node-pools update`. Google Kubernetes Engine (GKE) treats a node pool label or tag update as a node replacement and aggressively replaces all nodes, rather than performing a controlled rolling upgrade. This bypasses the failover process that Redpanda requires for safe node cycling. It can leave persistent volume claims (PVCs) in a pending state and may require recovering the entire cluster.
+
+The Dataplane settings page and the Control Plane API are the supported methods. With both, Redpanda applies labels directly to the Google Compute Engine (GCE) instances and disks in your cluster, and network tags directly to the instances. Because nothing is applied to the node pools, GKE does not replace any nodes.
+====
+
+=== Use the Dataplane settings page
+
+To manage labels and network tags in the Redpanda Cloud UI:
+
+. In the Redpanda Cloud UI, open your https://cloud.redpanda.com/clusters[cluster^], and click *Dataplane settings*.
+. Under *Manage resource labels and network tags for your cluster*, click *Add*, and enter a key and value for each label. Keys and values are case-sensitive.
++
+To apply a network tag to the GCE instances in the cluster, use a key that starts with `gcp.network-tag.`. For example, the key `gcp.network-tag.web-servers` applies the `web-servers` https://cloud.google.com/vpc/docs/add-remove-network-tags[network tag^].
++
+You can add up to 10 entries on this page. To manage up to 16, use the <<use-the-control-plane-api,Control Plane API>>.
+. Click *Save*.
+
+=== Use the Control Plane API
+
+The Control Plane API allows up to 16 custom resource labels and network tags in GCP.
 
 Make sure you have:
 
 * The cluster ID. You can find this in the Redpanda Cloud UI, in the **Details** section of the cluster overview.
-* A valid bearer token for the Cloud Control Plane API. For details, see link:/api/doc/cloud-controlplane/authentication[Authenticate to the API]. 
+* A valid bearer token for the Control Plane API. For details, see link:/api/doc/cloud-controlplane/authentication[Authenticate to the API].
 
-include::shared:partial$feature-flag.adoc[]
+Then complete the following steps:
 
 . To refresh agent permissions so the Redpanda agent can update labels and network tags, run:
 +
@@ -24,7 +47,7 @@ This step is required because label/tag management requires additional IAM permi
 * `compute.disks.setLabels`
 * `compute.instances.setLabels`
 
-. To update labels and network tags, invoke the Cloud API.
+. To update labels and network tags, invoke the Control Plane API.
 +
 First, set your authentication token:
 +
