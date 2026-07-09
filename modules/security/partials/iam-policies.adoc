@@ -1,527 +1,1435 @@
-ifdef::env-aws[] 
-When you run `rpk cloud byoc aws apply` to create a BYOC cluster, you grant IAM permissions to the Redpanda Cloud agent. IAM permissions allow the agent to access the AWS API to create and manage cluster resources. The permissions follow the principle of least privilege, limiting access to only what is necessary. IAM permissions are not required by Redpanda Cloud users.
+ifdef::env-aws[]
+// ============================================================================
+// DOC-2297 EDITOR NOTES — resolve before merge, then delete this comment block.
+// Rebuilt from cloudv2 apps/redpanda-agent/infra/aws/redpanda/agent/instance_profile.tf
+// (30 statements across policy docs redpanda_agent, _agent1, _agent2, _agent3, _oxla).
+// TODO(eng) items, confirm with Sarah Haskins / Dimitris Bachtis:
+//  1. Does the cross-account (CloudProviderAccess) role grant this SAME permission
+//     set, or a separate/generated set? This page currently documents the agent
+//     provisioning policy as the source of truth.
+//  2. Provide the customer trust-policy + role Terraform (external_id) for the
+//     "Cross-account role" section below (currently a placeholder).
+//  3. Confirm which statements are feature-gated vs. always granted. Candidates:
+//     ElastiCache, RDS/Aurora (scoped to ai-gateway-*), Oxla (scoped to oxla-*).
+//  4. Supply "why it is needed" text for every cell marked TODO(eng) (Denis's sheet).
+// ============================================================================
+To deploy a new BYOC cluster on AWS, you create an IAM role in your AWS account that Redpanda assumes to provision and reconcile cluster resources on your behalf. This role grants the permissions listed on this page. The permissions follow the principle of least privilege: each is scoped to only the resources Redpanda provisions for your cluster. These permissions are _not_ required by Redpanda Cloud end users, and they do not grant human access to your cluster.
 
 [NOTE]
 ====
-* This page lists the IAM permissions Redpanda needs to create xref:get-started:cluster-types/byoc/aws/create-byoc-cluster-aws.adoc[BYOC clusters]. This does _not_ pertain to xref:get-started:cluster-types/byoc/aws/vpc-byo-aws.adoc[BYOVPC clusters]. 
-* IAM permissions are not required for Redpanda Cloud users. IAM policies do not grant user access to a cluster; rather, they grant the deployed Redpanda agent access, so that brokers can communicate with the BYOC clusters. 
+* This page lists the permissions Redpanda needs to create and manage xref:get-started:cluster-types/byoc/aws/create-byoc-cluster-aws.adoc[BYOC clusters]. It does _not_ apply to xref:get-started:cluster-types/byoc/aws/vpc-byo-aws.adoc[BYOVPC clusters].
+* Cross-account IAM delegation applies to *new* AWS BYOC clusters. Existing clusters continue to use the agent-based model, where the same permissions attach to a Redpanda agent that runs in your account after you run `rpk cloud byoc aws apply`.
 ====
 
-== AWS IAM policies
+// TODO(eng, item 1): confirm the cross-account role uses this exact permission set before publishing.
 
-IAM policies are assigned to deployed Redpanda agents for BYOC AWS
-clusters that use the following AWS services:
+== How to read this page
 
-* https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/concepts.html[Amazon Elastic Compute Cloud (AWS EC2)^]
-* https://aws.amazon.com/ec2/autoscaling/[Amazon Elastic Compute Cloud Auto Scaling (AWS EC2 Auto Scaling)^]
-* https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html[Amazon Simple Storage Service (AWS S3)^]
-* https://aws.amazon.com/route53/[Amazon Route 53^]
-* https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Introduction.html[Amazon DynamoDB^]
+Redpanda's provisioning policy is a set of scoped IAM statements. Below, statements are organized into functional groups (compute, networking, storage, identity, secrets, monitoring, and coordination state). Each statement lists the actions it allows and _why_ they are needed, the *resource scope* that constrains them, and the exact Terraform in a collapsible block.
 
-=== Actions allowed with wildcard resources
+[cols="1,4", options="header"]
+|===
+|Access level |Meaning
+|Read |Describe, Get, or List actions. Cannot modify or delete resources.
+|Write |Creates or modifies resources.
+|Delete |Removes resources.
+|Full |Service-wide (`+*+`) action, constrained by the statement's resource scope. See <<aws-service-wide-actions>>.
+|===
 
-The following actions apply only to Redpanda agents with wildcard resources.
+[#aws-service-wide-actions]
+== A note on service-wide actions
 
-.RedpandaAgentActionsOnlyAllowedWithWildcardResources
-[,js,role=no-copy]
+A few statements use a service-wide action (`+*+`) rather than listing individual actions. In every case the action is constrained by the statement's resource scope, so the grant is not account-wide:
+
+[cols="2,3", options="header"]
+|===
+|Action |Constrained to
+|`+eks:*+` |A single EKS cluster and its add-ons and node groups: `cluster/redpanda-<redpanda-id>`, `+addon/redpanda-<redpanda-id>/*+`, `+nodegroup/redpanda-<redpanda-id>/*+`.
+|`+s3:*+` |The cluster management bucket only.
+|`+autoscaling:*+` |Auto Scaling groups named `+redpanda-<redpanda-id>*+` and `+redpanda-agent-<redpanda-id>*+`.
+|===
+
+== Compute and Kubernetes
+
+Provisions and operates the EKS cluster, EC2 nodes, launch templates, and Auto Scaling groups that run the Redpanda data plane. The service-wide actions here (`+eks:*+`, `+autoscaling:*+`) are each scoped to your cluster's resources.
+
+=== Manage the EKS cluster
+
+*Scope:* Restricted to your cluster's EKS resources: `+arn:aws:eks:*:${local.aws_account_id}:cluster/redpanda-${var.redpanda_id}+`, its add-ons, and its node groups.
+
+[cols="3,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`+eks:*+` |Full |Required to manage the full lifecycle of the EKS cluster that hosts your Redpanda data plane, including cluster creation, upgrades, node group management, and decommissioning. Required to configure EKS add-ons, access entries, and identity mappings that Redpanda Cloud needs to operate the managed service.
+|===
+
+.Terraform
+[%collapsible]
+====
+[source,hcl]
 ----
 statement {
-   sid    = "RedpandaAgentActionsOnlyAllowedWithWildcardResources"
-   effect = "Allow"
-   actions = [
-     "ec2:CreateTags",
-     "ec2:DescribeAccountAttributes",
-     "ec2:DescribeImages",
-     "ec2:DescribeInstances",
-     "ec2:DescribeInstanceTypes",
-     "ec2:CreateLaunchTemplate",
-     "ec2:CreateLaunchTemplateVersion",
-     "ec2:DescribeLaunchTemplateVersions",
-     "ec2:DescribeLaunchTemplates",
-     "iam:ListPolicies",
-     "iam:ListRoles",
-     "iam:GetOpenIDConnectProvider",
-     "iam:DeleteOpenIDConnectProvider",
-     "autoscaling:DescribeScalingActivities",
-     "autoscaling:DescribeAutoScalingGroups",
-     "autoscaling:DescribeTags",
-     "autoscaling:DescribeTerminationPolicyTypes",
-     "autoscaling:DescribeInstanceRefreshes",
-     "autoscaling:DescribeLaunchConfigurations",
-     "iam:CreateServiceLinkedRole",
-     "ec2:CreatePlacementGroup",
-     "ec2:DeletePlacementGroup",
-     "ec2:DescribePlacementGroups",
-     "eks:DescribeNodegroup",
-     "eks:DeleteNodegroup"
-   ]
-   resources = [
-     "*",
-   ]
- }
+  sid    = "RedpandaAgentEKSCluster"
+  effect = "Allow"
+  actions = [
+    "eks:*",
+  ]
+  resources = [
+    "arn:aws:eks:*:${local.aws_account_id}:cluster/redpanda-${var.redpanda_id}",
+    "arn:aws:eks:*:${local.aws_account_id}:addon/redpanda-${var.redpanda_id}/*",
+    "arn:aws:eks:*:${local.aws_account_id}:nodegroup/redpanda-${var.redpanda_id}/*",
+  ]
+}
 ----
+====
 
-=== Run in EC2 instances
+=== Read the EKS node group service-linked role
 
-The following actions apply only to Redpanda agents running in AWS EC2 instances.
+*Scope:* Restricted to the AWS-managed service-linked role for EKS node groups: `arn:aws:iam::${local.aws_account_id}:role/aws-service-role/eks-nodegroup.amazonaws.com/AWSServiceRoleForAmazonEKSNodegroup`.
 
-.RedpandaAgentEC2RunInstances
-[,js]
+[cols="3,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`iam:GetRole` |Read |Required to read the AWS service-linked role that EKS uses to create managed node groups. Without it, node group creation fails with a permission error.
+|===
+
+.Terraform
+[%collapsible]
+====
+[source,hcl]
 ----
 statement {
-   sid    = "RedpandaAgentEC2RunInstances"
-   effect = "Allow"
-   actions = [
-     "ec2:RunInstances",
-   ]
-   resources = [
-     "arn:aws:ec2:*:${local.aws_account_id}:instance/*",
-     "arn:aws:ec2:*:${local.aws_account_id}:network-interface/*",
-     "arn:aws:ec2:*:${local.aws_account_id}:volume/*",
-     "arn:aws:ec2:*:${local.aws_account_id}:security-group/*",
-     "arn:aws:ec2:*:${local.aws_account_id}:subnet/*",
-     "arn:aws:ec2:*:${local.aws_account_id}:launch-template/*",
-     "arn:aws:ec2:*::image/*",
-   ]
- }
+  sid    = "RedpandaAgentEKSNodegroupRoleCreation"
+  effect = "Allow"
+  actions = [
+    "iam:GetRole",
+  ]
+  resources = [
+    "arn:aws:iam::${local.aws_account_id}:role/aws-service-role/eks-nodegroup.amazonaws.com/AWSServiceRoleForAmazonEKSNodegroup",
+  ]
+}
 ----
+====
 
-=== Delete launch templates
+=== Manage Auto Scaling groups
 
-The following actions apply only to Redpanda agents deleting AWS launch templates.
+*Scope:* Restricted to Auto Scaling groups named for your cluster: `+arn:aws:autoscaling:*:${local.aws_account_id}:autoScalingGroup:*:autoScalingGroupName/redpanda-${var.redpanda_id}*+` and `+.../redpanda-agent-${var.redpanda_id}*+`.
 
-.RedpandaAgentEC2RunInstances
-[,js]
+[cols="3,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`+autoscaling:*+` |Full |Required to manage the full lifecycle of the Auto Scaling groups that provide compute capacity for your Redpanda cluster, including creating, scaling, updating, refreshing, and tearing down node groups.
+|===
+
+.Terraform
+[%collapsible]
+====
+[source,hcl]
 ----
 statement {
-   sid    = "RedpandaAgentLaunchTemplateDeletion"
-   effect = "Allow"
-   actions = [
-     "ec2:DeleteLaunchTemplate",
-   ]
-   resources = [
-     "arn:aws:ec2:__:${local.aws_account_id}:launch-template/__",
-   ]
-   condition {
-     test     = "StringEquals"
-     variable = "ec2:ResourceTag/redpanda-id"
-     values = [
-       var.redpanda_id,
-     ]
-   }
- }
-
+  sid    = "RedpandaAgentAutoscaling"
+  effect = "Allow"
+  actions = [
+    "autoscaling:*",
+  ]
+  resources = [
+    "arn:aws:autoscaling:*:${local.aws_account_id}:autoScalingGroup:*:autoScalingGroupName/redpanda-${var.redpanda_id}*",
+    "arn:aws:autoscaling:*:${local.aws_account_id}:autoScalingGroup:*:autoScalingGroupName/redpanda-agent-${var.redpanda_id}*"
+  ]
+}
 ----
+====
+
+=== Read and tag Auto Scaling resources
+
+*Scope:* Account-wide (`+*+`). AWS does not allow these describe and tag actions to be constrained to specific resource ARNs.
+
+[cols="3,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`autoscaling:DescribeScalingActivities` |Read |Required to monitor scaling activity for the Auto Scaling groups that back your Redpanda cluster's node groups.
+|`autoscaling:DescribeAutoScalingGroups` |Read |Required to read the Auto Scaling groups that manage your Redpanda cluster's compute nodes.
+|`autoscaling:DescribeTags` |Read |Required to read tags on the Auto Scaling groups managing your Redpanda cluster's nodes.
+|`autoscaling:CreateOrUpdateTags` |Write |TODO(eng): confirm purpose. Tags Auto Scaling groups belonging to your Redpanda cluster.
+|`autoscaling:DeleteTags` |Delete |TODO(eng): confirm purpose. Removes tags from your Redpanda cluster's Auto Scaling groups.
+|`autoscaling:DescribeTerminationPolicyTypes` |Read |Required to configure appropriate node termination policies for your Redpanda cluster's Auto Scaling groups.
+|`autoscaling:DescribeInstanceRefreshes` |Read |Required to monitor instance refresh operations during upgrades and rolling updates of your Redpanda cluster nodes.
+|`autoscaling:DescribeLaunchConfigurations` |Read |Required to read the launch configurations associated with your Redpanda cluster's Auto Scaling groups.
+|===
+
+.Terraform
+[%collapsible]
+====
+[source,hcl]
+----
+statement {
+  sid    = "RedpandaAgentAutoScaling"
+  effect = "Allow"
+  actions = [
+    "autoscaling:DescribeScalingActivities",
+    "autoscaling:DescribeAutoScalingGroups",
+    "autoscaling:DescribeTags",
+    "autoscaling:CreateOrUpdateTags",
+    "autoscaling:DeleteTags",
+    "autoscaling:DescribeTerminationPolicyTypes",
+    "autoscaling:DescribeInstanceRefreshes",
+    "autoscaling:DescribeLaunchConfigurations",
+  ]
+  resources = [
+    "*",
+  ]
+}
+----
+====
+
+=== Launch EC2 instances
+
+*Scope:* Restricted to EC2 instance, network interface, volume, security group, subnet, launch template, and image resources in your account.
+
+[cols="3,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`ec2:RunInstances` |Write |Required to provision the EC2 instances that run your Redpanda broker and worker nodes.
+|===
+
+.Terraform
+[%collapsible]
+====
+[source,hcl]
+----
+statement {
+  sid    = "RedpandaAgentEC2RunInstances"
+  effect = "Allow"
+  actions = [
+    "ec2:RunInstances",
+  ]
+  resources = [
+    "arn:aws:ec2:*:${local.aws_account_id}:instance/*",
+    "arn:aws:ec2:*:${local.aws_account_id}:network-interface/*",
+    "arn:aws:ec2:*:${local.aws_account_id}:volume/*",
+    "arn:aws:ec2:*:${local.aws_account_id}:security-group/*",
+    "arn:aws:ec2:*:${local.aws_account_id}:subnet/*",
+    "arn:aws:ec2:*:${local.aws_account_id}:launch-template/*",
+    "arn:aws:ec2:*::image/*",
+  ]
+}
+----
+====
+
+=== Manage launch templates
+
+*Scope:* Restricted to launch templates in your account: `+arn:aws:ec2:*:${local.aws_account_id}:launch-template/*+`, further restricted by a condition on the `redpanda-id` resource tag.
+
+[cols="3,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`ec2:DeleteLaunchTemplate` |Delete |Required to clean up launch templates when you decommission your Redpanda cluster.
+|`ec2:ModifyLaunchTemplate` |Write |TODO(eng): confirm purpose. Updates launch templates for your Redpanda cluster's compute nodes.
+|===
+
+.Terraform
+[%collapsible]
+====
+[source,hcl]
+----
+statement {
+  sid    = "RedpandaAgentLaunchTemplateDeletion"
+  effect = "Allow"
+  actions = [
+    "ec2:DeleteLaunchTemplate",
+    "ec2:ModifyLaunchTemplate",
+  ]
+  resources = [
+    "arn:aws:ec2:*:${local.aws_account_id}:launch-template/*",
+  ]
+  condition {
+    test     = "StringEquals"
+    variable = "ec2:ResourceTag/redpanda-id"
+    values = [
+      var.redpanda_id,
+    ]
+  }
+}
+----
+====
+
+=== Terminate EC2 instances
+
+*Scope:* Account-wide (`+*+`), restricted by a condition on the `redpanda-id` resource tag so only instances belonging to your Redpanda cluster can be terminated.
+
+[cols="3,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`ec2:TerminateInstances` |Delete |TODO(eng): confirm purpose. Terminates EC2 instances tagged for your Redpanda cluster during scaling, node replacement, or decommissioning.
+|===
+
+.Terraform
+[%collapsible]
+====
+[source,hcl]
+----
+statement {
+  sid    = "RedpandaAgentTerminateInstances"
+  effect = "Allow"
+  actions = [
+    "ec2:TerminateInstances",
+  ]
+  condition {
+    test     = "StringEquals"
+    variable = "ec2:ResourceTag/redpanda-id"
+    values = [
+      var.redpanda_id,
+    ]
+  }
+  resources = [
+    "*",
+  ]
+}
+----
+====
+
+=== Reboot EC2 instances
+
+*Scope:* Account-wide (`+*+`), restricted by a condition on the `redpanda-id` resource tag so only instances belonging to your Redpanda cluster can be rebooted.
+
+[cols="3,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`ec2:RebootInstances` |Write |TODO(eng): confirm purpose. Reboots EC2 instances tagged for your Redpanda cluster during recovery or maintenance operations.
+|===
+
+.Terraform
+[%collapsible]
+====
+[source,hcl]
+----
+statement {
+  sid    = "RedpandaAgentRebootInstances"
+  effect = "Allow"
+  actions = [
+    "ec2:RebootInstances",
+  ]
+  condition {
+    test     = "StringEquals"
+    variable = "ec2:ResourceTag/redpanda-id"
+    values = [
+      var.redpanda_id,
+    ]
+  }
+  resources = [
+    "*",
+  ]
+}
+----
+====
+
+=== Read-only, tagging, and provisioning actions (wildcard resources)
+
+*Scope:* Account-wide (`+*+`). These are read-only describe calls, tag operations, launch-template creation, and service-linked role and placement-group actions that AWS does not allow to be constrained to specific resource ARNs.
+
+[cols="3,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`ec2:CreateTags` |Write |Required to tag AWS resources Redpanda Cloud provisions on your behalf so they are clearly identifiable as belonging to your Redpanda cluster.
+|`ec2:DeleteTags` |Delete |TODO(eng): confirm purpose. Removes tags from resources Redpanda provisioned for your cluster.
+|`ec2:DescribeTags` |Read |TODO(eng): confirm purpose. Reads tags on resources Redpanda provisioned for your cluster.
+|`ec2:DescribeAccountAttributes` |Read |Required to validate your AWS account supports the configuration needed to run your Redpanda cluster.
+|`ec2:DescribeImages` |Read |Required to look up the approved machine images used for Redpanda broker and worker nodes.
+|`ec2:DescribeInstances` |Read |Required to monitor the EC2 instances that run your Redpanda cluster and reconcile their state during operations.
+|`ec2:DescribeInstanceTypes` |Read |Required to validate that the requested instance types are available in your region before provisioning your Redpanda cluster.
+|`ec2:DescribeVolumes` |Read |TODO(eng): confirm purpose. Reads the EBS volumes attached to your Redpanda cluster's nodes.
+|`ec2:DescribeNetworkInterfaces` |Read |TODO(eng): confirm purpose. Reads the network interfaces used by your Redpanda cluster's nodes.
+|`ec2:CreateLaunchTemplate` |Write |Required to manage the launch templates that define how compute nodes for your Redpanda cluster are provisioned.
+|`ec2:CreateLaunchTemplateVersion` |Write |Required to update launch template versions when your Redpanda cluster is upgraded or reconfigured.
+|`ec2:DescribeLaunchTemplateVersions` |Read |Required to read launch template versions when reconciling or updating your Redpanda cluster's compute configuration.
+|`ec2:DescribeLaunchTemplates` |Read |Required to read the launch templates associated with your Redpanda cluster's compute nodes.
+|`iam:ListPolicies` |Read |Required to discover existing IAM policies when provisioning or reconciling your Redpanda cluster's IAM configuration.
+|`iam:ListRoles` |Read |Required to discover existing IAM roles when provisioning or reconciling your Redpanda cluster's IAM configuration.
+|`iam:GetRole` |Read |TODO(eng): confirm purpose. Reads IAM roles while reconciling your Redpanda cluster's IAM configuration.
+|`iam:GetOpenIDConnectProvider` |Read |Required to read the OIDC provider used to federate Redpanda workloads (such as EKS service accounts) with AWS IAM.
+|`iam:DeleteOpenIDConnectProvider` |Delete |Required to clean up the OIDC provider when you decommission your Redpanda cluster.
+|`iam:CreateServiceLinkedRole` |Write |Required to create the AWS service-linked roles needed by services (such as EKS and Auto Scaling) that run your Redpanda cluster.
+|`ec2:CreatePlacementGroup` |Write |Required to manage placement groups that optimize network performance and availability for your Redpanda broker nodes.
+|`ec2:DeletePlacementGroup` |Delete |Required to clean up placement groups when you decommission your Redpanda cluster.
+|`ec2:DescribePlacementGroups` |Read |Required to read placement groups used by your Redpanda cluster's compute nodes.
+|`eks:DescribeNodegroup` |Read |Required to read the EKS node groups that host your Redpanda cluster's workloads.
+|`eks:DeleteNodegroup` |Delete |Required to remove EKS node groups when scaling down or decommissioning your Redpanda cluster.
+|===
+
+.Terraform
+[%collapsible]
+====
+[source,hcl]
+----
+statement {
+  sid    = "RedpandaAgentActionsOnlyAllowedWithWildcardResources"
+  effect = "Allow"
+  actions = [
+    "ec2:CreateTags",
+    "ec2:DeleteTags",
+    "ec2:DescribeTags",
+    "ec2:DescribeAccountAttributes",
+    "ec2:DescribeImages",
+    "ec2:DescribeInstances",
+    "ec2:DescribeInstanceTypes",
+    "ec2:DescribeVolumes",
+    "ec2:DescribeNetworkInterfaces",
+    "ec2:CreateLaunchTemplate",
+    "ec2:CreateLaunchTemplateVersion",
+    "ec2:DescribeLaunchTemplateVersions",
+    "ec2:DescribeLaunchTemplates",
+    "iam:ListPolicies",
+    "iam:ListRoles",
+    "iam:GetRole",
+    "iam:GetOpenIDConnectProvider",
+    "iam:DeleteOpenIDConnectProvider",
+    "iam:CreateServiceLinkedRole",
+    "ec2:CreatePlacementGroup",
+    "ec2:DeletePlacementGroup",
+    "ec2:DescribePlacementGroups",
+    "eks:DescribeNodegroup",
+    "eks:DeleteNodegroup"
+  ]
+  resources = [
+    "*",
+  ]
+}
+----
+====
+
+== Networking and connectivity
+
+Creates and manages the VPC, subnets, routes, gateways, security groups, VPC endpoints and endpoint services, load balancers, VPC peering, and Route 53 DNS that isolate cluster traffic and provide connectivity.
+
+=== Manage the VPC
+
+*Scope:* Account-wide (`+*+`). AWS does not allow these VPC networking actions to be constrained to specific resource ARNs.
+
+[cols="3,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`ec2:DescribeVpcs` |Read |Required to read the VPC that hosts your Redpanda cluster and validate its configuration.
+|`ec2:DescribeVpcAttribute` |Read |Required to read VPC attributes (such as DNS settings) needed to run your Redpanda cluster.
+|`ec2:DescribeSecurityGroups` |Read |Required to read the security groups protecting your Redpanda cluster's network traffic.
+|`ec2:DescribeSecurityGroupRules` |Read |TODO(eng): confirm purpose. Reads the individual rules of your Redpanda cluster's security groups.
+|`ec2:CreateInternetGateway` |Write |Required to provision the internet gateway used for public connectivity to your Redpanda cluster when applicable.
+|`ec2:DeleteInternetGateway` |Delete |Required to remove the internet gateway when you decommission your Redpanda cluster.
+|`ec2:AttachInternetGateway` |Write |Required to attach the internet gateway to your Redpanda cluster's VPC.
+|`ec2:DescribeInternetGateways` |Read |Required to read the internet gateways associated with your Redpanda cluster's VPC.
+|`ec2:CreateNatGateway` |Write |Required to provision NAT gateways so private subnets in your Redpanda cluster's VPC can reach AWS APIs and other required services.
+|`ec2:DeleteNatGateway` |Delete |Required to remove NAT gateways when you decommission your Redpanda cluster.
+|`ec2:DescribeNatGateways` |Read |Required to read NAT gateways used by your Redpanda cluster's VPC.
+|`ec2:CreateRoute` |Write |Required to manage the network routes that direct traffic within and out of your Redpanda cluster's VPC.
+|`ec2:DeleteRoute` |Delete |Required to remove routes when reconfiguring or decommissioning your Redpanda cluster's network.
+|`ec2:CreateRouteTable` |Write |Required to manage the route tables that control traffic flow in your Redpanda cluster's VPC.
+|`ec2:DeleteRouteTable` |Delete |Required to remove route tables when you decommission your Redpanda cluster.
+|`ec2:DescribeRouteTables` |Read |Required to read the route tables in your Redpanda cluster's VPC.
+|`ec2:AssociateRouteTable` |Write |Required to associate route tables with subnets in your Redpanda cluster's VPC.
+|`ec2:CreateSubnet` |Write |Required to provision the subnets that host your Redpanda cluster's nodes across availability zones.
+|`ec2:DeleteSubnet` |Delete |Required to remove subnets when you decommission your Redpanda cluster.
+|`ec2:DescribeSubnets` |Read |Required to read the subnets that host your Redpanda cluster.
+|`ec2:DescribeVpcPeeringConnections` |Read |Required to read VPC peering connections between your network and your Redpanda cluster's VPC.
+|`ec2:ModifyVpcPeeringConnectionOptions` |Write |Required to configure DNS resolution and other options on VPC peering connections that link your network to your Redpanda cluster.
+|`ec2:DescribeNetworkAcls` |Read |Required to read the network ACLs in your Redpanda cluster's VPC.
+|`ec2:DescribeNetworkInterfaces` |Read |Required to read the network interfaces used by your Redpanda cluster's nodes and endpoints.
+|`ec2:AttachNetworkInterface` |Write |Required to attach network interfaces to your Redpanda cluster's compute nodes.
+|`ec2:DetachNetworkInterface` |Delete |Required to detach network interfaces during reconfiguration or decommissioning of your Redpanda cluster.
+|`ec2:DescribeAvailabilityZones` |Read |Required to determine which availability zones are available for placing your Redpanda cluster's nodes.
+|===
+
+.Terraform
+[%collapsible]
+====
+[source,hcl]
+----
+statement {
+  sid    = "RedpandaAgentVPCManagement"
+  effect = "Allow"
+  actions = [
+    "ec2:DescribeVpcs",
+    "ec2:DescribeVpcAttribute",
+    "ec2:DescribeSecurityGroups",
+    "ec2:DescribeSecurityGroupRules",
+    "ec2:CreateInternetGateway",
+    "ec2:DeleteInternetGateway",
+    "ec2:AttachInternetGateway",
+    "ec2:DescribeInternetGateways",
+    "ec2:CreateNatGateway",
+    "ec2:DeleteNatGateway",
+    "ec2:DescribeNatGateways",
+    "ec2:CreateRoute",
+    "ec2:DeleteRoute",
+    "ec2:CreateRouteTable",
+    "ec2:DeleteRouteTable",
+    "ec2:DescribeRouteTables",
+    "ec2:AssociateRouteTable",
+    "ec2:CreateSubnet",
+    "ec2:DeleteSubnet",
+    "ec2:DescribeSubnets",
+    "ec2:DescribeVpcPeeringConnections",
+    "ec2:ModifyVpcPeeringConnectionOptions",
+    "ec2:DescribeNetworkAcls",
+    "ec2:DescribeNetworkInterfaces",
+    "ec2:AttachNetworkInterface",
+    "ec2:DetachNetworkInterface",
+    "ec2:DescribeAvailabilityZones",
+  ]
+  resources = [
+    "*",
+  ]
+}
+----
+====
+
+=== Manage VPC endpoints, endpoint services, and load balancers
+
+*Scope:* Account-wide (`+*+`). AWS does not allow these VPC endpoint, endpoint service, and Elastic Load Balancing actions to be constrained to specific resource ARNs. These support private connectivity (such as PrivateLink) to your Redpanda cluster.
+
+[cols="3,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`ec2:CreateVpcEndpoint` |Write |Required to provision VPC endpoints (such as PrivateLink) so clients can connect privately to your Redpanda cluster and so your cluster can reach AWS services privately.
+|`ec2:ModifyVpcEndpoint` |Write |Required to update VPC endpoint configuration as your Redpanda cluster's private connectivity requirements evolve.
+|`ec2:DeleteVpcEndpoints` |Delete |Required to remove VPC endpoints when you decommission your Redpanda cluster or disable private connectivity.
+|`ec2:DescribeVpcEndpoints` |Read |Required to read the VPC endpoints associated with your Redpanda cluster.
+|`ec2:DescribeVpcEndpointServices` |Read |Required to discover VPC endpoint services when configuring private connectivity for your Redpanda cluster.
+|`ec2:AcceptVpcEndpointConnections` |Write |TODO(eng): confirm purpose. Accepts connections to the endpoint service that fronts your Redpanda cluster.
+|`ec2:CreateVpcEndpointConnectionNotification` |Write |TODO(eng): confirm purpose.
+|`ec2:CreateVpcEndpointServiceConfiguration` |Write |TODO(eng): confirm purpose. Creates the VPC endpoint service that exposes your Redpanda cluster over PrivateLink.
+|`ec2:DescribeVpcEndpointServiceConfigurations` |Read |TODO(eng): confirm purpose.
+|`ec2:ModifyVpcEndpointServiceConfiguration` |Write |TODO(eng): confirm purpose.
+|`ec2:DeleteVpcEndpointServiceConfigurations` |Delete |TODO(eng): confirm purpose.
+|`ec2:DeleteVpcEndpointConnectionNotifications` |Delete |TODO(eng): confirm purpose.
+|`ec2:DescribeVpcEndpointConnectionNotifications` |Read |TODO(eng): confirm purpose.
+|`ec2:DescribeVpcEndpointConnections` |Read |TODO(eng): confirm purpose.
+|`ec2:DescribeVpcEndpointServicePermissions` |Read |TODO(eng): confirm purpose.
+|`ec2:ModifyVpcEndpointConnectionNotification` |Write |TODO(eng): confirm purpose.
+|`ec2:ModifyVpcEndpointServicePayerResponsibility` |Write |TODO(eng): confirm purpose.
+|`ec2:ModifyVpcEndpointServicePermissions` |Write |TODO(eng): confirm purpose.
+|`ec2:RejectVpcEndpointConnections` |Write |TODO(eng): confirm purpose.
+|`ec2:StartVpcEndpointServicePrivateDnsVerification` |Write |TODO(eng): confirm purpose.
+|`vpce:AllowMultiRegion` |Write |TODO(eng): confirm purpose.
+|`elasticloadbalancing:DescribeLoadBalancers` |Read |TODO(eng): confirm purpose. Reads the load balancers that front your Redpanda cluster's endpoints.
+|`elasticloadbalancing:CreateListener` |Write |TODO(eng): confirm purpose.
+|`elasticloadbalancing:DeleteListener` |Delete |TODO(eng): confirm purpose.
+|`elasticloadbalancing:DescribeListeners` |Read |TODO(eng): confirm purpose.
+|`elasticloadbalancing:DescribeListenerAttributes` |Read |TODO(eng): confirm purpose.
+|`elasticloadbalancing:CreateTargetGroup` |Write |TODO(eng): confirm purpose.
+|`elasticloadbalancing:DeleteTargetGroup` |Delete |TODO(eng): confirm purpose.
+|`elasticloadbalancing:DescribeTargetGroups` |Read |TODO(eng): confirm purpose.
+|`elasticloadbalancing:RegisterTargets` |Write |TODO(eng): confirm purpose.
+|`elasticloadbalancing:DescribeTags` |Read |TODO(eng): confirm purpose.
+|`elasticloadbalancing:DescribeLoadBalancerAttributes` |Read |TODO(eng): confirm purpose.
+|`elasticloadbalancing:AddTags` |Write |TODO(eng): confirm purpose.
+|`elasticloadbalancing:RemoveTags` |Delete |TODO(eng): confirm purpose.
+|`elasticloadbalancing:DescribeTargetGroupAttributes` |Read |TODO(eng): confirm purpose.
+|`elasticloadbalancing:ModifyTargetGroupAttributes` |Write |TODO(eng): confirm purpose.
+|===
+
+.Terraform
+[%collapsible]
+====
+[source,hcl]
+----
+statement {
+  sid    = "RedpandaAgentVPCEndpointService"
+  effect = "Allow"
+  actions = [
+    "ec2:CreateVpcEndpoint",
+    "ec2:ModifyVpcEndpoint",
+    "ec2:DeleteVpcEndpoints",
+    "ec2:DescribeVpcEndpoints",
+    "ec2:DescribeVpcEndpointServices",
+    "ec2:AcceptVpcEndpointConnections",
+    "ec2:CreateVpcEndpointConnectionNotification",
+    "ec2:CreateVpcEndpointServiceConfiguration",
+    "ec2:DescribeVpcEndpointServiceConfigurations",
+    "ec2:ModifyVpcEndpointServiceConfiguration",
+    "ec2:DeleteVpcEndpointServiceConfigurations",
+    "ec2:DeleteVpcEndpointConnectionNotifications",
+    "ec2:DescribeVpcEndpointConnectionNotifications",
+    "ec2:DescribeVpcEndpointConnections",
+    "ec2:DescribeVpcEndpointServicePermissions",
+    "ec2:ModifyVpcEndpointConnectionNotification",
+    "ec2:ModifyVpcEndpointServiceConfiguration",
+    "ec2:ModifyVpcEndpointServicePayerResponsibility",
+    "ec2:ModifyVpcEndpointServicePermissions",
+    "ec2:RejectVpcEndpointConnections",
+    "ec2:StartVpcEndpointServicePrivateDnsVerification",
+    "vpce:AllowMultiRegion",
+    "elasticloadbalancing:DescribeLoadBalancers",
+    "elasticloadbalancing:CreateListener",
+    "elasticloadbalancing:DeleteListener",
+    "elasticloadbalancing:DescribeListeners",
+    "elasticloadbalancing:DescribeListenerAttributes",
+    "elasticloadbalancing:CreateTargetGroup",
+    "elasticloadbalancing:DeleteTargetGroup",
+    "elasticloadbalancing:DescribeTargetGroups",
+    "elasticloadbalancing:RegisterTargets",
+    "elasticloadbalancing:DescribeTags",
+    "elasticloadbalancing:DescribeLoadBalancerAttributes",
+    "elasticloadbalancing:AddTags",
+    "elasticloadbalancing:RemoveTags",
+    "elasticloadbalancing:DescribeTargetGroupAttributes",
+    "elasticloadbalancing:ModifyTargetGroupAttributes",
+  ]
+  resources = [
+    "*",
+  ]
+}
+----
+====
 
 === Manage security groups
 
-The following actions apply only to Redpanda agents managing AWS security groups.
+*Scope:* Restricted to security groups in your account and your cluster's VPC: `+arn:aws:ec2:*:${local.aws_account_id}:security-group/*+` and `+arn:aws:ec2:*:${local.aws_account_id}:vpc/${local.network_config.vpc_id}+`.
 
-.RedpandaAgentSecurityGroups
-[,js]
+[cols="3,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`ec2:AuthorizeSecurityGroupEgress` |Write |Required to manage the network security rules that control outbound traffic from your Redpanda cluster.
+|`ec2:AuthorizeSecurityGroupIngress` |Write |Required to manage the network security rules that control inbound traffic to your Redpanda cluster (such as Kafka client connections).
+|`ec2:CreateSecurityGroup` |Write |Required to create the security groups that isolate and protect your Redpanda cluster's network traffic.
+|`ec2:DeleteSecurityGroup` |Delete |Required to remove security groups when you decommission your Redpanda cluster.
+|`ec2:RevokeSecurityGroupEgress` |Delete |Required to remove outbound network rules when reconfiguring or decommissioning your Redpanda cluster.
+|`ec2:RevokeSecurityGroupIngress` |Delete |Required to remove inbound network rules when reconfiguring or decommissioning your Redpanda cluster.
+|`ec2:UpdateSecurityGroupRuleDescriptionsIngress` |Write |Required to keep inbound security group rule descriptions accurate as your Redpanda cluster's network configuration evolves.
+|`ec2:UpdateSecurityGroupRuleDescriptionsEgress` |Write |Required to keep outbound security group rule descriptions accurate as your Redpanda cluster's network configuration evolves.
+|`ec2:ModifySecurityGroupRules` |Write |Required to update security group rules as your Redpanda cluster's network access requirements change.
+|===
+
+.Terraform
+[%collapsible]
+====
+[source,hcl]
 ----
 statement {
-   sid    = "RedpandaAgentSecurityGroups"
-   effect = "Allow"
-   actions = [
-     "ec2:AuthorizeSecurityGroupEgress",
-     "ec2:AuthorizeSecurityGroupIngress",
-     "ec2:CreateSecurityGroup",
-     "ec2:DeleteSecurityGroup",
-     "ec2:RevokeSecurityGroupEgress",
-     "ec2:RevokeSecurityGroupIngress",
-     "ec2:UpdateSecurityGroupRuleDescriptionsIngress",
-     "ec2:UpdateSecurityGroupRuleDescriptionsEgress",
-     "ec2:ModifySecurityGroupRules",
-   ]
-   resources = [
-     "arn:aws:ec2:*:${local.aws_account_id}:security-group/*",
-     "arn:aws:ec2:*:${local.aws_account_id}:vpc/${local.network_config.vpc_id}",
-   ]
- }
+  sid    = "RedpandaAgentSecurityGroups"
+  effect = "Allow"
+  actions = [
+    "ec2:AuthorizeSecurityGroupEgress",
+    "ec2:AuthorizeSecurityGroupIngress",
+    "ec2:CreateSecurityGroup",
+    "ec2:DeleteSecurityGroup",
+    "ec2:RevokeSecurityGroupEgress",
+    "ec2:RevokeSecurityGroupIngress",
+    "ec2:UpdateSecurityGroupRuleDescriptionsIngress",
+    "ec2:UpdateSecurityGroupRuleDescriptionsEgress",
+    "ec2:ModifySecurityGroupRules",
+  ]
+  resources = [
+    "arn:aws:ec2:*:${local.aws_account_id}:security-group/*",
+    "arn:aws:ec2:*:${local.aws_account_id}:vpc/${local.network_config.vpc_id}",
+  ]
+}
 ----
-
-=== Manage EKS clusters
-
-The following actions apply only to Redpanda agents managing Amazon Elastic
-Kubernetes Service (Amazon EKS) clusters.
-
-.RedpandaAgentEKSCluster
-[,js]
-----
-statement {
-   sid    = "RedpandaAgentEKSCluster"
-   effect = "Allow"
-   actions = [
-     "eks:__",
-   ]
-   resources = [
-     "arn:aws:eks:__:${local.aws_account_id}:cluster/redpanda-${var.redpanda_id}",
-   ]
- }
-----
-
-=== Manage instance profiles
-
-The following actions apply only to Redpanda agents managing AWS instance profiles.
-
-.RedpandaAgentInstanceProfile
-[,js]
-----
-statement {
-   sid    = "RedpandaAgentInstanceProfile"
-   effect = "Allow"
-   actions = [
-     "iam:AddRoleToInstanceProfile",
-     "iam:RemoveRoleFromInstanceProfile",
-     "iam:CreateInstanceProfile",
-     "iam:DeleteInstanceProfile",
-     "iam:GetInstanceProfile",
-     "iam:TagInstanceProfile",
-   ]
-   resources = [
-     "arn:aws:iam::${local.aws_account_id}:instance-profile/redpanda-${var.redpanda_id}*",
-     "arn:aws:iam::${local.aws_account_id}:instance-profile/redpanda-agent-${var.redpanda_id}*",
-   ]
- }
-----
-
-=== Create EKS OIDC providers
-
-The following actions apply only to Redpanda agents creating and accessing AWS
-EKS OIDC providers.
-
-.RedpandaAgentEKSOIDCProvider
-[,js]
-----
-statement {
-   sid    = "RedpandaAgentEKSOIDCProvider"
-   effect = "Allow"
-   actions = [
-     "iam:CreateOpenIDConnectProvider",
-     "iam:TagOpenIDConnectProvider",
-     "iam:UntagOpenIDConnectProvider",
-   ]
-   resources = [
-     "arn:aws:iam::${local.aws_account_id}:oidc-provider/oidc.eks.*.amazonaws.com",
-   ]
- }
-
-statement {
-    sid    = "RedpandaAgentEKSOIDCProviderCACertThumbprintUpdate"
-    effect = "Allow"
-    actions = [
-      "iam:UpdateOpenIDConnectProviderThumbprint",
-    ]
-    resources = [
-      "arn:aws:iam::${local.aws_account_id}:oidc-provider/oidc.eks.*.amazonaws.com",
-      "arn:aws:iam::${local.aws_account_id}:oidc-provider/oidc.eks.*.amazonaws.com/id/*",
-    ]
-    condition {
-      test     = "StringEquals"
-      variable = "aws:ResourceTag/redpanda-id"
-      values = [
-        var.redpanda_id,
-      ]
-    }
-  }
-----
-
-=== Manage IAM policies
-
-The following actions apply only to Redpanda agents managing AWS IAM policies.
-
-.RedpandaAgentIAMPolicies
-[,js]
-----
-statement {
-   sid    = "RedpandaAgentIAMPolicies"
-   effect = "Allow"
-   actions = [
-     "iam:CreatePolicy",
-     "iam:DeletePolicy",
-     "iam:GetPolicy",
-     "iam:GetPolicyVersion",
-     "iam:ListPolicyVersions",
-     "iam:TagPolicy"
-   ]
-   resources = [
-     "arn:aws:iam::${local.aws_account_id}:policy/aws_ebs_csi_driver-redpanda-${var.redpanda_id}",
-     "arn:aws:iam::${local.aws_account_id}:policy/cert_manager_policy-${var.redpanda_id}",
-     "arn:aws:iam::${local.aws_account_id}:policy/external_dns_policy-${var.redpanda_id}",
-     "arn:aws:iam::${local.aws_account_id}:policy/load_balancer_controller-${var.redpanda_id}",
-     "arn:aws:iam::${local.aws_account_id}:policy/redpanda-agent-${var.redpanda_id}*",
-     "arn:aws:iam::${local.aws_account_id}:policy/redpanda-${var.redpanda_id}-autoscaler",
-     "arn:aws:iam::${local.aws_account_id}:policy/redpanda-cloud-storage-manager-${var.redpanda_id}",
-     "arn:aws:iam::${local.aws_account_id}:policy/secrets_manager_policy-${var.redpanda_id}",
-     "arn:aws:iam::${local.aws_account_id}:policy/redpanda-connectors-secrets-manager-${var.redpanda_id}",
-     "arn:aws:iam::${local.aws_account_id}:policy/redpanda-console-secrets-manager-${var.redpanda_id}",
-   ]
- }
-----
-
-=== Manage IAM roles
-
-The following actions apply only to Redpanda agents managing AWS IAM roles.
-
-.RedpandaAgentIAMRoleManagement
-[,js]
-----
-statement {
-   sid    = "RedpandaAgentIAMRoleManagement"
-   effect = "Allow"
-   actions = [
-     "iam:CreateRole",
-     "iam:DeleteRole",
-     "iam:AttachRolePolicy",
-     "iam:DetachRolePolicy",
-     "iam:GetRole",
-     "iam:TagRole",
-     "iam:PassRole",
-     "iam:ListAttachedRolePolicies",
-     "iam:ListInstanceProfilesForRole",
-     "iam:ListRolePolicies",
-   ]
-   resources = [
-     "arn:aws:iam::${local.aws_account_id}:role/redpanda-cloud-storage-manager-${var.redpanda_id}",
-     "arn:aws:iam::${local.aws_account_id}:role/redpanda-agent-${var.redpanda_id}_",
-     "arn:aws:iam::${local.aws_account_id}:role/redpanda-${var.redpanda_id}_",
-     "arn:aws:iam::${local.aws_account_id}:role/redpanda-connectors-secrets-manager-${var.redpanda_id}_",
-     "arn:aws:iam::${local.aws_account_id}:role/redpanda-console-secrets-manager-${var.redpanda_id}_",
-   ]
- }
-----
-
-=== Manage S3 buckets
-
-The following actions apply only to Redpanda agents managing AWS Simple
-Storage Service (S3) buckets.
-
-.RedpandaAgentS3ManagementBucket
-[,js]
-----
-statement {
-   sid    = "RedpandaAgentS3ManagementBucket"
-   effect = "Allow"
-   actions = [
-     "s3:*",
-   ]
-   resources = [
-     data.aws_s3_bucket.management.arn,
-     "${data.aws_s3_bucket.management.arn}/*",
-   ]
- }
-----
-
-=== Manage S3 cloud bucket storage
-
-The following actions apply only to Redpanda agents managing AWS S3 cloud bucket
-storage.
-
-.RedpandaAgentS3ManagementBucket
-[,js]
-----
- statement {
-   sid    = "RedpandaAgentS3CloudStorageBucket"
-   effect = "Allow"
-   actions = [
-     "s3:List*",
-     "s3:Get*",
-     "s3:CreateBucket",
-     "s3:DeleteBucket",
-     "s3:PutBucketPolicy",
-     "s3:DeleteBucketPolicy",
-   ]
-   resources = [
-     local.redpanda_cloud_storage_bucket_arn,
-     "${local.redpanda_cloud_storage_bucket_arn}/*",
-   ]
- }
-----
-
-=== Manage virtual private cloud (VPC)
-
-The following actions apply only to Redpanda agents managing AWS VPCs.
-
-.RedpandaAgentVPCManagement
-[,js]
-----
-statement {
-   sid    = "RedpandaAgentVPCManagement"
-   effect = "Allow"
-   actions = [
-     "ec2:DescribeVpcs",
-     "ec2:DescribeVpcAttribute",
-     "ec2:DescribeSecurityGroups",
-     "ec2:CreateInternetGateway",
-     "ec2:DeleteInternetGateway",
-     "ec2:AttachInternetGateway",
-     "ec2:DescribeInternetGateways",
-     "ec2:CreateNatGateway",
-     "ec2:DeleteNatGateway",
-     "ec2:DescribeNatGateways",
-     "ec2:CreateRoute",
-     "ec2:DeleteRoute",
-     "ec2:CreateRouteTable",
-     "ec2:DeleteRouteTable",
-     "ec2:DescribeRouteTables",
-     "ec2:AssociateRouteTable",
-     "ec2:CreateSubnet",
-     "ec2:DeleteSubnet",
-     "ec2:DescribeSubnets",
-     "ec2:CreateVpcEndpoint",
-     "ec2:ModifyVpcEndpoint",
-     "ec2:DeleteVpcEndpoints",
-     "ec2:DescribeVpcEndpoints",
-     "ec2:DescribeVpcEndpointServices",
-     "ec2:DescribeVpcPeeringConnections",
-     "ec2:ModifyVpcPeeringConnectionOptions",
-     "ec2:DescribeNetworkAcls",
-     "ec2:DescribeNetworkInterfaces",
-     "ec2:AttachNetworkInterface",
-     "ec2:DetachNetworkInterface",
-     "ec2:DescribeAvailabilityZones",
-   ]
-   resources = [
-     "*",
-   ]
- }
-----
-
-=== Delete network interface
-
-The following actions apply only to Redpanda agents deleting AWS network interfaces.
-
-.RedpandaAgentNetworkInterfaceDelete
-[,js]
-----
-statement {
-   sid    = "RedpandaAgentNetworkInterfaceDelete"
-   effect = "Allow"
-   actions = [
-     "ec2:DeleteNetworkInterface",
-   ]
-   resources = [
-     "arn:aws:ec2:__:${local.aws_account_id}:network-interface/__",
-   ]
- }
-----
+====
 
 === Create VPC peering
 
-The following actions apply only to Redpanda agents creating AWS VPC peering.
+*Scope:* Restricted to your cluster's VPC: `+arn:aws:ec2:*:${local.aws_account_id}:vpc/${local.network_config.vpc_id}+`.
 
-.RedpandaAgentVPCPeeringsCreate
-[,js]
+[cols="3,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`ec2:CreateVpcPeeringConnection` |Write |Required to establish VPC peering between your network and your Redpanda cluster's VPC for private connectivity.
+|===
+
+.Terraform
+[%collapsible]
+====
+[source,hcl]
 ----
 statement {
-   sid    = "RedpandaAgentVPCPeeringsCreate"
-   effect = "Allow"
-   actions = [
-     "ec2:CreateVpcPeeringConnection",
-   ]
-   resources = [
-     "arn:aws:ec2:*:${local.aws_account_id}:vpc/${local.network_config.vpc_id}",
-   ]
- }
+  sid    = "RedpandaAgentVPCPeeringsCreate"
+  effect = "Allow"
+  actions = [
+    "ec2:CreateVpcPeeringConnection",
+  ]
+  resources = [
+    "arn:aws:ec2:*:${local.aws_account_id}:vpc/${local.network_config.vpc_id}",
+  ]
+}
 ----
+====
 
 === Delete VPC peering
 
-The following actions apply only to Redpanda agents deleting AWS VPC peering.
+*Scope:* Restricted to VPC peering connections in your account: `+arn:aws:ec2:*:${local.aws_account_id}:vpc-peering-connection/*+`, further restricted by a condition on the `redpanda-id` resource tag.
 
-.RedpandaAgentVPCPeeringsDelete
-[,js]
+[cols="3,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`ec2:DeleteVpcPeeringConnection` |Delete |Required to tear down VPC peering when you disable private connectivity or decommission your Redpanda cluster.
+|`ec2:ModifyVpcPeeringConnectionOptions` |Write |Required to configure DNS resolution and other options on VPC peering connections that link your network to your Redpanda cluster.
+|===
+
+.Terraform
+[%collapsible]
+====
+[source,hcl]
 ----
 statement {
-   sid    = "RedpandaAgentVPCPeeringsDelete"
-   effect = "Allow"
-   actions = [
-     "ec2:DeleteVpcPeeringConnection",
-     "ec2:ModifyVpcPeeringConnectionOptions",
-   ]
-   resources = [
-     "arn:aws:ec2:__:${local.aws_account_id}:vpc-peering-connection/__",
-   ]
-   condition {
-     test     = "StringEquals"
-     variable = "ec2:ResourceTag/redpanda-id"
-     values = [
-       var.redpanda_id,
-     ]
-   }
- }
+  sid    = "RedpandaAgentVPCPeeringsDelete"
+  effect = "Allow"
+  actions = [
+    "ec2:DeleteVpcPeeringConnection",
+    "ec2:ModifyVpcPeeringConnectionOptions",
+  ]
+  resources = [
+    "arn:aws:ec2:*:${local.aws_account_id}:vpc-peering-connection/*",
+  ]
+  condition {
+    test     = "StringEquals"
+    variable = "ec2:ResourceTag/redpanda-id"
+    values = [
+      var.redpanda_id,
+    ]
+  }
+}
 ----
+====
 
-=== Manage DynamoDB Terraform backend
+=== Delete network interfaces
 
-The following actions apply only to Redpanda agents managing the AWS DynamoDB
-Terraform backend.
+*Scope:* Restricted to network interfaces in your account: `+arn:aws:ec2:*:${local.aws_account_id}:network-interface/*+`.
 
-.RedpandaAgentTFBackend
-[,js]
-----
-statement {
-   sid    = "RedpandaAgentTFBackend"
-   effect = "Allow"
-   actions = [
-     "dynamodb:GetItem",
-     "dynamodb:PutItem",
-     "dynamodb:DeleteItem",
-   ]
-   resources = [
-     "arn:aws:dynamodb:*:${local.aws_account_id}:table/rp-${local.aws_account_id}*",
-   ]
- }
-----
+[cols="3,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`ec2:DeleteNetworkInterface` |Delete |Required to remove network interfaces when reconfiguring or decommissioning your Redpanda cluster.
+|===
 
-=== Manage Route 53
-
-The following actions apply only to Redpanda agents managing the AWS Route 53
-service.
-
-.RedpandaAgentRoute53Management
-[,js]
+.Terraform
+[%collapsible]
+====
+[source,hcl]
 ----
 statement {
-   sid    = "RedpandaAgentRoute53Management"
-   effect = "Allow"
-   actions = [
-     "route53:CreateHostedZone",
-     "route53:GetChange",
-     "route53:ChangeTagsForResource",
-     "route53:GetHostedZone",
-     "route53:ListTagsForResource",
-     "route53:ListResourceRecordSets",
-     "route53:ChangeResourceRecordSets",
-     "route53:GetDNSSEC",
-     "route53:DeleteHostedZone",
-   ]
-   resources = [
-     "*",
-   ]
- }
+  sid    = "RedpandaAgentNetworkInterfaceDelete"
+  effect = "Allow"
+  actions = [
+    "ec2:DeleteNetworkInterface",
+  ]
+  resources = [
+    "arn:aws:ec2:*:${local.aws_account_id}:network-interface/*",
+  ]
+}
 ----
+====
 
-=== Manage Auto Scaling
+=== Manage Route 53 DNS
 
-The following actions apply only to Redpanda agents managing the AWS Auto Scaling.
+*Scope:* Account-wide (`+*+`). AWS does not allow these Route 53 actions to be constrained to specific resource ARNs.
 
-.RedpandaAgentAutoscaling
-[,js]
+[cols="3,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`route53:CreateHostedZone` |Write |Required to create the DNS hosted zone used for your Redpanda cluster's endpoints.
+|`route53:GetChange` |Read |Required to track the status of DNS record changes made for your Redpanda cluster.
+|`route53:ChangeTagsForResource` |Write |Required to tag Route 53 resources so they are clearly identifiable as belonging to your Redpanda cluster.
+|`route53:GetHostedZone` |Read |Required to read the DNS hosted zone associated with your Redpanda cluster.
+|`route53:ListTagsForResource` |Read |Required to read tags on Route 53 resources during reconciliation of your Redpanda cluster's DNS configuration.
+|`route53:ListResourceRecordSets` |Read |Required to read the DNS records that resolve your Redpanda cluster's endpoints.
+|`route53:ChangeResourceRecordSets` |Write |Required to manage the DNS records that resolve your Redpanda cluster's Kafka, HTTP, and admin endpoints.
+|`route53:GetDNSSEC` |Read |Required to read DNSSEC configuration on the hosted zone used by your Redpanda cluster.
+|`route53:DeleteHostedZone` |Delete |Required to remove the DNS hosted zone when you decommission your Redpanda cluster.
+|===
+
+.Terraform
+[%collapsible]
+====
+[source,hcl]
 ----
 statement {
-   sid    = "RedpandaAgentAutoscaling"
-   effect = "Allow"
-   actions = [
-     "autoscaling:*",
-   ]
-   resources = [
-     "arn:aws:autoscaling:*:${local.aws_account_id}:autoScalingGroup:*:autoScalingGroupName/redpanda-${var.redpanda_id}*",
-     "arn:aws:autoscaling:*:${local.aws_account_id}:autoScalingGroup:*:autoScalingGroupName/redpanda-agent-${var.redpanda_id}*"
-   ]
- }
+  sid    = "RedpandaAgentRoute53Management"
+  effect = "Allow"
+  actions = [
+    "route53:CreateHostedZone",
+    "route53:GetChange",
+    "route53:ChangeTagsForResource",
+    "route53:GetHostedZone",
+    "route53:ListTagsForResource",
+    "route53:ListResourceRecordSets",
+    "route53:ChangeResourceRecordSets",
+    "route53:GetDNSSEC",
+    "route53:DeleteHostedZone",
+  ]
+  resources = [
+    "*",
+  ]
+}
 ----
+====
+
+== Storage
+
+Manages the S3 buckets backing Tiered Storage and the cluster management bucket. The `+s3:*+` action is scoped to the specific management bucket.
+
+=== Manage the S3 management bucket
+
+*Scope:* Restricted to the cluster management bucket: `data.aws_s3_bucket.management.arn` and its objects.
+
+[cols="3,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`+s3:*+` |Full |Required to manage the S3 bucket that backs your Redpanda cluster's management data, including full lifecycle (create, configure, read, write, delete).
+|===
+
+.Terraform
+[%collapsible]
+====
+[source,hcl]
+----
+statement {
+  sid    = "RedpandaAgentS3ManagementBucket"
+  effect = "Allow"
+  actions = [
+    "s3:*",
+  ]
+  resources = [
+    data.aws_s3_bucket.management.arn,
+    "${data.aws_s3_bucket.management.arn}/*",
+  ]
+}
+----
+====
+
+=== Manage the S3 Tiered Storage bucket
+
+*Scope:* Restricted to the cluster's cloud storage bucket: `local.redpanda_cloud_storage_bucket_arn` and its objects.
+
+[cols="3,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`s3:PutBucketPolicy` |Write |Required to apply the bucket policies that restrict access to your Redpanda cluster's Tiered Storage bucket.
+|`s3:DeleteBucketPolicy` |Delete |Required to remove bucket policies during reconfiguration or cleanup of your Redpanda cluster's storage.
+|`+s3:List*+` |Read |Required to list objects used by your Redpanda cluster for Tiered Storage and backups.
+|`+s3:Get*+` |Read |Required to read bucket configuration and objects used by your Redpanda cluster for Tiered Storage and backups.
+|`s3:CreateBucket` |Write |Required to create the S3 bucket that backs your Redpanda cluster's Tiered Storage and backups.
+|`s3:DeleteBucket` |Delete |Required to remove the S3 bucket when you decommission your Redpanda cluster.
+|===
+
+.Terraform
+[%collapsible]
+====
+[source,hcl]
+----
+statement {
+  sid    = "RedpandaAgentS3CloudStorageBucket"
+  effect = "Allow"
+  actions = [
+    "s3:PutBucketPolicy",
+    "s3:DeleteBucketPolicy",
+    "s3:List*",
+    "s3:Get*",
+    "s3:CreateBucket",
+    "s3:DeleteBucket"
+  ]
+  resources = [
+    local.redpanda_cloud_storage_bucket_arn,
+    "${local.redpanda_cloud_storage_bucket_arn}/*",
+  ]
+}
+----
+====
+
+== Identity and access (IAM)
+
+Creates the least-privilege roles, policies, instance profiles, and OIDC federation the cluster components need. Every statement here is scoped to resources named for your cluster.
+
+=== Manage IAM roles
+
+*Scope:* Restricted to IAM roles named for your cluster (storage manager, agent, connectors, and console roles).
+
+[cols="3,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`iam:CreateRole` |Write |Required to create the IAM roles used by your Redpanda cluster's control plane, data plane, and workload components.
+|`iam:DeleteRole` |Delete |Required to remove IAM roles when you decommission your Redpanda cluster.
+|`iam:AttachRolePolicy` |Write |Required to attach the necessary IAM policies to your Redpanda cluster's roles.
+|`iam:DetachRolePolicy` |Delete |Required to detach IAM policies from roles during reconfiguration or cleanup.
+|`iam:TagRole` |Write |Required to tag IAM roles so they are clearly identifiable as belonging to your Redpanda cluster.
+|`iam:UntagRole` |Delete |TODO(eng): confirm purpose. Removes tags from your Redpanda cluster's IAM roles.
+|`iam:GetRole` |Read |Required to read IAM roles while reconciling your Redpanda cluster's IAM configuration.
+|`iam:GetRolePolicy` |Read |TODO(eng): confirm purpose. Reads inline policies on your Redpanda cluster's IAM roles.
+|`iam:PassRole` |Write |Required to allow AWS services (such as EC2 and EKS) to assume the IAM roles that Redpanda Cloud provisions for your cluster.
+|`iam:UpdateAssumeRolePolicy` |Write |TODO(eng): confirm purpose. Updates the trust policy on your Redpanda cluster's IAM roles.
+|`iam:ListAttachedRolePolicies` |Read |Required to read the policies attached to your Redpanda cluster's IAM roles during reconciliation.
+|`iam:ListInstanceProfilesForRole` |Read |Required to read the instance profiles associated with your Redpanda cluster's IAM roles during reconciliation.
+|`iam:ListRolePolicies` |Read |Required to read the inline policies attached to your Redpanda cluster's IAM roles during reconciliation.
+|===
+
+.Terraform
+[%collapsible]
+====
+[source,hcl]
+----
+statement {
+  sid    = "RedpandaAgentIAMRoleManagement"
+  effect = "Allow"
+  actions = [
+    "iam:CreateRole",
+    "iam:DeleteRole",
+    "iam:AttachRolePolicy",
+    "iam:DetachRolePolicy",
+    "iam:TagRole",
+    "iam:UntagRole",
+    "iam:GetRole",
+    "iam:GetRolePolicy",
+    "iam:PassRole",
+    "iam:UpdateAssumeRolePolicy",
+    "iam:ListAttachedRolePolicies",
+    "iam:ListInstanceProfilesForRole",
+    "iam:ListRolePolicies",
+  ]
+  resources = [
+    "arn:aws:iam::${local.aws_account_id}:role/redpanda-cloud-storage-manager-${var.redpanda_id}",
+    "arn:aws:iam::${local.aws_account_id}:role/redpanda-agent-${var.redpanda_id}*",
+    "arn:aws:iam::${local.aws_account_id}:role/redpanda-${var.redpanda_id}*",
+    "arn:aws:iam::${local.aws_account_id}:role/redpanda-connectors-secrets-manager-${var.redpanda_id}*",
+    "arn:aws:iam::${local.aws_account_id}:role/redpanda-console-secrets-manager-${var.redpanda_id}*",
+  ]
+}
+----
+====
+
+=== Manage IAM policies
+
+*Scope:* Restricted to IAM policies named for your cluster (agent, autoscaler, storage manager, glue manager, secrets managers, and add-on policies).
+
+[cols="3,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`iam:CreatePolicy` |Write |Required to create the IAM policies that grant your Redpanda cluster the minimum AWS permissions it needs to operate.
+|`iam:CreatePolicyVersion` |Write |TODO(eng): confirm purpose. Creates new versions of your Redpanda cluster's IAM policies during updates.
+|`iam:DeletePolicy` |Delete |Required to remove IAM policies when you decommission your Redpanda cluster.
+|`iam:DeletePolicyVersion` |Delete |TODO(eng): confirm purpose. Removes old versions of your Redpanda cluster's IAM policies.
+|`iam:GetPolicy` |Read |Required to read IAM policies while reconciling your Redpanda cluster's IAM configuration.
+|`iam:GetPolicyVersion` |Read |Required to read specific versions of IAM policies while reconciling your Redpanda cluster's IAM configuration.
+|`iam:ListPolicyVersions` |Read |Required to list IAM policy versions while reconciling and updating your Redpanda cluster's IAM configuration.
+|`iam:TagPolicy` |Write |Required to tag IAM policies so they are clearly identifiable as belonging to your Redpanda cluster.
+|`iam:UntagPolicy` |Delete |TODO(eng): confirm purpose. Removes tags from your Redpanda cluster's IAM policies.
+|===
+
+.Terraform
+[%collapsible]
+====
+[source,hcl]
+----
+statement {
+  sid    = "RedpandaAgentIAMPolicies"
+  effect = "Allow"
+  actions = [
+    "iam:CreatePolicy",
+    "iam:CreatePolicyVersion",
+    "iam:DeletePolicy",
+    "iam:DeletePolicyVersion",
+    "iam:GetPolicy",
+    "iam:GetPolicyVersion",
+    "iam:ListPolicyVersions",
+    "iam:TagPolicy",
+    "iam:UntagPolicy"
+  ]
+  resources = [
+    "arn:aws:iam::${local.aws_account_id}:policy/aws_ebs_csi_driver-redpanda-${var.redpanda_id}",
+    "arn:aws:iam::${local.aws_account_id}:policy/cert_manager_policy-${var.redpanda_id}",
+    "arn:aws:iam::${local.aws_account_id}:policy/external_dns_policy-${var.redpanda_id}",
+    "arn:aws:iam::${local.aws_account_id}:policy/load_balancer_controller-${var.redpanda_id}",
+    "arn:aws:iam::${local.aws_account_id}:policy/redpanda-agent-${var.redpanda_id}*",
+    "arn:aws:iam::${local.aws_account_id}:policy/redpanda-${var.redpanda_id}*",
+    "arn:aws:iam::${local.aws_account_id}:policy/redpanda-${var.redpanda_id}-autoscaler",
+    "arn:aws:iam::${local.aws_account_id}:policy/redpanda-cloud-storage-manager-${var.redpanda_id}",
+    "arn:aws:iam::${local.aws_account_id}:policy/redpanda-glue-manager-${var.redpanda_id}",
+    "arn:aws:iam::${local.aws_account_id}:policy/secrets_manager_policy-${var.redpanda_id}",
+    "arn:aws:iam::${local.aws_account_id}:policy/redpanda-connectors-secrets-manager-${var.redpanda_id}",
+    "arn:aws:iam::${local.aws_account_id}:policy/redpanda-console-secrets-manager-${var.redpanda_id}",
+  ]
+}
+----
+====
+
+=== Manage instance profiles
+
+*Scope:* Restricted to instance profiles named for your cluster: `+redpanda-${var.redpanda_id}*+` and `+redpanda-agent-${var.redpanda_id}*+`.
+
+[cols="3,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`iam:AddRoleToInstanceProfile` |Write |Required to attach IAM roles to instance profiles so your Redpanda cluster nodes have the AWS permissions they need to run.
+|`iam:RemoveRoleFromInstanceProfile` |Delete |Required to detach IAM roles from instance profiles when reconfiguring or decommissioning your Redpanda cluster.
+|`iam:CreateInstanceProfile` |Write |Required to create the instance profiles used by your Redpanda cluster's compute nodes.
+|`iam:DeleteInstanceProfile` |Delete |Required to clean up instance profiles when you decommission your Redpanda cluster.
+|`iam:GetInstanceProfile` |Read |Required to read the instance profiles associated with your Redpanda cluster.
+|`iam:TagInstanceProfile` |Write |Required to tag instance profiles so they are clearly identifiable as belonging to your Redpanda cluster.
+|`iam:UntagInstanceProfile` |Delete |TODO(eng): confirm purpose. Removes tags from your Redpanda cluster's instance profiles.
+|===
+
+.Terraform
+[%collapsible]
+====
+[source,hcl]
+----
+statement {
+  sid    = "RedpandaAgentInstanceProfile"
+  effect = "Allow"
+  actions = [
+    "iam:AddRoleToInstanceProfile",
+    "iam:RemoveRoleFromInstanceProfile",
+    "iam:CreateInstanceProfile",
+    "iam:DeleteInstanceProfile",
+    "iam:GetInstanceProfile",
+    "iam:TagInstanceProfile",
+    "iam:UntagInstanceProfile",
+  ]
+  resources = [
+    "arn:aws:iam::${local.aws_account_id}:instance-profile/redpanda-${var.redpanda_id}*",
+    "arn:aws:iam::${local.aws_account_id}:instance-profile/redpanda-agent-${var.redpanda_id}*",
+  ]
+}
+----
+====
+
+=== Create EKS OIDC providers
+
+*Scope:* Restricted to EKS OIDC providers: `+arn:aws:iam::${local.aws_account_id}:oidc-provider/oidc.eks.*.amazonaws.com+` and their IDs.
+
+[cols="3,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`iam:CreateOpenIDConnectProvider` |Write |Required to establish the OIDC federation that allows workloads in your Redpanda cluster (such as EKS service accounts) to assume AWS IAM roles.
+|`iam:TagOpenIDConnectProvider` |Write |Required to tag the OIDC provider so it is clearly identifiable as belonging to your Redpanda cluster.
+|`iam:UntagOpenIDConnectProvider` |Delete |Required to remove tags from the OIDC provider during reconfiguration or cleanup.
+|===
+
+.Terraform
+[%collapsible]
+====
+[source,hcl]
+----
+statement {
+  sid    = "RedpandaAgentEKSOIDCProvider"
+  effect = "Allow"
+  actions = [
+    "iam:CreateOpenIDConnectProvider",
+    "iam:TagOpenIDConnectProvider",
+    "iam:UntagOpenIDConnectProvider",
+  ]
+  resources = [
+    "arn:aws:iam::${local.aws_account_id}:oidc-provider/oidc.eks.*.amazonaws.com",
+    "arn:aws:iam::${local.aws_account_id}:oidc-provider/oidc.eks.*.amazonaws.com/id/*",
+  ]
+}
+----
+====
+
+=== Rotate EKS OIDC provider thumbprint
+
+*Scope:* Restricted to EKS OIDC providers, further restricted by a condition on the `redpanda-id` resource tag.
+
+[cols="3,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`iam:UpdateOpenIDConnectProviderThumbprint` |Write |Required to rotate the OIDC provider thumbprint to keep federation with AWS IAM secure and current.
+|===
+
+.Terraform
+[%collapsible]
+====
+[source,hcl]
+----
+statement {
+  sid    = "RedpandaAgentEKSOIDCProviderCACertThumbprintUpdate"
+  effect = "Allow"
+  actions = [
+    "iam:UpdateOpenIDConnectProviderThumbprint",
+  ]
+  resources = [
+    "arn:aws:iam::${local.aws_account_id}:oidc-provider/oidc.eks.*.amazonaws.com",
+    "arn:aws:iam::${local.aws_account_id}:oidc-provider/oidc.eks.*.amazonaws.com/id/*",
+  ]
+  condition {
+    test     = "StringEquals"
+    variable = "aws:ResourceTag/redpanda-id"
+    values = [
+      var.redpanda_id,
+    ]
+  }
+}
+----
+====
+
+== Secrets management
+
+Cleans up the AWS Secrets Manager secrets Redpanda creates for your cluster when the cluster is destroyed.
+
+=== Delete cluster secrets
+
+*Scope:* Restricted to secrets under `+arn:aws:secretsmanager:${var.region}:*:secret:redpanda/${var.redpanda_id}/*+`, further restricted by a condition on the `owner` resource tag (`console`).
+
+[cols="3,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`secretsmanager:DeleteSecret` |Delete |Required to delete the user secrets Redpanda created for your cluster when the cluster is destroyed.
+|===
+
+.Terraform
+[%collapsible]
+====
+[source,hcl]
+----
+statement {
+  effect = "Allow"
+  actions = [
+    "secretsmanager:DeleteSecret"
+  ]
+  resources = [
+    "arn:aws:secretsmanager:${var.region}:*:secret:redpanda/${var.redpanda_id}/*"
+  ]
+  condition {
+    test     = "StringEquals"
+    values   = ["console"]
+    variable = "aws:ResourceTag/owner"
+  }
+}
+----
+====
+
+=== List secrets
+
+*Scope:* Account-wide (`+*+`). AWS does not allow the list action to be constrained to specific resource ARNs.
+
+[cols="3,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`secretsmanager:ListSecrets` |Read |Required to find the secrets to delete when your Redpanda cluster is destroyed.
+|===
+
+.Terraform
+[%collapsible]
+====
+[source,hcl]
+----
+statement {
+  effect = "Allow"
+  actions = [
+    "secretsmanager:ListSecrets",
+  ]
+  resources = [
+    "*"
+  ]
+}
+----
+====
+
+== Monitoring
+
+=== Read CloudWatch metrics
+
+*Scope:* Account-wide (`+*+`). AWS does not allow this metrics action to be constrained to specific resource ARNs.
+
+[cols="3,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`cloudwatch:GetMetricData` |Read |TODO(eng): confirm purpose. Reads CloudWatch metrics for the AWS resources that run your Redpanda cluster.
+|===
+
+.Terraform
+[%collapsible]
+====
+[source,hcl]
+----
+statement {
+  sid    = "RedpandaAgentCloudWatch"
+  effect = "Allow"
+  actions = [
+    "cloudwatch:GetMetricData",
+  ]
+  resources = [
+    "*",
+  ]
+}
+----
+====
+
+== Coordination state
+
+Reads and writes the small amount of state Redpanda uses to serialize Terraform operations safely, and reads the caller identity.
+
+=== Manage the DynamoDB Terraform backend
+
+*Scope:* Restricted to the cluster's Terraform state table: `+arn:aws:dynamodb:*:${local.aws_account_id}:table/rp-${local.aws_account_id}*+`.
+
+[cols="3,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`dynamodb:GetItem` |Read |Required to read state that Redpanda Cloud stores in DynamoDB to coordinate operations against your cluster.
+|`dynamodb:PutItem` |Write |Required to write coordination state that Redpanda Cloud uses to safely manage operations against your cluster.
+|`dynamodb:DeleteItem` |Delete |Required to clean up coordination state stored in DynamoDB during cluster operations and decommissioning.
+|===
+
+.Terraform
+[%collapsible]
+====
+[source,hcl]
+----
+statement {
+  sid    = "RedpandaAgentTFBackend"
+  effect = "Allow"
+  actions = [
+    "dynamodb:GetItem",
+    "dynamodb:PutItem",
+    "dynamodb:DeleteItem",
+  ]
+  resources = [
+    "arn:aws:dynamodb:*:${local.aws_account_id}:table/rp-${local.aws_account_id}*",
+  ]
+}
+----
+====
+
+=== Read the caller identity
+
+*Scope:* Account-wide (`+*+`).
+
+[cols="3,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`sts:GetCallerIdentity` |Read |Required to confirm the identity Redpanda is operating as when managing your cluster. This is a residual no-op statement retained to avoid AWS policy-detachment conflicts.
+|===
+
+.Terraform
+[%collapsible]
+====
+[source,hcl]
+----
+statement {
+  sid    = "RedpandaAgentNoopPolicy"
+  effect = "Allow"
+  actions = [
+    "sts:GetCallerIdentity"
+  ]
+  resources = [
+    "*"
+  ]
+}
+----
+====
+
+== Optional feature permissions
+
+// TODO(eng, item 3): confirm whether these statements are granted only when the
+// corresponding feature is enabled, and whether they apply to the cross-account
+// role in the Phase 1 release. They are scoped to ai-gateway-* / oxla-* resources.
+[NOTE]
+====
+The following permissions are scoped to specific feature resources (`+ai-gateway-*+`, `+oxla-*+`) and apply only when you use the corresponding Redpanda features (AI Gateway and Redpanda SQL). TODO(eng): confirm scope for the cross-account role.
+====
+
+=== Manage ElastiCache for the AI Gateway
+
+*Scope:* Restricted to ElastiCache resources named `+ai-gateway-${var.redpanda_id}*+`.
+
+[cols="3,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`elasticache:CreateUser` |Write |TODO(eng): confirm purpose. Manages the ElastiCache resources backing the AI Gateway feature.
+|`elasticache:AddTagsToResource` |Write |TODO(eng): confirm purpose.
+|`elasticache:DescribeUsers` |Read |TODO(eng): confirm purpose.
+|`elasticache:ListTagsForResource` |Read |TODO(eng): confirm purpose.
+|`elasticache:DeleteUser` |Delete |TODO(eng): confirm purpose.
+|`elasticache:CreateUserGroup` |Write |TODO(eng): confirm purpose.
+|`elasticache:DescribeUserGroups` |Read |TODO(eng): confirm purpose.
+|`elasticache:DeleteUserGroup` |Delete |TODO(eng): confirm purpose.
+|`elasticache:CreateServerlessCache` |Write |TODO(eng): confirm purpose.
+|`elasticache:DeleteServerlessCache` |Delete |TODO(eng): confirm purpose.
+|`elasticache:DescribeServerlessCaches` |Read |TODO(eng): confirm purpose.
+|===
+
+.Terraform
+[%collapsible]
+====
+[source,hcl]
+----
+statement {
+  sid    = "RedpandaElastiCache"
+  effect = "Allow"
+  actions = [
+    "elasticache:CreateUser",
+    "elasticache:AddTagsToResource",
+    "elasticache:DescribeUsers",
+    "elasticache:ListTagsForResource",
+    "elasticache:DeleteUser",
+    "elasticache:CreateUserGroup",
+    "elasticache:DescribeUserGroups",
+    "elasticache:DeleteUserGroup",
+    "elasticache:CreateServerlessCache",
+    "elasticache:DeleteServerlessCache",
+    "elasticache:DescribeServerlessCaches",
+  ]
+  resources = [
+    "arn:aws:elasticache:*:*:*:ai-gateway-${var.redpanda_id}*",
+  ]
+}
+----
+====
+
+=== Manage RDS Aurora for the AI Gateway
+
+*Scope:* Restricted to RDS resources named `+ai-gateway-${var.redpanda_id}*+` (clusters, instances, subnet groups, and parameter groups).
+
+[cols="3,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`rds:CreateDBCluster` |Write |TODO(eng): confirm purpose. Manages the Aurora database backing the AI Gateway feature.
+|`rds:DeleteDBCluster` |Delete |TODO(eng): confirm purpose.
+|`rds:DescribeDBClusters` |Read |TODO(eng): confirm purpose.
+|`rds:ModifyDBCluster` |Write |TODO(eng): confirm purpose.
+|`rds:CreateDBInstance` |Write |TODO(eng): confirm purpose.
+|`rds:DeleteDBInstance` |Delete |TODO(eng): confirm purpose.
+|`rds:DescribeDBInstances` |Read |TODO(eng): confirm purpose.
+|`rds:ModifyDBInstance` |Write |TODO(eng): confirm purpose.
+|`rds:CreateDBSubnetGroup` |Write |TODO(eng): confirm purpose.
+|`rds:DeleteDBSubnetGroup` |Delete |TODO(eng): confirm purpose.
+|`rds:DescribeDBSubnetGroups` |Read |TODO(eng): confirm purpose.
+|`rds:CreateDBClusterParameterGroup` |Write |TODO(eng): confirm purpose.
+|`rds:DeleteDBClusterParameterGroup` |Delete |TODO(eng): confirm purpose.
+|`rds:DescribeDBClusterParameterGroups` |Read |TODO(eng): confirm purpose.
+|`rds:DescribeDBClusterParameters` |Read |TODO(eng): confirm purpose.
+|`rds:ModifyDBClusterParameterGroup` |Write |TODO(eng): confirm purpose.
+|`rds:AddTagsToResource` |Write |TODO(eng): confirm purpose.
+|`rds:ListTagsForResource` |Read |TODO(eng): confirm purpose.
+|`rds:RemoveTagsFromResource` |Delete |TODO(eng): confirm purpose.
+|`rds:DescribeDBEngineVersions` |Read |TODO(eng): confirm purpose.
+|===
+
+.Terraform
+[%collapsible]
+====
+[source,hcl]
+----
+statement {
+  sid    = "RedpandaRDSAurora"
+  effect = "Allow"
+  actions = [
+    "rds:CreateDBCluster",
+    "rds:DeleteDBCluster",
+    "rds:DescribeDBClusters",
+    "rds:ModifyDBCluster",
+    "rds:CreateDBInstance",
+    "rds:DeleteDBInstance",
+    "rds:DescribeDBInstances",
+    "rds:ModifyDBInstance",
+    "rds:CreateDBSubnetGroup",
+    "rds:DeleteDBSubnetGroup",
+    "rds:DescribeDBSubnetGroups",
+    "rds:CreateDBClusterParameterGroup",
+    "rds:DeleteDBClusterParameterGroup",
+    "rds:DescribeDBClusterParameterGroups",
+    "rds:DescribeDBClusterParameters",
+    "rds:ModifyDBClusterParameterGroup",
+    "rds:AddTagsToResource",
+    "rds:ListTagsForResource",
+    "rds:RemoveTagsFromResource",
+    "rds:DescribeDBEngineVersions",
+  ]
+  resources = [
+    "arn:aws:rds:*:*:cluster:ai-gateway-${var.redpanda_id}*",
+    "arn:aws:rds:*:*:db:ai-gateway-${var.redpanda_id}*",
+    "arn:aws:rds:*:*:subgrp:ai-gateway-${var.redpanda_id}*",
+    "arn:aws:rds:*:*:cluster-pg:ai-gateway-${var.redpanda_id}*",
+  ]
+}
+----
+====
+
+=== Describe RDS Aurora resources
+
+*Scope:* Account-wide (`+*+`). AWS does not allow these describe actions to be constrained to specific resource ARNs.
+
+[cols="3,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`rds:DescribeDBClusters` |Read |TODO(eng): confirm purpose.
+|`rds:DescribeDBInstances` |Read |TODO(eng): confirm purpose.
+|`rds:DescribeDBSubnetGroups` |Read |TODO(eng): confirm purpose.
+|`rds:DescribeDBClusterParameterGroups` |Read |TODO(eng): confirm purpose.
+|`rds:DescribeDBClusterParameters` |Read |TODO(eng): confirm purpose.
+|`rds:DescribeDBEngineVersions` |Read |TODO(eng): confirm purpose.
+|`rds:DescribeGlobalClusters` |Read |TODO(eng): confirm purpose.
+|===
+
+.Terraform
+[%collapsible]
+====
+[source,hcl]
+----
+statement {
+  sid    = "RedpandaRDSAuroraDescribe"
+  effect = "Allow"
+  actions = [
+    "rds:DescribeDBClusters",
+    "rds:DescribeDBInstances",
+    "rds:DescribeDBSubnetGroups",
+    "rds:DescribeDBClusterParameterGroups",
+    "rds:DescribeDBClusterParameters",
+    "rds:DescribeDBEngineVersions",
+    "rds:DescribeGlobalClusters",
+  ]
+  resources = [
+    "*",
+  ]
+}
+----
+====
+
+=== Manage Redpanda SQL storage buckets
+
+*Scope:* Restricted to S3 buckets named `+oxla-*+` (the internal resource name for Redpanda SQL).
+
+[cols="3,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`s3:PutBucketPolicy` |Write |TODO(eng): confirm purpose. Manages the S3 buckets backing the Redpanda SQL feature.
+|`s3:DeleteBucketPolicy` |Delete |TODO(eng): confirm purpose.
+|`+s3:List*+` |Read |TODO(eng): confirm purpose.
+|`+s3:Get*+` |Read |TODO(eng): confirm purpose.
+|`s3:CreateBucket` |Write |TODO(eng): confirm purpose.
+|`s3:DeleteBucket` |Delete |TODO(eng): confirm purpose.
+|`s3:PutBucketTagging` |Write |TODO(eng): confirm purpose.
+|`s3:PutBucketPublicAccessBlock` |Write |TODO(eng): confirm purpose.
+|`s3:PutEncryptionConfiguration` |Write |TODO(eng): confirm purpose.
+|`s3:PutBucketOwnershipControls` |Write |TODO(eng): confirm purpose.
+|`s3:DeleteObject` |Delete |TODO(eng): confirm purpose.
+|`s3:DeleteObjectVersion` |Delete |TODO(eng): confirm purpose.
+|===
+
+.Terraform
+[%collapsible]
+====
+[source,hcl]
+----
+statement {
+  sid    = "RedpandaAgentOxlaCreateBucket"
+  effect = "Allow"
+  actions = [
+    "s3:PutBucketPolicy",
+    "s3:DeleteBucketPolicy",
+    "s3:List*",
+    "s3:Get*",
+    "s3:CreateBucket",
+    "s3:DeleteBucket",
+    "s3:PutBucketTagging",
+    "s3:PutBucketPublicAccessBlock",
+    "s3:PutEncryptionConfiguration",
+    "s3:PutBucketOwnershipControls",
+    "s3:DeleteObject",
+    "s3:DeleteObjectVersion"
+  ]
+  resources = ["arn:aws:s3:::oxla-*", "arn:aws:s3:::oxla-*/*"]
+}
+----
+====
 endif::[]
 
 ifdef::env-gcp[]

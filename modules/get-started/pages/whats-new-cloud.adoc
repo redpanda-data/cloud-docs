@@ -8,6 +8,12 @@ This page lists new features added to Redpanda Cloud.
 
 == July 2026
 
+// DOC-2297 DRAFT entry (ENG-1139), 26.2, AWS only, new clusters only. Targeted GA 2026-07-14.
+// TODO(team): confirm wording and links before publishing; do not publish before GA.
+=== Cross-account IAM delegation for BYOC on AWS
+
+New BYOC clusters on AWS can now use cross-account IAM delegation. Instead of running `rpk cloud byoc aws apply` and hosting a provisioning agent in your account, you create an IAM role that Redpanda's control plane assumes to provision and reconcile your cluster. You control the role, so you can review, audit, and revoke Redpanda's access at any time. This model applies to new AWS clusters only; existing clusters and clusters on Azure and GCP continue to use agent-based provisioning. See xref:get-started:cluster-types/byoc/aws/cross-account-iam-aws.adoc[Deploy a BYOC Cluster on AWS with Cross-Account IAM Delegation] and xref:security:authorization/cloud-iam-policies.adoc[AWS IAM policies].
+
 === SQL editor in Redpanda Cloud Console
 
 Redpanda Cloud Console now includes a built-in SQL editor. For SQL-enabled environments, you can write and run `SELECT` queries against your Redpanda topics directly in the Console without installing a separate PostgreSQL client. The editor supports syntax highlighting, autocomplete, query history, and CSV and JSON export. For Iceberg-enabled topics, an indicator shows when results span both live topic data and Iceberg-committed history. To enable Redpanda SQL, see xref:sql:get-started/deploy-sql-cluster.adoc[Enable Redpanda SQL]. To use the editor, see xref:sql:query-data/sql-editor.adoc[Use the SQL Editor].

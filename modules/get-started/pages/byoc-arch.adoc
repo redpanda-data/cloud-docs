@@ -44,6 +44,33 @@ they have dedicated job queues in the control plane. Agents also manage VPC peer
 +
 image::shared:byoc_apply.png[cloud_byoc_apply]
 
-NOTE: To create a Redpanda cluster in your virtual private cloud (VPC), follow the instructions in the Redpanda Cloud UI. The UI contains the parameters necessary to successfully run `rpk cloud byoc apply` with your cloud provider. 
+NOTE: To create a Redpanda cluster in your virtual private cloud (VPC), follow the instructions in the Redpanda Cloud UI. The UI contains the parameters necessary to successfully run `rpk cloud byoc apply` with your cloud provider.
+
+== Provisioning models on AWS
+
+// DOC-2297: cross-account IAM delegation (ENG-1139), 26.2, AWS only, new clusters only.
+// TODO(team): confirm wording once the deploy workflow (ENG-1129) and external-ID
+// handling (CIAINFRA-3970) are finalized. Do not publish before GA (2026-07-14).
+
+New BYOC clusters on AWS use *cross-account IAM delegation*. Instead of bootstrapping an agent VM in your account, you create an IAM role that Redpanda's control plane assumes to provision and reconcile your cluster. Redpanda runs the deployment for you, so you do not run `rpk cloud byoc aws apply`. This is the recommended model for new AWS clusters, and it lets you review, audit, and revoke Redpanda's access at any time.
+
+[cols="1,2,2", options="header"]
+|===
+| | Cross-account IAM delegation | Agent-based provisioning
+
+| Applies to
+| New BYOC clusters on AWS
+| Existing clusters, and clusters on Azure and GCP
+
+| Who provisions
+| Redpanda's control plane assumes a role you create
+| An agent VM that runs in your account
+
+| How you start it
+| Create a cross-account IAM role, then deploy from the Cloud UI
+| Run `rpk cloud byoc apply`
+|===
+
+Cross-account IAM delegation applies only to new clusters on AWS. Migrating an existing cluster is not supported, and the agent-based model described above continues to apply to existing clusters and to clusters on Azure and GCP. To deploy a new AWS cluster with cross-account IAM delegation, see xref:get-started:cluster-types/byoc/aws/cross-account-iam-aws.adoc[Deploy a BYOC Cluster on AWS with Cross-Account IAM Delegation]. For the permissions the role grants, see xref:security:authorization/cloud-iam-policies.adoc[AWS IAM policies].
 
 include::get-started:partial$no-access.adoc[]

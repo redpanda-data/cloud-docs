@@ -1,0 +1,72 @@
+= Deploy a BYOC Cluster on AWS with Cross-Account IAM Delegation
+:description: Create a cross-account IAM role that Redpanda assumes to provision and manage new BYOC clusters on AWS, without running rpk cloud byoc apply.
+:page-aliases: deploy:deployment-option/cloud/cluster-types/byoc/aws/cross-account-iam-aws.adoc
+:env-aws: true
+
+// ============================================================================
+// DOC-2297 DRAFT — cross-account IAM delegation (ENG-1139), 26.2, AWS only, new
+// clusters only. Blocked on team answers before this can be finalized:
+//   TODO(team) 1: exact Cloud UI / deployment wizard steps (ENG-1129).
+//   TODO(team) 2: where the customer gets the role Terraform, and how it is delivered.
+//   TODO(team) 3: whether the external ID is shown in the UI before role creation,
+//                 and the exact step ordering (CIAINFRA-3970).
+//   TODO(team) 4: exact role name and trust policy content.
+// Do not publish until GA (targeted 2026-07-14) and the above are resolved.
+// ============================================================================
+
+With cross-account IAM delegation, you create an IAM role in your AWS account that Redpanda assumes to provision and reconcile your BYOC cluster. Redpanda runs the deployment for you, so you do not run `rpk cloud byoc aws apply` or host a provisioning agent in your account. This is the recommended way to deploy new BYOC clusters on AWS.
+
+[NOTE]
+====
+* Cross-account IAM delegation applies to *new* BYOC clusters on *AWS* only. To deploy on Azure or GCP, or to manage a cluster you created before this feature was available, see xref:get-started:cluster-types/byoc/aws/create-byoc-cluster-aws.adoc[Create a BYOC Cluster on AWS].
+* Migrating an existing cluster to cross-account IAM delegation is not supported.
+* This page does not apply to xref:get-started:cluster-types/byoc/aws/vpc-byo-aws.adoc[BYOVPC clusters].
+====
+
+== How it works
+
+Instead of running a provisioning agent inside your AWS account, Redpanda's control plane assumes an IAM role that you own:
+
+. You create an IAM role in your AWS account using a Terraform configuration that Redpanda provides. The role has:
++
+--
+* A *permissions policy* that grants the access Redpanda needs to provision and manage your cluster. For the full list and an explanation of each permission, see xref:security:authorization/cloud-iam-policies.adoc[AWS IAM policies].
+* A *trust policy* that allows only Redpanda's control plane to assume the role, scoped by a unique external ID.
+--
+. Redpanda's control plane assumes the role using AWS Security Token Service (STS), presenting the external ID, and uses the granted permissions to provision, configure, and reconcile your cluster.
+
+Because Redpanda assumes a role you control, you can review and audit the exact permissions at any time, and you can revoke access by deleting the role.
+
+// TODO(team 4): confirm role name, session duration, and trust policy details before publishing.
+
+== Prerequisites
+
+* An AWS account with permission to create IAM roles and policies (for example, `AWSAdministratorAccess`).
+* Terraform installed, or another way to apply the configuration Redpanda provides. TODO(team 2): confirm the supported tooling and where customers obtain the configuration.
+* The external ID that Redpanda generates for your cross-account role. TODO(team 3): confirm where this is shown in the Cloud UI and whether it is available before role creation.
+
+== Create the cross-account role
+
+// TODO(team 2, 3): replace this section with the confirmed workflow once the
+// Terraform delivery mechanism and external-ID ordering are known.
+
+. Log in to https://cloud.redpanda.com[Redpanda Cloud^].
+. Start creating a BYOC cluster on AWS and note the external ID that Redpanda generates for your cross-account role. TODO(team 3): confirm exact UI location.
+. Apply the Redpanda-provided Terraform configuration in your AWS account to create the IAM role, its permissions policy, and its trust policy (scoped to the external ID from the previous step). TODO(team 2): add the configuration or a link to it.
+. Provide the resulting role ARN to Redpanda in the Cloud UI. TODO(team 1): confirm the field and screen.
+
+== Create the cluster
+
+// TODO(team 1): align these steps with the deployment wizard (ENG-1129).
+
+. On the Clusters page, click *Create cluster*, then click *Create* for BYOC.
+. Enter a cluster name, then select the resource group, provider (AWS), xref:reference:tiers/byoc-tiers.adoc[region, tier], availability, and Redpanda version.
+. Complete the network configuration. See xref:get-started:cluster-types/byoc/aws/create-byoc-cluster-aws.adoc[Create a BYOC Cluster on AWS] for details about the network options.
+. Complete the deployment. Redpanda assumes your cross-account role and provisions the cluster. No agent runs in your account, and you do not run `rpk cloud byoc aws apply`.
+
+include::get-started:partial$no-access.adoc[]
+
+== Next steps
+
+* xref:security:authorization/cloud-iam-policies.adoc[Review the AWS IAM policies] that your cross-account role grants.
+* xref:networking:byoc/aws/index.adoc[Configure private networking]
