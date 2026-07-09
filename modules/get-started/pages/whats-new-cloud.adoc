@@ -12,6 +12,10 @@ This page lists new features added to Redpanda Cloud.
 
 New Serverless free-trial users now get a guided start in the Cloud UI. After you sign up, a few quick questions help Redpanda tailor your experience. The welcome cluster's *Overview* page summarizes your trial credits, and the *Get started* drawer offers guided ways to start streaming: create a Redpanda Connect pipeline, connect with your own Kafka client, or use `rpk` from the command line. See xref:get-started:cluster-types/serverless.adoc#get-started-with-serverless[Get started with Serverless].
 
+=== SQL editor in Redpanda Cloud Console
+
+Redpanda Cloud Console now includes a built-in SQL editor. For SQL-enabled environments, you can write and run `SELECT` queries against your Redpanda topics directly in the Console without installing a separate PostgreSQL client. The editor supports syntax highlighting, autocomplete, query history, and CSV and JSON export. For Iceberg-enabled topics, an indicator shows when results span both live topic data and Iceberg-committed history. To enable Redpanda SQL, see xref:sql:get-started/deploy-sql-cluster.adoc[Enable Redpanda SQL]. To use the editor, see xref:sql:query-data/sql-editor.adoc[Use the SQL Editor].
+
 === Self-service organization deletion for Serverless
 
 You can now permanently delete a Serverless organization (free trial and pay-as-you-go plans) directly from the Cloud UI, without contacting Redpanda Support. The new *Manage organization* page, available from your profile icon, shows your plan and organization-wide resource counts, and walks you through the deletion prerequisites: delete all clusters, delete all private links, and settle any pending or outstanding invoices. See xref:manage:manage-organization.adoc[Manage Your Organization].
@@ -37,6 +41,11 @@ A new guide walks Cloud customers through configuring IAM Roles for Service Acco
 === Customer-managed default topic settings
 
 You can now set cluster-wide defaults for new topics on BYOC and Dedicated clusters. The xref:reference:properties/cluster-properties.adoc#default_topic_partitions[`default_topic_partitions`], xref:reference:properties/cluster-properties.adoc#log_retention_ms[`log_retention_ms`], and xref:reference:properties/cluster-properties.adoc#retention_bytes[`retention_bytes`] cluster properties are now customer-managed. The default topic retention period (`log_retention_ms`) previously could only be changed by Redpanda support. See xref:manage:cluster-maintenance/config-cluster.adoc[Configure Cluster Properties].
+
+=== Redpanda Connect updates
+
+* Processors:
+** xref:develop:connect/components/processors/try_catch.adoc[try_catch]: Combines the behavior of the `try` and `catch` processors into a single block with an explicit recovery path.
 
 == May 2026
 
