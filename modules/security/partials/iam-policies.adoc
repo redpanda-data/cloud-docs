@@ -1433,437 +1433,621 @@ statement {
 endif::[]
 
 ifdef::env-gcp[]
-When you run `rpk cloud byoc gcp apply` to create a BYOC cluster, you grant IAM permissions to the Redpanda Cloud agent. IAM permissions allow the agent to access the GCP API to create and manage cluster resources. The permissions follow the principle of least privilege, limiting access to only what is necessary. IAM permissions are not required by Redpanda Cloud users.
+// DOC-2297: reformatted for consistency with AWS. Rebuilt from cloudv2
+// pkg/provisioners/gcp/terraform/agent/role_redpanda_agent.tf. GCP keeps the
+// agent-based model (no cross-account delegation in this release).
+// TODO(eng): supply "why" text for cells marked TODO(eng); confirm the
+// Kubernetes Engine Admin / Storage Object Admin predefined-role grants.
+When you run `rpk cloud byoc gcp apply` to create a BYOC cluster, you grant these permissions to the Redpanda Cloud agent service account. The agent uses them to call the GCP API and manage cluster resources on your behalf. The permissions follow the principle of least privilege. They are _not_ required by Redpanda Cloud end users, and your GCP account does not need them for the initial Terraform bootstrap.
 
 [NOTE]
 ====
-* This page lists the IAM permissions the Redpanda agent service account uses to manage xref:get-started:cluster-types/byoc/gcp/create-byoc-cluster-gcp.adoc[BYOC cluster] resources. Your GCP account does not need these permissions for the initial Terraform bootstrap. This does _not_ pertain to permissions for xref:get-started:cluster-types/byoc/gcp/vpc-byo-gcp.adoc[BYOVPC clusters].
-* No IAM permissions are required for Redpanda Cloud users. IAM policies do not grant user access to a cluster; rather, they grant the deployed Redpanda agent access, so that brokers can communicate with the BYOC clusters. 
+This page covers the permissions the Redpanda agent service account uses to manage xref:get-started:cluster-types/byoc/gcp/create-byoc-cluster-gcp.adoc[BYOC cluster] resources. It does _not_ apply to xref:get-started:cluster-types/byoc/gcp/vpc-byo-gcp.adoc[BYOVPC clusters].
 ====
 
-== GCP IAM policies
+[NOTE]
+====
+These permissions are granted to the Redpanda agent service account within the Redpanda-managed GCP project. Two capabilities are granted as predefined roles rather than individual permissions: *Kubernetes Engine Admin* (full management of the GKE cluster) and *Storage Object Admin* (object access, scoped to a single Tiered Storage bucket).
+====
 
-The Redpanda agent service account for GCP is granted the following roles/permissions to manage
-Redpanda cluster resources:
-
+[cols="1,4", options="header"]
 |===
-| Role/Permission | Description
-
-| compute.addresses.get
-| Allows a user to retrieve a specified address.
-
-| compute.autoscalers.get
-| Allows a user to retrieve a specified autoscaler.
-
-| compute.autoscalers.list
-| Allows a user to list autoscalers in a specified zone.
-
-| compute.firewalls.create
-| Allows a user to create firewall rules to control inbound and outbound traffic for GCP instances.
-
-| compute.firewalls.delete
-| Allows a user or service account to remove existing firewall rules from within a GCP project, modifying the network security configuration.
-
-| compute.firewalls.get
-| Allows a user to view the details and configuration of a specific firewall rule for GCP projects.
-
-| compute.firewalls.update
-| Allows a user to modify a specified firewall.
-
-| compute.forwardingRules.create
-| Allows a user to create new forwarding rules within a project.
-
-| compute.forwardingRules.delete
-| Allows a user to delete existing forwarding rules within a project.
-
-| compute.forwardingRules.get
-| Allows a user to retrieve details about a specific forwarding rule within a project.
-
-| compute.forwardingRules.pscCreate
-| Allows a user to create Private Service Connect forwarding rules within a project.
-
-| compute.forwardingRules.pscDelete
-| Allows a user to delete Private Service Connect forwarding rules within a project.
-
-| compute.forwardingRules.pscSetLabels
-| Allows a user to set or modify labels on Private Service Connect forwarding rules within a project.
-
-| compute.forwardingRules.pscSetTarget
-| Allows a user to update the target service for a Private Service Connect forwarding rule.
-
-| compute.forwardingRules.pscUpdate
-| Allows a user to update Private Service Connect forwarding rules within a project.
-
-| compute.forwardingRules.setLabels
-| Allows a user to set, update, or remove labels on forwarding rules.
-
-| compute.forwardingRules.setTarget
-| Allows a user to update the target of an existing forwarding rule.
-
-| compute.forwardingRules.use
-| Allows a user to use a forwarding rule for traffic routing or other operations, without the ability to modify or delete it.
-
-| compute.globalOperations.get
-| Allows a user to retrieve information about a specific global operation in a GCP project.
-
-| compute.instanceGroupManagers.create
-| Allows a user to create a managed instance group.
-
-| compute.instanceGroupManagers.delete
-| Allows a user to delete a specified managed instance group.
-
-| compute.instanceGroupManagers.get
-| Allows a user or service account to retrieve details like the configuration, status, and properties of an instance group manager within GCP.
-
-| compute.instanceGroupManagers.update
-| Allows a user to modify a specified managed instance group.
-
-| compute.instanceGroups.create
-| Allows a user to create an instance group.
-
-| compute.instanceGroups.delete
-| Allows a user to delete a specified instance group.
-
-| compute.instanceGroups.get
-| Allows a user to retrieve a specified instance group.
-
-| compute.instanceGroups.update
-| Allows a user to modify a specified instance group.
-
-| compute.instances.create
-| Allows a user to create an instance.
-
-| compute.instances.delete
-| Allows a user to delete a specified instance.
-
-| compute.instances.get
-| Allows a user to retrieve a specified instance.
-
-| compute.instances.list
-| Allows a user to list instances contained within a specified zone.
-
-| compute.instances.reset
-| Allows a user to perform a reset on the specified instance.
-
-| compute.instances.setDeletionProtection
-| Allows a user to enable deletion protection on a specified instance.
-
-| compute.instances.update
-| Allows a user to modify a specified instance.
-
-| compute.instances.use
-| Allows a user to use VM instances for operations, such as connecting to or interacting with the VM, but it does not grant the ability to modify or manage the instance itself.
-
-| compute.instanceTemplates.create
-| Allows a user to create an instance template.
-
-| compute.instanceTemplates.delete
-| Allows a user to delete a specified instance template.
-
-| compute.instanceTemplates.get
-| Allows a user to retrieve a specified instance template.
-
-| compute.networks.create
-| Allows a user to create a network.
-
-| compute.networks.delete
-| Allows a user to delete a specified network.
-
-| compute.networks.getEffectiveFirewalls
-| Allows a user to retrieve the effective firewalls for a specified network.
-
-| compute.networks.update
-| Allows a user to modify a specified network.
-
-| compute.networks.updatePolicy
-| Allows a user to update the configuration of existing GCP network resources.
-
-| compute.networks.use
-| Allows a user to use a VPC network and its associated resources for tasks like launching instances or using network services, but it does not grant permission to modify the network itself.
-
-| compute.projects.get
-| Allows a user or service account to retrieve information (such as project metadata, quotas, and configuration settings) about a specific GCP project.
-
-| compute.regionBackendServices.create
-| Allows a user to create backend services in a specific region for a regional load balancer.
-
-| compute.regionBackendServices.delete
-| Allows a user to delete backend services within a specific region.
-
-| compute.regionBackendServices.get
-| Allows a user to retrieve information about a backend service within a specific region.
-
-| compute.regionBackendServices.use
-| Allows a user to use a backend service in a specific region for operations like routing traffic, but does not grant the ability to modify or delete the backend service.
-
-| compute.regionNetworkEndpointGroups.attachNetworkEndpoints
-| Allows a user to attach network endpoints to a regional network endpoint group (NEG).
-
-| compute.regionNetworkEndpointGroups.create
-| Allows a user to create a NEG within a specific region.
-
-| compute.regionNetworkEndpointGroups.delete
-| Allows a user to delete a NEG in a specific region.
-
-| compute.regionNetworkEndpointGroups.detachNetworkEndpoints
-| Allows a user to remove network endpoints from a regional NEG.
-
-| compute.regionNetworkEndpointGroups.get
-| Allows a user to retrieve information about a specific NEG within a region.
-
-| compute.regionNetworkEndpointGroups.use
-| Allows a user to use a NEG within a specific region, typically for traffic routing and load balancing operations, without granting the ability to modify or delete the NEG itself.
-
-| compute.regions.get
-| Allows a user to retrieve a specified region.
-
-| compute.regions.list
-| Allows a user to retrieve a list of the available regions in a GCP project.
-
-| compute.routers.get
-| Allows a user to retrieve a specified router.
-
-| compute.serviceAttachments.create
-| Allows a user to create service attachments for Google Cloud services within a specific project or region.
-
-| compute.serviceAttachments.delete
-| Allows a user to delete service attachments that are configured in a project or region.
-
-| compute.serviceAttachments.get
-| Allows a user to retrieve information about an existing service attachment in a project or region.
-
-| compute.serviceAttachments.list
-| Allows a user to list all service attachments within a project or region.
-
-| compute.serviceAttachments.update
-| Allows a user to update or modify a service attachment in a project or region.
-
-| compute.subnetworks.get
-| Allows a user to retrieve a specified subnetwork.
-
-| compute.zoneOperations.get
-| Allows a user to retrieve a specified zone operation.
-
-| compute.zoneOperations.list
-| Allows a user to list zone operations.
-
-| compute.zones.get
-| Allows a user to retrieve a specified zone.
-
-| compute.zones.list
-| Allows a user to retrieve a list of the available zones in a GCP project.
-
-| dns.changes.create
-| Allows a user to create and update DNS resource record sets.
-
-| dns.changes.get
-| Allows a user to retrieve the information about an existing DNS change.
-
-| dns.changes.list
-| Allows a user to retrieve a list of changes to DNS resource record sets.
-
-| dns.managedZones.create
-| Allows a user to create a new managed zone. A DNS managed zone holds the Domain Name System (DNS) records for the same DNS name suffix.
-
-| dns.managedZones.delete
-| Allows a user or service account to delete managed zones within the Google Cloud DNS project.
-
-| dns.managedZones.get
-| Allows a user or service account to retrieve information about a specific DNS managed zone. This permission is used in the context of Google Cloud DNS, which is a scalable and reliable domain name system (DNS) service.
-
-| dns.managedZones.list
-| Allows a user or service account to list the managed zones within a Google Cloud DNS project.
-
-| dns.managedZones.update
-| Allows a user to update or modify the configuration of a managed DNS zone within a Google Cloud DNS project.
-
-| dns.projects.get
-| Allows a user to retrieve information about an existing GCP DNS project.
-
-| dns.resourceRecordSets.create
-| Allows a user to create resource record sets within a DNS zone.
-
-| dns.resourceRecordSets.delete
-| Allows a user to delete resource record sets within a DNS zone.
-
-| dns.resourceRecordSets.get
-| Allows a user or service account to retrieve information about resource record sets within a managed DNS zone.
-
-| dns.resourceRecordSets.list
-| Allows a user or service account to retrieve a list of resource record sets that are part of a particular DNS zone.
-
-| dns.resourceRecordSets.update
-| Allows a user or service account to make changes to the resource records in a DNS zone.
-
-| iam.roles.create
-| Allows a user to create a custom role for a GCP project or an organization.
-
-| iam.roles.delete
-| Allows a user to delete a custom role from a GCP project or an organization.
-
-| iam.roles.get
-| Allows a user to retrieve information about a specific role, including its permissions.
-
-| iam.roles.list
-| Allows a user to list predefined roles, or the custom roles for a project or an organization.
-
-| iam.roles.undelete
-| Allows a user to undelete a custom role from an organization or a project.
-
-| iam.roles.update
-| Allows a user to update an IAM custom role.
-
-| iam.serviceAccounts.actAs
-| Allows a service account to act as another service account or user within a GCP project. This permission is used to delegate authority to one service account to impersonate or perform actions on behalf of another service account or user.
-
-| iam.serviceAccounts.create
-| Allows a user to create a service account for a project.
-
-| iam.serviceAccounts.delete
-| Allows a user to delete a service account for a project.
-
-| iam.serviceAccounts.get
-| Allows a user or service account to retrieve metadata and configuration information about a particular service account within a project. This includes information such as the email address, display name, and IAM policies associated with the service account.
-
-| iam.serviceAccounts.getIamPolicy
-| Allows a user to retrieve the IAM policy for a service account.
-
-| iam.serviceAccounts.setIamPolicy
-| Allows a user to set the IAM policy for a service account.
-
-| iam.serviceAccounts.update
-| Allows a user to modify the service account for a project.
-
-| logging.logEntries.create
-| Allows a user to write log entries.
-
-| resourcemanager.projects.get
-| Allows a user or service account to view project details, such as project ID, name, labels, and other project-level settings. This permission controls the ability to retrieve the metadata and configuration of a project in GCP using the Resource Manager API.
-
-| resourcemanager.projects.getIamPolicy
-| Allows a user or service account to retrieve the IAM access control policy for a specified project. Permission is denied if the policy or the resource does not exist.
-
-| resourcemanager.projects.setIamPolicy
-| Allows a user or service account to set the IAM access control policy for the specified project.
-
-| storage.buckets.get
-| Allows a user to retrieve metadata and configuration information about a specific bucket in Google Cloud Storage. Users with this permission can view details such as the bucket's name, location, storage class, access control settings, and other attributes.
-
-| storage.buckets.getIamPolicy
-| Allows a user to retrieve the IAM policy for a bucket.
-
-| storage.buckets.setIamPolicy
-| Allows a user to set the IAM policy for a bucket.
-
-| Storage Object Admin
-| Grants full control of bucket objects. The Redpanda Agent Storage Admin grant is scoped to a single bucket.
-
-| Kubernetes Engine Admin
-| Full management of Kubernetes clusters and their Kubernetes API objects.
-
+|Access level |Meaning
+|Read |`get`/`list` actions. Cannot modify or delete resources.
+|Write |Creates, updates, or uses resources.
+|Delete |Removes resources.
 |===
+
+== Compute and Kubernetes
+
+Manages the Compute Engine instances, instance groups and templates, autoscalers, and disks that run the Redpanda data plane, plus the operations and zone/region metadata needed to provision them. Kubernetes cluster management is granted through the Kubernetes Engine Admin role.
+
+[cols="3,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`compute.autoscalers.get` |Read |Required to read autoscaler configuration so Redpanda Cloud can safely scale the compute backing your cluster.
+|`compute.autoscalers.list` |Read |Required to enumerate autoscalers when managing the compute that runs your Redpanda cluster.
+|`compute.disks.get` |Read |Required to read details of the persistent disks attached to your cluster's brokers (used when applying labels and validating storage).
+|`compute.disks.list` |Read |Required to enumerate the persistent disks belonging to your cluster.
+|`compute.disks.setLabels` |Write |Required to apply Redpanda-managed labels to your cluster's persistent disks for identification, cost tracking, and lifecycle management.
+|`compute.globalOperations.get` |Read |Required to check the status of long-running GCP operations initiated on your cluster's behalf.
+|`compute.globalOperations.list` |Read |Required to inspect long-running GCP operations so Redpanda Cloud can detect quota exhaustion, capacity stockouts, and other provisioning errors affecting your cluster.
+|`compute.instanceGroupManagers.create` |Write |Required to create the managed instance groups that run the compute nodes of your Redpanda cluster.
+|`compute.instanceGroupManagers.delete` |Delete |Required to delete managed instance groups when nodes or the cluster are being removed.
+|`compute.instanceGroupManagers.get` |Read |Required to read managed instance group configuration to validate and reconcile the state of your cluster's compute.
+|`compute.instanceGroupManagers.list` |Read |Required to enumerate managed instance groups belonging to your Redpanda cluster.
+|`compute.instanceGroupManagers.update` |Write |Required to update managed instance groups when scaling, upgrading, or reconfiguring your cluster.
+|`compute.instanceGroups.create` |Write |Required to create the instance groups that back your Redpanda cluster's compute.
+|`compute.instanceGroups.delete` |Delete |Required to delete instance groups during cluster changes or teardown.
+|`compute.instanceGroups.get` |Read |Required to read instance group details when managing your cluster's compute.
+|`compute.instanceGroups.update` |Write |Required to update instance groups as your cluster is scaled or reconfigured.
+|`compute.instanceTemplates.create` |Write |Required to create the instance templates that define how your Redpanda cluster's nodes are provisioned.
+|`compute.instanceTemplates.delete` |Delete |Required to delete obsolete instance templates during upgrades and teardown.
+|`compute.instanceTemplates.get` |Read |Required to read instance template details when validating and provisioning your cluster.
+|`compute.instances.create` |Write |Required to provision the compute instances (VMs) that host your Redpanda cluster's brokers and supporting workloads.
+|`compute.instances.delete` |Delete |Required to deprovision compute instances when nodes are replaced, scaled down, or the cluster is torn down.
+|`compute.instances.get` |Read |Required to read instance details for health checks, validation, and reconciliation of your cluster's compute.
+|`compute.instances.list` |Read |Required to enumerate the instances that make up your Redpanda cluster.
+|`compute.instances.reset` |Write |Required to reset (hard-reboot) an instance during recovery when a node becomes unresponsive.
+|`compute.instances.setDeletionProtection` |Write |Required to apply deletion protection to cluster instances so they cannot be accidentally destroyed.
+|`compute.instances.setLabels` |Write |Required to apply Redpanda-managed labels to your cluster's instances for identification, cost tracking, and lifecycle management.
+|`compute.instances.update` |Write |Required to update instance configuration as part of scaling, upgrades, or reconfiguration of your cluster.
+|`compute.instances.use` |Write |Required so Redpanda Cloud can attach instances to networking resources (such as Private Service Connect network endpoint groups) that provide connectivity to your cluster.
+|`compute.projects.get` |Read |Required to read basic GCP project metadata (such as default network settings) needed to provision resources for your cluster.
+|`compute.regionOperations.get` |Read |Required to check the status of regional operations initiated on your cluster's behalf (including Private Service Connect operations).
+|`compute.regionOperations.list` |Read |TODO(eng): confirm purpose.
+|`compute.regions.get` |Read |Required to read region metadata when provisioning resources for your cluster.
+|`compute.regions.list` |Read |Required to enumerate available regions when placing and validating your cluster.
+|`compute.zoneOperations.get` |Read |Required to check the status of zonal operations so Redpanda Cloud can detect quota exhaustion, capacity stockouts, and other provisioning errors affecting your cluster.
+|`compute.zoneOperations.list` |Read |Required to inspect zonal operations for detecting quota and capacity issues that affect your cluster's health.
+|`compute.zones.get` |Read |Required to read zone metadata when placing your cluster's compute resources.
+|`compute.zones.list` |Read |Required to enumerate available zones when provisioning and validating your cluster.
+|===
+
+== Networking and connectivity
+
+Manages the VPC network, firewall rules, forwarding rules and Private Service Connect endpoints, backend services, network endpoint groups, service attachments, subnetworks, and Cloud DNS zones and records.
+
+[cols="3,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`compute.addresses.get` |Read |Required to read static IP address details when provisioning and managing the network endpoints used by your Redpanda cluster.
+|`compute.firewalls.create` |Write |Required so Redpanda Cloud can create the firewall rules that protect your cluster's network and allow only intended traffic.
+|`compute.firewalls.delete` |Delete |Required so Redpanda Cloud can remove firewall rules it created when they are no longer needed (e.g., cluster changes or teardown).
+|`compute.firewalls.get` |Read |Required to inspect existing firewall rules to validate cluster networking and detect drift from the expected configuration.
+|`compute.firewalls.update` |Write |Required so Redpanda Cloud can update firewall rules as your cluster's networking requirements change.
+|`compute.forwardingRules.create` |Write |Required to create the forwarding rules that establish Private Service Connect (PSC) endpoints so you can privately reach your Redpanda cluster.
+|`compute.forwardingRules.delete` |Delete |Required to remove PSC forwarding rules when endpoints or the cluster are torn down.
+|`compute.forwardingRules.get` |Read |Required to read PSC forwarding rule details when validating and reconciling private connectivity to your cluster.
+|`compute.forwardingRules.pscCreate` |Write |Required to create Private Service Connect forwarding rules that let you privately reach your Redpanda cluster.
+|`compute.forwardingRules.pscDelete` |Write |Required to delete Private Service Connect forwarding rules when private connectivity is being removed.
+|`compute.forwardingRules.pscSetLabels` |Write |Required to apply Redpanda-managed labels to PSC forwarding rules for identification, cost tracking, and lifecycle management.
+|`compute.forwardingRules.pscSetTarget` |Write |Required to configure the target of PSC forwarding rules so private connections resolve to your Redpanda cluster.
+|`compute.forwardingRules.pscUpdate` |Write |Required to update PSC forwarding rules as your private connectivity configuration changes.
+|`compute.forwardingRules.setLabels` |Write |Required to apply Redpanda-managed labels to forwarding rules for identification, cost tracking, and lifecycle management.
+|`compute.forwardingRules.setTarget` |Write |Required to configure forwarding rule targets so traffic is directed to the correct components of your Redpanda cluster.
+|`compute.forwardingRules.use` |Write |Required so Redpanda Cloud can attach forwarding rules to your cluster's networking resources.
+|`compute.networks.create` |Write |Required to create the VPC network resources that carry your Redpanda cluster's traffic (when Redpanda Cloud manages the network).
+|`compute.networks.delete` |Delete |Required to remove VPC network resources that Redpanda Cloud created when they are no longer needed.
+|`compute.networks.getEffectiveFirewalls` |Read |Required to inspect the effective firewall rules on your VPC so Redpanda Cloud can validate that cluster networking is correctly configured.
+|`compute.networks.update` |Write |Required to update VPC network configuration on networks that Redpanda Cloud manages for your cluster.
+|`compute.networks.updatePolicy` |Write |Required to update network-level policies applied to the VPC hosting your cluster.
+|`compute.networks.use` |Write |Required so Redpanda Cloud can attach your cluster's resources (instances, service attachments, endpoints) to the VPC network.
+|`compute.regionBackendServices.create` |Write |Required to create the regional backend services that route Private Service Connect traffic to your Redpanda cluster.
+|`compute.regionBackendServices.delete` |Delete |Required to delete regional backend services when PSC connectivity or the cluster is being torn down.
+|`compute.regionBackendServices.get` |Read |Required to read regional backend service details when validating and reconciling private connectivity.
+|`compute.regionBackendServices.use` |Write |Required so Redpanda Cloud can attach backend services to forwarding rules and service attachments serving your cluster.
+|`compute.regionNetworkEndpointGroups.attachNetworkEndpoints` |Write |Required to attach your cluster's broker instances to the network endpoint groups that back Private Service Connect.
+|`compute.regionNetworkEndpointGroups.create` |Write |Required to create the network endpoint groups that expose your cluster's brokers through Private Service Connect.
+|`compute.regionNetworkEndpointGroups.delete` |Delete |Required to delete network endpoint groups when PSC connectivity or the cluster is being torn down.
+|`compute.regionNetworkEndpointGroups.detachNetworkEndpoints` |Write |Required to detach broker instances from network endpoint groups during scaling, replacement, or teardown.
+|`compute.regionNetworkEndpointGroups.get` |Read |Required to read network endpoint group details when validating and reconciling PSC connectivity.
+|`compute.regionNetworkEndpointGroups.use` |Write |Required so Redpanda Cloud can attach network endpoint groups to the backend services and forwarding rules serving your cluster.
+|`compute.routers.get` |Read |Required to read Cloud Router configuration when validating VPC networking used by your cluster.
+|`compute.serviceAttachments.create` |Write |Required to create the Private Service Connect service attachments that publish your Redpanda cluster for private consumption.
+|`compute.serviceAttachments.delete` |Delete |Required to delete PSC service attachments when private connectivity or the cluster is being torn down.
+|`compute.serviceAttachments.get` |Read |Required to read PSC service attachment details when validating and reconciling private connectivity.
+|`compute.serviceAttachments.list` |Read |Required to enumerate PSC service attachments belonging to your cluster.
+|`compute.serviceAttachments.update` |Write |Required to update PSC service attachments as private connectivity settings (such as allow-lists) change.
+|`compute.subnetworks.get` |Read |Required to read subnetwork details when validating and placing your cluster's resources on the correct subnets.
+|`compute.subnetworks.use` |Write |Required so Redpanda Cloud can place your cluster's instances and endpoints in the appropriate subnets.
+|`dns.changes.create` |Write |Required to publish DNS record changes so clients can resolve the endpoints of your Redpanda cluster (including external-DNS updates from the underlying GKE cluster).
+|`dns.changes.get` |Read |Required to check the status of pending DNS record changes for your cluster's endpoints.
+|`dns.changes.list` |Read |Required to enumerate DNS record changes when reconciling the DNS state for your cluster.
+|`dns.managedZones.create` |Write |Required to create the managed DNS zones that host your Redpanda cluster's endpoint records.
+|`dns.managedZones.delete` |Delete |Required to delete managed DNS zones created by Redpanda Cloud when they are no longer needed.
+|`dns.managedZones.get` |Read |Required to read managed DNS zone details when reconciling your cluster's DNS configuration.
+|`dns.managedZones.list` |Read |Required to enumerate managed DNS zones associated with your cluster (used by external-DNS and by Redpanda's validation).
+|`dns.managedZones.update` |Write |Required to update managed DNS zone configuration as your cluster's DNS needs change.
+|`dns.projects.get` |Read |Required to read Cloud DNS project settings when managing DNS for your cluster.
+|`dns.resourceRecordSets.create` |Write |Required to create DNS records so clients can resolve your Redpanda cluster's endpoints (used by external-DNS).
+|`dns.resourceRecordSets.delete` |Delete |Required to remove DNS records when endpoints are decommissioned or the cluster is torn down.
+|`dns.resourceRecordSets.get` |Read |Required to read DNS record details when reconciling your cluster's DNS state.
+|`dns.resourceRecordSets.list` |Read |Required to enumerate DNS records associated with your cluster.
+|`dns.resourceRecordSets.update` |Write |Required to update DNS records as your cluster's endpoints change.
+|===
+
+== Storage
+
+Reads bucket metadata and manages the IAM policy on the Tiered Storage bucket. Object-level access is granted through the Storage Object Admin role, scoped to a single bucket.
+
+[cols="3,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`storage.buckets.get` |Read |Required to read storage bucket details for the buckets used by your cluster (for example, Tiered Storage).
+|`storage.buckets.getIamPolicy` |Read |Required to inspect IAM bindings on your cluster's storage buckets to validate access is correctly configured.
+|`storage.buckets.setIamPolicy` |Write |Required to grant your cluster's service accounts access to the storage buckets it uses (for example, Tiered Storage).
+|===
+
+== Identity and access
+
+Creates and manages the custom role, service accounts, and project-level IAM bindings the cluster components need.
+
+[cols="3,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`iam.roles.create` |Write |Required to create the custom IAM roles that grant Redpanda Cloud components least-privilege access needed to operate your cluster.
+|`iam.roles.delete` |Delete |Required to delete custom IAM roles created by Redpanda Cloud when they are no longer needed.
+|`iam.roles.get` |Read |Required to read custom IAM role definitions to validate that the correct permissions are in place for your cluster.
+|`iam.roles.list` |Read |Required to enumerate IAM roles when validating and reconciling the permissions granted for your cluster.
+|`iam.roles.undelete` |Write |Required to restore an accidentally deleted custom IAM role so your cluster's operation is not disrupted.
+|`iam.roles.update` |Write |Required to update custom IAM role definitions as Redpanda Cloud's required permissions evolve.
+|`iam.serviceAccounts.actAs` |Write |Required so Redpanda Cloud components can impersonate the service accounts used to operate your cluster (following GCP's least-privilege delegation model).
+|`iam.serviceAccounts.create` |Write |Required to create the service accounts used by the various components that run your Redpanda cluster.
+|`iam.serviceAccounts.delete` |Delete |Required to delete service accounts created by Redpanda Cloud when they are no longer needed.
+|`iam.serviceAccounts.get` |Read |Required to read service account details to validate that your cluster's components have the correct identities.
+|`iam.serviceAccounts.getIamPolicy` |Read |Required to inspect service account IAM bindings when validating and reconciling permissions for your cluster.
+|`iam.serviceAccounts.setIamPolicy` |Write |Required to grant the necessary IAM bindings on service accounts so cluster components can act on their behalf.
+|`iam.serviceAccounts.update` |Write |Required to update service account configuration as your cluster evolves.
+|`resourcemanager.projects.get` |Read |Required to read basic project metadata used by all Redpanda Cloud components (cluster provisioning, connectors, and application services) that run in your project.
+|`resourcemanager.projects.getIamPolicy` |Read |Required to inspect your project's IAM policy to validate that the necessary bindings for Redpanda Cloud are correctly in place.
+|`resourcemanager.projects.setIamPolicy` |Write |Required to grant the project-level IAM bindings needed for Redpanda Cloud to operate your cluster.
+|===
+
+== Secrets management
+
+Lists and deletes the Secret Manager secrets Redpanda creates for your cluster.
+
+[cols="3,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`secretmanager.secrets.delete` |Delete |TODO(eng): confirm purpose.
+|`secretmanager.secrets.list` |Read |TODO(eng): confirm purpose.
+|===
+
+== Service enablement
+
+Enables and reads the state of the GCP APIs (services) that your cluster depends on.
+
+[cols="3,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`serviceusage.services.enable` |Write |TODO(eng): confirm purpose.
+|`serviceusage.services.get` |Read |TODO(eng): confirm purpose.
+|===
+
+== Observability
+
+Writes log entries for the agent and cluster components.
+
+[cols="3,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`logging.logEntries.create` |Write |Required so your Redpanda cluster and the underlying GKE cluster can write operational logs to Cloud Logging in your project.
+|===
+
+== Optional feature permissions
+
+[NOTE]
+====
+The following permissions apply only when you use Redpanda SQL. They are granted through a separate custom role (internally named for `oxla`, the legacy name for Redpanda SQL). TODO(eng): confirm feature-gating.
+====
+
+=== Manage Redpanda SQL storage buckets
+
+Creates and manages the Cloud Storage bucket that holds Redpanda SQL metadata.
+
+[cols="3,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`storage.buckets.create` |Write |TODO(eng): confirm purpose.
+|`storage.buckets.delete` |Delete |TODO(eng): confirm purpose.
+|`storage.buckets.update` |Write |TODO(eng): confirm purpose.
+|`storage.objects.delete` |Delete |TODO(eng): confirm purpose.
+|`storage.objects.list` |Read |TODO(eng): confirm purpose.
+|===
+
+== Full role definition
+
+The complete set of permissions in the Redpanda agent custom role:
+
+.Terraform
+[%collapsible]
+====
+[source,hcl]
+----
+permissions = [
+  "compute.addresses.get",
+  "compute.autoscalers.get",
+  "compute.autoscalers.list",
+  "compute.firewalls.create",
+  "compute.firewalls.delete",
+  "compute.firewalls.get",
+  "compute.firewalls.update",
+  "compute.forwardingRules.use",
+  "compute.globalOperations.get",
+  "compute.globalOperations.list",
+  "compute.instanceGroupManagers.create",
+  "compute.instanceGroupManagers.delete",
+  "compute.instanceGroupManagers.get",
+  "compute.instanceGroupManagers.list",
+  "compute.instanceGroupManagers.update",
+  "compute.instanceGroups.create",
+  "compute.instanceGroups.delete",
+  "compute.instanceGroups.get",
+  "compute.instanceGroups.update",
+  "compute.instances.create",
+  "compute.instances.delete",
+  "compute.instances.get",
+  "compute.instances.list",
+  "compute.instances.reset",
+  "compute.instances.setDeletionProtection",
+  "compute.instances.update",
+  "compute.instanceTemplates.create",
+  "compute.instanceTemplates.delete",
+  "compute.instanceTemplates.get",
+  "compute.instances.setLabels",
+  "compute.disks.get",
+  "compute.disks.list",
+  "compute.disks.setLabels",
+  "compute.networks.create",
+  "compute.networks.delete",
+  "compute.networks.getEffectiveFirewalls",
+  "compute.networks.update",
+  "compute.networks.updatePolicy",
+  "compute.projects.get",
+  "compute.regionOperations.get",
+  "compute.regionOperations.list",
+  "compute.regions.get",
+  "compute.regions.list",
+  "compute.routers.get",
+  "compute.serviceAttachments.create",
+  "compute.serviceAttachments.delete",
+  "compute.serviceAttachments.get",
+  "compute.serviceAttachments.list",
+  "compute.serviceAttachments.update",
+  "compute.subnetworks.get",
+  "compute.subnetworks.use",
+  "compute.zoneOperations.get",
+  "compute.zoneOperations.list",
+  "compute.zones.get",
+  "compute.zones.list",
+  "dns.changes.create",
+  "dns.changes.get",
+  "dns.changes.list",
+  "dns.managedZones.create",
+  "dns.managedZones.delete",
+  "dns.managedZones.get",
+  "dns.managedZones.list",
+  "dns.managedZones.update",
+  "dns.projects.get",
+  "dns.resourceRecordSets.create",
+  "dns.resourceRecordSets.delete",
+  "dns.resourceRecordSets.get",
+  "dns.resourceRecordSets.list",
+  "dns.resourceRecordSets.update",
+  "iam.roles.create",
+  "iam.roles.delete",
+  "iam.roles.get",
+  "iam.roles.list",
+  "iam.roles.undelete",
+  "iam.roles.update",
+  "iam.serviceAccounts.actAs",
+  "iam.serviceAccounts.create",
+  "iam.serviceAccounts.delete",
+  "iam.serviceAccounts.get",
+  "iam.serviceAccounts.getIamPolicy",
+  "iam.serviceAccounts.setIamPolicy",
+  "iam.serviceAccounts.update",
+  "logging.logEntries.create",
+  "resourcemanager.projects.get",
+  "resourcemanager.projects.getIamPolicy",
+  "resourcemanager.projects.setIamPolicy",
+  "storage.buckets.get",
+  "storage.buckets.getIamPolicy",
+  "storage.buckets.setIamPolicy",
+  "compute.forwardingRules.create",
+  "compute.forwardingRules.delete",
+  "compute.forwardingRules.get",
+  "compute.forwardingRules.setLabels",
+  "compute.forwardingRules.setTarget",
+  "compute.forwardingRules.pscCreate",
+  "compute.forwardingRules.pscDelete",
+  "compute.forwardingRules.pscSetLabels",
+  "compute.forwardingRules.pscSetTarget",
+  "compute.forwardingRules.pscUpdate",
+  "compute.instances.use",
+  "compute.networks.use",
+  "compute.regionBackendServices.create",
+  "compute.regionBackendServices.delete",
+  "compute.regionBackendServices.get",
+  "compute.regionBackendServices.use",
+  "compute.regionNetworkEndpointGroups.attachNetworkEndpoints",
+  "compute.regionNetworkEndpointGroups.create",
+  "compute.regionNetworkEndpointGroups.delete",
+  "compute.regionNetworkEndpointGroups.detachNetworkEndpoints",
+  "compute.regionNetworkEndpointGroups.get",
+  "compute.regionNetworkEndpointGroups.use",
+  "secretmanager.secrets.list",
+  "secretmanager.secrets.delete",
+  "serviceusage.services.enable",
+  "serviceusage.services.get",
+]
+----
+====
 endif::[]
 
-
 ifdef::env-azure[]
-When you run `rpk cloud byoc azure apply` to create a BYOC cluster, you grant IAM permissions to the Redpanda Cloud agent. IAM permissions allow the agent to access the Azure API to create and manage cluster resources. The permissions follow the principle of least privilege, limiting access to only what is necessary. IAM permissions are not required by Redpanda Cloud users.
+// DOC-2297: reformatted for consistency with AWS. Rebuilt from cloudv2
+// pkg/provisioners/azure/terraform/agent/iam.tf. Azure keeps the agent-based
+// model (no cross-account delegation in this release).
+// TODO(eng): supply "why" text for cells marked TODO(eng).
+When you run `rpk cloud byoc azure apply` to create a BYOC cluster, you grant these permissions to the Redpanda Cloud agent. The agent uses them to call the Azure API and manage cluster resources on your behalf. The permissions follow the principle of least privilege. They are _not_ required by Redpanda Cloud end users.
 
 [NOTE]
 ====
-* This page lists the IAM permissions Redpanda needs to create xref:get-started:cluster-types/byoc/azure/create-byoc-cluster-azure.adoc[BYOC clusters]. This _does not_ pertain to xref:get-started:cluster-types/byoc/azure/vnet-azure.adoc[BYOVNet clusters]. 
-* No IAM permissions are required for Redpanda Cloud users. IAM policies do not grant user access to a cluster; rather, they grant the deployed Redpanda agent access, so that brokers can communicate with the BYOC clusters.
+This page covers the permissions Redpanda needs to create xref:get-started:cluster-types/byoc/azure/create-byoc-cluster-azure.adoc[BYOC clusters]. It does _not_ apply to xref:get-started:cluster-types/byoc/azure/vnet-azure.adoc[BYOVNet clusters].
 ====
 
-Azure RBAC (role-based access control) is scoped to resource groups. For example:
+[NOTE]
+====
+Azure RBAC for the agent is scoped to the cluster resource groups, for example `rg-rpcloud-<id>`, `rg-rpcloud-<id>-network`, and `rg-rpcloud-<id>-storage`. Permissions are granted through a single custom role definition; the full definition is available at the end of this page.
+====
 
-```
-"/subscriptions/<subscriptionid>/resourceGroups/rg-rpcloud-cqh5itt4650ot3irs5mg",
-            "/subscriptions/<subscriptionid>/resourceGroups/rg-rpcloud-cqh5itt4650ot3irs5mg-network",
-            "/subscriptions/<subscriptionid>/resourceGroups/rg-rpcloud-cqh5itt4650ot3irs5mg-storage"
-        ],
-        "permissions": [
-            {
-```
+[cols="1,4", options="header"]
+|===
+|Access level |Meaning
+|Read |`/read` actions. Cannot modify or delete resources.
+|Write |`/write` and `/action` operations.
+|Delete |`/delete` actions.
+|===
 
-== Azure IAM policies
+== Compute and Kubernetes
 
-IAM policies are assigned to deployed Redpanda agents for BYOC Azure
-clusters that use the following Azure services:
+Manages the AKS managed clusters and their agent (node) pools that run the Redpanda data plane.
 
-    actions = [
-      # Ability to read the resource group
-      "Microsoft.Resources/subscriptions/resourcegroups/read",
-      # Storage Containers
-      "Microsoft.Storage/storageAccounts/blobServices/containers/delete",
-      "Microsoft.Storage/storageAccounts/blobServices/containers/read",
-      "Microsoft.Storage/storageAccounts/blobServices/containers/write",
-      "Microsoft.Storage/storageAccounts/blobServices/generateUserDelegationKey/action",
-      # Create DNS Zones
-      "Microsoft.Network/dnszones/read",
-      "Microsoft.Network/dnszones/write",
-      "Microsoft.Network/dnszones/delete",
-      # Workaround for TF needing to import the zone when it already exists.
-      "Microsoft.Network/dnszones/SOA/read",
-      # Private link read
-      "Microsoft.Network/privatelinkservices/read",
-      # The agent needs access to the storage account in order to access the data
-      "Microsoft.Storage/storageAccounts/read",
-      # Manage AKS Clusters
-      "Microsoft.ContainerService/managedClusters/read",
-      "Microsoft.ContainerService/managedClusters/delete",
-      "Microsoft.ContainerService/managedClusters/write",
-      "Microsoft.ContainerService/managedClusters/agentPools/read",
-      "Microsoft.ContainerService/managedClusters/agentPools/write",
-      "Microsoft.ContainerService/managedClusters/agentPools/delete",
-      "Microsoft.ContainerService/managedClusters/agentPools/upgradeNodeImageVersion/action",
-      # Without this, cannot create node pools to the specified AKS cluster
-      "Microsoft.ContainerService/managedClusters/listClusterUserCredential/action",
-      # Allows joining to a VNet
-      "Microsoft.Network/virtualNetworks/read",
-      "Microsoft.Network/virtualNetworks/subnets/join/action",
-      "Microsoft.Network/virtualNetworks/subnets/read",
-      "Microsoft.Network/virtualNetworks/subnets/write",
-      "Microsoft.Network/virtualNetworks/subnets/delete",
-      # Allow agent to manage role assignments for the Redpanda cluster
-      "Microsoft.Authorization/roleAssignments/read",
-      "Microsoft.Authorization/roleAssignments/write",
-      "Microsoft.Authorization/roleAssignments/delete",
-      # Allow agent to manage role definitions for the Redpana cluster
-      "Microsoft.Authorization/roleDefinitions/write",
-      "Microsoft.Authorization/roleDefinitions/read",
-      "Microsoft.Authorization/roleDefinitions/delete",
-      # Allow agent to manage identities for the Redpanda cluster
-      "Microsoft.ManagedIdentity/userAssignedIdentities/read",
-      "Microsoft.ManagedIdentity/userAssignedIdentities/write",
-      "Microsoft.ManagedIdentity/userAssignedIdentities/delete",
-      "Microsoft.ManagedIdentity/userAssignedIdentities/assign/action",
-      "Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials/read",
-      "Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials/write",
-      "Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials/delete",
-      # Allow agent to manage tiered storage bucket for the Redpanda cluster
-      "Microsoft.Storage/storageAccounts/read",
-      "Microsoft.Storage/storageAccounts/write",
-      "Microsoft.Storage/storageAccounts/delete",
-      "Microsoft.Storage/storageAccounts/blobServices/read",
-      "Microsoft.Storage/storageAccounts/blobServices/write",
-      # Allow agent to read public IPs
-      "Microsoft.Network/publicIPAddresses/read",
-      "Microsoft.Network/publicIPAddresses/write",
-      "Microsoft.Network/publicIPAddresses/delete",
-      # Creating the RP storage account requires these additional permissions to workaround  https://github.com/hashicorp/terraform-provider-azurerm/issues/25521
-      "Microsoft.Storage/storageAccounts/queueServices/read",
-      "Microsoft.Storage/storageAccounts/fileServices/read",
-      "Microsoft.Storage/storageAccounts/fileServices/shares/read",
-      "Microsoft.Storage/storageAccounts/listkeys/action",
-      # Read the keyvault
-      "Microsoft.KeyVault/vaults/read"
-    ]
-    data_actions = [
-      # Storage Containers
-      "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/delete",
-      "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/read",
-      "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/write",
-      "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/move/action",
-      "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/add/action"
-    ]
+[cols="4,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`Microsoft.ContainerService/managedClusters/agentPools/delete` |Delete |Required to remove AKS node pools when scaling down or decommissioning your Redpanda cluster.
+|`Microsoft.ContainerService/managedClusters/agentPools/read` |Read |Needed so Redpanda Cloud can inspect the state of the AKS node pools that host your Redpanda brokers.
+|`Microsoft.ContainerService/managedClusters/agentPools/upgradeNodeImageVersion/action` |Write |Required to apply node image upgrades so the underlying OS running your Redpanda brokers stays patched and secure.
+|`Microsoft.ContainerService/managedClusters/agentPools/upgradeProfiles/read` |Read |TODO(eng): confirm purpose.
+|`Microsoft.ContainerService/managedClusters/agentPools/write` |Write |Required to provision and scale the AKS node pools that run your Redpanda brokers and supporting workloads.
+|`Microsoft.ContainerService/managedClusters/delete` |Delete |Required to tear down the AKS cluster that hosts Redpanda when you decommission your environment.
+|`Microsoft.ContainerService/managedClusters/listClusterAdminCredential/action` |Write |TODO(eng): confirm purpose.
+|`Microsoft.ContainerService/managedClusters/listClusterUserCredential/action` |Write |Required so Redpanda Cloud can obtain kubeconfig credentials to operate and manage the AKS cluster running your Redpanda deployment.
+|`Microsoft.ContainerService/managedClusters/read` |Read |Needed so Redpanda Cloud can read the configuration and status of the AKS cluster hosting your Redpanda deployment.
+|`Microsoft.ContainerService/managedClusters/upgradeProfiles/read` |Read |TODO(eng): confirm purpose.
+|`Microsoft.ContainerService/managedClusters/write` |Write |Required to create and update the AKS cluster that hosts your managed Redpanda deployment.
+|===
+
+== Networking and connectivity
+
+Joins the cluster to the virtual network and subnets, manages public and private DNS zones and private endpoints, reads Private Link services, and manages public IP addresses.
+
+[cols="4,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`Microsoft.Network/dnszones/SOA/read` |Read |Needed to read DNS zone SOA records when reconciling the DNS configuration that exposes your Redpanda cluster endpoints.
+|`Microsoft.Network/dnszones/delete` |Delete |Required to remove DNS records for your Redpanda cluster endpoints when the cluster is decommissioned.
+|`Microsoft.Network/dnszones/read` |Read |Needed so Redpanda Cloud can look up the DNS zone used to publish endpoints for your Redpanda cluster.
+|`Microsoft.Network/dnszones/write` |Write |Required to create and update DNS records so clients can resolve your Redpanda cluster endpoints.
+|`Microsoft.Network/privateDnsZones/A/delete` |Delete |TODO(eng): confirm purpose.
+|`Microsoft.Network/privateDnsZones/A/read` |Read |TODO(eng): confirm purpose.
+|`Microsoft.Network/privateDnsZones/A/write` |Write |TODO(eng): confirm purpose.
+|`Microsoft.Network/privateDnsZones/SOA/read` |Read |TODO(eng): confirm purpose.
+|`Microsoft.Network/privateDnsZones/SOA/write` |Write |TODO(eng): confirm purpose.
+|`Microsoft.Network/privateDnsZones/delete` |Delete |TODO(eng): confirm purpose.
+|`Microsoft.Network/privateDnsZones/join/action` |Write |TODO(eng): confirm purpose.
+|`Microsoft.Network/privateDnsZones/read` |Read |TODO(eng): confirm purpose.
+|`Microsoft.Network/privateDnsZones/virtualNetworkLinks/delete` |Delete |TODO(eng): confirm purpose.
+|`Microsoft.Network/privateDnsZones/virtualNetworkLinks/read` |Read |TODO(eng): confirm purpose.
+|`Microsoft.Network/privateDnsZones/virtualNetworkLinks/write` |Write |TODO(eng): confirm purpose.
+|`Microsoft.Network/privateDnsZones/write` |Write |TODO(eng): confirm purpose.
+|`Microsoft.Network/privateEndpoints/delete` |Delete |TODO(eng): confirm purpose.
+|`Microsoft.Network/privateEndpoints/privateDnsZoneGroups/delete` |Delete |TODO(eng): confirm purpose.
+|`Microsoft.Network/privateEndpoints/privateDnsZoneGroups/read` |Read |TODO(eng): confirm purpose.
+|`Microsoft.Network/privateEndpoints/privateDnsZoneGroups/write` |Write |TODO(eng): confirm purpose.
+|`Microsoft.Network/privateEndpoints/read` |Read |TODO(eng): confirm purpose.
+|`Microsoft.Network/privateEndpoints/write` |Write |TODO(eng): confirm purpose.
+|`Microsoft.Network/privatelinkservices/read` |Read |Needed so Redpanda Cloud can inspect Private Link services used to expose your Redpanda cluster privately to your VNets.
+|`Microsoft.Network/publicIPAddresses/delete` |Delete |Required to release public IP addresses when networking resources for your Redpanda cluster are decommissioned.
+|`Microsoft.Network/publicIPAddresses/read` |Read |Needed so Redpanda Cloud can inspect the public IP addresses associated with your cluster's ingress endpoints.
+|`Microsoft.Network/publicIPAddresses/write` |Write |Required to allocate the public IP addresses used for the ingress endpoints of your Redpanda cluster (when public access is enabled).
+|`Microsoft.Network/publicIPPrefixes/join/action` |Write |TODO(eng): confirm purpose.
+|`Microsoft.Network/virtualNetworks/join/action` |Write |TODO(eng): confirm purpose.
+|`Microsoft.Network/virtualNetworks/read` |Read |Needed so Redpanda Cloud can inspect the virtual network in which your Redpanda cluster is deployed.
+|`Microsoft.Network/virtualNetworks/subnets/delete` |Delete |Required to remove subnets provisioned for your Redpanda cluster when it is decommissioned.
+|`Microsoft.Network/virtualNetworks/subnets/join/action` |Write |Required so AKS nodes, load balancers, and private endpoints for your Redpanda cluster can attach to the designated subnets.
+|`Microsoft.Network/virtualNetworks/subnets/read` |Read |Needed so Redpanda Cloud can inspect the subnets used by your Redpanda cluster.
+|`Microsoft.Network/virtualNetworks/subnets/write` |Write |Required to create and configure the subnets that host the AKS nodes and networking resources for your Redpanda cluster.
+|===
+
+== Storage
+
+Manages the storage accounts and blob containers backing Tiered Storage, and reads the Key Vault.
+
+[cols="4,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`Microsoft.KeyVault/vaults/read` |Read |Needed so Redpanda Cloud can look up the Key Vault used to store cluster secrets and encryption keys.
+|`Microsoft.Storage/storageAccounts/PrivateEndpointConnectionsApproval/action` |Write |TODO(eng): confirm purpose.
+|`Microsoft.Storage/storageAccounts/blobServices/containers/delete` |Delete |Required to remove the blob container used for tiered storage when the associated Redpanda cluster is decommissioned.
+|`Microsoft.Storage/storageAccounts/blobServices/containers/read` |Read |Needed so Redpanda Cloud can inspect the blob container that backs tiered storage for your cluster.
+|`Microsoft.Storage/storageAccounts/blobServices/containers/write` |Write |Required to create and configure the blob container used for tiered storage of your Redpanda topic data.
+|`Microsoft.Storage/storageAccounts/blobServices/generateUserDelegationKey/action` |Write |Required to issue short-lived user delegation keys for scoped, time-bound access to blobs, avoiding the use of long-lived storage account keys.
+|`Microsoft.Storage/storageAccounts/blobServices/read` |Read |Needed so Redpanda Cloud can inspect the blob service configuration on the storage account backing your cluster.
+|`Microsoft.Storage/storageAccounts/blobServices/write` |Write |Required to configure blob service settings (such as retention and versioning) on the storage account that backs tiered storage.
+|`Microsoft.Storage/storageAccounts/delete` |Delete |Required to remove the storage account provisioned for your Redpanda cluster when it is decommissioned.
+|`Microsoft.Storage/storageAccounts/fileServices/read` |Read |Needed to read file service metadata on the storage account so Redpanda Cloud can reconcile its full configuration.
+|`Microsoft.Storage/storageAccounts/fileServices/shares/read` |Read |Needed to read file share metadata on the storage account so Redpanda Cloud can reconcile its full configuration.
+|`Microsoft.Storage/storageAccounts/listkeys/action` |Write |Required to retrieve storage account keys used for authenticated access to the storage account backing your Redpanda cluster.
+|`Microsoft.Storage/storageAccounts/queueServices/read` |Read |Needed to read queue service metadata on the storage account so Redpanda Cloud can reconcile its full configuration.
+|`Microsoft.Storage/storageAccounts/read` |Read |Needed so Redpanda Cloud can inspect the storage account used for tiered storage of your Redpanda topic data.
+|`Microsoft.Storage/storageAccounts/read` |Read |Needed so Redpanda Cloud can inspect the storage account used for tiered storage of your Redpanda topic data.
+|`Microsoft.Storage/storageAccounts/write` |Write |Required to create and configure the storage account that backs tiered storage for your Redpanda cluster.
+|===
+
+== Identity and access
+
+Manages the role assignments, role definitions, and user-assigned managed identities (including federated credentials) the cluster components need.
+
+[cols="4,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`Microsoft.Authorization/roleAssignments/delete` |Delete |Required to remove role assignments when tearing down or reconfiguring identities used by your Redpanda cluster.
+|`Microsoft.Authorization/roleAssignments/read` |Read |Needed so Redpanda Cloud can verify the correct role assignments are in place for the managed identities powering your cluster.
+|`Microsoft.Authorization/roleAssignments/write` |Write |Required to grant the managed identities used by your Redpanda cluster the specific roles they need on your Azure resources.
+|`Microsoft.Authorization/roleDefinitions/delete` |Delete |Required to remove the least-privilege custom role definitions Redpanda creates when your cluster is decommissioned.
+|`Microsoft.Authorization/roleDefinitions/read` |Read |Needed so Redpanda Cloud can inspect existing custom role definitions before managing identities and permissions in your subscription.
+|`Microsoft.Authorization/roleDefinitions/write` |Write |Required to create and update the scoped custom role definitions that give Redpanda workloads only the permissions they need.
+|`Microsoft.ManagedIdentity/userAssignedIdentities/assign/action` |Write |Required to attach user-assigned managed identities to the AKS and storage resources that make up your Redpanda cluster.
+|`Microsoft.ManagedIdentity/userAssignedIdentities/delete` |Delete |Required to remove user-assigned managed identities when your Redpanda cluster is decommissioned.
+|`Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials/delete` |Delete |Required to remove federated identity credentials when Redpanda workloads are torn down or reconfigured.
+|`Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials/read` |Read |Needed so Redpanda Cloud can verify the federated identity credentials that let Redpanda workloads authenticate to Azure without static secrets.
+|`Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials/write` |Write |Required to create federated identity credentials so Redpanda workloads running in AKS can authenticate to Azure services securely via workload identity, without long-lived secrets.
+|`Microsoft.ManagedIdentity/userAssignedIdentities/read` |Read |Needed so Redpanda Cloud can inspect the user-assigned managed identities used by your cluster.
+|`Microsoft.ManagedIdentity/userAssignedIdentities/write` |Write |Required to create and update the user-assigned managed identities that Redpanda workloads use to access Azure resources on your behalf.
+|===
+
+== Monitoring
+
+Reads Log Analytics workspace keys used to reconcile node pools.
+
+[cols="4,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`Microsoft.OperationalInsights/workspaces/sharedkeys/read` |Read |TODO(eng): confirm purpose.
+|===
+
+== Resource group
+
+Reads the resource groups the cluster is deployed into.
+
+[cols="4,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`Microsoft.Resources/subscriptions/resourcegroups/read` |Read |Needed so Redpanda Cloud can verify the target resource group exists and confirm it has the correct permissions before deploying your cluster.
+|===
+
+== Data-plane actions
+
+These `data_actions` let Redpanda read and write your topic data in the Tiered Storage blob containers.
+
+[cols="4,1,5", options="header"]
+|===
+|Permission |Access |Why it is needed
+|`Microsoft.Storage/storageAccounts/blobServices/containers/blobs/add/action` |Write |Required so Redpanda can write topic data to the blob storage container used for tiered storage. _(Data-plane action.)_
+|`Microsoft.Storage/storageAccounts/blobServices/containers/blobs/delete` |Delete |Required so Redpanda can remove expired or compacted objects from the blob storage container used for tiered storage, according to your retention policies. _(Data-plane action.)_
+|`Microsoft.Storage/storageAccounts/blobServices/containers/blobs/move/action` |Write |Required so Redpanda can reorganize objects in the tiered storage container as part of normal data lifecycle operations. _(Data-plane action.)_
+|`Microsoft.Storage/storageAccounts/blobServices/containers/blobs/read` |Read |Required so Redpanda can read topic data stored in the tiered storage blob container when serving consumer reads. _(Data-plane action.)_
+|`Microsoft.Storage/storageAccounts/blobServices/containers/blobs/write` |Write |Required so Redpanda can upload topic segments to the blob storage container that backs tiered storage for your cluster. _(Data-plane action.)_
+|===
+
+== Full role definition
+
+The complete set of `actions` and `data_actions` in the agent custom role:
+
+.Terraform
+[%collapsible]
+====
+[source,hcl]
+----
+actions = [
+  "Microsoft.Resources/subscriptions/resourcegroups/read",
+  "Microsoft.Storage/storageAccounts/blobServices/containers/delete",
+  "Microsoft.Storage/storageAccounts/blobServices/containers/read",
+  "Microsoft.Storage/storageAccounts/blobServices/containers/write",
+  "Microsoft.Storage/storageAccounts/blobServices/generateUserDelegationKey/action",
+  "Microsoft.Network/dnszones/read",
+  "Microsoft.Network/dnszones/write",
+  "Microsoft.Network/dnszones/delete",
+  "Microsoft.Network/dnszones/SOA/read",
+  "Microsoft.Network/privatelinkservices/read",
+  "Microsoft.Storage/storageAccounts/read",
+  "Microsoft.ContainerService/managedClusters/read",
+  "Microsoft.ContainerService/managedClusters/delete",
+  "Microsoft.ContainerService/managedClusters/write",
+  "Microsoft.ContainerService/managedClusters/upgradeProfiles/read",
+  "Microsoft.ContainerService/managedClusters/agentPools/read",
+  "Microsoft.ContainerService/managedClusters/agentPools/write",
+  "Microsoft.ContainerService/managedClusters/agentPools/delete",
+  "Microsoft.ContainerService/managedClusters/agentPools/upgradeNodeImageVersion/action",
+  "Microsoft.ContainerService/managedClusters/agentPools/upgradeProfiles/read",
+  "Microsoft.ContainerService/managedClusters/listClusterUserCredential/action",
+  "Microsoft.ContainerService/managedClusters/listClusterAdminCredential/action",
+  "Microsoft.Network/virtualNetworks/read",
+  "Microsoft.Network/virtualNetworks/subnets/join/action",
+  "Microsoft.Network/virtualNetworks/subnets/read",
+  "Microsoft.Network/virtualNetworks/subnets/write",
+  "Microsoft.Network/virtualNetworks/subnets/delete",
+  "Microsoft.Authorization/roleAssignments/read",
+  "Microsoft.Authorization/roleAssignments/write",
+  "Microsoft.Authorization/roleAssignments/delete",
+  "Microsoft.Authorization/roleDefinitions/write",
+  "Microsoft.Authorization/roleDefinitions/read",
+  "Microsoft.Authorization/roleDefinitions/delete",
+  "Microsoft.ManagedIdentity/userAssignedIdentities/read",
+  "Microsoft.ManagedIdentity/userAssignedIdentities/write",
+  "Microsoft.ManagedIdentity/userAssignedIdentities/delete",
+  "Microsoft.ManagedIdentity/userAssignedIdentities/assign/action",
+  "Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials/read",
+  "Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials/write",
+  "Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials/delete",
+  "Microsoft.Storage/storageAccounts/read",
+  "Microsoft.Storage/storageAccounts/write",
+  "Microsoft.Storage/storageAccounts/delete",
+  "Microsoft.Storage/storageAccounts/blobServices/read",
+  "Microsoft.Storage/storageAccounts/blobServices/write",
+  "Microsoft.Storage/storageAccounts/PrivateEndpointConnectionsApproval/action",
+  "Microsoft.Network/privateEndpoints/read",
+  "Microsoft.Network/privateEndpoints/write",
+  "Microsoft.Network/privateEndpoints/delete",
+  "Microsoft.Network/privateEndpoints/privateDnsZoneGroups/read",
+  "Microsoft.Network/privateEndpoints/privateDnsZoneGroups/write",
+  "Microsoft.Network/privateEndpoints/privateDnsZoneGroups/delete",
+  "Microsoft.Network/privateDnsZones/read",
+  "Microsoft.Network/privateDnsZones/write",
+  "Microsoft.Network/privateDnsZones/delete",
+  "Microsoft.Network/privateDnsZones/join/action",
+  "Microsoft.Network/privateDnsZones/SOA/read",
+  "Microsoft.Network/privateDnsZones/SOA/write",
+  "Microsoft.Network/privateDnsZones/A/read",
+  "Microsoft.Network/privateDnsZones/A/write",
+  "Microsoft.Network/privateDnsZones/A/delete",
+  "Microsoft.Network/privateDnsZones/virtualNetworkLinks/read",
+  "Microsoft.Network/privateDnsZones/virtualNetworkLinks/write",
+  "Microsoft.Network/privateDnsZones/virtualNetworkLinks/delete",
+  "Microsoft.Network/virtualNetworks/join/action",
+  "Microsoft.Network/publicIPAddresses/read",
+  "Microsoft.Network/publicIPAddresses/write",
+  "Microsoft.Network/publicIPAddresses/delete",
+  "Microsoft.Network/publicIPPrefixes/join/action",
+  "Microsoft.Storage/storageAccounts/queueServices/read",
+  "Microsoft.Storage/storageAccounts/fileServices/read",
+  "Microsoft.Storage/storageAccounts/fileServices/shares/read",
+  "Microsoft.Storage/storageAccounts/listkeys/action",
+  "Microsoft.KeyVault/vaults/read",
+  "Microsoft.OperationalInsights/workspaces/sharedkeys/read",
+]
+data_actions = [
+  "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/delete",
+  "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/read",
+  "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/write",
+  "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/move/action",
+  "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/add/action",
+]
+----
+====
 endif::[]
