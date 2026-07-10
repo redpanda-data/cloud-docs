@@ -30,6 +30,9 @@ In the Redpanda Cloud UI, you can identify which plane you're in by the side nav
 
 In a BYOC architecture, you deploy the data plane in your own VPC. All network connections into the data plane take place through either a public endpoint, or for private clusters, through Redpanda Cloud network connections such as VPC peering, AWS PrivateLink, Azure Private Link, or GCP Private Service Connect. Customer data never leaves the data plane.
 
+// DOC-2297: forward-reference so readers know the agent flow is not the AWS-new default.
+NOTE: On AWS, new clusters use <<provisioning-models-on-aws,cross-account IAM delegation>>. The agent-based setup described here applies to existing AWS clusters and to clusters on Azure and GCP.
+
 A BYOC cluster is initially set up from the control plane. This is a two-step process performed by `rpk cloud byoc apply`:
 
 . You bootstrap a virtual machine (VM) in your VPC. 
