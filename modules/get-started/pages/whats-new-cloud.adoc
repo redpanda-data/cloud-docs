@@ -10,9 +10,9 @@ This page lists new features added to Redpanda Cloud.
 
 // DOC-2297 DRAFT entry (ENG-1139), 26.2, AWS only, new clusters only. Targeted GA 2026-07-14.
 // TODO(team): confirm wording and links before publishing; do not publish before GA.
-=== Cross-account IAM delegation for BYOC on AWS
+=== Simpler, more transparent BYOC deployment on AWS
 
-New BYOC clusters on AWS can now use cross-account IAM delegation. Instead of running `rpk cloud byoc aws apply` and hosting a provisioning agent in your account, you create an IAM role that Redpanda's control plane assumes to provision and reconcile your cluster. You control the role, so you can review, audit, and revoke Redpanda's access at any time. This model applies to new AWS clusters only; existing clusters and clusters on Azure and GCP continue to use agent-based provisioning. See xref:get-started:cluster-types/byoc/aws/create-byoc-cluster-aws.adoc[Create a BYOC Cluster on AWS] and xref:security:authorization/cloud-iam-policies.adoc[AWS IAM policies].
+Deploying a new BYOC cluster on AWS is now simpler and gives you more control. Instead of running a command-line tool to bootstrap the cluster yourself, you grant Redpanda access through a standard AWS IAM role that you create (using cross-account IAM delegation), and Redpanda deploys and maintains the cluster for you. Because the role lives in your own AWS account, you can see exactly what Redpanda is allowed to do, and you can change or remove that access at any time. This applies to new clusters on AWS. See xref:get-started:cluster-types/byoc/aws/create-byoc-cluster-aws.adoc[Create a BYOC Cluster on AWS] and xref:security:authorization/cloud-iam-policies.adoc[AWS IAM policies].
 
 === SQL editor in Redpanda Cloud Console
 
