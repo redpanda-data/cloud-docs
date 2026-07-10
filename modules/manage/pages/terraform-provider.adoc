@@ -109,7 +109,6 @@ output "cluster_api_url" {
 The following functionality is supported in the Cloud API but not in the Redpanda Terraform provider:
 
 * Creating or deleting BYOVNet clusters on Azure
-* Secrets
 * Kafka Connect
 
 [WARNING]
@@ -240,7 +239,7 @@ For each supported sensitive field, the provider exposes two new attributes alon
 * `<field>_wo`: A write-only attribute. Terraform sends the value to the provider during `apply` but never persists it to state.
 * `<field>_wo_version`: An integer version. Because Terraform cannot detect changes in a write-only value (there is nothing to compare against in state), you increment this number to signal that the value has changed and to trigger an update on the next apply.
 
-NOTE: `redpanda_pipeline` is an exception to this naming convention. The existing `client_secret` attribute is the write-only attribute (no separate `client_secret_wo` field), and is paired with `secret_version` instead of `client_secret_wo_version`.
+NOTE: `redpanda_pipeline` and `redpanda_secret` are exceptions to this naming convention. For `redpanda_pipeline`, the existing `client_secret` attribute is the write-only attribute (no separate `client_secret_wo` field), and is paired with `secret_version` instead of `client_secret_wo_version`. For `redpanda_secret`, the `secret_data` attribute is write-only by design (there is no plaintext variant), and is paired with `secret_data_version`.
 
 The provider retains the original plaintext attributes for backward compatibility. You can migrate to the write-only variants on your own schedule. Avoid setting both the plaintext attribute and its write-only counterpart on the same resource. If both are set, the provider uses the write-only value.
 
@@ -268,6 +267,11 @@ The provider retains the original plaintext attributes for backward compatibilit
 | `client_secret`
 | `client_secret` (write-only)
 | `secret_version`
+
+| `redpanda_secret`
+| None (write-only by design)
+| `secret_data`
+| `secret_data_version`
 |===
 
 === Set a write-only attribute
@@ -318,6 +322,36 @@ resource "redpanda_user" "schema_user" {
 ----
 
 After running `terraform apply`, the provider sends the new password to Redpanda Cloud. Neither the old nor the new value is written to state.
+
+== Manage cluster secrets
+
+The Redpanda Terraform provider (v2.0.0+) supports creating and managing secrets in a cluster's secret store with the `redpanda_secret` resource. Cluster secrets hold sensitive values, such as pipeline credentials, that other resources reference by name using `${secrets.<NAME>}`.
+
+The secret value (`secret_data`) is a write-only attribute, so Terraform never stores it in state. To rotate the value, change `secret_data` and increment `secret_data_version`, following the same pattern as <<manage-sensitive-attributes-with-write-only-fields,other write-only attributes>>.
+
+[source,hcl]
+----
+variable "secret_value" {
+  description = "Value to store in the secret"
+  sensitive   = true
+}
+
+resource "redpanda_secret" "example" {
+  name                = "EXAMPLE_SECRET"
+  secret_data         = var.secret_value
+  secret_data_version = 1
+  scopes              = ["SCOPE_REDPANDA_CONNECT"]
+  cluster_api_url     = redpanda_cluster.example.cluster_api_url
+  allow_deletion      = true
+}
+----
+
+* `name`: An uppercase identifier matching `^[A-Z][A-Z0-9_]*$`. You cannot rename a secret after you create it.
+* `secret_data`: The secret value, Base64-encoded. Requires Terraform 1.11 or later.
+* `scopes`: The features that can use the secret. For example, use `SCOPE_REDPANDA_CONNECT` for Redpanda Connect pipelines or `SCOPE_REDPANDA_CLUSTER` for Shadowing credentials. If a secret doesn't have a scope that matches its consumer, the consumer fails at runtime.
+* `labels` (optional): Labels to organize your secrets. You cannot change labels after you create the secret.
+
+For the full schema and import syntax, see the https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs/resources/secret[redpanda_secret resource documentation^]. To use secrets in Redpanda Connect pipelines, see xref:develop:connect/configuration/secret-management.adoc[].
 
 == Configure cluster properties
 
