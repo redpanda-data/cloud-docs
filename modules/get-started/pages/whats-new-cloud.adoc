@@ -30,6 +30,10 @@ The Redpanda Terraform provider (v2.1.0+) now supports enabling and managing Red
 
 The Redpanda Terraform provider (v2.0.0+) now supports managing cluster secrets with the new `redpanda_secret` resource. The secret value is a write-only attribute, so Terraform never stores it in your state file, and scopes control which features can use the secret, such as Redpanda Connect pipelines. See xref:manage:terraform-provider.adoc#manage-cluster-secrets[Manage cluster secrets].
 
+=== Terraform provider: Cross-region AWS PrivateLink
+
+The Redpanda Terraform provider (v2.0.0+) now supports configuring cross-region AWS PrivateLink with the `supported_regions` attribute of the `aws_private_link` block on a `redpanda_cluster` resource, allowing clients in other AWS regions to connect to your cluster through PrivateLink. See xref:manage:terraform-provider.adoc#configure-cross-region-aws-privatelink[Configure cross-region AWS PrivateLink].
+
 === Centralized egress for BYOC on GCP: beta
 
 You can route all GCP BYOC cluster egress through your own GCP hub VPC and NAT VM instead of a per-cluster Cloud NAT, so outbound traffic exits through your centralized inspection point. This is useful for regulated environments that require a single, predictable public IP for outbound allowlisting or that prohibit per-cluster Cloud NAT. Centralized egress is in a glossterm:beta[] release and is enabled per organization. Contact your account team for access. See xref:networking:byoc/gcp/nat-free-egress.adoc[Configure Centralized Egress with GCP VPC Peering].

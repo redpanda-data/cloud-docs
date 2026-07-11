@@ -5,6 +5,7 @@
 :learning-objective-1: Configure and deploy Redpanda Cloud clusters using Terraform
 :learning-objective-2: Manage sensitive credentials using Terraform write-only attributes
 :learning-objective-3: Enable Redpanda SQL on a BYOC cluster using the rpsql block
+:learning-objective-4: Configure cross-region AWS PrivateLink on a cluster
 
 Use the https://registry.terraform.io/providers/redpanda-data/redpanda/latest[Redpanda Terraform provider^] to define, automate, and track changes to your Redpanda Cloud infrastructure as code.
 
@@ -29,6 +30,7 @@ After reading this page, you will be able to:
 * [ ] {learning-objective-1}
 * [ ] {learning-objective-2}
 * [ ] {learning-objective-3}
+* [ ] {learning-objective-4}
 
 == Why use Terraform with Redpanda?
 
@@ -374,6 +376,46 @@ Only the properties listed in xref:reference:properties/cluster-properties.adoc[
 
 NOTE: Cluster properties are not available on Serverless clusters or on BYOC and Dedicated clusters running on Azure.
 
+== Configure cross-region AWS PrivateLink
+
+By default, AWS PrivateLink only accepts connections from VPCs in the same region as your Redpanda cluster. The Redpanda Terraform provider (v2.0.0+) supports xref:networking:aws-privatelink.adoc#cross-region-privatelink[cross-region PrivateLink], which allows clients in other AWS regions to connect to your cluster through PrivateLink.
+
+To enable cross-region PrivateLink, add the `supported_regions` attribute to the `aws_private_link` block of a `redpanda_cluster` resource. The attribute accepts a list of up to 50 unique AWS region identifiers from which PrivateLink endpoints can connect. If you omit it, only same-region connections are allowed.
+
+Requirements:
+
+* The cluster must be deployed across multiple availability zones (multi-AZ). This is an AWS limitation for cross-region PrivateLink.
+* For BYOC clusters, the Redpanda agent IAM role must have the `vpce:AllowMultiRegion` and `elasticloadbalancing:DescribeListenerAttributes` permissions.
+
+[source,hcl]
+----
+resource "redpanda_cluster" "example" {
+  # ... other cluster arguments ...
+
+  zones = ["use2-az1", "use2-az2", "use2-az3"]  # Cross-region PrivateLink requires a multi-AZ cluster
+
+  aws_private_link = {
+    enabled            = true
+    connect_console    = true
+    allowed_principals = ["arn:aws:iam::123456789012:root"]
+    supported_regions  = ["us-east-1", "us-west-2", "eu-west-1"]
+  }
+}
+
+output "privatelink_service_name" {
+  value = redpanda_cluster.example.aws_private_link.status.service_name
+}
+----
+
+* `enabled`: Whether the Redpanda PrivateLink endpoint service is enabled.
+* `connect_console`: Whether Redpanda Console is connected over PrivateLink.
+* `allowed_principals`: The ARNs of the AWS principals allowed to access the endpoint service. To allow all principals, use an asterisk (`*`).
+* `supported_regions` (optional): The AWS regions from which clients can create PrivateLink endpoints that connect to the cluster.
+
+You can add or change the `aws_private_link` block on an existing cluster. Terraform updates the cluster in place without recreating it.
+
+After you apply the configuration, clients in the listed regions can create VPC endpoints that connect to the cluster's endpoint service, identified by the `service_name` output in the example. See xref:networking:aws-privatelink.adoc#create-a-cross-region-vpc-endpoint[Create a cross-region VPC endpoint] for the AWS CLI workflow, and xref:networking:aws-privatelink.adoc[] for the full PrivateLink setup, including client VPC configuration and connection testing.
+
 == Examples
 
 The following examples use the Redpanda Terraform provider to create and manage clusters. For descriptions of resources and data sources, see the https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs[Redpanda Terraform Provider documentation^].
@@ -671,6 +713,8 @@ resource "redpanda_cluster" "test" {
   }
 }
 ----
+
+For details on the `aws_private_link` block, including the multi-AZ requirement for cross-region PrivateLink, see <<configure-cross-region-aws-privatelink>>.
 
 === Create a Serverless cluster
 
