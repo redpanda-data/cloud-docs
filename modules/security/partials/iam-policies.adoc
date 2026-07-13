@@ -13,7 +13,7 @@ ifdef::env-aws[]
 //     ElastiCache, RDS/Aurora (scoped to ai-gateway-*), Oxla (scoped to oxla-*).
 //  4. Supply "why it is needed" text for every cell marked TODO(eng) (Denis's sheet).
 // ============================================================================
-To deploy a new BYOC cluster on AWS, you create an IAM role in your AWS account that Redpanda assumes to provision and reconcile cluster resources on your behalf. This role grants the permissions listed on this page. The permissions follow the principle of least privilege: each is scoped to only the resources Redpanda provisions for your cluster. These permissions are _not_ required by Redpanda Cloud end users, and they do not grant human access to your cluster.
+To deploy a new BYOC cluster on AWS, you create an IAM role in your AWS account that Redpanda assumes to provision and reconcile cluster resources on your behalf. This role grants the permissions listed on this page. The permissions follow the principle of least privilege. Where AWS supports resource-level scoping, they are restricted to the resources Redpanda provisions for your cluster; some actions that do not support resource-level scoping require a wildcard (`*`) resource scope. These permissions are _not_ required by Redpanda Cloud end users, and they do not grant human access to your cluster.
 
 [NOTE]
 ====
@@ -433,7 +433,7 @@ Creates and manages the VPC, subnets, routes, gateways, security groups, VPC end
 |`ec2:DescribeNetworkAcls` |Read |Required to read the network ACLs in your Redpanda cluster's VPC.
 |`ec2:DescribeNetworkInterfaces` |Read |Required to read the network interfaces used by your Redpanda cluster's nodes and endpoints.
 |`ec2:AttachNetworkInterface` |Write |Required to attach network interfaces to your Redpanda cluster's compute nodes.
-|`ec2:DetachNetworkInterface` |Delete |Required to detach network interfaces during reconfiguration or decommissioning of your Redpanda cluster.
+|`ec2:DetachNetworkInterface` |Write |Required to detach network interfaces during reconfiguration or decommissioning of your Redpanda cluster.
 |`ec2:DescribeAvailabilityZones` |Read |Required to determine which availability zones are available for placing your Redpanda cluster's nodes.
 |===
 
@@ -853,7 +853,7 @@ Creates the least-privilege roles, policies, instance profiles, and OIDC federat
 |`iam:UntagRole` |Delete |Required to remove obsolete Redpanda-managed tags from IAM roles that belong to your cluster.
 |`iam:GetRole` |Read |Required to read IAM roles while reconciling your Redpanda cluster's IAM configuration.
 |`iam:GetRolePolicy` |Read |Required to inspect inline policies on your cluster's IAM roles when reconciling their permissions.
-|`iam:PassRole` |Write |Required to allow AWS services (such as EC2 and EKS) to assume the IAM roles that Redpanda Cloud provisions for your cluster.
+|`iam:PassRole` |Write |Required so Redpanda Cloud can pass cluster-specific IAM roles to AWS services such as EC2 and EKS when creating resources for your cluster.
 |`iam:UpdateAssumeRolePolicy` |Write |Required to update trust policies on Redpanda-managed workload roles as cluster identities or federation settings change.
 |`iam:ListAttachedRolePolicies` |Read |Required to read the policies attached to your Redpanda cluster's IAM roles during reconciliation.
 |`iam:ListInstanceProfilesForRole` |Read |Required to read the instance profiles associated with your Redpanda cluster's IAM roles during reconciliation.
@@ -1195,7 +1195,7 @@ statement {
 [cols="3,1,5", options="header"]
 |===
 |Permission |Access |Why it is needed
-|`sts:GetCallerIdentity` |Read |Required to confirm the identity Redpanda is operating as when managing your cluster. This is a residual no-op statement retained to avoid AWS policy-detachment conflicts.
+|`sts:GetCallerIdentity` |N/A |Used to identify the assumed role and AWS account Redpanda is operating as. AWS does not require an IAM grant for this operation, so the statement is retained as a no-op to avoid AWS policy-detachment conflicts.
 |===
 
 .Terraform
@@ -1520,7 +1520,7 @@ Manages the VPC network, firewall rules, forwarding rules and Private Service Co
 |`compute.forwardingRules.delete` |Delete |Required to remove PSC forwarding rules when endpoints or the cluster are torn down.
 |`compute.forwardingRules.get` |Read |Required to read PSC forwarding rule details when validating and reconciling private connectivity to your cluster.
 |`compute.forwardingRules.pscCreate` |Write |Required to create Private Service Connect forwarding rules that let you privately reach your Redpanda cluster.
-|`compute.forwardingRules.pscDelete` |Write |Required to delete Private Service Connect forwarding rules when private connectivity is being removed.
+|`compute.forwardingRules.pscDelete` |Delete |Required to delete Private Service Connect forwarding rules when private connectivity is being removed.
 |`compute.forwardingRules.pscSetLabels` |Write |Required to apply Redpanda-managed labels to PSC forwarding rules for identification, cost tracking, and lifecycle management.
 |`compute.forwardingRules.pscSetTarget` |Write |Required to configure the target of PSC forwarding rules so private connections resolve to your Redpanda cluster.
 |`compute.forwardingRules.pscUpdate` |Write |Required to update PSC forwarding rules as your private connectivity configuration changes.
@@ -1592,7 +1592,7 @@ Creates and manages the custom role, service accounts, and project-level IAM bin
 |`iam.roles.list` |Read |Required to enumerate IAM roles when validating and reconciling the permissions granted for your cluster.
 |`iam.roles.undelete` |Write |Required to restore an accidentally deleted custom IAM role so your cluster's operation is not disrupted.
 |`iam.roles.update` |Write |Required to update custom IAM role definitions as Redpanda Cloud's required permissions evolve.
-|`iam.serviceAccounts.actAs` |Write |Required so Redpanda Cloud components can impersonate the service accounts used to operate your cluster (following GCP's least-privilege delegation model).
+|`iam.serviceAccounts.actAs` |Write |Required to attach Redpanda-managed service accounts to the GCP resources that run your cluster workloads, so those resources run with the service account's identity.
 |`iam.serviceAccounts.create` |Write |Required to create the service accounts used by the various components that run your Redpanda cluster.
 |`iam.serviceAccounts.delete` |Delete |Required to delete service accounts created by Redpanda Cloud when they are no longer needed.
 |`iam.serviceAccounts.get` |Read |Required to read service account details to validate that your cluster's components have the correct identities.
@@ -1881,12 +1881,12 @@ Manages the storage accounts and blob containers backing Tiered Storage, and rea
 [cols="4,1,5", options="header"]
 |===
 |Permission |Access |Why it is needed
-|`Microsoft.KeyVault/vaults/read` |Read |Needed so Redpanda Cloud can look up the Key Vault used to store cluster secrets and encryption keys.
+|`Microsoft.KeyVault/vaults/read` |Read |Needed so Redpanda Cloud can read the properties of the Key Vault associated with your cluster. This permission does not grant access to keys or secret values.
 |`Microsoft.Storage/storageAccounts/PrivateEndpointConnectionsApproval/action` |Write |Required to approve private endpoint connections to the storage account that backs your cluster.
 |`Microsoft.Storage/storageAccounts/blobServices/containers/delete` |Delete |Required to remove the blob container used for tiered storage when the associated Redpanda cluster is decommissioned.
 |`Microsoft.Storage/storageAccounts/blobServices/containers/read` |Read |Needed so Redpanda Cloud can inspect the blob container that backs tiered storage for your cluster.
 |`Microsoft.Storage/storageAccounts/blobServices/containers/write` |Write |Required to create and configure the blob container used for tiered storage of your Redpanda topic data.
-|`Microsoft.Storage/storageAccounts/blobServices/generateUserDelegationKey/action` |Write |Required to issue short-lived user delegation keys for scoped, time-bound access to blobs, avoiding the use of long-lived storage account keys.
+|`Microsoft.Storage/storageAccounts/blobServices/generateUserDelegationKey/action` |Write |Required to obtain a short-lived user delegation key for scoped, time-bound access to the blobs that back your Redpanda cluster.
 |`Microsoft.Storage/storageAccounts/blobServices/read` |Read |Needed so Redpanda Cloud can inspect the blob service configuration on the storage account backing your cluster.
 |`Microsoft.Storage/storageAccounts/blobServices/write` |Write |Required to configure blob service settings (such as retention and versioning) on the storage account that backs tiered storage.
 |`Microsoft.Storage/storageAccounts/delete` |Delete |Required to remove the storage account provisioned for your Redpanda cluster when it is decommissioned.
@@ -1894,7 +1894,6 @@ Manages the storage accounts and blob containers backing Tiered Storage, and rea
 |`Microsoft.Storage/storageAccounts/fileServices/shares/read` |Read |Needed to read file share metadata on the storage account so Redpanda Cloud can reconcile its full configuration.
 |`Microsoft.Storage/storageAccounts/listkeys/action` |Write |Required to retrieve storage account keys used for authenticated access to the storage account backing your Redpanda cluster.
 |`Microsoft.Storage/storageAccounts/queueServices/read` |Read |Needed to read queue service metadata on the storage account so Redpanda Cloud can reconcile its full configuration.
-|`Microsoft.Storage/storageAccounts/read` |Read |Needed so Redpanda Cloud can inspect the storage account used for tiered storage of your Redpanda topic data.
 |`Microsoft.Storage/storageAccounts/read` |Read |Needed so Redpanda Cloud can inspect the storage account used for tiered storage of your Redpanda topic data.
 |`Microsoft.Storage/storageAccounts/write` |Write |Required to create and configure the storage account that backs tiered storage for your Redpanda cluster.
 |===
