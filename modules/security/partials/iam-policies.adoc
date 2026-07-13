@@ -150,8 +150,8 @@ statement {
 |`autoscaling:DescribeScalingActivities` |Read |Required to monitor scaling activity for the Auto Scaling groups that back your Redpanda cluster's node groups.
 |`autoscaling:DescribeAutoScalingGroups` |Read |Required to read the Auto Scaling groups that manage your Redpanda cluster's compute nodes.
 |`autoscaling:DescribeTags` |Read |Required to read tags on the Auto Scaling groups managing your Redpanda cluster's nodes.
-|`autoscaling:CreateOrUpdateTags` |Write |TODO(eng): confirm purpose. Tags Auto Scaling groups belonging to your Redpanda cluster.
-|`autoscaling:DeleteTags` |Delete |TODO(eng): confirm purpose. Removes tags from your Redpanda cluster's Auto Scaling groups.
+|`autoscaling:CreateOrUpdateTags` |Write |Required to apply Redpanda-managed tags used to identify, reconcile, and clean up the Auto Scaling groups that belong to your cluster.
+|`autoscaling:DeleteTags` |Delete |Required to remove obsolete Redpanda-managed tags when your cluster's Auto Scaling groups are updated or removed.
 |`autoscaling:DescribeTerminationPolicyTypes` |Read |Required to configure appropriate node termination policies for your Redpanda cluster's Auto Scaling groups.
 |`autoscaling:DescribeInstanceRefreshes` |Read |Required to monitor instance refresh operations during upgrades and rolling updates of your Redpanda cluster nodes.
 |`autoscaling:DescribeLaunchConfigurations` |Read |Required to read the launch configurations associated with your Redpanda cluster's Auto Scaling groups.
@@ -224,7 +224,7 @@ statement {
 |===
 |Permission |Access |Why it is needed
 |`ec2:DeleteLaunchTemplate` |Delete |Required to clean up launch templates when you decommission your Redpanda cluster.
-|`ec2:ModifyLaunchTemplate` |Write |TODO(eng): confirm purpose. Updates launch templates for your Redpanda cluster's compute nodes.
+|`ec2:ModifyLaunchTemplate` |Write |Required to update launch template settings, such as the default version, when cluster nodes are upgraded or reconfigured.
 |===
 
 .Terraform
@@ -260,7 +260,7 @@ statement {
 [cols="3,1,5", options="header"]
 |===
 |Permission |Access |Why it is needed
-|`ec2:TerminateInstances` |Delete |TODO(eng): confirm purpose. Terminates EC2 instances tagged for your Redpanda cluster during scaling, node replacement, or decommissioning.
+|`ec2:TerminateInstances` |Delete |Required to remove unhealthy, replaced, or scaled-down cluster nodes and to clean up nodes when the cluster is decommissioned.
 |===
 
 .Terraform
@@ -295,7 +295,7 @@ statement {
 [cols="3,1,5", options="header"]
 |===
 |Permission |Access |Why it is needed
-|`ec2:RebootInstances` |Write |TODO(eng): confirm purpose. Reboots EC2 instances tagged for your Redpanda cluster during recovery or maintenance operations.
+|`ec2:RebootInstances` |Write |Required to restart a cluster node during recovery or maintenance.
 |===
 
 .Terraform
@@ -331,21 +331,21 @@ statement {
 |===
 |Permission |Access |Why it is needed
 |`ec2:CreateTags` |Write |Required to tag AWS resources Redpanda Cloud provisions on your behalf so they are clearly identifiable as belonging to your Redpanda cluster.
-|`ec2:DeleteTags` |Delete |TODO(eng): confirm purpose. Removes tags from resources Redpanda provisioned for your cluster.
-|`ec2:DescribeTags` |Read |TODO(eng): confirm purpose. Reads tags on resources Redpanda provisioned for your cluster.
+|`ec2:DeleteTags` |Delete |Required to remove obsolete Redpanda-managed tags from resources that belong to your cluster.
+|`ec2:DescribeTags` |Read |Required to inspect resource tags so Redpanda Cloud can identify cluster resources and reconcile their ownership and lifecycle.
 |`ec2:DescribeAccountAttributes` |Read |Required to validate your AWS account supports the configuration needed to run your Redpanda cluster.
 |`ec2:DescribeImages` |Read |Required to look up the approved machine images used for Redpanda broker and worker nodes.
 |`ec2:DescribeInstances` |Read |Required to monitor the EC2 instances that run your Redpanda cluster and reconcile their state during operations.
 |`ec2:DescribeInstanceTypes` |Read |Required to validate that the requested instance types are available in your region before provisioning your Redpanda cluster.
-|`ec2:DescribeVolumes` |Read |TODO(eng): confirm purpose. Reads the EBS volumes attached to your Redpanda cluster's nodes.
-|`ec2:DescribeNetworkInterfaces` |Read |TODO(eng): confirm purpose. Reads the network interfaces used by your Redpanda cluster's nodes.
+|`ec2:DescribeVolumes` |Read |Required to inspect the EBS volumes attached to cluster nodes when reconciling storage configuration.
+|`ec2:DescribeNetworkInterfaces` |Read |Required to inspect the network interfaces attached to cluster nodes and endpoints when reconciling network configuration.
 |`ec2:CreateLaunchTemplate` |Write |Required to manage the launch templates that define how compute nodes for your Redpanda cluster are provisioned.
 |`ec2:CreateLaunchTemplateVersion` |Write |Required to update launch template versions when your Redpanda cluster is upgraded or reconfigured.
 |`ec2:DescribeLaunchTemplateVersions` |Read |Required to read launch template versions when reconciling or updating your Redpanda cluster's compute configuration.
 |`ec2:DescribeLaunchTemplates` |Read |Required to read the launch templates associated with your Redpanda cluster's compute nodes.
 |`iam:ListPolicies` |Read |Required to discover existing IAM policies when provisioning or reconciling your Redpanda cluster's IAM configuration.
 |`iam:ListRoles` |Read |Required to discover existing IAM roles when provisioning or reconciling your Redpanda cluster's IAM configuration.
-|`iam:GetRole` |Read |TODO(eng): confirm purpose. Reads IAM roles while reconciling your Redpanda cluster's IAM configuration.
+|`iam:GetRole` |Read |Required to inspect existing IAM roles before Redpanda Cloud creates or updates the roles used by your cluster.
 |`iam:GetOpenIDConnectProvider` |Read |Required to read the OIDC provider used to federate Redpanda workloads (such as EKS service accounts) with AWS IAM.
 |`iam:DeleteOpenIDConnectProvider` |Delete |Required to clean up the OIDC provider when you decommission your Redpanda cluster.
 |`iam:CreateServiceLinkedRole` |Write |Required to create the AWS service-linked roles needed by services (such as EKS and Auto Scaling) that run your Redpanda cluster.
@@ -411,7 +411,7 @@ Creates and manages the VPC, subnets, routes, gateways, security groups, VPC end
 |`ec2:DescribeVpcs` |Read |Required to read the VPC that hosts your Redpanda cluster and validate its configuration.
 |`ec2:DescribeVpcAttribute` |Read |Required to read VPC attributes (such as DNS settings) needed to run your Redpanda cluster.
 |`ec2:DescribeSecurityGroups` |Read |Required to read the security groups protecting your Redpanda cluster's network traffic.
-|`ec2:DescribeSecurityGroupRules` |Read |TODO(eng): confirm purpose. Reads the individual rules of your Redpanda cluster's security groups.
+|`ec2:DescribeSecurityGroupRules` |Read |Required to inspect individual security group rules and reconcile them with the network access configured for your cluster.
 |`ec2:CreateInternetGateway` |Write |Required to provision the internet gateway used for public connectivity to your Redpanda cluster when applicable.
 |`ec2:DeleteInternetGateway` |Delete |Required to remove the internet gateway when you decommission your Redpanda cluster.
 |`ec2:AttachInternetGateway` |Write |Required to attach the internet gateway to your Redpanda cluster's VPC.
@@ -493,37 +493,37 @@ statement {
 |`ec2:DeleteVpcEndpoints` |Delete |Required to remove VPC endpoints when you decommission your Redpanda cluster or disable private connectivity.
 |`ec2:DescribeVpcEndpoints` |Read |Required to read the VPC endpoints associated with your Redpanda cluster.
 |`ec2:DescribeVpcEndpointServices` |Read |Required to discover VPC endpoint services when configuring private connectivity for your Redpanda cluster.
-|`ec2:AcceptVpcEndpointConnections` |Write |TODO(eng): confirm purpose. Accepts connections to the endpoint service that fronts your Redpanda cluster.
-|`ec2:CreateVpcEndpointConnectionNotification` |Write |TODO(eng): confirm purpose.
-|`ec2:CreateVpcEndpointServiceConfiguration` |Write |TODO(eng): confirm purpose. Creates the VPC endpoint service that exposes your Redpanda cluster over PrivateLink.
-|`ec2:DescribeVpcEndpointServiceConfigurations` |Read |TODO(eng): confirm purpose.
-|`ec2:ModifyVpcEndpointServiceConfiguration` |Write |TODO(eng): confirm purpose.
-|`ec2:DeleteVpcEndpointServiceConfigurations` |Delete |TODO(eng): confirm purpose.
-|`ec2:DeleteVpcEndpointConnectionNotifications` |Delete |TODO(eng): confirm purpose.
-|`ec2:DescribeVpcEndpointConnectionNotifications` |Read |TODO(eng): confirm purpose.
-|`ec2:DescribeVpcEndpointConnections` |Read |TODO(eng): confirm purpose.
-|`ec2:DescribeVpcEndpointServicePermissions` |Read |TODO(eng): confirm purpose.
-|`ec2:ModifyVpcEndpointConnectionNotification` |Write |TODO(eng): confirm purpose.
+|`ec2:AcceptVpcEndpointConnections` |Write |Required to approve authorized interface endpoint connection requests when the cluster's PrivateLink service requires acceptance.
+|`ec2:CreateVpcEndpointConnectionNotification` |Write |Required to configure notifications for endpoint connection events so Redpanda Cloud can detect and reconcile private connectivity changes.
+|`ec2:CreateVpcEndpointServiceConfiguration` |Write |Required to create the PrivateLink endpoint service that exposes your cluster's endpoints for private connections.
+|`ec2:DescribeVpcEndpointServiceConfigurations` |Read |Required to inspect the state and configuration of the PrivateLink endpoint service that exposes your cluster.
+|`ec2:ModifyVpcEndpointServiceConfiguration` |Write |Required to update the cluster's PrivateLink endpoint service as its load balancers, availability, or private connectivity settings change.
+|`ec2:DeleteVpcEndpointServiceConfigurations` |Delete |Required to remove the cluster's PrivateLink endpoint service when private connectivity is disabled or the cluster is decommissioned.
+|`ec2:DeleteVpcEndpointConnectionNotifications` |Delete |Required to remove endpoint connection notification configurations during reconfiguration or cleanup.
+|`ec2:DescribeVpcEndpointConnectionNotifications` |Read |Required to inspect the notification configurations used to track endpoint connection events.
+|`ec2:DescribeVpcEndpointConnections` |Read |Required to inspect endpoint connection requests and their current states when reconciling private connectivity.
+|`ec2:DescribeVpcEndpointServicePermissions` |Read |Required to inspect which AWS principals are allowed to request connections to the cluster's PrivateLink endpoint service.
+|`ec2:ModifyVpcEndpointConnectionNotification` |Write |Required to update which endpoint connection events generate notifications and where those notifications are sent.
 |`ec2:ModifyVpcEndpointServicePayerResponsibility` |Write |TODO(eng): confirm purpose.
-|`ec2:ModifyVpcEndpointServicePermissions` |Write |TODO(eng): confirm purpose.
-|`ec2:RejectVpcEndpointConnections` |Write |TODO(eng): confirm purpose.
-|`ec2:StartVpcEndpointServicePrivateDnsVerification` |Write |TODO(eng): confirm purpose.
-|`vpce:AllowMultiRegion` |Write |TODO(eng): confirm purpose.
-|`elasticloadbalancing:DescribeLoadBalancers` |Read |TODO(eng): confirm purpose. Reads the load balancers that front your Redpanda cluster's endpoints.
-|`elasticloadbalancing:CreateListener` |Write |TODO(eng): confirm purpose.
-|`elasticloadbalancing:DeleteListener` |Delete |TODO(eng): confirm purpose.
-|`elasticloadbalancing:DescribeListeners` |Read |TODO(eng): confirm purpose.
-|`elasticloadbalancing:DescribeListenerAttributes` |Read |TODO(eng): confirm purpose.
-|`elasticloadbalancing:CreateTargetGroup` |Write |TODO(eng): confirm purpose.
-|`elasticloadbalancing:DeleteTargetGroup` |Delete |TODO(eng): confirm purpose.
-|`elasticloadbalancing:DescribeTargetGroups` |Read |TODO(eng): confirm purpose.
-|`elasticloadbalancing:RegisterTargets` |Write |TODO(eng): confirm purpose.
-|`elasticloadbalancing:DescribeTags` |Read |TODO(eng): confirm purpose.
-|`elasticloadbalancing:DescribeLoadBalancerAttributes` |Read |TODO(eng): confirm purpose.
-|`elasticloadbalancing:AddTags` |Write |TODO(eng): confirm purpose.
-|`elasticloadbalancing:RemoveTags` |Delete |TODO(eng): confirm purpose.
-|`elasticloadbalancing:DescribeTargetGroupAttributes` |Read |TODO(eng): confirm purpose.
-|`elasticloadbalancing:ModifyTargetGroupAttributes` |Write |TODO(eng): confirm purpose.
+|`ec2:ModifyVpcEndpointServicePermissions` |Write |Required to add or remove the AWS principals allowed to request connections to the cluster's PrivateLink endpoint service.
+|`ec2:RejectVpcEndpointConnections` |Write |Required to reject unauthorized or obsolete endpoint connection requests to the cluster's PrivateLink service.
+|`ec2:StartVpcEndpointServicePrivateDnsVerification` |Write |Required to verify ownership of the private DNS name before clients use it to access the cluster's PrivateLink endpoint service.
+|`vpce:AllowMultiRegion` |Write |Required when cross-Region PrivateLink connectivity is enabled for the cluster's endpoint service.
+|`elasticloadbalancing:DescribeLoadBalancers` |Read |Required to inspect the load balancers that receive traffic for your cluster's endpoints.
+|`elasticloadbalancing:CreateListener` |Write |Required to create listeners that accept client connections and forward them to the appropriate cluster target groups.
+|`elasticloadbalancing:DeleteListener` |Delete |Required to remove obsolete listeners during endpoint reconfiguration or cleanup.
+|`elasticloadbalancing:DescribeListeners` |Read |Required to inspect listener ports, protocols, and routing configuration for your cluster's load balancers.
+|`elasticloadbalancing:DescribeListenerAttributes` |Read |Required to inspect listener settings when reconciling your cluster's endpoint configuration.
+|`elasticloadbalancing:CreateTargetGroup` |Write |Required to create target groups containing the cluster services that receive traffic from a load balancer.
+|`elasticloadbalancing:DeleteTargetGroup` |Delete |Required to remove target groups when endpoints are reconfigured or the cluster is decommissioned.
+|`elasticloadbalancing:DescribeTargetGroups` |Read |Required to inspect target group configuration when reconciling your cluster's endpoints.
+|`elasticloadbalancing:RegisterTargets` |Write |Required to register cluster service endpoints with the target groups that receive client traffic.
+|`elasticloadbalancing:DescribeTags` |Read |Required to inspect tags used to identify load-balancing resources that belong to your cluster.
+|`elasticloadbalancing:DescribeLoadBalancerAttributes` |Read |Required to inspect load balancer settings when reconciling your cluster's endpoints.
+|`elasticloadbalancing:AddTags` |Write |Required to apply Redpanda-managed tags that identify load-balancing resources belonging to your cluster.
+|`elasticloadbalancing:RemoveTags` |Delete |Required to remove obsolete Redpanda-managed tags from your cluster's load-balancing resources.
+|`elasticloadbalancing:DescribeTargetGroupAttributes` |Read |Required to inspect target group settings when reconciling traffic routing to your cluster.
+|`elasticloadbalancing:ModifyTargetGroupAttributes` |Write |Required to update target group settings as your cluster's endpoint requirements change.
 |===
 
 .Terraform
@@ -850,11 +850,11 @@ Creates the least-privilege roles, policies, instance profiles, and OIDC federat
 |`iam:AttachRolePolicy` |Write |Required to attach the necessary IAM policies to your Redpanda cluster's roles.
 |`iam:DetachRolePolicy` |Delete |Required to detach IAM policies from roles during reconfiguration or cleanup.
 |`iam:TagRole` |Write |Required to tag IAM roles so they are clearly identifiable as belonging to your Redpanda cluster.
-|`iam:UntagRole` |Delete |TODO(eng): confirm purpose. Removes tags from your Redpanda cluster's IAM roles.
+|`iam:UntagRole` |Delete |Required to remove obsolete Redpanda-managed tags from IAM roles that belong to your cluster.
 |`iam:GetRole` |Read |Required to read IAM roles while reconciling your Redpanda cluster's IAM configuration.
-|`iam:GetRolePolicy` |Read |TODO(eng): confirm purpose. Reads inline policies on your Redpanda cluster's IAM roles.
+|`iam:GetRolePolicy` |Read |Required to inspect inline policies on your cluster's IAM roles when reconciling their permissions.
 |`iam:PassRole` |Write |Required to allow AWS services (such as EC2 and EKS) to assume the IAM roles that Redpanda Cloud provisions for your cluster.
-|`iam:UpdateAssumeRolePolicy` |Write |TODO(eng): confirm purpose. Updates the trust policy on your Redpanda cluster's IAM roles.
+|`iam:UpdateAssumeRolePolicy` |Write |Required to update trust policies on Redpanda-managed workload roles as cluster identities or federation settings change.
 |`iam:ListAttachedRolePolicies` |Read |Required to read the policies attached to your Redpanda cluster's IAM roles during reconciliation.
 |`iam:ListInstanceProfilesForRole` |Read |Required to read the instance profiles associated with your Redpanda cluster's IAM roles during reconciliation.
 |`iam:ListRolePolicies` |Read |Required to read the inline policies attached to your Redpanda cluster's IAM roles during reconciliation.
@@ -902,14 +902,14 @@ statement {
 |===
 |Permission |Access |Why it is needed
 |`iam:CreatePolicy` |Write |Required to create the IAM policies that grant your Redpanda cluster the minimum AWS permissions it needs to operate.
-|`iam:CreatePolicyVersion` |Write |TODO(eng): confirm purpose. Creates new versions of your Redpanda cluster's IAM policies during updates.
+|`iam:CreatePolicyVersion` |Write |Required to publish updated permissions for a cluster-managed IAM policy without replacing its policy ARN.
 |`iam:DeletePolicy` |Delete |Required to remove IAM policies when you decommission your Redpanda cluster.
-|`iam:DeletePolicyVersion` |Delete |TODO(eng): confirm purpose. Removes old versions of your Redpanda cluster's IAM policies.
+|`iam:DeletePolicyVersion` |Delete |Required to remove obsolete, nondefault versions of cluster-managed IAM policies after an update.
 |`iam:GetPolicy` |Read |Required to read IAM policies while reconciling your Redpanda cluster's IAM configuration.
 |`iam:GetPolicyVersion` |Read |Required to read specific versions of IAM policies while reconciling your Redpanda cluster's IAM configuration.
 |`iam:ListPolicyVersions` |Read |Required to list IAM policy versions while reconciling and updating your Redpanda cluster's IAM configuration.
 |`iam:TagPolicy` |Write |Required to tag IAM policies so they are clearly identifiable as belonging to your Redpanda cluster.
-|`iam:UntagPolicy` |Delete |TODO(eng): confirm purpose. Removes tags from your Redpanda cluster's IAM policies.
+|`iam:UntagPolicy` |Delete |Required to remove obsolete Redpanda-managed tags from IAM policies that belong to your cluster.
 |===
 
 .Terraform
@@ -962,7 +962,7 @@ statement {
 |`iam:DeleteInstanceProfile` |Delete |Required to clean up instance profiles when you decommission your Redpanda cluster.
 |`iam:GetInstanceProfile` |Read |Required to read the instance profiles associated with your Redpanda cluster.
 |`iam:TagInstanceProfile` |Write |Required to tag instance profiles so they are clearly identifiable as belonging to your Redpanda cluster.
-|`iam:UntagInstanceProfile` |Delete |TODO(eng): confirm purpose. Removes tags from your Redpanda cluster's instance profiles.
+|`iam:UntagInstanceProfile` |Delete |Required to remove obsolete Redpanda-managed tags from instance profiles that belong to your cluster.
 |===
 
 .Terraform
@@ -1131,7 +1131,7 @@ statement {
 [cols="3,1,5", options="header"]
 |===
 |Permission |Access |Why it is needed
-|`cloudwatch:GetMetricData` |Read |TODO(eng): confirm purpose. Reads CloudWatch metrics for the AWS resources that run your Redpanda cluster.
+|`cloudwatch:GetMetricData` |Read |Required to read infrastructure metric time series used to monitor and reconcile the AWS resources supporting your cluster.
 |===
 
 .Terraform
@@ -1233,17 +1233,17 @@ The following permissions are scoped to specific feature resources (`+ai-gateway
 [cols="3,1,5", options="header"]
 |===
 |Permission |Access |Why it is needed
-|`elasticache:CreateUser` |Write |TODO(eng): confirm purpose. Manages the ElastiCache resources backing the AI Gateway feature.
-|`elasticache:AddTagsToResource` |Write |TODO(eng): confirm purpose.
-|`elasticache:DescribeUsers` |Read |TODO(eng): confirm purpose.
-|`elasticache:ListTagsForResource` |Read |TODO(eng): confirm purpose.
-|`elasticache:DeleteUser` |Delete |TODO(eng): confirm purpose.
-|`elasticache:CreateUserGroup` |Write |TODO(eng): confirm purpose.
-|`elasticache:DescribeUserGroups` |Read |TODO(eng): confirm purpose.
-|`elasticache:DeleteUserGroup` |Delete |TODO(eng): confirm purpose.
-|`elasticache:CreateServerlessCache` |Write |TODO(eng): confirm purpose.
-|`elasticache:DeleteServerlessCache` |Delete |TODO(eng): confirm purpose.
-|`elasticache:DescribeServerlessCaches` |Read |TODO(eng): confirm purpose.
+|`elasticache:CreateUser` |Write |Required to create the ElastiCache user that AI Gateway uses to authenticate to its serverless cache.
+|`elasticache:AddTagsToResource` |Write |Required to tag AI Gateway ElastiCache resources for identification, reconciliation, and lifecycle management.
+|`elasticache:DescribeUsers` |Read |Required to inspect AI Gateway cache users and reconcile their authentication configuration.
+|`elasticache:ListTagsForResource` |Read |Required to inspect tags on AI Gateway ElastiCache resources during reconciliation.
+|`elasticache:DeleteUser` |Delete |Required to remove an AI Gateway cache user when the cache configuration is replaced or the feature is decommissioned.
+|`elasticache:CreateUserGroup` |Write |Required to create the ElastiCache user group that controls which users can access the AI Gateway cache.
+|`elasticache:DescribeUserGroups` |Read |Required to inspect the user group associated with the AI Gateway cache and reconcile its membership.
+|`elasticache:DeleteUserGroup` |Delete |Required to remove the AI Gateway cache user group during reconfiguration or decommissioning.
+|`elasticache:CreateServerlessCache` |Write |Required to provision the serverless ElastiCache resource used by AI Gateway.
+|`elasticache:DeleteServerlessCache` |Delete |Required to remove the AI Gateway serverless cache when the feature or cluster is decommissioned.
+|`elasticache:DescribeServerlessCaches` |Read |Required to inspect the state and configuration of the serverless cache used by AI Gateway.
 |===
 
 .Terraform
@@ -1281,26 +1281,26 @@ statement {
 [cols="3,1,5", options="header"]
 |===
 |Permission |Access |Why it is needed
-|`rds:CreateDBCluster` |Write |TODO(eng): confirm purpose. Manages the Aurora database backing the AI Gateway feature.
-|`rds:DeleteDBCluster` |Delete |TODO(eng): confirm purpose.
-|`rds:DescribeDBClusters` |Read |TODO(eng): confirm purpose.
-|`rds:ModifyDBCluster` |Write |TODO(eng): confirm purpose.
-|`rds:CreateDBInstance` |Write |TODO(eng): confirm purpose.
-|`rds:DeleteDBInstance` |Delete |TODO(eng): confirm purpose.
-|`rds:DescribeDBInstances` |Read |TODO(eng): confirm purpose.
-|`rds:ModifyDBInstance` |Write |TODO(eng): confirm purpose.
-|`rds:CreateDBSubnetGroup` |Write |TODO(eng): confirm purpose.
-|`rds:DeleteDBSubnetGroup` |Delete |TODO(eng): confirm purpose.
-|`rds:DescribeDBSubnetGroups` |Read |TODO(eng): confirm purpose.
-|`rds:CreateDBClusterParameterGroup` |Write |TODO(eng): confirm purpose.
-|`rds:DeleteDBClusterParameterGroup` |Delete |TODO(eng): confirm purpose.
-|`rds:DescribeDBClusterParameterGroups` |Read |TODO(eng): confirm purpose.
-|`rds:DescribeDBClusterParameters` |Read |TODO(eng): confirm purpose.
-|`rds:ModifyDBClusterParameterGroup` |Write |TODO(eng): confirm purpose.
-|`rds:AddTagsToResource` |Write |TODO(eng): confirm purpose.
-|`rds:ListTagsForResource` |Read |TODO(eng): confirm purpose.
-|`rds:RemoveTagsFromResource` |Delete |TODO(eng): confirm purpose.
-|`rds:DescribeDBEngineVersions` |Read |TODO(eng): confirm purpose.
+|`rds:CreateDBCluster` |Write |Required to create the Aurora DB cluster used by AI Gateway.
+|`rds:DeleteDBCluster` |Delete |Required to remove the AI Gateway Aurora DB cluster when the feature or cluster is decommissioned.
+|`rds:DescribeDBClusters` |Read |Required to inspect the state and configuration of the Aurora DB cluster used by AI Gateway.
+|`rds:ModifyDBCluster` |Write |Required to update the AI Gateway Aurora DB cluster as its configuration changes.
+|`rds:CreateDBInstance` |Write |Required to create the database instances that provide compute capacity for the AI Gateway Aurora cluster.
+|`rds:DeleteDBInstance` |Delete |Required to remove AI Gateway Aurora database instances during replacement, scaling, or decommissioning.
+|`rds:DescribeDBInstances` |Read |Required to inspect the state and configuration of the database instances in the AI Gateway Aurora cluster.
+|`rds:ModifyDBInstance` |Write |Required to update the database instances in the AI Gateway Aurora cluster.
+|`rds:CreateDBSubnetGroup` |Write |Required to create the subnet group that places the AI Gateway Aurora database in the appropriate cluster subnets.
+|`rds:DeleteDBSubnetGroup` |Delete |Required to remove the AI Gateway database subnet group during cleanup.
+|`rds:DescribeDBSubnetGroups` |Read |Required to inspect the subnet group used by the AI Gateway Aurora database.
+|`rds:CreateDBClusterParameterGroup` |Write |Required to create the parameter group that configures the AI Gateway Aurora DB cluster.
+|`rds:DeleteDBClusterParameterGroup` |Delete |Required to remove the AI Gateway database parameter group during cleanup.
+|`rds:DescribeDBClusterParameterGroups` |Read |Required to inspect the parameter group associated with the AI Gateway Aurora DB cluster.
+|`rds:DescribeDBClusterParameters` |Read |Required to inspect the database parameters applied to the AI Gateway Aurora DB cluster.
+|`rds:ModifyDBClusterParameterGroup` |Write |Required to update database parameters for the AI Gateway Aurora DB cluster.
+|`rds:AddTagsToResource` |Write |Required to tag AI Gateway RDS resources for identification, reconciliation, and lifecycle management.
+|`rds:ListTagsForResource` |Read |Required to inspect tags on AI Gateway RDS resources during reconciliation.
+|`rds:RemoveTagsFromResource` |Delete |Required to remove obsolete Redpanda-managed tags from AI Gateway RDS resources.
+|`rds:DescribeDBEngineVersions` |Read |Required to identify supported Aurora engine versions before creating or upgrading the AI Gateway database.
 |===
 
 .Terraform
@@ -1350,13 +1350,13 @@ statement {
 [cols="3,1,5", options="header"]
 |===
 |Permission |Access |Why it is needed
-|`rds:DescribeDBClusters` |Read |TODO(eng): confirm purpose.
-|`rds:DescribeDBInstances` |Read |TODO(eng): confirm purpose.
-|`rds:DescribeDBSubnetGroups` |Read |TODO(eng): confirm purpose.
-|`rds:DescribeDBClusterParameterGroups` |Read |TODO(eng): confirm purpose.
-|`rds:DescribeDBClusterParameters` |Read |TODO(eng): confirm purpose.
-|`rds:DescribeDBEngineVersions` |Read |TODO(eng): confirm purpose.
-|`rds:DescribeGlobalClusters` |Read |TODO(eng): confirm purpose.
+|`rds:DescribeDBClusters` |Read |Required to discover and inspect Aurora DB clusters when reconciling the AI Gateway database.
+|`rds:DescribeDBInstances` |Read |Required to discover and inspect database instances when reconciling the AI Gateway Aurora cluster.
+|`rds:DescribeDBSubnetGroups` |Read |Required to discover and inspect subnet groups available to the AI Gateway Aurora database.
+|`rds:DescribeDBClusterParameterGroups` |Read |Required to discover and inspect parameter groups used by the AI Gateway Aurora cluster.
+|`rds:DescribeDBClusterParameters` |Read |Required to inspect the parameters defined in AI Gateway Aurora cluster parameter groups.
+|`rds:DescribeDBEngineVersions` |Read |Required to discover Aurora engine versions supported in the AWS account and Region.
+|`rds:DescribeGlobalClusters` |Read |Required to inspect Aurora global database configuration when AI Gateway uses a multi-Region database topology.
 |===
 
 .Terraform
@@ -1390,18 +1390,18 @@ statement {
 [cols="3,1,5", options="header"]
 |===
 |Permission |Access |Why it is needed
-|`s3:PutBucketPolicy` |Write |TODO(eng): confirm purpose. Manages the S3 buckets backing the Redpanda SQL feature.
-|`s3:DeleteBucketPolicy` |Delete |TODO(eng): confirm purpose.
-|`+s3:List*+` |Read |TODO(eng): confirm purpose.
-|`+s3:Get*+` |Read |TODO(eng): confirm purpose.
-|`s3:CreateBucket` |Write |TODO(eng): confirm purpose.
-|`s3:DeleteBucket` |Delete |TODO(eng): confirm purpose.
-|`s3:PutBucketTagging` |Write |TODO(eng): confirm purpose.
-|`s3:PutBucketPublicAccessBlock` |Write |TODO(eng): confirm purpose.
-|`s3:PutEncryptionConfiguration` |Write |TODO(eng): confirm purpose.
-|`s3:PutBucketOwnershipControls` |Write |TODO(eng): confirm purpose.
-|`s3:DeleteObject` |Delete |TODO(eng): confirm purpose.
-|`s3:DeleteObjectVersion` |Delete |TODO(eng): confirm purpose.
+|`s3:PutBucketPolicy` |Write |Required to apply the bucket policy that restricts access to the S3 buckets used by Redpanda SQL.
+|`s3:DeleteBucketPolicy` |Delete |Required to remove or replace a Redpanda SQL bucket policy during reconfiguration or cleanup.
+|`+s3:List*+` |Read |Required to inspect Redpanda SQL bucket contents and configuration during reconciliation and cleanup.
+|`+s3:Get*+` |Read |Required to read configuration and objects from the S3 buckets used by Redpanda SQL.
+|`s3:CreateBucket` |Write |Required to create the S3 buckets used by Redpanda SQL.
+|`s3:DeleteBucket` |Delete |Required to remove Redpanda SQL buckets when the feature or cluster is decommissioned.
+|`s3:PutBucketTagging` |Write |Required to tag Redpanda SQL buckets for identification, reconciliation, and lifecycle management.
+|`s3:PutBucketPublicAccessBlock` |Write |Required to block public access to the S3 buckets used by Redpanda SQL.
+|`s3:PutEncryptionConfiguration` |Write |Required to configure encryption at rest for the S3 buckets used by Redpanda SQL.
+|`s3:PutBucketOwnershipControls` |Write |Required to enforce bucket-owner control of objects stored in Redpanda SQL buckets.
+|`s3:DeleteObject` |Delete |Required to remove Redpanda SQL objects during cleanup or when the feature is decommissioned.
+|`s3:DeleteObjectVersion` |Delete |Required to remove versioned Redpanda SQL objects during bucket cleanup.
 |===
 
 .Terraform
@@ -1495,7 +1495,7 @@ Manages the Compute Engine instances, instance groups and templates, autoscalers
 |`compute.instances.use` |Write |Required so Redpanda Cloud can attach instances to networking resources (such as Private Service Connect network endpoint groups) that provide connectivity to your cluster.
 |`compute.projects.get` |Read |Required to read basic GCP project metadata (such as default network settings) needed to provision resources for your cluster.
 |`compute.regionOperations.get` |Read |Required to check the status of regional operations initiated on your cluster's behalf (including Private Service Connect operations).
-|`compute.regionOperations.list` |Read |TODO(eng): confirm purpose.
+|`compute.regionOperations.list` |Read |Required to list regional operations so Redpanda Cloud can monitor asynchronous provisioning and Private Service Connect changes and detect failures.
 |`compute.regions.get` |Read |Required to read region metadata when provisioning resources for your cluster.
 |`compute.regions.list` |Read |Required to enumerate available regions when placing and validating your cluster.
 |`compute.zoneOperations.get` |Read |Required to check the status of zonal operations so Redpanda Cloud can detect quota exhaustion, capacity stockouts, and other provisioning errors affecting your cluster.
@@ -1611,8 +1611,8 @@ Lists and deletes the Secret Manager secrets Redpanda creates for your cluster.
 [cols="3,1,5", options="header"]
 |===
 |Permission |Access |Why it is needed
-|`secretmanager.secrets.delete` |Delete |TODO(eng): confirm purpose.
-|`secretmanager.secrets.list` |Read |TODO(eng): confirm purpose.
+|`secretmanager.secrets.delete` |Delete |Required to remove Redpanda-managed secret resources associated with your cluster during reconfiguration or teardown.
+|`secretmanager.secrets.list` |Read |Required to find Redpanda-managed secret resources during reconciliation and cleanup. This permission does not grant access to secret values.
 |===
 
 == Service enablement
@@ -1622,8 +1622,8 @@ Enables and reads the state of the GCP APIs (services) that your cluster depends
 [cols="3,1,5", options="header"]
 |===
 |Permission |Access |Why it is needed
-|`serviceusage.services.enable` |Write |TODO(eng): confirm purpose.
-|`serviceusage.services.get` |Read |TODO(eng): confirm purpose.
+|`serviceusage.services.enable` |Write |Required to enable the Google Cloud APIs used to provision and operate your cluster.
+|`serviceusage.services.get` |Read |Required to verify that the Google Cloud APIs needed by your cluster are enabled.
 |===
 
 == Observability
@@ -1650,11 +1650,11 @@ Creates and manages the Cloud Storage bucket that holds Redpanda SQL metadata.
 [cols="3,1,5", options="header"]
 |===
 |Permission |Access |Why it is needed
-|`storage.buckets.create` |Write |TODO(eng): confirm purpose.
-|`storage.buckets.delete` |Delete |TODO(eng): confirm purpose.
-|`storage.buckets.update` |Write |TODO(eng): confirm purpose.
-|`storage.objects.delete` |Delete |TODO(eng): confirm purpose.
-|`storage.objects.list` |Read |TODO(eng): confirm purpose.
+|`storage.buckets.create` |Write |Required to create the Cloud Storage buckets used by Redpanda SQL.
+|`storage.buckets.delete` |Delete |Required to remove Redpanda SQL buckets when the feature or cluster is decommissioned.
+|`storage.buckets.update` |Write |Required to configure security, lifecycle, and other settings on the Cloud Storage buckets used by Redpanda SQL.
+|`storage.objects.delete` |Delete |Required to remove Redpanda SQL objects during lifecycle operations or before deleting a bucket.
+|`storage.objects.list` |Read |Required to enumerate Redpanda SQL objects during reconciliation and cleanup.
 |===
 
 == Full role definition
@@ -1822,13 +1822,13 @@ Manages the AKS managed clusters and their agent (node) pools that run the Redpa
 |`Microsoft.ContainerService/managedClusters/agentPools/delete` |Delete |Required to remove AKS node pools when scaling down or decommissioning your Redpanda cluster.
 |`Microsoft.ContainerService/managedClusters/agentPools/read` |Read |Needed so Redpanda Cloud can inspect the state of the AKS node pools that host your Redpanda brokers.
 |`Microsoft.ContainerService/managedClusters/agentPools/upgradeNodeImageVersion/action` |Write |Required to apply node image upgrades so the underlying OS running your Redpanda brokers stays patched and secure.
-|`Microsoft.ContainerService/managedClusters/agentPools/upgradeProfiles/read` |Read |TODO(eng): confirm purpose.
+|`Microsoft.ContainerService/managedClusters/agentPools/upgradeProfiles/read` |Read |Required to inspect supported upgrade paths before upgrading the AKS node pools that host your Redpanda cluster.
 |`Microsoft.ContainerService/managedClusters/agentPools/write` |Write |Required to provision and scale the AKS node pools that run your Redpanda brokers and supporting workloads.
 |`Microsoft.ContainerService/managedClusters/delete` |Delete |Required to tear down the AKS cluster that hosts Redpanda when you decommission your environment.
 |`Microsoft.ContainerService/managedClusters/listClusterAdminCredential/action` |Write |TODO(eng): confirm purpose.
 |`Microsoft.ContainerService/managedClusters/listClusterUserCredential/action` |Write |Required so Redpanda Cloud can obtain kubeconfig credentials to operate and manage the AKS cluster running your Redpanda deployment.
 |`Microsoft.ContainerService/managedClusters/read` |Read |Needed so Redpanda Cloud can read the configuration and status of the AKS cluster hosting your Redpanda deployment.
-|`Microsoft.ContainerService/managedClusters/upgradeProfiles/read` |Read |TODO(eng): confirm purpose.
+|`Microsoft.ContainerService/managedClusters/upgradeProfiles/read` |Read |Required to inspect supported Kubernetes upgrade paths before upgrading the AKS cluster that hosts Redpanda.
 |`Microsoft.ContainerService/managedClusters/write` |Write |Required to create and update the AKS cluster that hosts your managed Redpanda deployment.
 |===
 
@@ -1843,24 +1843,24 @@ Joins the cluster to the virtual network and subnets, manages public and private
 |`Microsoft.Network/dnszones/delete` |Delete |Required to remove DNS records for your Redpanda cluster endpoints when the cluster is decommissioned.
 |`Microsoft.Network/dnszones/read` |Read |Needed so Redpanda Cloud can look up the DNS zone used to publish endpoints for your Redpanda cluster.
 |`Microsoft.Network/dnszones/write` |Write |Required to create and update DNS records so clients can resolve your Redpanda cluster endpoints.
-|`Microsoft.Network/privateDnsZones/A/delete` |Delete |TODO(eng): confirm purpose.
-|`Microsoft.Network/privateDnsZones/A/read` |Read |TODO(eng): confirm purpose.
-|`Microsoft.Network/privateDnsZones/A/write` |Write |TODO(eng): confirm purpose.
-|`Microsoft.Network/privateDnsZones/SOA/read` |Read |TODO(eng): confirm purpose.
-|`Microsoft.Network/privateDnsZones/SOA/write` |Write |TODO(eng): confirm purpose.
-|`Microsoft.Network/privateDnsZones/delete` |Delete |TODO(eng): confirm purpose.
-|`Microsoft.Network/privateDnsZones/join/action` |Write |TODO(eng): confirm purpose.
-|`Microsoft.Network/privateDnsZones/read` |Read |TODO(eng): confirm purpose.
-|`Microsoft.Network/privateDnsZones/virtualNetworkLinks/delete` |Delete |TODO(eng): confirm purpose.
-|`Microsoft.Network/privateDnsZones/virtualNetworkLinks/read` |Read |TODO(eng): confirm purpose.
-|`Microsoft.Network/privateDnsZones/virtualNetworkLinks/write` |Write |TODO(eng): confirm purpose.
-|`Microsoft.Network/privateDnsZones/write` |Write |TODO(eng): confirm purpose.
-|`Microsoft.Network/privateEndpoints/delete` |Delete |TODO(eng): confirm purpose.
-|`Microsoft.Network/privateEndpoints/privateDnsZoneGroups/delete` |Delete |TODO(eng): confirm purpose.
-|`Microsoft.Network/privateEndpoints/privateDnsZoneGroups/read` |Read |TODO(eng): confirm purpose.
-|`Microsoft.Network/privateEndpoints/privateDnsZoneGroups/write` |Write |TODO(eng): confirm purpose.
-|`Microsoft.Network/privateEndpoints/read` |Read |TODO(eng): confirm purpose.
-|`Microsoft.Network/privateEndpoints/write` |Write |TODO(eng): confirm purpose.
+|`Microsoft.Network/privateDnsZones/A/delete` |Delete |Required to remove private DNS A records when cluster endpoints are reconfigured or decommissioned.
+|`Microsoft.Network/privateDnsZones/A/read` |Read |Required to inspect the private DNS A records that map cluster service names to private endpoint addresses.
+|`Microsoft.Network/privateDnsZones/A/write` |Write |Required to create or update private DNS A records so cluster service names resolve to the correct private endpoint addresses.
+|`Microsoft.Network/privateDnsZones/SOA/read` |Read |Required to inspect the authoritative settings of the private DNS zone used for cluster endpoints.
+|`Microsoft.Network/privateDnsZones/SOA/write` |Write |Required to update the authoritative settings of the private DNS zone used for cluster endpoints.
+|`Microsoft.Network/privateDnsZones/delete` |Delete |Required to remove a private DNS zone created for cluster endpoints when it is no longer needed.
+|`Microsoft.Network/privateDnsZones/join/action` |Write |Required to allow cluster networking resources to associate with the private DNS zone used for endpoint resolution.
+|`Microsoft.Network/privateDnsZones/read` |Read |Required to inspect the private DNS zone used to resolve cluster endpoints.
+|`Microsoft.Network/privateDnsZones/virtualNetworkLinks/delete` |Delete |Required to remove the link between a private DNS zone and a virtual network during reconfiguration or cleanup.
+|`Microsoft.Network/privateDnsZones/virtualNetworkLinks/read` |Read |Required to inspect the virtual network links that make the cluster's private DNS zone resolvable from connected VNets.
+|`Microsoft.Network/privateDnsZones/virtualNetworkLinks/write` |Write |Required to create or update links that make the cluster's private DNS zone resolvable from connected VNets.
+|`Microsoft.Network/privateDnsZones/write` |Write |Required to create or update the private DNS zone that contains records for cluster endpoints.
+|`Microsoft.Network/privateEndpoints/delete` |Delete |Required to remove private endpoints when private connectivity is disabled or the cluster is decommissioned.
+|`Microsoft.Network/privateEndpoints/privateDnsZoneGroups/delete` |Delete |Required to remove the association between a private endpoint and its private DNS zones during reconfiguration or cleanup.
+|`Microsoft.Network/privateEndpoints/privateDnsZoneGroups/read` |Read |Required to inspect the private DNS zone groups associated with cluster private endpoints.
+|`Microsoft.Network/privateEndpoints/privateDnsZoneGroups/write` |Write |Required to associate cluster private endpoints with the private DNS zones used for name resolution.
+|`Microsoft.Network/privateEndpoints/read` |Read |Required to inspect the state and configuration of private endpoints used by your cluster.
+|`Microsoft.Network/privateEndpoints/write` |Write |Required to create or update private endpoints that provide private access to cluster resources.
 |`Microsoft.Network/privatelinkservices/read` |Read |Needed so Redpanda Cloud can inspect Private Link services used to expose your Redpanda cluster privately to your VNets.
 |`Microsoft.Network/publicIPAddresses/delete` |Delete |Required to release public IP addresses when networking resources for your Redpanda cluster are decommissioned.
 |`Microsoft.Network/publicIPAddresses/read` |Read |Needed so Redpanda Cloud can inspect the public IP addresses associated with your cluster's ingress endpoints.
@@ -1882,7 +1882,7 @@ Manages the storage accounts and blob containers backing Tiered Storage, and rea
 |===
 |Permission |Access |Why it is needed
 |`Microsoft.KeyVault/vaults/read` |Read |Needed so Redpanda Cloud can look up the Key Vault used to store cluster secrets and encryption keys.
-|`Microsoft.Storage/storageAccounts/PrivateEndpointConnectionsApproval/action` |Write |TODO(eng): confirm purpose.
+|`Microsoft.Storage/storageAccounts/PrivateEndpointConnectionsApproval/action` |Write |Required to approve private endpoint connections to the storage account that backs your cluster.
 |`Microsoft.Storage/storageAccounts/blobServices/containers/delete` |Delete |Required to remove the blob container used for tiered storage when the associated Redpanda cluster is decommissioned.
 |`Microsoft.Storage/storageAccounts/blobServices/containers/read` |Read |Needed so Redpanda Cloud can inspect the blob container that backs tiered storage for your cluster.
 |`Microsoft.Storage/storageAccounts/blobServices/containers/write` |Write |Required to create and configure the blob container used for tiered storage of your Redpanda topic data.
@@ -1928,7 +1928,7 @@ Reads Log Analytics workspace keys used to reconcile node pools.
 [cols="4,1,5", options="header"]
 |===
 |Permission |Access |Why it is needed
-|`Microsoft.OperationalInsights/workspaces/sharedkeys/read` |Read |TODO(eng): confirm purpose.
+|`Microsoft.OperationalInsights/workspaces/sharedkeys/read` |Read |Required to retrieve the Log Analytics workspace keys used to connect cluster monitoring agents to the workspace.
 |===
 
 == Resource group
