@@ -13,12 +13,12 @@ ifdef::env-aws[]
 //     ElastiCache, RDS/Aurora (scoped to ai-gateway-*), Oxla (scoped to oxla-*).
 //  4. Supply "why it is needed" text for every cell marked TODO(eng) (Denis's sheet).
 // ============================================================================
-To deploy a new BYOC cluster on AWS, you create an IAM role in your AWS account that Redpanda assumes to provision and reconcile cluster resources on your behalf. This role grants the permissions listed on this page. The permissions follow the principle of least privilege. Where AWS supports resource-level scoping, they are restricted to the resources Redpanda provisions for your cluster; some actions that do not support resource-level scoping require a wildcard (`*`) resource scope. These permissions are _not_ required by Redpanda Cloud end users, and they do not grant human access to your cluster.
+To deploy a new BYOC cluster on AWS, you create an IAM role in your AWS account that Redpanda assumes to provision and reconcile cluster resources on your behalf. This role grants the permissions listed on this page. The permissions follow the principle of least privilege. Where possible, they are scoped to the resources Redpanda provisions for your cluster; some statements grant actions with an account-wide (`*`) resource scope, as noted in each section. These permissions are _not_ required by Redpanda Cloud end users, and they do not grant human access to your cluster.
 
 [NOTE]
 ====
 * This page lists the permissions Redpanda needs to create and manage xref:get-started:cluster-types/byoc/aws/create-byoc-cluster-aws.adoc[BYOC clusters]. It does _not_ apply to xref:get-started:cluster-types/byoc/aws/vpc-byo-aws.adoc[BYOVPC clusters].
-* Cross-account IAM delegation applies to *new* AWS BYOC clusters. Existing clusters continue to use the agent-based model, where the same permissions attach to a Redpanda agent that runs in your account after you run `rpk cloud byoc aws apply`.
+* Cross-account IAM delegation applies to *new* AWS BYOC clusters. Existing clusters continue to use the agent-based model, where a similar set of permissions attaches to a Redpanda agent that runs in your account after you run `rpk cloud byoc aws apply`.
 ====
 
 // TODO(eng, item 1): confirm the cross-account role uses this exact permission set before publishing.
@@ -142,7 +142,7 @@ statement {
 
 === Read and tag Auto Scaling resources
 
-*Scope:* Account-wide (`+*+`). AWS does not allow these describe and tag actions to be constrained to specific resource ARNs.
+*Scope:* Account-wide (`+*+`). These describe and tag actions are granted with an account-wide resource scope.
 
 [cols="3,1,5", options="header"]
 |===
@@ -325,7 +325,7 @@ statement {
 
 === Read-only, tagging, and provisioning actions (wildcard resources)
 
-*Scope:* Account-wide (`+*+`). These are read-only describe calls, tag operations, launch-template creation, and service-linked role and placement-group actions that AWS does not allow to be constrained to specific resource ARNs.
+*Scope:* Account-wide (`+*+`). These are read-only describe calls, tag operations, launch-template creation, and service-linked role and placement-group actions, granted with an account-wide resource scope.
 
 [cols="3,1,5", options="header"]
 |===
@@ -403,7 +403,7 @@ Creates and manages the VPC, subnets, routes, gateways, security groups, VPC end
 
 === Manage the VPC
 
-*Scope:* Account-wide (`+*+`). AWS does not allow these VPC networking actions to be constrained to specific resource ARNs.
+*Scope:* Account-wide (`+*+`). These VPC networking actions are granted with an account-wide resource scope.
 
 [cols="3,1,5", options="header"]
 |===
@@ -483,7 +483,7 @@ statement {
 
 === Manage VPC endpoints, endpoint services, and load balancers
 
-*Scope:* Account-wide (`+*+`). AWS does not allow these VPC endpoint, endpoint service, and Elastic Load Balancing actions to be constrained to specific resource ARNs. These support private connectivity (such as PrivateLink) to your Redpanda cluster.
+*Scope:* Account-wide (`+*+`). These VPC endpoint, endpoint service, and Elastic Load Balancing actions are granted with an account-wide resource scope. They support private connectivity (such as PrivateLink) to your Redpanda cluster.
 
 [cols="3,1,5", options="header"]
 |===
@@ -720,7 +720,7 @@ statement {
 
 === Manage Route 53 DNS
 
-*Scope:* Account-wide (`+*+`). AWS does not allow these Route 53 actions to be constrained to specific resource ARNs.
+*Scope:* Account-wide (`+*+`). These Route 53 actions are granted with an account-wide resource scope.
 
 [cols="3,1,5", options="header"]
 |===
@@ -1070,7 +1070,7 @@ Cleans up the AWS Secrets Manager secrets Redpanda creates for your cluster when
 [cols="3,1,5", options="header"]
 |===
 |Permission |Access |Why it is needed
-|`secretsmanager:DeleteSecret` |Delete |Required to delete the user secrets Redpanda created for your cluster when the cluster is destroyed.
+|`secretsmanager:DeleteSecret` |Delete |Required to delete the secrets Redpanda creates for your cluster when the cluster is destroyed.
 |===
 
 .Terraform
@@ -1097,7 +1097,7 @@ statement {
 
 === List secrets
 
-*Scope:* Account-wide (`+*+`). AWS does not allow the list action to be constrained to specific resource ARNs.
+*Scope:* Account-wide (`+*+`). This list action is granted with an account-wide resource scope.
 
 [cols="3,1,5", options="header"]
 |===
@@ -1126,7 +1126,7 @@ statement {
 
 === Read CloudWatch metrics
 
-*Scope:* Account-wide (`+*+`). AWS does not allow this metrics action to be constrained to specific resource ARNs.
+*Scope:* Account-wide (`+*+`). This metrics action is granted with an account-wide resource scope.
 
 [cols="3,1,5", options="header"]
 |===
@@ -1223,7 +1223,7 @@ statement {
 // role in the Phase 1 release. They are scoped to ai-gateway-* / oxla-* resources.
 [NOTE]
 ====
-The following permissions are scoped to specific feature resources (`+ai-gateway-*+`, `+oxla-*+`) and apply only when you use the corresponding Redpanda features (AI Gateway and Redpanda SQL). TODO(eng): confirm scope for the cross-account role.
+The following permissions are scoped by resource name to specific feature resources (`+ai-gateway-*+`, `+oxla-*+`), which correspond to the AI Gateway and Redpanda SQL features. TODO(eng): confirm whether these permissions are granted only when the feature is enabled, and confirm the scope for the cross-account role.
 ====
 
 === Manage ElastiCache for the AI Gateway
@@ -1345,7 +1345,7 @@ statement {
 
 === Describe RDS Aurora resources
 
-*Scope:* Account-wide (`+*+`). AWS does not allow these describe actions to be constrained to specific resource ARNs.
+*Scope:* Account-wide (`+*+`). These describe actions are granted with an account-wide resource scope.
 
 [cols="3,1,5", options="header"]
 |===
@@ -1840,9 +1840,9 @@ Joins the cluster to the virtual network and subnets, manages public and private
 |===
 |Permission |Access |Why it is needed
 |`Microsoft.Network/dnszones/SOA/read` |Read |Needed to read DNS zone SOA records when reconciling the DNS configuration that exposes your Redpanda cluster endpoints.
-|`Microsoft.Network/dnszones/delete` |Delete |Required to remove DNS records for your Redpanda cluster endpoints when the cluster is decommissioned.
+|`Microsoft.Network/dnszones/delete` |Delete |Required to delete the public DNS zone used for your Redpanda cluster endpoints when the cluster is decommissioned.
 |`Microsoft.Network/dnszones/read` |Read |Needed so Redpanda Cloud can look up the DNS zone used to publish endpoints for your Redpanda cluster.
-|`Microsoft.Network/dnszones/write` |Write |Required to create and update DNS records so clients can resolve your Redpanda cluster endpoints.
+|`Microsoft.Network/dnszones/write` |Write |Required to create or update the public DNS zone used for your Redpanda cluster endpoints.
 |`Microsoft.Network/privateDnsZones/A/delete` |Delete |Required to remove private DNS A records when cluster endpoints are reconfigured or decommissioned.
 |`Microsoft.Network/privateDnsZones/A/read` |Read |Required to inspect the private DNS A records that map cluster service names to private endpoint addresses.
 |`Microsoft.Network/privateDnsZones/A/write` |Write |Required to create or update private DNS A records so cluster service names resolve to the correct private endpoint addresses.

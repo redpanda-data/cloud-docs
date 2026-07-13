@@ -15,11 +15,11 @@
 // Do not publish until GA and the above are resolved.
 // ============================================================================
 
-New BYOC clusters on AWS use *cross-account IAM delegation*: you create an IAM role in your AWS account, and Redpanda's control plane assumes that role to provision and reconcile your cluster. Redpanda runs the deployment for you, so you do not run `rpk cloud byoc aws apply` or host a provisioning agent in your account. Because you own the role, you can review, audit, and revoke Redpanda's access at any time. See also xref:get-started:byoc-arch.adoc#provisioning-models-on-aws[Provisioning models on AWS].
+New BYOC clusters on AWS use *cross-account IAM delegation*: you create an IAM role in your AWS account, and Redpanda's control plane assumes that role to provision and reconcile your cluster. Redpanda runs the deployment for you, so you do not run `rpk cloud byoc aws apply` or host a provisioning agent in your account. Because you own the role, you can review, audit, and revoke Redpanda's access at any time. Revoking access stops Redpanda from provisioning, reconciling, upgrading, or deleting your cluster resources until you restore it. See also xref:get-started:byoc-arch.adoc#provisioning-models-on-aws[Provisioning models on AWS].
 
 [NOTE]
 ====
-* With standard BYOC clusters, Redpanda manages security policies and resources for your VPC, including subnetworks, service accounts, IAM roles, firewall rules, and storage buckets. For the highest level of security, you can manage these resources yourself with a xref:./vpc-byo-aws.adoc[BYOVPC cluster on AWS].
+* With standard BYOC clusters, Redpanda manages security policies and resources for your VPC, including subnetworks, service accounts, IAM roles, firewall rules, and storage buckets. For the highest level of security, you can manage these resources yourself with a xref:get-started:cluster-types/byoc/aws/vpc-byo-aws.adoc[BYOVPC cluster on AWS].
 * Cross-account IAM delegation applies to *new AWS clusters* only. Migrating an existing cluster is not supported, and existing clusters continue to use the xref:get-started:byoc-arch.adoc#provisioning-models-on-aws[agent-based model]. TODO(team 5): confirm whether agent-based creation is still offered for new AWS clusters.
 ====
 
@@ -36,7 +36,7 @@ Redpanda then assumes the role using AWS Security Token Service (STS), presentin
 
 == Prerequisites
 
-* An AWS account with permission to create IAM roles and policies (for example, `AWSAdministratorAccess`).
+* An AWS principal with permission to create the IAM role and apply its permissions and trust policies.
 * Terraform installed, or another way to apply the configuration Redpanda provides. TODO(team 2): confirm the supported tooling and where customers obtain the configuration.
 
 == Grant IAM permissions
