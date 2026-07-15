@@ -162,6 +162,9 @@ WITH (AWS_CRED(AWS_REGION 'us-west-1', AWS_KEY_ID 'key_id', AWS_PRIVATE_KEY 'acc
 
 ==== Google Cloud Storage
 
+// TODO: This example passes a file path to GCS_CRED, but GCS_CRED (like CREATE STORAGE's
+// service_account_key) accepts the JSON key file's *contents*, not a path. Verify and fix
+// in a follow-up pass on this PR.
 Pass the path to your credentials JSON file:
 
 [source,sql]
@@ -176,7 +179,14 @@ If you cannot use a path to the credentials file, pass its contents as a string:
 COPY default_redpanda_catalog=>project TO 'gs://your-bucket/project_file' WITH (GCS_CRED('<contents of the credentials.json file>'));
 ----
 
-You can also use `AWS_CRED` with GCS by setting the endpoint:
+`GCS_CRED` is optional. If you omit it, Redpanda SQL authenticates using Application Default Credentials (ADC), which includes Workload Identity Federation on GKE:
+
+[source,sql]
+----
+COPY default_redpanda_catalog=>project TO 'gs://your-bucket/project_file';
+----
+
+`GCS_CRED` has no option to override the GCS endpoint. To target a custom endpoint (for example, a GCS emulator or the XML API), use `AWS_CRED` instead, since Google Cloud Storage supports an S3-compatible API:
 
 [source,sql]
 ----
@@ -186,7 +196,7 @@ WITH (AWS_CRED(AWS_REGION 'region1', AWS_KEY_ID 'key_id', AWS_PRIVATE_KEY 'acces
 
 [TIP]
 ====
-For Google Cloud Storage, use HMAC keys for authentication. See the link:https://cloud.google.com/storage/docs/authentication/hmackeys[HMAC keys - Cloud Storage^] page for details.
+The `AWS_CRED` approach requires HMAC keys for authentication. See the link:https://cloud.google.com/storage/docs/authentication/hmackeys[HMAC keys - Cloud Storage^] page for details.
 ====
 
 ==== Azure Blob Storage

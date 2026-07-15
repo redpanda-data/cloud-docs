@@ -6,7 +6,9 @@
 :learning-objective-2: Scale or disable the SQL engine
 :learning-objective-3: Verify that the SQL engine is running and ready to accept connections
 
-Enable Redpanda SQL on a Bring Your Own Cloud (BYOC) cluster so you can query streaming data in Redpanda topics using standard PostgreSQL syntax. For Iceberg-enabled topics, queries can span both the streaming topic and its Iceberg history. See xref:sql:query-data/query-iceberg-topics.adoc[Query Iceberg-enabled topics] for that workflow.
+// TODO: Drop the "On AWS" scoping once RPSQL Deployment with Iceberg on GCP
+// (CIAINFRA-3422/M9) and BigLake REST catalog support (OXLA-9522, cloudv2 PR #27525) ship.
+Enable Redpanda SQL on a Bring Your Own Cloud (BYOC) cluster so you can query streaming data in Redpanda topics using standard PostgreSQL syntax. On AWS, Iceberg-enabled topics also support queries that span both the streaming topic and its Iceberg history. See xref:sql:query-data/query-iceberg-topics.adoc[Query Iceberg-enabled topics] for that workflow.
 
 After reading this page, you will be able to:
 
@@ -14,7 +16,7 @@ After reading this page, you will be able to:
 * [ ] {learning-objective-2}
 * [ ] {learning-objective-3}
 
-NOTE: Redpanda SQL is currently available only on BYOC clusters running on AWS.
+NOTE: Redpanda SQL is currently available on BYOC clusters running on AWS and GCP.
 
 TIP: If you manage your infrastructure with Terraform, see xref:manage:terraform-provider.adoc#enable-redpanda-sql-on-a-byoc-cluster[Enable Redpanda SQL on a BYOC cluster] in the Terraform provider guide.
 
@@ -43,7 +45,7 @@ Cloud Console::
 +
 --
 . Log in to https://cloud.redpanda.com[Redpanda Cloud^].
-. Start creating a new BYOC cluster on AWS. For details and prerequisites, see xref:get-started:cluster-types/byoc/aws/create-byoc-cluster-aws.adoc[].
+. Start creating a new BYOC cluster on AWS or GCP. For details and prerequisites, see xref:get-started:cluster-types/byoc/aws/create-byoc-cluster-aws.adoc[] or xref:get-started:cluster-types/byoc/gcp/create-byoc-cluster-gcp.adoc[].
 . In the cluster creation form, locate the *Redpanda SQL engine* card. Toggle the engine on and use the *RPU* slider to set the compute size.
 +
 For more on RPUs, compute, and cost calculations, see xref:billing:billing.adoc#redpanda-sql-billing-metrics[Redpanda SQL billing metrics].
@@ -64,7 +66,7 @@ curl -X POST "https://api.redpanda.com/v1/clusters" \
   -d '{
     "cluster": {
       "name": "<cluster-name>",
-      "cloud_provider": "CLOUD_PROVIDER_AWS",
+      "cloud_provider": "<cloud-provider>",
       "type": "TYPE_BYOC",
       "region": "<region>",
       "zones": [ <zones> ],
@@ -79,8 +81,9 @@ curl -X POST "https://api.redpanda.com/v1/clusters" \
   }'
 ----
 +
-Replace the `rpsql` placeholders with your own values:
+Replace the placeholders with your own values:
 +
+* `<cloud-provider>`: `CLOUD_PROVIDER_AWS` or `CLOUD_PROVIDER_GCP`.
 * `<compute-nodes>`: Set the initial number of SQL compute nodes (minimum 1).
 * `<sql-az>` (optional): For multi-AZ clusters, specify which of the cluster's availability zones to deploy for the SQL engine. Provide a single zone string from the cluster's `zones` list.
 +
@@ -90,6 +93,9 @@ Replace the `rpsql` placeholders with your own values:
 
 === On an existing cluster
 
+// TODO: Confirm with SME whether GCP BYOC clusters created before Redpanda SQL launched on GCP
+// (M7/CIAINFRA-3420) need an equivalent agent-permission refresh step before enabling SQL, similar
+// to the AWS `rpk cloud byoc aws apply` requirement below.
 NOTE: If your BYOC cluster on AWS was created before May 28, 2026, rerun `rpk cloud byoc aws apply --redpanda-id=<cluster-id>` to update the agent's IAM permissions before enabling Redpanda SQL.
 
 [tabs]

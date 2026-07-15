@@ -2,22 +2,22 @@
 :description: The CREATE STORAGE statement creates a connection to external object storage for use with Redpanda catalogs.
 :page-topic-type: reference
 
-The `CREATE STORAGE` statement creates a named connection to external object storage such as Amazon S3.
+The `CREATE STORAGE` statement creates a named connection to external object storage such as Amazon S3 or Google Cloud Storage (GCS).
 
 == Syntax
 
 [source,sql]
 ----
 CREATE STORAGE [IF NOT EXISTS] storage_name
-TYPE = S3
+TYPE = S3 | GCS
 WITH (option = 'value' [, ...]);
 ----
 
 * `storage_name`: Name for the new storage connection.
-* `TYPE`: Storage type. Redpanda SQL currently supports only `S3`.
+* `TYPE`: Storage type. Redpanda SQL supports `S3` and `GCS`.
 * `IF NOT EXISTS`: Optional. Prevents an error if a storage connection with the same name already exists.
 
-== Options
+== S3 options
 
 [cols="<30%,<15%,<10%,<45%",options="header"]
 |===
@@ -39,7 +39,31 @@ WITH (option = 'value' [, ...]);
 |AWS secret access key.
 |===
 
+== GCS options
+
+[cols="<30%,<15%,<10%,<45%",options="header"]
+|===
+|Option |Type |Required |Description
+
+|`url`
+|STRING
+|No
+|GCS bucket URL, in the form `gs://<bucket>/<path>`. If omitted, the connection holds credentials only and has no associated bucket.
+
+|`service_account_key`
+|STRING
+|No
+|Contents of a GCP service account key JSON file. If omitted, Redpanda SQL authenticates using Application Default Credentials (ADC), which includes Workload Identity Federation on GKE.
+
+|`endpoint`
+|STRING
+|No
+|Override the default GCS endpoint.
+|===
+
 == Examples
+
+=== Create an S3 storage connection
 
 [source,sql]
 ----
@@ -49,5 +73,30 @@ WITH (
   region = 'us-west-2',
   access_key_id = 'AKIAIOSFODNN7EXAMPLE',
   secret_access_key = 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY'
+);
+----
+
+=== Create a GCS storage connection with a service account key
+
+[source,sql]
+----
+CREATE STORAGE archive_storage
+TYPE = GCS
+WITH (
+  url = 'gs://archive-bucket/redpanda-sql',
+  service_account_key = '{"type": "service_account", "project_id": "my-project", ...}'
+);
+----
+
+=== Create a GCS storage connection using Application Default Credentials
+
+Omit `service_account_key` to authenticate with Application Default Credentials (ADC). On GKE, this includes Workload Identity Federation.
+
+[source,sql]
+----
+CREATE STORAGE archive_storage
+TYPE = GCS
+WITH (
+  url = 'gs://archive-bucket/redpanda-sql'
 );
 ----
