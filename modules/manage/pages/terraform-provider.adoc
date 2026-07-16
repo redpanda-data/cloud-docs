@@ -349,9 +349,9 @@ resource "redpanda_secret" "example" {
 ----
 
 * `name`: An uppercase identifier matching `^[A-Z][A-Z0-9_]*$`. You cannot rename a secret after you create it.
-* `secret_data`: The secret value, Base64-encoded. Requires Terraform 1.11 or later.
+* `secret_data`: The secret value. Requires Terraform 1.11 or later.
 * `scopes`: The features that can use the secret. For example, use `SCOPE_REDPANDA_CONNECT` for Redpanda Connect pipelines or `SCOPE_REDPANDA_CLUSTER` for Shadowing credentials. If a secret doesn't have a scope that matches its consumer, the consumer fails at runtime.
-* `labels` (optional): Labels to organize your secrets. You cannot change labels after you create the secret.
+* `labels` (optional): Labels to organize your secrets. You can update labels on an existing secret (provider v2.1.0+).
 
 For the full schema and import syntax, see the https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs/resources/secret[redpanda_secret resource documentation^]. To use secrets in Redpanda Connect pipelines, see xref:develop:connect/configuration/secret-management.adoc[].
 
@@ -378,7 +378,7 @@ NOTE: Cluster properties are not available on Serverless clusters or on BYOC and
 
 == Configure cross-region AWS PrivateLink
 
-By default, AWS PrivateLink only accepts connections from VPCs in the same region as your Redpanda cluster. The Redpanda Terraform provider (v2.0.0+) supports xref:networking:aws-privatelink.adoc#cross-region-privatelink[cross-region PrivateLink], which allows clients in other AWS regions to connect to your cluster through PrivateLink.
+By default, AWS PrivateLink only accepts connections from VPCs in the same region as your Redpanda cluster. The Redpanda Terraform provider (v1.7.0+) supports xref:networking:aws-privatelink.adoc#cross-region-privatelink[cross-region PrivateLink], which allows clients in other AWS regions to connect to your cluster through PrivateLink.
 
 To enable cross-region PrivateLink, add the `supported_regions` attribute to the `aws_private_link` block of a `redpanda_cluster` resource. The attribute accepts a list of up to 50 unique AWS region identifiers from which PrivateLink endpoints can connect. If you omit it, only same-region connections are allowed.
 
