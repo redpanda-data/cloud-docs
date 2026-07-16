@@ -20,6 +20,7 @@ With the Redpanda Terraform provider, you can manage:
 * link:https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs/resources/role_assignments[Role assignments^]
 * link:https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs/resources/schema[Schemas^]
 * link:https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs/resources/schema_registry_acl[Schema Registry ACLs^]
+* link:https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs/resources/secret[Secrets^]
 * link:https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs/resources/serverless_cluster[Serverless clusters^]
 * link:https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs/resources/serverless_private_link[Serverless private links^]
 * link:https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs/resources/topic[Topics^]
@@ -343,7 +344,7 @@ resource "redpanda_secret" "example" {
   secret_data         = var.secret_value
   secret_data_version = 1
   scopes              = ["SCOPE_REDPANDA_CONNECT"]
-  cluster_api_url     = redpanda_cluster.example.cluster_api_url
+  cluster_api_url     = data.redpanda_cluster.byoc.cluster_api_url
   allow_deletion      = true
 }
 ----
