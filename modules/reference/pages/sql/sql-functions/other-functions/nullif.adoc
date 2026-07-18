@@ -1,8 +1,8 @@
-= NULLIF
-:description: The `NULLIF` function replaces a given value with NULL if it matches a specific criterion.
+= nullif
+:description: The `nullif` function replaces a given value with NULL if it matches a specific criterion.
 :page-topic-type: reference
 
-The `NULLIF` function replaces a given value with NULL if it matches a specific criterion.
+The `nullif` function replaces a given value with NULL if it matches a specific criterion.
 
 == Syntax
 
@@ -11,21 +11,21 @@ The `NULLIF` function replaces a given value with NULL if it matches a specific 
 NULLIF(argument_1,argument_2);
 ----
 
-The `NULLIF` function takes two arguments:
+The `nullif` function takes two arguments:
 
 * The first argument is the value to evaluate.
 * The second argument is the value to treat as NULL if the first argument matches it.
 
 [TIP]
 ====
-If the first argument matches the second argument, the `NULLIF` function returns `NULL`. Otherwise, it returns the first argument as-is.
+If the first argument matches the second argument, the `nullif` function returns `NULL`. Otherwise, it returns the first argument as-is.
 ====
 
 == Examples
 
 === Handle equal values
 
-In this case, the `NULLIF` function compares the values 4 and 4.
+In this case, the `nullif` function compares the values 4 and 4.
 
 [source,sql]
 ----
@@ -42,14 +42,14 @@ The result is `NULL` because the two values being compared are equal (4 = 4).
 
 === Handle different values
 
-This example uses the `NULLIF` function to manage different values.
+This example uses the `nullif` function to manage different values.
 
 [source,sql]
 ----
 SELECT NULLIF (9, 0);
 ----
 
-The result is `9` because the second value in the `NULLIF` function is 0 (the two values are not equal).
+The result is `9` because the second value in the `nullif` function is 0 (the two values are not equal).
 
 [source,sql]
 ----
@@ -60,7 +60,7 @@ The result is `9` because the second value in the `NULLIF` function is 0 (the tw
 
 === String comparison
 
-In this case, the `NULLIF` function compares the strings `L` and `O`.
+In this case, the `nullif` function compares the strings `L` and `O`.
 
 [source,sql]
 ----
@@ -122,7 +122,7 @@ SELECT name, NULLIF(salary, 0) AS adjusted_salary
 FROM employees;
 ----
 
-The `NULLIF` function checks whether the `salary` value is 0. If it is, the function returns NULL. Otherwise, it returns the original `salary` value.
+The `nullif` function checks whether the `salary` value is 0. If it is, the function returns NULL. Otherwise, it returns the original `salary` value.
 
 [source,sql]
 ----
@@ -173,7 +173,7 @@ SELECT * FROM fractions;
         15 |           3
 ----
 
-Here, the `NULLIF` function is applied to the `denominator` column. If the `denominator` is 0, the function returns NULL, avoiding division by zero.
+Here, the `nullif` function is applied to the `denominator` column. If the `denominator` is 0, the function returns NULL, avoiding division by zero.
 
 [source,sql]
 ----
