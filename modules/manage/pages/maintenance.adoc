@@ -3,7 +3,7 @@
 :page-topic-type: concepts
 :personas: platform_admin, app_developer, streaming_developer
 :learning-objective-1: Compare minor upgrades, major upgrades, and deprecations and what to expect from each
-:learning-objective-2: Explain how scheduled maintenance windows work for BYOC and Dedicated clusters
+:learning-objective-2: Explain how scheduled maintenance windows and tier migrations work for BYOC and Dedicated clusters
 :learning-objective-3: Distinguish maintenance behavior for Serverless versus BYOC and Dedicated clusters
 
 As a fully-managed service, the Redpanda Cloud glossterm:control plane[] handles all maintenance operations, such as upgrades to your software and infrastructure. Here, _control plane_ refers to the Redpanda Cloud managed service that orchestrates cluster operations, not the Kubernetes control plane.
@@ -29,6 +29,25 @@ For BYOC and Dedicated clusters, Redpanda Cloud may run maintenance operations o
 If you select a *Scheduled* maintenance window, then Redpanda Cloud runs operations on the day and time specified. Maintenance windows typically take six hours. All operations begin during your maintenance window, but some operations may complete after the window closes. All times are in Coordinated Universal Time (UTC).
 
 TIP: Redpanda Cloud maintenance cycles always start on Tuesdays. Clusters scheduled for maintenance on Tuesdays are updated first, and clusters scheduled on Mondays are updated last. Keep this in mind when sequencing updates for multiple clusters.
+
+[[tier-migrations]]
+== Tier migrations
+
+You can move a BYOC or Dedicated cluster to a different xref:reference:tiers/byoc-tiers.adoc[usage tier] as your workload changes, for example to scale up before expected traffic growth, or to scale down after peak demand. To request a tier change, contact https://support.redpanda.com/hc/en-us/requests/new[Redpanda Support^]. Redpanda runs the migration for you, and your maintenance window controls when it starts.
+
+// TODO(eng): Confirm guardrails with engineering (ENG-450, Nate Cole): can customers move multiple tiers in one migration, or one tier at a time? Also confirm typical migration duration per tier step.
+
+A tier migration changes the compute resources underlying your cluster while the cluster continues to serve traffic:
+
+. Redpanda provisions new brokers that match the target tier.
+. Partition data and leadership move to the new brokers in a rolling fashion, accompanied by health checks.
+. Redpanda decommissions and removes the original brokers.
+
+Your cluster's endpoints do not change. When Redpanda decommissions a broker, the broker's client connections restart, and all mainstream Kafka client libraries reconnect automatically.
+
+Like other maintenance operations, tier migrations begin during your scheduled maintenance window, but a migration may complete after the window closes.
+
+NOTE: If you manage your cluster with the Redpanda Terraform provider, add a `lifecycle` block that ignores changes to `throughput_tier` before requesting a tier migration. Otherwise, the next `terraform apply` destroys and replaces the cluster. See xref:manage:terraform-provider.adoc#limitations[Redpanda Terraform provider limitations].
 
 [[serverless-maintenance]]
 == Serverless maintenance
