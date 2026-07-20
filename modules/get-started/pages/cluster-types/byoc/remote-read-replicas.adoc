@@ -6,15 +6,25 @@ A remote read replica topic is a read-only topic that mirrors a topic on a diffe
 
 Redpanda Cloud supports remote read replica topics in BYOC clusters on AWS or GCP. These clusters can be ephemeral; that is, created temporarily to handle specific or transient workloads, but they don't have to be. The ability to make them ephemeral provides flexibility and cost efficiency: you can scale resources up or down as needed and pay only for what you use. 
 
+[IMPORTANT]
+====
+Creating the remote read replica topic is only one of several required steps. To set up a remote read replica, you must complete all of the following:
+
+. *BYOVPC only*: Grant the reader cluster's service account read access to the source cluster's storage bucket. See <<byovpc-storage-permissions>>.
+. Link the reader cluster to the source cluster by setting `read_replica_cluster_ids`. See <<link-clusters>>. Creating the topic alone does _not_ link the clusters.
+. Create the remote read replica topic. See <<create-remote-read-replica-topic>>.
+====
+
 == Prerequisites
 
 To use remote read replicas, you need:
 
 * A BYOC reader cluster in Ready state. This separate reader cluster must exist in the same Redpanda organization as the source cluster.
-** AWS: The reader cluster can be in the same or a different region as the origin cluster's S3 bucket. For cross-region remote read replica topics, see <<create-cross-region-rrr-topic>>.
+** AWS: The reader cluster must be in the same region and the same account as the source cluster.
 ** GCP: The reader cluster can be in the same or a different region as the source cluster. The reader cluster must be in the same project as the source cluster.
 ** Azure: Remote read replicas are not supported.
 
+[[byovpc-storage-permissions]]
 === BYOVPC: Grant storage permissions
 
 [NOTE]
@@ -49,7 +59,25 @@ This should be done in the Terraform of the reader cluster.
 --
 ======
 
-== Configure remote read replica
+If the reader cluster's service account does not have read access to the source cluster's storage bucket, creating the remote read replica topic fails with an error like `UNKNOWN_SERVER_ERROR: Unable to perform requested topic operation`.
+
+[[link-clusters]]
+== Link the reader cluster to the source cluster
+
+Linking is a required step. It does more than record the relationship between the clusters:
+
+* It orders upgrades safely across the linked clusters.
+* It prevents the source cluster from being deleted while it is linked to a reader cluster.
+
+The way linking interacts with storage permissions depends on your deployment type:
+
+* Standard BYOC: Linking the clusters grants the reader cluster read access to the source cluster's storage bucket, so you cannot create a remote read replica topic until the clusters are linked.
+* BYOVPC: You grant the reader cluster read access to the bucket manually (see <<byovpc-storage-permissions>>), so creating the topic succeeds even when the clusters are not linked. This makes the linking step easy to miss.
+
+[WARNING]
+====
+Creating a remote read replica topic does _not_ link the reader cluster to the source cluster. You must also set `read_replica_cluster_ids` as described in this section. Without this link, upgrades are not ordered safely across the clusters, and the source cluster is not protected from deletion, even if remote read replica topics exist.
+====
 
 Add or remove reader clusters to a source cluster in Redpanda Cloud with the xref:cloud-data-platform:manage:api/controlplane/index.adoc[Cloud Control Plane API]. For information on accessing the Cloud API, see the link:/api/doc/cloud-controlplane/authentication[authentication guide].
 
@@ -81,10 +109,11 @@ curl -X GET $API_HOST/v1/clusters/$SOURCE_CLUSTER_ID \
 
 [NOTE]
 ====
-A source cluster cannot be deleted if it has remote read replica topics. When you delete a reader cluster, that cluster's ID is removed from any existing source cluster `read_replica_cluster_ids` lists.
+A source cluster cannot be deleted while any reader cluster IDs are set in its `read_replica_cluster_ids` list. This deletion protection is based on the link, not on the existence of remote read replica topics. When you delete a reader cluster, that cluster's ID is automatically removed from any existing source cluster `read_replica_cluster_ids` lists.
 
 ====
 
+[[create-remote-read-replica-topic]]
 == Create remote read replica topic
 
 To create a remote read replica topic, run:
@@ -97,48 +126,6 @@ rpk topic create <topic_name> -c redpanda.remote.readreplica=<source-cluster-buc
 - For `<source-cluster-bucket-name>`, use the bucket specified in the `cloud_storage_bucket` properties for the origin cluster.
 
 For standard BYOC clusters, the source cluster bucket name follows the pattern: `redpanda-cloud-storage-${SOURCE_CLUSTER_ID}`
-
-[[create-cross-region-rrr-topic]]
-=== Create a cross-region remote read replica topic on AWS
-
-Use this configuration only when the remote cluster is in a *different AWS region* than the origin cluster's S3 bucket. For same-region AWS or GCP deployments, use the standard <<Create remote read replica topic,topic creation command>>.
-
-==== Create the topic
-
-To create a cross-region remote read replica topic, append `region` and `endpoint` query-string parameters to the bucket name.
-
-In the following example, replace the placeholders:
-
-- `<topic_name>`: The name of the topic in the cluster hosting the remote read replica.
-- `<bucket_name>`: The S3 bucket configured on the origin cluster (`cloud_storage_bucket`).
-- `<origin_bucket_region>`: The AWS region of the origin cluster's S3 bucket (not the remote cluster's region). 
-
-[,bash]
-----
-rpk topic create <topic_name> \
-  -c redpanda.remote.readreplica=<bucket_name>?region=<origin_bucket_region>&endpoint=s3.<origin_bucket_region>.amazonaws.com
-  --tls-enabled
-----
-
-For example, if the origin cluster stores data in a bucket called `my-bucket` in `us-east-1`:
-
-[,bash]
-----
-rpk topic create my-topic \
-  -c redpanda.remote.readreplica=my-bucket?region=us-east-1&endpoint=s3.us-east-1.amazonaws.com
-  --tls-enabled
-----
-
-NOTE: The `endpoint` value must not include the bucket name. When using `virtual_host` URL style, Redpanda automatically prepends the bucket name to the endpoint. When using `path` URL style, Redpanda appends the bucket name as a path segment.
-
-==== Limits
-
-Each unique combination of region and endpoint creates a separate object storage target on the remote cluster. A cluster supports a maximum of 10 targets.
-
-How targets are counted depends on `cloud_storage_url_style`:
-
-- `virtual_host`: Each unique combination of bucket, region, and endpoint counts as one target. You can create up to 10 distinct cross-region remote read replica topics for each cluster.
-- `path`: Each unique combination of region and endpoint counts as one target (the bucket name is not part of the key). You can create cross-region remote read replica topics for multiple buckets using the same region/endpoint combination, with a maximum of 10 distinct region/endpoint combinations for each cluster.
 
 == Optional: Tune for live topics
 

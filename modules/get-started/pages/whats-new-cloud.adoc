@@ -6,7 +6,37 @@
 
 This page lists new features added to Redpanda Cloud.
 
+== July 2026
+
+=== Improved Serverless trial onboarding
+
+New Serverless free-trial users now get a guided start in the Redpanda Cloud UI. After you sign up, a few quick questions help Redpanda tailor your experience. The welcome cluster's *Overview* page summarizes your trial credits, and the *Get started* button offers options to start streaming: create a Redpanda Connect pipeline, use `rpk` from the command line, or connect with your own Kafka client. See xref:get-started:cluster-types/serverless.adoc#get-started-with-serverless[Get started with Serverless].
+
+=== SQL editor in Redpanda Cloud Console
+
+Redpanda Cloud Console now includes a built-in SQL editor. For SQL-enabled environments, you can write and run `SELECT` queries against your Redpanda topics directly in the Console without installing a separate PostgreSQL client. The editor supports syntax highlighting, autocomplete, query history, and CSV and JSON export. For Iceberg-enabled topics, an indicator shows when results span both live topic data and Iceberg-committed history. To enable Redpanda SQL, see xref:sql:get-started/deploy-sql-cluster.adoc[Enable Redpanda SQL]. To use the editor, see xref:sql:query-data/sql-editor.adoc[Use the SQL Editor].
+
+=== Self-service organization deletion for Serverless
+
+You can now permanently delete a Serverless organization (free trial and pay-as-you-go plans) directly from the Cloud UI, without contacting Redpanda Support. The new *Manage organization* page, available from your profile icon, shows your plan and organization-wide resource counts, and walks you through the deletion prerequisites: delete all clusters, delete all private links, and settle any pending or outstanding invoices. See xref:manage:manage-organization.adoc[Manage Your Organization].
+
 == June 2026
+
+=== Terraform provider: Redpanda SQL support
+
+The Redpanda Terraform provider (v2.1.0+) now supports enabling and managing Redpanda SQL on BYOC clusters on AWS. Use the `rpsql` block on a `redpanda_cluster` resource to enable SQL, configure compute replicas, and retrieve the SQL endpoint URL. See xref:manage:terraform-provider.adoc#enable-redpanda-sql-on-a-byoc-cluster[Enable Redpanda SQL on a BYOC cluster].
+
+=== Terraform provider: Secrets management
+
+The Redpanda Terraform provider (v2.0.0+) now supports managing cluster secrets with the new `redpanda_secret` resource. The secret value is a write-only attribute, so Terraform never stores it in your state file, and scopes control which features can use the secret, such as Redpanda Connect pipelines. See xref:manage:terraform-provider.adoc#manage-cluster-secrets[Manage cluster secrets].
+
+=== Centralized egress for BYOC on GCP: beta
+
+You can route all GCP BYOC cluster egress through your own GCP hub VPC and NAT VM instead of a per-cluster Cloud NAT, so outbound traffic exits through your centralized inspection point. This is useful for regulated environments that require a single, predictable public IP for outbound allowlisting or that prohibit per-cluster Cloud NAT. Centralized egress is in a glossterm:beta[] release and is enabled per organization. Contact your account team for access. See xref:networking:byoc/gcp/nat-free-egress.adoc[Configure Centralized Egress with GCP VPC Peering].
+
+=== GCP Lakehouse catalog for Iceberg topics
+
+BYOC clusters on GCP can now use GCP Lakehouse as an Iceberg REST catalog. See xref:manage:iceberg/iceberg-topics-gcp-biglake.adoc[].
 
 === Connect to Amazon Aurora with IAM roles
 
@@ -15,6 +45,11 @@ A new guide walks Cloud customers through configuring IAM Roles for Service Acco
 === Customer-managed default topic settings
 
 You can now set cluster-wide defaults for new topics on BYOC and Dedicated clusters. The xref:reference:properties/cluster-properties.adoc#default_topic_partitions[`default_topic_partitions`], xref:reference:properties/cluster-properties.adoc#log_retention_ms[`log_retention_ms`], and xref:reference:properties/cluster-properties.adoc#retention_bytes[`retention_bytes`] cluster properties are now customer-managed. The default topic retention period (`log_retention_ms`) previously could only be changed by Redpanda support. See xref:manage:cluster-maintenance/config-cluster.adoc[Configure Cluster Properties].
+
+=== Redpanda Connect updates
+
+* Processors:
+** xref:develop:connect/components/processors/try_catch.adoc[try_catch]: Combines the behavior of the `try` and `catch` processors into a single block with an explicit recovery path.
 
 == May 2026
 
@@ -98,9 +133,9 @@ GBAC is available for BYOC and Dedicated clusters. In addition to the predefined
 
 Remote MCP has been deprecated and removed from Redpanda Cloud.
 
-=== Increased Serverless limits for Redpanda Connect pipelines and MCP servers
+=== Increased Serverless limits for Redpanda Connect pipelines
 
-Serverless clusters now support up to 100 Redpanda Connect pipelines and MCP servers. See xref:get-started:cluster-types/serverless.adoc#_serverless_usage_limits[Serverless usage limits].
+Serverless clusters now support up to 100 Redpanda Connect pipelines. See xref:get-started:cluster-types/serverless.adoc#_serverless_usage_limits[Serverless usage limits].
 
 === Terraform provider: Write-only attributes for sensitive fields
 
@@ -178,10 +213,6 @@ See xref:manage:iceberg/specify-iceberg-schema.adoc#how-iceberg-modes-translate-
 
 xref:develop:produce-data/leader-pinning.adoc[Leader pinning] now supports the `ordered_racks` configuration value, which lets you specify preferred racks in priority order. Unlike `racks`, which distributes leaders uniformly across all listed racks, `ordered_racks` places leaders in the highest-priority available rack and fails over to subsequent racks only when higher-priority racks become unavailable.
 
-=== Cross-region Remote Read Replicas on AWS
-
-xref:get-started:cluster-types/byoc/remote-read-replicas.adoc[Remote read replica] topics on AWS can now be deployed in a different region from the origin cluster's S3 bucket. This enables cross-region disaster recovery and data locality scenarios while maintaining the read-only replication model. 
-
 === BYOVPC on AWS: GA
 
 xref:get-started:cluster-types/byoc/aws/vpc-byo-aws.adoc[BYOVPC on AWS] is now generally available (GA). With Bring Your Own VPC (BYOVPC), you deploy the Redpanda data plane into your own VPC and manage security policies and resources yourself, including subnets, IAM roles, firewall rules, and storage buckets. The Redpanda BYOVPC Terraform Module contains Terraform code that deploys the resources required for a BYOVPC cluster on AWS. Secrets management is enabled by default with the Terraform module. 
@@ -196,12 +227,6 @@ Redpanda Cloud now sends email notifications to organization admins when credit 
 
 == February 2026
 
-=== Agentic Data Plane (ADP): LA
-
-Redpanda Agentic Data Plane (ADP) is now available in glossterm:LA[, limited availability] (LA). Redpanda ADP provides enterprise-grade infrastructure for building, deploying, and governing AI agents at scale. Key capabilities include declarative agents, MCP servers backed by 300+ connectors, an AI Gateway with model failover and fiscal controls, and compliance-grade transcripts built on Redpanda's immutable log. 
-
-See xref:ai-agents:adp-overview.adoc[Agentic Data Plane Overview].
-
 === Serverless on AWS: GA
 
 xref:get-started:cluster-types/serverless.adoc[Serverless] on AWS is now generally available (GA). This release includes private networking with AWS PrivateLink. You can use the Cloud Console, the Cloud API, or the Redpanda Terraform provider to create and manage Serverless private links. Serverless is the easiest and fastest way to begin streaming data with Redpanda.
@@ -212,7 +237,7 @@ You can now enable xref:manage:schema-reg/schema-id-validation.adoc[schema ID va
 
 === Cross-region AWS PrivateLink
 
-AWS PrivateLink now supports cross-region connectivity, allowing clients in different AWS regions to connect to your Redpanda cluster through PrivateLink. Configure supported regions in the xref:networking:configure-privatelink-in-cloud-ui.adoc#cross-region-privatelink[Cloud UI] or using the xref:networking:aws-privatelink.adoc#cross-region-privatelink[Cloud API] to specify which regions can establish PrivateLink connections. This feature requires multi-AZ cluster deployments.
+AWS PrivateLink now supports cross-region connectivity, allowing clients in different AWS regions to connect to your Redpanda cluster through PrivateLink. Configure supported regions in the xref:networking:configure-privatelink-in-cloud-ui.adoc#cross-region-privatelink[Cloud Console], using the xref:networking:aws-privatelink.adoc#cross-region-privatelink[Cloud API], or with the Redpanda Terraform provider (v1.7.0+) using the `supported_regions` attribute of the `aws_private_link` block. See xref:manage:terraform-provider.adoc#configure-cross-region-aws-privatelink[Configure cross-region AWS PrivateLink]. This feature requires multi-AZ cluster deployments.
 
 == January 2026
 
@@ -269,7 +294,7 @@ You can view details about Kafka client connections using `rpk` or the Data Plan
 
 === Increased message size limit
 
-Redpanda Cloud increased the xref:develop:topics/create-topic.adoc[message size limit] on newly-created topics. BYOC and Dedicated clusters have a default message size limit of 20 MiB with a maximum of 32 MiB. Serverless clusters have a default message size limit of 8 MiB with a maximum of 20 MiB. Configure the message size limit with the `max_message_bytes` topic property.
+Redpanda Cloud increased the xref:develop:topics/create-topic.adoc[message size limit] on newly-created topics. BYOC and Dedicated clusters have a default message size limit of 20 MiB with a maximum of 32 MiB. Serverless clusters have a default message size limit of 8 MiB with a maximum of 20 MiB. Configure the message size limit with the `max.message.bytes` topic property.
 
 The message size setting on existing topics is not changed, but the message size limit on existing topics can only be updated to the new maximum.
 
@@ -333,11 +358,13 @@ Enable multi-factor authentication (MFA) to add an extra layer of security to yo
 
 === Redpanda Cloud Management MCP Server: beta
 
-Connect AI assistants like Claude directly to your Redpanda Cloud account with the new xref:ai-agents:mcp/overview.adoc[Redpanda Cloud Management MCP Server]. This server runs on your computer and provides AI tools for managing clusters, topics, and other cloud resources through natural language commands.
+Connect AI assistants like Claude directly to your Redpanda Cloud account with the new Redpanda Cloud Management MCP Server. This server runs on your computer and provides AI tools for managing clusters, topics, and other cloud resources through natural language commands.
 
-Ask your AI assistant to "Create a new topic called user-events" or "List all clusters in my account" and it will handle the technical details automatically. Get started with the xref:ai-agents:mcp/quickstart.adoc[quickstart guide].
+Ask your AI assistant to "Create a new topic called user-events" or "List all clusters in my account" and it will handle the technical details automatically. Get started with the xref:reference:rpk/rpk-cloud/rpk-cloud-mcp-install.adoc[rpk cloud mcp install] command.
 
 The Redpanda Cloud Management MCP Server uses the Model Context Protocol (MCP) to extend AI assistants with Redpanda-specific capabilities, making cloud operations more accessible through conversational interfaces.
+
+
 
 === Automatic topic creation and topic limit
 
@@ -516,10 +543,6 @@ See also:
 WebAssembly xref:develop:data-transforms/index.adoc[data transforms] are now generally available in Redpanda Cloud. Data transforms let you run common data streaming tasks within Redpanda, like filtering, scrubbing, and transcoding. 
 
 Data transforms are supported for BYOC and Dedicated clusters running Redpanda version 24.3 and later.
-
-=== AI agents: beta
-
-Redpanda Cloud is starting to introduce beta versions of xref:develop:agents/about.adoc[AI agents] for enterprise agentic applications driven by a continuous data feed.
 
 === Redpanda Connect for BYOVPC on AWS and GCP: beta
 
