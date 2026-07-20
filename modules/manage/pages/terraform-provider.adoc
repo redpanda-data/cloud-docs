@@ -6,6 +6,7 @@
 :learning-objective-2: Manage sensitive credentials using Terraform write-only attributes
 :learning-objective-3: Enable Redpanda SQL on a BYOC cluster using the rpsql block
 :learning-objective-4: Configure cross-region AWS PrivateLink on a cluster
+:learning-objective-5: Create Redpanda Connect pipelines and allow pipeline egress to custom destinations
 
 Use the https://registry.terraform.io/providers/redpanda-data/redpanda/latest[Redpanda Terraform provider^] to define, automate, and track changes to your Redpanda Cloud infrastructure as code.
 
@@ -32,6 +33,7 @@ After reading this page, you will be able to:
 * [ ] {learning-objective-2}
 * [ ] {learning-objective-3}
 * [ ] {learning-objective-4}
+* [ ] {learning-objective-5}
 
 == Why use Terraform with Redpanda?
 
@@ -325,6 +327,132 @@ resource "redpanda_user" "schema_user" {
 ----
 
 After running `terraform apply`, the provider sends the new password to Redpanda Cloud. Neither the old nor the new value is written to state.
+
+== Create Redpanda Connect pipelines
+
+Use the `redpanda_pipeline` resource to create and manage xref:develop:connect/about.adoc[Redpanda Connect] pipelines as code. Pass the pipeline configuration as YAML in the `config_yaml` attribute.
+
+[source,hcl]
+----
+resource "redpanda_pipeline" "example" {
+  cluster_api_url = redpanda_cluster.example.cluster_api_url
+  display_name    = "example-pipeline"
+  description     = "Generates data and writes it to a topic"
+  state           = "running"
+  allow_deletion  = true
+
+  config_yaml = <<-YAML
+    input:
+      generate:
+        interval: 5s
+        mapping: |
+          root.message = "hello world"
+          root.timestamp = now()
+
+    output:
+      redpanda:
+        seed_brokers:
+          - $${REDPANDA_BROKERS}
+        tls:
+          enabled: true
+        sasl:
+          - mechanism: SCRAM-SHA-256
+            username: $${secrets.KAFKA_USER_CONNECT}
+            password: $${secrets.KAFKA_PASSWORD_CONNECT}
+        topic: example-topic
+  YAML
+
+  resources = {
+    memory_shares = "128Mi"
+    cpu_shares    = "100m"
+  }
+
+  tags = {
+    environment = "dev"
+  }
+}
+----
+
+* `cluster_api_url`: The URL of the data plane API for the cluster that runs the pipeline.
+* `config_yaml`: The pipeline configuration in YAML format. Escape literal `$\{...}` references, such as xref:develop:connect/configuration/secret-management.adoc[secrets] and xref:develop:connect/configuration/contextual-variables.adoc[contextual variables], as `$$\{...}` so that Terraform doesn't interpret them as its own interpolation syntax. Redpanda Connect resolves them at runtime.
+* `state`: The desired state of the pipeline: `running` or `stopped`. The provider ensures the pipeline reaches this state after create and update operations.
+* `resources` (optional): The amount of memory and CPU to allocate for the pipeline. See xref:develop:connect/configuration/scale-pipelines.adoc[].
+* `allow_deletion` (optional): Whether Terraform may destroy the pipeline. Defaults to `false`.
+
+This example references the `KAFKA_USER_CONNECT` and `KAFKA_PASSWORD_CONNECT` cluster secrets for SASL authentication. You can create these secrets with the `redpanda_secret` resource. See <<manage-cluster-secrets>>.
+
+For the full schema and import syntax, see the https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs/resources/pipeline[redpanda_pipeline resource documentation^].
+
+=== Enable egress to custom destinations
+
+On BYOC clusters, Redpanda Connect pipelines run inside the Redpanda dataplane VPC in your cloud account. By default, pipelines can connect to your Redpanda cluster and to publicly-routable endpoints. Outbound connections to other destinations, such as a database with a private address in a peered VPC, are blocked.
+
+To allow pipelines to reach these destinations, add the `redpanda_connect.allowed_destination_cidr_ports` attribute to the `redpanda_cluster` resource (requires provider version `>= 2.1.1`). The attribute accepts up to 16 rules, each allowing egress to a destination CIDR block on a port or port range:
+
+[source,hcl]
+----
+resource "redpanda_cluster" "example" {
+  # ... other cluster arguments ...
+
+  redpanda_connect = {
+    allowed_destination_cidr_ports = [
+      {
+        cidr       = "10.62.0.0/16" # CIDR of the VPC that hosts your database
+        port_start = 5432           # PostgreSQL
+      },
+      {
+        cidr       = "203.0.113.0/24"
+        port_start = 9000
+        port_end   = 9100
+      }
+    ]
+  }
+}
+----
+
+* `cidr`: The destination IPv4 CIDR block, for example `10.62.0.0/16`.
+* `port_start`: The start of the TCP/UDP port range, 1-65535.
+* `port_end` (optional): The end of the TCP/UDP port range. To allow a single port, omit this attribute. When set, the value must be greater than or equal to `port_start`.
+
+You can add or change the `redpanda_connect` block on an existing cluster. Terraform updates the cluster in place without recreating it.
+
+The allowlist permits outbound traffic from pipelines, but it does not create a network path to the destination. For private destinations, you must also establish routing, for example by peering the Redpanda dataplane VPC with the VPC that hosts your database and adding routes in both directions.
+
+After you apply the configuration, pipelines can connect to the allowed destinations. For example, a pipeline with a xref:develop:connect/components/outputs/sql_insert.adoc[`sql_insert`] output can write to a PostgreSQL database at a private address in the peered VPC:
+
+[source,hcl]
+----
+resource "redpanda_pipeline" "postgres_sink" {
+  cluster_api_url = redpanda_cluster.example.cluster_api_url
+  display_name    = "postgres-sink"
+  description     = "Writes topic data to a private PostgreSQL database"
+  state           = "running"
+  allow_deletion  = true
+
+  config_yaml = <<-YAML
+    input:
+      redpanda:
+        seed_brokers:
+          - $${REDPANDA_BROKERS}
+        topics: ["orders"]
+        consumer_group: postgres-sink
+        tls:
+          enabled: true
+        sasl:
+          - mechanism: SCRAM-SHA-256
+            username: $${secrets.KAFKA_USER_CONNECT}
+            password: $${secrets.KAFKA_PASSWORD_CONNECT}
+
+    output:
+      sql_insert:
+        driver: postgres
+        dsn: postgres://$${secrets.PG_USER}:$${secrets.PG_PASSWORD}@db.private.example.internal:5432/orders?sslmode=require
+        table: orders
+        columns: ["payload"]
+        args_mapping: root = [ content().string() ]
+  YAML
+}
+----
 
 == Manage cluster secrets
 
