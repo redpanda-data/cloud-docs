@@ -5,6 +5,7 @@
 :learning-objective-1: Configure and deploy Redpanda Cloud clusters using Terraform
 :learning-objective-2: Manage sensitive credentials using Terraform write-only attributes
 :learning-objective-3: Enable Redpanda SQL on a BYOC cluster using the rpsql block
+:learning-objective-4: Configure cross-region AWS PrivateLink on a cluster
 
 Use the https://registry.terraform.io/providers/redpanda-data/redpanda/latest[Redpanda Terraform provider^] to define, automate, and track changes to your Redpanda Cloud infrastructure as code.
 
@@ -19,6 +20,7 @@ With the Redpanda Terraform provider, you can manage:
 * link:https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs/resources/role_assignments[Role assignments^]
 * link:https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs/resources/schema[Schemas^]
 * link:https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs/resources/schema_registry_acl[Schema Registry ACLs^]
+* link:https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs/resources/secret[Secrets^]
 * link:https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs/resources/serverless_cluster[Serverless clusters^]
 * link:https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs/resources/serverless_private_link[Serverless private links^]
 * link:https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs/resources/topic[Topics^]
@@ -29,6 +31,7 @@ After reading this page, you will be able to:
 * [ ] {learning-objective-1}
 * [ ] {learning-objective-2}
 * [ ] {learning-objective-3}
+* [ ] {learning-objective-4}
 
 == Why use Terraform with Redpanda?
 
@@ -109,7 +112,6 @@ output "cluster_api_url" {
 The following functionality is supported in the Cloud API but not in the Redpanda Terraform provider:
 
 * Creating or deleting BYOVNet clusters on Azure
-* Secrets
 * Kafka Connect
 
 [WARNING]
@@ -240,7 +242,7 @@ For each supported sensitive field, the provider exposes two new attributes alon
 * `<field>_wo`: A write-only attribute. Terraform sends the value to the provider during `apply` but never persists it to state.
 * `<field>_wo_version`: An integer version. Because Terraform cannot detect changes in a write-only value (there is nothing to compare against in state), you increment this number to signal that the value has changed and to trigger an update on the next apply.
 
-NOTE: `redpanda_pipeline` is an exception to this naming convention. The existing `client_secret` attribute is the write-only attribute (no separate `client_secret_wo` field), and is paired with `secret_version` instead of `client_secret_wo_version`.
+NOTE: `redpanda_pipeline` and `redpanda_secret` are exceptions to this naming convention. For `redpanda_pipeline`, the existing `client_secret` attribute is the write-only attribute (no separate `client_secret_wo` field), and is paired with `secret_version` instead of `client_secret_wo_version`. For `redpanda_secret`, the `secret_data` attribute is write-only by design (there is no plaintext variant), and is paired with `secret_data_version`.
 
 The provider retains the original plaintext attributes for backward compatibility. You can migrate to the write-only variants on your own schedule. Avoid setting both the plaintext attribute and its write-only counterpart on the same resource. If both are set, the provider uses the write-only value.
 
@@ -268,6 +270,11 @@ The provider retains the original plaintext attributes for backward compatibilit
 | `client_secret`
 | `client_secret` (write-only)
 | `secret_version`
+
+| `redpanda_secret`
+| None (write-only by design)
+| `secret_data`
+| `secret_data_version`
 |===
 
 === Set a write-only attribute
@@ -319,6 +326,36 @@ resource "redpanda_user" "schema_user" {
 
 After running `terraform apply`, the provider sends the new password to Redpanda Cloud. Neither the old nor the new value is written to state.
 
+== Manage cluster secrets
+
+The Redpanda Terraform provider (v2.0.0+) supports creating and managing secrets in a cluster's secret store with the `redpanda_secret` resource. Cluster secrets hold sensitive values, such as pipeline credentials, that other resources reference by name using `${secrets.<NAME>}`.
+
+The secret value (`secret_data`) is a write-only attribute, so Terraform never stores it in state. To rotate the value, change `secret_data` and increment `secret_data_version`, following the same pattern as <<manage-sensitive-attributes-with-write-only-fields,other write-only attributes>>.
+
+[source,hcl]
+----
+variable "secret_value" {
+  description = "Value to store in the secret"
+  sensitive   = true
+}
+
+resource "redpanda_secret" "example" {
+  name                = "EXAMPLE_SECRET"
+  secret_data         = var.secret_value
+  secret_data_version = 1
+  scopes              = ["SCOPE_REDPANDA_CONNECT"]
+  cluster_api_url     = data.redpanda_cluster.byoc.cluster_api_url
+  allow_deletion      = true
+}
+----
+
+* `name`: An uppercase identifier matching `^[A-Z][A-Z0-9_]*$`. You cannot rename a secret after you create it.
+* `secret_data`: The secret value. Requires Terraform 1.11 or later.
+* `scopes`: The features that can use the secret. For example, use `SCOPE_REDPANDA_CONNECT` for Redpanda Connect pipelines or `SCOPE_REDPANDA_CLUSTER` for Shadowing credentials. If a secret doesn't have a scope that matches its consumer, the consumer fails at runtime.
+* `labels` (optional): Labels to organize your secrets. You can update labels on an existing secret (provider v2.1.0+).
+
+For the full schema and import syntax, see the https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs/resources/secret[redpanda_secret resource documentation^]. To use secrets in Redpanda Connect pipelines, see xref:develop:connect/configuration/secret-management.adoc[].
+
 == Configure cluster properties
 
 To set xref:reference:properties/cluster-properties.adoc[cluster configuration properties] on a BYOC or Dedicated cluster, add a `cluster_configuration` block to the `redpanda_cluster` resource and pass the properties as a JSON string with `custom_properties_json`:
@@ -339,6 +376,46 @@ resource "redpanda_cluster" "test" {
 Only the properties listed in xref:reference:properties/cluster-properties.adoc[] and xref:reference:properties/object-storage-properties.adoc[] can be configured through the provider. Setting an unsupported property returns a `REASON_INVALID_INPUT` error indicating that the property is not allowed. For example, `kafka_batch_max_bytes` cannot be set through the provider. To control the maximum message size, set the `max.message.bytes` property on each topic instead. For more information, see xref:manage:cluster-maintenance/config-cluster.adoc[].
 
 NOTE: Cluster properties are not available on Serverless clusters or on BYOC and Dedicated clusters running on Azure.
+
+== Configure cross-region AWS PrivateLink
+
+By default, AWS PrivateLink only accepts connections from VPCs in the same region as your Redpanda cluster. The Redpanda Terraform provider (v1.7.0+) supports xref:networking:aws-privatelink.adoc#cross-region-privatelink[cross-region PrivateLink], which allows clients in other AWS regions to connect to your cluster through PrivateLink.
+
+To enable cross-region PrivateLink, add the `supported_regions` attribute to the `aws_private_link` block of a `redpanda_cluster` resource. The attribute accepts a list of up to 50 unique AWS region identifiers from which PrivateLink endpoints can connect. If you omit it, only same-region connections are allowed.
+
+Requirements:
+
+* The cluster must be deployed across multiple availability zones (multi-AZ). This is an AWS limitation for cross-region PrivateLink.
+* For BYOC clusters, the Redpanda agent IAM role must have the `vpce:AllowMultiRegion` and `elasticloadbalancing:DescribeListenerAttributes` permissions.
+
+[source,hcl]
+----
+resource "redpanda_cluster" "example" {
+  # ... other cluster arguments ...
+
+  zones = ["use2-az1", "use2-az2", "use2-az3"]  # Cross-region PrivateLink requires a multi-AZ cluster
+
+  aws_private_link = {
+    enabled            = true
+    connect_console    = true
+    allowed_principals = ["arn:aws:iam::123456789012:root"]
+    supported_regions  = ["us-east-1", "us-west-2", "eu-west-1"]
+  }
+}
+
+output "privatelink_service_name" {
+  value = redpanda_cluster.example.aws_private_link.status.service_name
+}
+----
+
+* `enabled`: Whether the Redpanda PrivateLink endpoint service is enabled.
+* `connect_console`: Whether Redpanda Console is connected over PrivateLink.
+* `allowed_principals`: The ARNs of the AWS principals allowed to access the endpoint service. To allow all principals, use an asterisk (`*`).
+* `supported_regions` (optional): The AWS regions from which clients can create PrivateLink endpoints that connect to the cluster.
+
+You can add or change the `aws_private_link` block on an existing cluster. Terraform updates the cluster in place without recreating it.
+
+After you apply the configuration, clients in the listed regions can create VPC endpoints that connect to the cluster's endpoint service, identified by the `service_name` output in the example. See xref:networking:aws-privatelink.adoc#create-a-cross-region-vpc-endpoint[Create a cross-region VPC endpoint] for the AWS CLI workflow, and xref:networking:aws-privatelink.adoc[] for the full PrivateLink setup, including client VPC configuration and connection testing.
 
 == Examples
 
@@ -637,6 +714,8 @@ resource "redpanda_cluster" "test" {
   }
 }
 ----
+
+For details on the `aws_private_link` block, including the multi-AZ requirement for cross-region PrivateLink, see <<configure-cross-region-aws-privatelink>>.
 
 === Create a Serverless cluster
 
