@@ -1,7 +1,9 @@
 ifdef::env-byoc[]
 == BYOC usage tiers
 
-When you create a BYOC cluster, you select your usage tier. Each tier defines a tested workload configuration with maximum (up to) values for throughput, partitions, and connections.
+When you create a BYOC cluster, you choose its capacity. If your organization uses usage-based billing, describe your workload and let Redpanda recommend a configuration, rather than choosing a tier directly. See xref:get-started:cluster-types/byoc/size-byoc-cluster.adoc[Size and Price a BYOC Cluster]. Otherwise, you select a usage tier. Each tier defines a tested workload configuration with maximum (up to) values for throughput, partitions, and connections.
+
+// TODO(pm): DOC-940/DOC-1861 - Denis Coady (Slack, 2026-07-20) says tiers are being phased out in favor of calculator-based sizing and customers shouldn't reason in tiers or RPUs. Asked on PR #642 whether docs should state a phase-out or keep "recommended" framing. Do not state a phase-out without official deprecation comms.
 
 Treat tier values as guidance rather than enforced caps. Redpanda does not throttle your workload at the advertised values. You can push one dimension beyond its advertised value, for example ingress throughput, by accepting trade-offs in other dimensions, such as egress capacity or latency.
 
@@ -33,9 +35,9 @@ Treat tier values as guidance rather than enforced caps. Redpanda does not throt
 
 === Machine types and RPUs
 
-Each tier maps to a machine type from your cloud provider, sized in Redpanda Processing Units (RPUs). One RPU represents two vCPUs of broker compute. Redpanda uses RPUs for cluster sizing and usage-based pricing.
+Each tier maps to a machine type from your cloud provider, with capacity measured in Redpanda Processing Units (RPUs), the internal unit that workload-based sizing and usage-based pricing use. You don't need to reason in RPUs: describe your workload in the xref:get-started:cluster-types/byoc/size-byoc-cluster.adoc[sizing calculator], and Redpanda resolves the machine configuration for you.
 
-To see the machine type and RPU count for each tier, use the link:/api/doc/cloud-controlplane[Control Plane API^] (`GET /v1beta2/throughput-tiers`). To get a machine configuration and price estimate matched to your workload instead of choosing a tier directly, see xref:get-started:cluster-types/byoc/size-byoc-cluster.adoc[Size and price a BYOC cluster].
+To see the machine type and RPU count for each tier, use the link:/api/doc/cloud-controlplane[Control Plane API^] (`GET /v1beta2/throughput-tiers`).
 
 // TODO(eng): DOC-940/DOC-1861 - verify the public tiers endpoint path in the published Control Plane API reference (GET /v1beta2/throughput-tiers vs /v1beta2/tiers) before publishing.
 

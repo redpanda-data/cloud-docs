@@ -6,7 +6,7 @@
 :learning-objective-2: Compare sizing options by RPU rate, machine type, and node count
 :learning-objective-3: Request sizing estimates programmatically with the Control Plane API
 
-When you create a BYOC cluster, you can size it from your workload requirements instead of translating them into Redpanda tier terminology. Describe your workload, such as throughput, glossterm:partition[,partitions], and retention, and Redpanda recommends machine configurations with itemized price estimates.
+When you create a BYOC cluster, size it from your workload requirements instead of translating them into Redpanda tier terminology. Describe your workload, such as throughput, glossterm:partition[,partitions], and retention, and Redpanda recommends machine configurations with itemized price estimates. Workload-based sizing is the recommended way to size a cluster: it applies the same logic Redpanda's performance team uses, and it stays accurate as performance improvements change what a given configuration can handle.
 
 After reading this page, you will be able to:
 
@@ -25,7 +25,7 @@ Sizing options appear only for organizations on usage-based billing. If you don'
 You can size a cluster in two ways:
 
 * *Describe your workload.* Provide workload parameters, such as partition count, ingress and egress throughput, retention, average message size, replication factor, producer count, and target latency. You can also indicate whether you plan to use cloud topics or Iceberg topics. Redpanda resolves the compute capacity your workload needs and recommends machine configurations that provide it.
-* *Specify capacity directly.* Provide a rate of Redpanda Processing Units (RPUs), from 1 to 384. One RPU represents two vCPUs of glossterm:broker[] compute. Redpanda resolves the machine configurations that deliver that capacity.
+* *Specify capacity directly.* Provide a rate of Redpanda Processing Units (RPUs), from 1 to 384. One RPU represents two vCPUs of glossterm:broker[] compute. Redpanda resolves the machine configurations that deliver that capacity. Use this mode only if you already know the capacity you need; describing your workload is the recommended path.
 
 Both ways return a ranked list of viable machine configurations. Each option includes the machine type, node count, RPU rate, and the xref:reference:tiers/byoc-tiers.adoc[usage tier] it maps to, along with an itemized price estimate covering compute, ingress, egress, storage, and Iceberg, with hourly and monthly totals.
 
