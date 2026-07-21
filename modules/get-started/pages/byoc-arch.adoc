@@ -13,7 +13,7 @@ image::shared:control_d_plane.png[Control plane and data plane]
 
 * *Data plane*: This is where your cluster lives. The term _data plane_ is sometimes used interchangeably with _cluster_. The data plane is where you manage topics, consumer groups, connectors, and schemas. You can use xref:security:authorization/rbac/rbac_dp.adoc[RBAC] or xref:security:authorization/gbac/gbac_dp.adoc[GBAC] in the data plane to configure cluster-level permissions for provisioned users at scale. 
 
-IAM permissions allow the Redpanda Cloud agent to access the cloud provider API to create and manage cluster resources. The permissions follow the principle of least privilege, limiting access to only what is necessary.
+IAM permissions allow Redpanda to access the cloud provider API to create and manage cluster resources, either through the Redpanda Cloud agent or, for new BYOC clusters on AWS, through a cross-account IAM role that Redpanda's control plane assumes. The permissions follow the principle of least privilege, limiting access to only what is necessary.
 
 Clusters are configured and maintained in the control plane, but they remain available even if the network connection to the control plane is lost. 
 
@@ -30,6 +30,9 @@ In the Redpanda Cloud UI, you can identify which plane you're in by the side nav
 
 In a BYOC architecture, you deploy the data plane in your own VPC. All network connections into the data plane take place through either a public endpoint, or for private clusters, through Redpanda Cloud network connections such as VPC peering, AWS PrivateLink, Azure Private Link, or GCP Private Service Connect. Customer data never leaves the data plane.
 
+// DOC-2297: forward-reference so readers know the agent flow is not the AWS-new default.
+NOTE: On AWS, new clusters use <<provisioning-models-on-aws,cross-account IAM delegation>>. The agent-based setup described here applies to existing AWS clusters and to clusters on Azure and GCP.
+
 A BYOC cluster is initially set up from the control plane. This is a two-step process performed by `rpk cloud byoc apply`:
 
 . You bootstrap a virtual machine (VM) in your VPC. 
@@ -44,6 +47,33 @@ they have dedicated job queues in the control plane. Agents also manage VPC peer
 +
 image::shared:byoc_apply.png[cloud_byoc_apply]
 
-NOTE: To create a Redpanda cluster in your virtual private cloud (VPC), follow the instructions in the Redpanda Cloud UI. The UI contains the parameters necessary to successfully run `rpk cloud byoc apply` with your cloud provider. 
+NOTE: To create a Redpanda cluster in your virtual private cloud (VPC), follow the instructions in the Redpanda Cloud UI. The UI contains the parameters necessary to successfully run `rpk cloud byoc apply` with your cloud provider.
+
+== Provisioning models on AWS
+
+// DOC-2297: cross-account IAM delegation (ENG-1139), 26.2, AWS only, new clusters only.
+// TODO(team): confirm wording once the deploy workflow (ENG-1129) and external-ID
+// handling (CIAINFRA-3970) are finalized. Do not publish before GA (2026-07-14).
+
+New BYOC clusters on AWS use *cross-account IAM delegation*. Instead of bootstrapping an agent VM in your account, you create an IAM role that Redpanda's control plane assumes to provision and reconcile your cluster. Redpanda runs the deployment for you, so you do not run `rpk cloud byoc aws apply`. This is the recommended model for new AWS clusters, and it lets you review, audit, and revoke Redpanda's access at any time. Revoking access stops Redpanda from provisioning, reconciling, upgrading, or deleting your cluster resources until you restore it.
+
+[cols="1,2,2", options="header"]
+|===
+| | Cross-account IAM delegation | Agent-based provisioning
+
+| Applies to
+| New BYOC clusters on AWS
+| Existing clusters, and clusters on Azure and GCP
+
+| Who provisions
+| Redpanda's control plane assumes a role you create
+| An agent VM that runs in your account
+
+| How you start it
+| Create a cross-account IAM role, then deploy from the Cloud UI
+| Run `rpk cloud byoc apply`
+|===
+
+Cross-account IAM delegation applies only to new clusters on AWS. Migrating an existing cluster is not supported, and the agent-based model described above continues to apply to existing clusters and to clusters on Azure and GCP. To deploy a new AWS cluster with cross-account IAM delegation, see xref:get-started:cluster-types/byoc/aws/create-byoc-cluster-aws.adoc[Create a BYOC Cluster on AWS]. For the permissions the role grants, see xref:security:authorization/cloud-iam-policies.adoc[AWS IAM policies].
 
 include::get-started:partial$no-access.adoc[]

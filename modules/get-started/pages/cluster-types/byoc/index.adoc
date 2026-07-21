@@ -11,6 +11,9 @@ Bring Your Own Cloud (BYOC) lets you run Redpanda in your own cloud environment 
 
 Your data never leaves your environment, giving you extra security and control. See xref:get-started:byoc-arch.adoc[BYOC architecture] for details. Redpanda manages provisioning, monitoring, upgrades, and security policies, and it manages required resources in your VPC or VNet, including subnets (subnetworks in GCP), IAM roles, and object storage resources (for example, S3 buckets or Azure Storage accounts). You get hands-off operations with a 99.99% uptime guarantee while keeping full control of your data. 
 
+// DOC-2297: AWS-only, new clusters, targeted 26.2. Confirm/finalize at GA.
+On AWS, new BYOC clusters use xref:get-started:byoc-arch.adoc#provisioning-models-on-aws[cross-account IAM delegation]: you create an IAM role that Redpanda assumes to provision your cluster, instead of running `rpk cloud byoc apply`. See xref:get-started:cluster-types/byoc/aws/create-byoc-cluster-aws.adoc[Create a BYOC Cluster on AWS].
+
 If you want to manage the networking infrastructure yourself, create a Bring Your Own Virtual Private Cloud (BYOVPC) or Bring Your Own Virtual Network (BYOVNet) cluster. With BYOVPC/BYOVNet, the Redpanda agent does not create or change resources in your account. This is ideal for organizations with stringent compliance requirements or existing network configurations, when you need full control over the network lifecycle. Compared to standard BYOC, BYOVPC/BYOVNet provides more security, but the configuration is more complex. See the xref:get-started:cloud-overview.adoc#shared-responsibility-model[shared responsibility model] to understand what you manage versus what Redpanda manages.
 
 IMPORTANT: Don't deploy other workloads on the BYOC infrastructure that Redpanda manages.
