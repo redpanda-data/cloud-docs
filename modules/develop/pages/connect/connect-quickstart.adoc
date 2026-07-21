@@ -358,7 +358,7 @@ output:
 
 The consumer pipeline in this quickstart drops messages instead of writing them to a real destination. When you replace the `drop` output with a connector that writes to your own systems, pipelines on BYOC clusters may need additional egress access.
 
-On BYOC clusters, pipelines run inside the Redpanda dataplane VPC in your cloud account. By default, pipelines can connect to your Redpanda cluster and to publicly-routable endpoints. Outbound connections to other destinations, such as a database with a private address in a peered VPC, are blocked.
+On BYOC clusters, pipelines run inside the Redpanda data plane VPC in your cloud account. By default, pipelines can connect to your Redpanda cluster and to publicly routable endpoints. Outbound connections to other destinations, such as a database with a private address in a peered VPC, are blocked.
 
 To allow pipelines to reach these destinations, add an egress allowlist to your cluster using the xref:manage:terraform-provider.adoc[Redpanda Terraform provider] (version `>= 2.1.1`). The `redpanda_connect.allowed_destination_cidr_ports` attribute on the `redpanda_cluster` resource accepts up to 16 rules, each allowing egress to a destination CIDR block on a port or port range:
 
@@ -378,7 +378,7 @@ resource "redpanda_cluster" "example" {
 }
 ----
 
-The allowlist permits outbound traffic from pipelines, but it does not create a network path to the destination. For private destinations, you must also establish routing, for example by peering the Redpanda dataplane VPC with the VPC that hosts your database.
+The allowlist permits outbound traffic from pipelines, but it does not create a network path to the destination. For private destinations, you must also establish routing, for example by peering the Redpanda data plane VPC with the VPC that hosts your database.
 
 For details, including a pipeline example that writes to a private PostgreSQL database, see xref:manage:terraform-provider.adoc#enable-egress-to-custom-destinations[Enable egress to custom destinations].
 
