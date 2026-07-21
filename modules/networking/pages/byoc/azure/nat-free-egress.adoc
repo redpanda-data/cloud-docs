@@ -1,0 +1,209 @@
+= Configure Centralized Egress with Azure Firewall
+:description: Route all BYOC cluster egress through your own Azure Firewall and hub VNet instead of a per-cluster NAT Gateway.
+:page-beta: true
+:page-topic-type: how-to
+:personas: platform_admin
+:learning-objective-1: Enable centralized egress on a new BYOC cluster using the Redpanda Cloud API
+:learning-objective-2: Identify the shared responsibility boundaries between Redpanda and your hub subscription
+:learning-objective-3: Troubleshoot egress failures caused by misconfigured hub routes or VNet peering
+
+[IMPORTANT]
+====
+This feature is in beta and is available only on Azure BYOC clusters with private networking. Availability is controlled per organization. Contact your account team to request access to centralized egress.
+====
+
+Centralized egress lets your BYOC cluster send all internet-bound traffic through your own Azure Firewall and hub VNet instead of a Redpanda-managed NAT Gateway in the Redpanda VNet. When centralized egress is enabled, the Redpanda spoke VNet peers with your hub VNet, all outbound traffic exits through the Azure Firewall in your hub, and no NAT Gateway is created in the spoke.
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
+
+== When to use centralized egress
+
+Use centralized egress when:
+
+* Your security policy prohibits per-cluster NAT Gateways and requires all internet-bound traffic to traverse a centralized inspection point such as Azure Firewall or a third-party network virtual appliance (NVA).
+* You already operate a hub-and-spoke network in Azure and want Redpanda to fit into that topology.
+* You want to consolidate egress through a single, predictable public IP for outbound allowlisting on external services.
+* You want to reduce NAT Gateway data-processing costs on high-throughput Redpanda workloads.
+
+If none of these apply, the default NAT Gateway egress used by standard BYOC clusters is simpler and requires no extra customer-managed infrastructure.
+
+== How it works
+
+Without centralized egress, the Redpanda agent creates one Azure NAT Gateway per availability zone in the Redpanda VNet. With centralized egress enabled, the agent skips NAT Gateway creation, peers the Redpanda VNet with your hub VNet, and creates a Route Table (UDR) on the Redpanda private subnets with a default route to your firewall's private IP.
+
+The following diagram shows the connectivity model:
+
+----
++----------------------------------+         +----------------------------------+
+| Redpanda VNet                    |         | Customer Hub VNet                |
+| (Redpanda subscription)          |         | (Customer subscription)          |
+|                                  |         |                                  |
+| VNet Peering                     +<------->+ VNet Peering                     |
+| allow_forwarded_traffic=true     |         | allow_gateway_transit=true       |
+| Route Table (UDR)                |         | Azure Firewall (Standard)        |
+| 0.0.0.0/0 -> Firewall private IP |         | SNAT to public IP                |
+| No NAT Gateway                   |         |                                  |
+| AKS Worker Nodes                 |         |                                  |
++----------------------------------+         +-----------+----------------------+
+                                                          |
+                                                          v
+                                                      Internet
+                                          (Cloudsmith, mcr.microsoft.com,
+                                                    NTP, Helm)
+----
+
+=== Outbound traffic flow
+
+. An AKS node in a Redpanda private subnet sends a packet destined for the internet.
+. The subnet's Route Table forwards `0.0.0.0/0` to the Azure Firewall's private IP in the hub VNet.
+. Because both sides of the VNet peering allow forwarded traffic, the packet crosses the peering even though its destination is outside either VNet's own address space.
+. The packet arrives at the Azure Firewall, which evaluates it against your firewall policy and performs SNAT to the firewall's public IP.
+. The packet exits to the internet.
+
+=== Return traffic flow
+
+. The internet response arrives at the firewall's public IP.
+. The Azure Firewall reverses the SNAT and forwards the packet back across the peering to the originating subnet.
+. The packet arrives at the originating AKS node.
+
+The hub VNet, Azure Firewall, and hub-side peering are your responsibility. Redpanda creates and manages the spoke-side peering and the Route Table (UDR). See xref:networking:byoc/azure/azure-hub-egress.adoc[Create an Azure Hub for Centralized Egress] for the full procedure.
+
+[#prerequisites]
+== Prerequisites
+
+Before you configure centralized egress, confirm all of the following:
+
+* Centralized egress is enabled on your Redpanda Cloud organization. Contact your account team to request access.
+* Your BYOC cluster uses private networking (connection type *Private*). Centralized egress is not available on clusters with a public connection type.
+* Your BYOC cluster uses a Redpanda-managed VNet. Centralized egress is not available on xref:get-started:cluster-types/byoc/azure/vnet-azure.adoc[BYOVNet clusters].
+* You have an existing hub VNet in the same region as the Redpanda BYOC cluster, with an Azure Firewall (or other NVA) providing internet egress. See xref:networking:byoc/azure/azure-hub-egress.adoc[Create an Azure Hub for Centralized Egress] if you need to provision a hub.
+* You have created the VNet peering from the hub to the Redpanda spoke VNet, with `allow_forwarded_traffic` enabled on both sides and `allow_gateway_transit` enabled on the hub side.
+* Your hub VNet address space and the planned Redpanda spoke VNet address space do not overlap.
++
+[WARNING]
+====
+Azure rejects VNet peering when address spaces overlap. Use a non-overlapping range for your hub. The `10.255.0.0/16` range is a safe default because it rarely conflicts with typical RFC 1918 workload CIDRs. For background, see xref:networking:cidr-ranges.adoc#what-are-cidrs[What are CIDRs?]
+====
+* The hub VNet's Azure resource ID, in the form `/subscriptions/<subscription-id>/resourceGroups/<resource-group>/providers/Microsoft.Network/virtualNetworks/<vnet-name>`.
+* The Azure Firewall's private IP address in the hub VNet.
+
+== Shared responsibility model
+
+[cols="2,1"]
+|===
+| Component | Owner
+
+| Redpanda spoke VNet, subnets, and AKS cluster | Redpanda
+| Spoke-side VNet peering with `allow_forwarded_traffic = true` | Redpanda
+| Route Table (UDR): `0.0.0.0/0` -> firewall private IP | Redpanda
+| No NAT Gateway created in the spoke | Redpanda
+| Hub VNet | Customer
+| Hub-side VNet peering with `allow_gateway_transit = true` | Customer
+| Azure Firewall (or other NVA) and its policy rules | Customer
+| Firewall public IP | Customer
+| Egress path availability and HA | Customer
+|===
+
+Redpanda does not manage the availability of the egress path. Plan for zone redundancy or the Premium tier in your hub if you need high availability or deep packet inspection. See xref:networking:byoc/azure/azure-hub-egress.adoc[Create an Azure Hub for Centralized Egress] for sizing guidance.
+
+== Limitations
+
+* Centralized egress requires a Redpanda-managed VNet. It is not available on BYOVNet clusters.
+* Centralized egress is set at network creation. Complete all hub-side setup before you start the network and cluster creation flow.
+* Cloud UI support for centralized egress on Azure is not yet available. Configure it through the Cloud API.
+
+== Configure egress at network creation
+
+Centralized egress is set at network creation. Complete all hub-side setup, including the VNet peering and Azure Firewall, before you create the network. See xref:networking:byoc/azure/azure-hub-egress.adoc[Create an Azure Hub for Centralized Egress].
+
+[NOTE]
+====
+Unlike AWS and GCP, centralized egress for Azure BYOC clusters does not yet have Cloud UI support. Configure it using the Cloud API, as shown below.
+====
+
+// The Cloud API path for centralized egress is intentionally hidden while the
+// `egress_spec` field is in PREVIEW. To re-enable the section when the field
+// graduates, set the :show-preview-api: attribute (either in this page's
+// header as `:show-preview-api:` or as a build-time attribute in the playbook).
+ifdef::show-preview-api[]
+=== Use the Cloud API
+
+[IMPORTANT]
+====
+The `egress_spec` field is in preview. Its shape and validation rules may change. Pin a specific API version when scripting against this field, and revisit your integration when the field graduates to general availability.
+====
+
+Set `egress_spec.azure.hub_vnet_id` and `egress_spec.azure.firewall_private_ip` on the Network resource when you create a network. Both fields are required when `egress_spec.azure` is set.
+
+[,bash]
+----
+curl -X POST https://api.redpanda.com/v1/networks \
+  -H "Authorization: Bearer $REDPANDA_CLOUD_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "prod-eastus2",
+    "cloud_provider": "CLOUD_PROVIDER_AZURE",
+    "region": "eastus2",
+    "cidr_block": "10.0.0.0/20",
+    "cluster_type": "TYPE_BYOC",
+    "egress_spec": {
+      "azure": {
+        "hub_vnet_id": "/subscriptions/<hub-subscription-id>/resourceGroups/hub-egress-rg/providers/Microsoft.Network/virtualNetworks/hub-vnet",
+        "firewall_private_ip": "10.255.0.4"
+      }
+    }
+  }'
+----
+
+For the surrounding workflow (authenticating to the Cloud API, creating the resource group, creating the cluster against this network, and running `rpk cloud byoc azure apply`) see xref:manage:api/cloud-byoc-controlplane-api.adoc[Use the BYOC Control Plane API]. After the network is created, create the cluster by calling the Cluster create endpoint with the new network ID. The Cloud UI create-cluster flow does not yet support selecting a centralized-egress network on Azure.
+endif::[]
+
+[#internet-endpoints]
+== Internet endpoints required from your hub
+
+Your hub Azure Firewall must provide internet egress for the following endpoints. If your firewall policy enforces an allowlist, allow outbound traffic to these endpoints from the Redpanda spoke address space:
+
+[cols="1,1,2"]
+|===
+| Endpoint | Protocol and port | Purpose
+
+| `docker.cloudsmith.io` | TCP/443 | Redpanda container images
+| `mcr.microsoft.com` | TCP/443 | AKS system images (CNI, kube-proxy, and other cluster add-ons)
+| NTP servers | UDP/123 | Time sync
+| `prometheus-community.github.io` and similar Helm repositories | TCP/443 | Monitoring stack Helm charts
+|===
+
+== DNS resolution
+
+Centralized egress does not affect DNS resolution. The Redpanda VNet uses Azure-provided DNS, which resolves both internal and external hostnames as long as `0.0.0.0/0` is routable through your hub. You do not need a separate DNS path or DNS resolver endpoint in your hub.
+
+== Troubleshooting
+
+[cols="1,1"]
+|===
+| Symptom | Likely cause
+
+| Cluster creation does not complete
+| The cluster cannot reach the external services it needs during bootstrap. On the hub side, verify all of the following: both the hub-side and spoke-side VNet peerings show `Connected`; the hub-side peering has `allow_gateway_transit` enabled; the firewall policy allowlist includes the endpoints in <<internet-endpoints,Internet endpoints required from your hub>>; and the hub VNet address space and the Redpanda spoke address space do not overlap. If these all look correct, contact Redpanda Support.
+
+| VNet peering stays in a non-connected state
+| The reciprocal peering from the Redpanda spoke VNet has not been created yet. This is expected until cluster provisioning completes. If the cluster is already running, confirm that `allow_forwarded_traffic` is enabled on both peerings.
+
+| VNet peering creation fails with an address space conflict error
+| The spoke VNet address space overlaps the hub VNet address space. Choose non-overlapping address spaces for the hub and every spoke.
+
+| Outbound traffic is intermittently dropped
+| Your firewall policy is not allowlisting the endpoints required by Redpanda. See <<internet-endpoints,Internet endpoints required from your hub>>.
+
+| All traffic appears to come from one public IP
+| This is the expected behavior of centralized egress. Use that IP for outbound allowlisting.
+|===
+
+== Next steps
+
+* xref:networking:byoc/azure/azure-hub-egress.adoc[Create an Azure Hub for Centralized Egress]
+* xref:get-started:cluster-types/byoc/azure/create-byoc-cluster-azure.adoc[Create a BYOC Cluster on Azure]

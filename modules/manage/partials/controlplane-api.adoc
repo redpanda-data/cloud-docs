@@ -133,7 +133,9 @@ curl -d \
 // To enable, set the attribute in the playbook or in this page header.
 // The GCP BYOC network example adds `egress_spec.gcp.hub_vpc_project` and
 // `egress_spec.gcp.hub_vpc_name` for centralized egress through a hub VPC.
-// Also gated behind `:show-preview-api:`.
+// The Azure BYOC network example adds `egress_spec.azure.hub_vnet_id` and
+// `egress_spec.azure.firewall_private_ip` for centralized egress through a
+// hub VNet and Azure Firewall. All are gated behind `:show-preview-api:`.
 ifdef::show-preview-api[]
 
 To route all cluster egress through your own AWS Transit Gateway and hub VPC instead of a per-VPC NAT Gateway, set `egress_spec.aws.transit_gateway_id` on an AWS BYOC network. Centralized egress is in beta. Before calling this endpoint, provision the hub VPC and Transit Gateway and share the Transit Gateway with the Redpanda cluster account. See xref:networking:byoc/aws/aws-hub-egress.adoc[Create an AWS Hub for Centralized Egress] and xref:networking:byoc/aws/nat-free-egress.adoc[Configure Centralized Egress with AWS Transit Gateway].
@@ -176,6 +178,30 @@ curl -d \
       "gcp": {
         "hub_vpc_project": "<hub-gcp-project-id>",
         "hub_vpc_name": "<hub-vpc-name>"
+      }
+    }
+  }
+}' -H "Content-Type: application/json" \
+-H "Authorization: Bearer <token>" -X POST https://api.redpanda.com/v1/networks
+----
+
+To route all cluster egress through your own Azure Firewall and hub VNet instead of a per-cluster NAT Gateway, set `egress_spec.azure.hub_vnet_id` and `egress_spec.azure.firewall_private_ip` on an Azure BYOC network. Centralized egress is in beta. Before calling this endpoint, provision the hub VNet, Azure Firewall, and VNet peering. See xref:networking:byoc/azure/azure-hub-egress.adoc[Create an Azure Hub for Centralized Egress] and xref:networking:byoc/azure/nat-free-egress.adoc[Configure Centralized Egress with Azure Firewall].
+
+[,bash]
+----
+curl -d \
+'{
+  "network": {
+    "cidr_block": "10.0.0.0/20",
+    "cloud_provider": "CLOUD_PROVIDER_AZURE",
+    "cluster_type": "TYPE_BYOC",
+    "name": "<network-name>",
+    "resource_group_id": "<resource-group-id>",
+    "region": "eastus2",
+    "egress_spec": {
+      "azure": {
+        "hub_vnet_id": "/subscriptions/<hub-subscription-id>/resourceGroups/hub-egress-rg/providers/Microsoft.Network/virtualNetworks/hub-vnet",
+        "firewall_private_ip": "10.255.0.4"
       }
     }
   }
