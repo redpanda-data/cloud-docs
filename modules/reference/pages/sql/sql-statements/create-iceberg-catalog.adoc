@@ -39,7 +39,12 @@ NOTE: Catalogs are created in the current schema (`public` by default). To creat
 |`auth_type`
 |STRING
 |No
-|Authentication type for the REST catalog. One of `oauth2`, `basic`, or `aws_sigv4`. If omitted, the catalog connects without authentication. Providing an auth-specific option (such as `username` or `aws_region`) without `auth_type` is rejected.
+|Authentication type for the REST catalog. One of `oauth2`, `basic`, `aws_sigv4`, or `gcp`. If omitted, the catalog connects without authentication. Providing an auth-specific option (such as `username`, `aws_region`, or `gcp_project_id`) without `auth_type` is rejected.
+
+|`gcp_project_id`
+|STRING
+|Required when `auth_type = 'gcp'`
+|GCP project that BigLake API requests are billed and quota-attributed to.
 
 |`oauth2_client_id`
 |STRING
@@ -212,6 +217,21 @@ CREATE ICEBERG CATALOG glue_cat STORAGE iceberg_storage
     aws_region         = 'us-east-1',
     allowed_namespaces = 'analytics, sales'
     -- flat_namespaces is auto-derived as true for Glue/S3 Tables
+  );
+----
+
+=== Create an Iceberg catalog for BigLake on GCP
+
+Use `auth_type = 'gcp'` for a Google Cloud BigLake REST catalog. Redpanda SQL authenticates with Application Default Credentials (ADC), which on Google Kubernetes Engine (GKE) resolves to Workload Identity, so no static key is required. The `gcp_project_id` option is required. Set `uri` and `warehouse` to the values for your BigLake catalog.
+
+[source,sql]
+----
+CREATE ICEBERG CATALOG biglake_cat STORAGE iceberg_storage
+  WITH (
+    uri            = '<biglake-rest-catalog-uri>',
+    warehouse      = '<warehouse>',
+    auth_type      = 'gcp',
+    gcp_project_id = '<gcp-project-id>'
   );
 ----
 

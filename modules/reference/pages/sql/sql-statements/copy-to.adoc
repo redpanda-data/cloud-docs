@@ -155,38 +155,38 @@ To export data to cloud storage, use the `COPY TO` command with the appropriate 
 
 [source,sql]
 ----
-COPY default_redpanda_catalog=>film TO 's3://your-bucket/file_name'
-WITH (AWS_CRED(AWS_REGION 'us-west-1', AWS_KEY_ID 'key_id', AWS_PRIVATE_KEY 'access_key', ENDPOINT 's3.us-west-1.amazonaws.com'),
+COPY default_redpanda_catalog=>film TO 's3://<bucket-name>/<file-name>'
+WITH (AWS_CRED(AWS_REGION 'us-west-1', AWS_KEY_ID '<aws-key-id>', AWS_PRIVATE_KEY '<access-key>', ENDPOINT 's3.us-west-1.amazonaws.com'),
       FORMAT CSV, HEADER ON, NULL 'unknown');
 ----
 
 ==== Google Cloud Storage
 
-Pass the path to your credentials JSON file:
+Pass the contents of your service account key JSON file to `GCS_CRED`:
 
 [source,sql]
 ----
-COPY default_redpanda_catalog=>film TO 'gs://your-bucket/file_name' WITH (GCS_CRED('/path/to/credentials.json'));
+COPY default_redpanda_catalog=>film TO 'gs://<bucket-name>/<file-name>' WITH (GCS_CRED('<credentials-json-contents>'));
 ----
 
-If you cannot use a path to the credentials file, pass its contents as a string:
-
-[source,sql]
-----
-COPY default_redpanda_catalog=>project TO 'gs://your-bucket/project_file' WITH (GCS_CRED('<contents of the credentials.json file>'));
-----
-
-You can also use `AWS_CRED` with GCS by setting the endpoint:
+`GCS_CRED` is optional. If you omit it, Redpanda SQL authenticates using Application Default Credentials (ADC), which includes Workload Identity Federation on Google Kubernetes Engine (GKE):
 
 [source,sql]
 ----
-COPY default_redpanda_catalog=>project TO 'gs://your-bucket/project_file'
+COPY default_redpanda_catalog=>project TO 'gs://<bucket-name>/<file-name>';
+----
+
+`GCS_CRED` has no option to override the GCS endpoint. To target a custom endpoint (for example, a GCS emulator or the XML API), use `AWS_CRED` instead, since Google Cloud Storage supports an S3-compatible API:
+
+[source,sql]
+----
+COPY default_redpanda_catalog=>project TO 'gs://<bucket-name>/<file-name>'
 WITH (AWS_CRED(AWS_REGION 'region1', AWS_KEY_ID 'key_id', AWS_PRIVATE_KEY 'access_key', ENDPOINT 'https://storage.googleapis.com'));
 ----
 
 [TIP]
 ====
-For Google Cloud Storage, use HMAC keys for authentication. See the link:https://cloud.google.com/storage/docs/authentication/hmackeys[HMAC keys - Cloud Storage^] page for details.
+The `AWS_CRED` approach requires HMAC keys for authentication. See the link:https://cloud.google.com/storage/docs/authentication/hmackeys[HMAC keys - Cloud Storage^] page for details.
 ====
 
 ==== Azure Blob Storage
@@ -197,6 +197,6 @@ For Google Cloud Storage, use HMAC keys for authentication. See the link:https:/
 
 [source,sql]
 ----
-COPY default_redpanda_catalog=>taxi_data TO 'wasbs://container-name/your_blob'
+COPY default_redpanda_catalog=>taxi_data TO 'wasbs://<container-name>/<blob-name>'
 WITH (AZURE_CRED(TENANT_ID 'your_tenant_id' CLIENT_ID 'your_client_id', CLIENT_SECRET 'your_client_secret'));
 ----
