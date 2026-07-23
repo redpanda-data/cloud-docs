@@ -1,16 +1,16 @@
 = Enable Redpanda SQL on a BYOVPC Cluster on GCP
-:description: Provision SQL-specific GCP resources with Terraform and enable the Redpanda SQL engine on a new or existing BYOVPC cluster on GCP.
+:description: Provision SQL-specific GCP resources and enable the Redpanda SQL engine on a running BYOVPC cluster on GCP using the Cloud API.
 :page-topic-type: how-to
 :personas: platform_admin
-:learning-objective-1: Provision SQL-specific GCP resources using the Redpanda BYOVPC Terraform module
-:learning-objective-2: Enable Redpanda SQL on a new or existing BYOVPC cluster by supplying customer-managed resources
+:learning-objective-1: Provision the SQL-specific GCP customer-managed resources
+:learning-objective-2: Enable Redpanda SQL on a running BYOVPC cluster with the Cloud API
 :learning-objective-3: Verify that the SQL engine is running and ready to accept connections
 
 include::shared:partial$feature-flag-rpcn.adoc[]
 
-Enable Redpanda SQL on a Bring Your Own Virtual Private Cloud (BYOVPC) cluster on GCP so you can query streaming data in Redpanda topics using standard PostgreSQL syntax. You can enable SQL when creating a new BYOVPC cluster or on an existing one.
+Enable Redpanda SQL on a running Bring Your Own Virtual Private Cloud (BYOVPC) cluster on GCP so you can query streaming data in Redpanda topics using standard PostgreSQL syntax.
 
-Unlike standard BYOC clusters, Redpanda does not create resources in your GCP project for BYOVPC clusters. You must provision the SQL-specific GCP resources yourself and supply them to the cluster as customer-managed resources (CMRs) before enabling the SQL engine.
+Unlike standard BYOC clusters, Redpanda does not create resources in your GCP project for BYOVPC clusters. You must provision the SQL-specific GCP resources yourself and supply them to the cluster as customer-managed resources (CMRs). On GCP, you enable Redpanda SQL as a day-2 operation with the Cloud API: the Cloud Console cannot supply the SQL customer-managed resources for a BYOVPC cluster.
 
 After reading this page, you will be able to:
 
@@ -20,292 +20,143 @@ After reading this page, you will be able to:
 
 == Prerequisites
 
-* For a new cluster: a BYOVPC network on GCP. For an existing cluster: a deployed xref:get-started:cluster-types/byoc/gcp/vpc-byo-gcp.adoc[BYOVPC cluster on GCP].
-* The https://registry.terraform.io/modules/redpanda-data/redpanda-byovpc/gcp/latest[Redpanda BYOVPC Terraform module^] and https://developer.hashicorp.com/terraform[Terraform^] version 1.8.5 or later.
-* Admin permissions in your Redpanda Cloud organization on xref:billing:billing.adoc[usage-based billing].
-* If using the Cloud API, a valid glossterm:bearer token[]. See link:/api/doc/cloud-controlplane/authentication[Authenticate to the Cloud API].
+* A running xref:get-started:cluster-types/byoc/gcp/vpc-byo-gcp.adoc[BYOVPC cluster on GCP], with its base customer-managed resources already provisioned.
+* Admin permissions in your Redpanda Cloud organization on xref:billing:billing.adoc[usage-based billing], and a Redpanda Cloud service account (client ID and secret) with permission to update clusters.
+* The https://cloud.google.com/sdk/docs/install[Google Cloud CLI^] (`gcloud`) with the beta component, authenticated with Application Default Credentials (`gcloud auth application-default login`) and your service project selected.
+* To verify the engine after enabling it: `psql` version 16 or later on a host inside the cluster's VPC. A BYOVPC cluster is private, so the SQL endpoint is not reachable from outside the VPC.
 
-== Provision SQL resources with Terraform
+== Provision the SQL customer-managed resources
 
-In your `terraform-gcp-redpanda-byovpc` module configuration, set `enable_redpanda_sql = true`:
+Redpanda SQL on a GCP BYOVPC cluster requires four customer-managed resources that the base BYOVPC provisioning does not create:
 
-[,hcl]
-----
-module "redpanda_byovpc" {
-  source = "redpanda-data/redpanda-byovpc/gcp"
-  # ... existing configuration ...
-  enable_redpanda_sql = true
-}
-----
+[cols="1,2",options="header"]
+|===
+| Resource | Purpose
+| A GCP service account for the SQL compute nodes | Reads and writes the SQL data-storage bucket.
+| A GCP service account for the SQL API | Accesses Secret Manager secrets under the SQL prefix.
+| A GCS bucket for SQL data storage | Stores the SQL engine's data.
+| A Secret Manager prefix | A string namespace (not a resource) that reserves where Redpanda SQL Iceberg catalog credentials are stored.
+|===
 
-Apply the updated configuration:
+Create the two service accounts and the storage bucket, and choose a Secret Manager prefix. Replace `<project-id>` and `<unique-id>` with your own values, and set the bucket location to your cluster's region.
 
 [,bash]
 ----
-terraform apply
+# Service accounts
+gcloud iam service-accounts create "redpanda-rpsql-<unique-id>" \
+  --project "<project-id>" --display-name "Redpanda SQL Service Account"
+gcloud iam service-accounts create "redpanda-rpsql-api-<unique-id>" \
+  --project "<project-id>" --display-name "Redpanda SQL API Service Account"
+
+# SQL data-storage bucket
+gcloud storage buckets create "gs://redpanda-rpsql-storage-<unique-id>" \
+  --project "<project-id>" --location "<region>" --uniform-bucket-level-access
 ----
 
-This creates SQL-specific resources in your GCP project:
+// TODO: SME/source confirmation needed on the exact IAM role bindings for the two SQL service
+// accounts and whether a roles/iam.workloadIdentityUser binding to the Oxla Kubernetes service
+// account is required. Marat's verified run used broad predefined roles (roles/storage.objectAdmin
+// on the bucket for the compute SA; roles/secretmanager.admin on the project for both SAs) and
+// flagged the workload-identity binding as possibly needed. The terraform-gcp-redpanda-byovpc
+// module (iam_rpsql.tf) instead grants narrower custom roles plus workload-identity bindings.
+// Confirm the canonical customer-facing IAM before publishing this section.
 
-* A service account for the Redpanda SQL API
-* A service account for the Redpanda SQL compute nodes
-* A GCS bucket for SQL data storage
+Grant each service account the permissions it needs. Confirm the exact roles with your Redpanda account team before you rely on this in production.
 
-It also derives a Secret Manager prefix and grants the API service account access to any secrets created under it, reserving the prefix for future Redpanda SQL Iceberg catalog credentials.
-
-After applying, Terraform outputs the following values. Supply these to the cluster when you enable SQL.
-
-[cols="1,3",options="header"]
-|===
-| Module output | Description
-| `redpanda_sql_api_service_account_email` | Email of the service account for the Redpanda SQL API
-| `redpanda_sql_service_account_email` | Email of the service account for Redpanda SQL compute nodes
-| `redpanda_sql_storage_bucket_name` | Name of the GCS bucket for SQL data storage
-| `redpanda_sql_secret_manager_prefix` | Secret Manager prefix reserved for Redpanda SQL Iceberg catalog credentials
-|===
+The Secret Manager prefix is a string you choose (for example, `redpanda-rpsql-<unique-id>`); it is not a GCP resource you create.
 
 == Enable Redpanda SQL
 
-Use the Terraform provider or the Cloud API to enable the SQL engine. The steps differ depending on whether you are creating a new cluster or updating an existing one.
-
-[NOTE]
-====
-The Cloud Console does not yet support enabling Redpanda SQL on a GCP BYOVPC cluster. Use Terraform or the Cloud API.
-====
-
-=== On a new cluster
-
-[NOTE]
-====
-To enable SQL when creating a new BYOVPC cluster, use the Terraform provider or the Cloud API.
-
-If your cluster already exists, skip to <<On an existing cluster>>.
-====
+Enable the SQL engine with a Cloud API `PATCH` request. The Cloud Console does not support supplying the SQL customer-managed resources for a BYOVPC cluster.
 
 [IMPORTANT]
 ====
-The SQL customer-managed resources `rpsql_api_service_account`, `rpsql_service_account`, and `rpsql_cloud_storage_bucket` are immutable while SQL is enabled. To change any of these resources, disable SQL first.
-
-`rpsql_secret_manager_prefix` can be changed without disabling SQL, but any secrets previously mapped under the old prefix become invalid. You must manually move them to the new prefix.
+The `PATCH` request must use an explicit leaf-path `update_mask` that lists each field you set, including each SQL customer-managed resource. A grouped mask (for example, `customer_managed_resources`) is silently dropped: the operation returns `STATE_COMPLETED`, but SQL stays disabled.
 ====
 
-[tabs]
-=====
-Terraform::
-+
---
-Add the SQL customer-managed resource fields and the `rpsql` block to the `redpanda_cluster` resource in your BYOVPC Terraform configuration. For the base `redpanda_cluster` configuration, see xref:get-started:cluster-types/byoc/gcp/vpc-byo-gcp.adoc[Create a BYOVPC Cluster on GCP].
+The SQL customer-managed resources `rpsql_service_account`, `rpsql_api_service_account`, and `rpsql_cloud_storage_bucket` are immutable while SQL is enabled. To change any of them, disable SQL first. You can change `rpsql_secret_manager_prefix` without disabling SQL, but any secrets mapped under the old prefix become invalid, and you must move them to the new prefix manually.
 
-[,hcl]
-----
-resource "redpanda_cluster" "cluster" {
-  # ... existing BYOVPC cluster configuration ...
-  customer_managed_resources = {
-    gcp = {
-      # ... existing BYOVPC customer-managed resources ...
-      rpsql_api_service_account = {
-        email = module.redpanda_byovpc.redpanda_sql_api_service_account_email
-      }
-      rpsql_service_account = {
-        email = module.redpanda_byovpc.redpanda_sql_service_account_email
-      }
-      rpsql_cloud_storage_bucket = {
-        name = module.redpanda_byovpc.redpanda_sql_storage_bucket_name
-      }
-      rpsql_secret_manager_prefix = module.redpanda_byovpc.redpanda_sql_secret_manager_prefix
-    }
-  }
-  rpsql = {
-    enabled  = true
-    replicas = 1
-    zones    = ["<sql-az>"]
-  }
-}
-----
-
-Replace the placeholders with your own values:
-
-* `replicas`: Initial number of SQL compute nodes (minimum 1, maximum 9).
-* `<sql-az>` (optional): One of the cluster's glossterm:availability zones[]. Even if the Redpanda cluster spans multiple AZs, the SQL engine always deploys to a single AZ. If omitted, Redpanda selects a zone automatically. The AZ is locked when SQL is first enabled and cannot be changed afterward.
-
-Apply the configuration:
-
-[,bash]
-----
-terraform apply
-----
---
-
-Cloud API::
-+
---
-When creating a new BYOVPC cluster via the Cloud API, include the SQL customer-managed resource fields and the `rpsql` configuration in the link:/api/doc/cloud-controlplane/operation/operation-clusterservice_createcluster[`POST /v1/clusters`] payload alongside your existing BYOVPC customer-managed resources.
-
-. link:/api/doc/cloud-controlplane/authentication[Authenticate to the Cloud API].
-. Make a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_createcluster[`POST /v1/clusters`] request. Include your existing BYOVPC customer-managed resource fields (see xref:get-started:cluster-types/byoc/gcp/vpc-byo-gcp.adoc[Create a BYOVPC Cluster on GCP]) and add the SQL customer-managed resource fields and `rpsql` block:
+. link:/api/doc/cloud-controlplane/authentication[Authenticate to the Cloud API] and obtain a bearer token.
+. Make a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_updatecluster[`PATCH /v1/clusters/{cluster.id}`] request. Set the `update_mask` query parameter to the explicit leaf paths, and provide the `rpsql` block and the four SQL customer-managed resources in the body. Replace `{cluster-id}` and the placeholder values with your own:
 +
 [,bash]
 ----
-curl -X POST "https://api.redpanda.com/v1/clusters" \
+curl -sX PATCH "https://api.redpanda.com/v1/clusters/{cluster-id}?update_mask=rpsql.enabled,rpsql.replicas,rpsql.zones,customer_managed_resources.gcp.rpsql_service_account.email,customer_managed_resources.gcp.rpsql_api_service_account.email,customer_managed_resources.gcp.rpsql_cloud_storage_bucket.name,customer_managed_resources.gcp.rpsql_secret_manager_prefix" \
   -H "Authorization: Bearer $AUTH_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "cluster": {
-      "name": "<cluster-name>",
-      "type": "TYPE_BYOC",
-      "cloud_provider": "CLOUD_PROVIDER_GCP",
-      "region": "<region>",
-      "zones": ["<az-1>", "<az-2>", "<az-3>"],
-      "network_id": "<network-id>",
-      "throughput_tier": "<tier>",
-      "resource_group_id": "<resource-group-id>",
-      "customer_managed_resources": {
-        "gcp": {
-          "rpsql_api_service_account": {"email": "<rpsql_api_service_account_email>"},
-          "rpsql_service_account": {"email": "<rpsql_service_account_email>"},
-          "rpsql_cloud_storage_bucket": {"name": "<rpsql_cloud_storage_bucket_name>"},
-          "rpsql_secret_manager_prefix": "<rpsql_secret_manager_prefix>"
-        }
-      },
-      "rpsql": {
-        "enabled": true,
-        "replicas": <compute-nodes>,
-        "zones": ["<sql-az>"]
-      }
-    }
-  }'
-----
-+
-Replace the placeholders with your own values:
-+
-* `<rpsql_api_service_account_email>`, `<rpsql_service_account_email>`, `<rpsql_cloud_storage_bucket_name>`, `<rpsql_secret_manager_prefix>`: The corresponding outputs from the Terraform module.
-* `<compute-nodes>`: Initial number of SQL compute nodes (minimum 1, maximum 9).
-* `<sql-az>` (optional): One of the cluster's glossterm:availability zones[]. Even if the Redpanda cluster spans multiple AZs, the SQL engine always deploys to a single AZ. If omitted, Redpanda selects a zone automatically. The AZ is locked when SQL is first enabled and cannot be changed afterward.
-+
-. The request returns the ID of a long-running operation. Poll the link:/api/doc/cloud-controlplane/operation/operation-operationservice_getoperation[`GET /v1/operations/{operation.id}`] endpoint until the operation completes:
-+
-[,bash]
-----
-curl -X GET "https://api.redpanda.com/v1/operations/{operation.id}" \
-  -H "Authorization: Bearer $AUTH_TOKEN" \
-  -H "Content-Type: application/json"
-----
-+
-When the operation is complete, the response shows `"state": "STATE_COMPLETED"`.
---
-=====
-
-=== On an existing cluster
-
-[tabs]
-=====
-Terraform::
-+
---
-Add the SQL customer-managed resource fields and the `rpsql` block to the `redpanda_cluster` resource in your BYOVPC Terraform configuration:
-
-[,hcl]
-----
-resource "redpanda_cluster" "cluster" {
-  # ... existing BYOVPC cluster configuration ...
-  customer_managed_resources = {
-    gcp = {
-      # ... existing BYOVPC customer-managed resources ...
-      rpsql_api_service_account = {
-        email = module.redpanda_byovpc.redpanda_sql_api_service_account_email
-      }
-      rpsql_service_account = {
-        email = module.redpanda_byovpc.redpanda_sql_service_account_email
-      }
-      rpsql_cloud_storage_bucket = {
-        name = module.redpanda_byovpc.redpanda_sql_storage_bucket_name
-      }
-      rpsql_secret_manager_prefix = module.redpanda_byovpc.redpanda_sql_secret_manager_prefix
-    }
-  }
-  rpsql = {
-    enabled  = true
-    replicas = 1
-    zones    = ["<sql-az>"]
-  }
-}
-----
-
-Replace the placeholders with your own values:
-
-* `replicas`: Initial number of SQL compute nodes (minimum 1, maximum 9).
-* `<sql-az>` (optional): One of the cluster's glossterm:availability zones[]. Even if the Redpanda cluster spans multiple AZs, the SQL engine always deploys to a single AZ. If omitted, Redpanda selects a zone automatically. The AZ is locked when SQL is first enabled and cannot be changed afterward.
-
-Apply the configuration:
-
-[,bash]
-----
-terraform apply
-----
---
-
-Cloud API::
-+
---
-. link:/api/doc/cloud-controlplane/authentication[Authenticate to the Cloud API].
-. Locate the cluster ID in the *Details* section of the cluster overview in the Cloud Console.
-. Make a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_updatecluster[`PATCH /v1/clusters/{cluster.id}`] request with the SQL customer-managed resources and `rpsql.enabled` set to `true`. Replace `{cluster.id}` with your cluster ID:
-+
-[,bash]
-----
-curl -X PATCH "https://api.redpanda.com/v1/clusters/{cluster.id}" \
-  -H "Authorization: Bearer $AUTH_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "customer_managed_resources": {
-      "gcp": {
-        "rpsql_api_service_account": {"email": "<rpsql_api_service_account_email>"},
-        "rpsql_service_account": {"email": "<rpsql_service_account_email>"},
-        "rpsql_cloud_storage_bucket": {"name": "<rpsql_cloud_storage_bucket_name>"},
-        "rpsql_secret_manager_prefix": "<rpsql_secret_manager_prefix>"
-      }
-    },
     "rpsql": {
       "enabled": true,
       "replicas": <compute-nodes>,
       "zones": ["<sql-az>"]
+    },
+    "customer_managed_resources": {
+      "gcp": {
+        "rpsql_service_account": {"email": "<rpsql-service-account-email>"},
+        "rpsql_api_service_account": {"email": "<rpsql-api-service-account-email>"},
+        "rpsql_cloud_storage_bucket": {"name": "<rpsql-storage-bucket-name>"},
+        "rpsql_secret_manager_prefix": "<rpsql-secret-manager-prefix>"
+      }
     }
   }'
 ----
 +
 Replace the placeholders with your own values:
 +
-* `<rpsql_api_service_account_email>`, `<rpsql_service_account_email>`, `<rpsql_cloud_storage_bucket_name>`, `<rpsql_secret_manager_prefix>`: The corresponding outputs from the Terraform module.
 * `<compute-nodes>`: Initial number of SQL compute nodes (minimum 1, maximum 9).
 * `<sql-az>` (optional): One of the cluster's glossterm:availability zones[]. Even if the Redpanda cluster spans multiple AZs, the SQL engine always deploys to a single AZ. If omitted, Redpanda selects a zone automatically. The AZ is locked when SQL is first enabled and cannot be changed afterward.
+* The four `rpsql_*` values: the service account emails, bucket name, and Secret Manager prefix from <<Provision the SQL customer-managed resources>>.
 +
-. The request returns the ID of a long-running operation. Poll the link:/api/doc/cloud-controlplane/operation/operation-operationservice_getoperation[`GET /v1/operations/{operation.id}`] endpoint until the operation completes:
+A genuine enable returns a long-running operation that stays `STATE_IN_PROGRESS` for roughly 15 to 30 minutes while the SQL node group provisions.
++
+. Poll the link:/api/doc/cloud-controlplane/operation/operation-operationservice_getoperation[`GET /v1/operations/{operation.id}`] endpoint until the operation completes:
 +
 [,bash]
 ----
-curl -X GET "https://api.redpanda.com/v1/operations/{operation.id}" \
+curl -s "https://api.redpanda.com/v1/operations/{operation-id}" \
   -H "Authorization: Bearer $AUTH_TOKEN" \
   -H "Content-Type: application/json"
 ----
-+
-When the operation is complete, the response shows `"state": "STATE_COMPLETED"`.
---
-=====
 
 == Verify the SQL engine is running
 
-After you enable Redpanda SQL, a *Redpanda SQL* tile appears in the cluster overview under *Products*. The tile shows the engine status, active sessions, queries per minute, and node count. When the *Nodes* indicator shows all nodes as ready (for example, *1/1*), the engine is provisioned and accepting connections. Provisioning can take up to 30 minutes.
+A completed operation does not guarantee that SQL was enabled. Confirm the result by fetching the cluster and checking that the `rpsql` block and all four SQL customer-managed resources are populated:
 
-For the API flow, poll the long-running operation until it returns `STATE_COMPLETED`.
+[,bash]
+----
+curl -s "https://api.redpanda.com/v1/clusters/{cluster-id}" \
+  -H "Authorization: Bearer $AUTH_TOKEN"
+----
 
-To verify the SQL engine is running, connect with `psql` version 16 or later, or another PostgreSQL client, using the connection details on the *SQL* tab under *Connection details*. You can also query data directly using the xref:sql:query-data/sql-editor.adoc[SQL editor] in the navigation menu.
+SQL is enabled when the response shows `rpsql.enabled` set to `true` with a non-empty `rpsql.url`, and the four `customer_managed_resources.gcp.rpsql_*` fields are populated (not null). For example:
 
-// TODO: Confirm with SME whether OIDC bearer-token authentication works on GCP before publishing.
-// A 2026-07-08 testing note on an unrelated cloudv2 PR (BigLake/Iceberg validation) reported that
-// Oxla's OIDC client couldn't fetch the Auth0 discovery document on GCP (a certificate issue), but
-// that finding wasn't isolated to end-user OIDC auth specifically and may already be fixed. If still
-// broken, add a NOTE here scoping authentication to SCRAM (or OIDC client credentials, if unaffected)
-// and cross-check xref:sql:connect-to-sql/authenticate.adoc[] for the same caveat.
+[,json,role="no-copy"]
+----
+"rpsql": {
+  "enabled": true,
+  "replicas": 3,
+  "url": "oxla-<id>.<cluster-id>.byoc.<region>.cloud.redpanda.com:5432",
+  "zones": ["<sql-az>"]
+}
+----
+
+A *Redpanda SQL* tile also appears in the cluster overview in the Cloud Console, under *Products*, showing engine status and node count. Provisioning can take up to 30 minutes.
+
+To connect from a host inside the cluster's VPC, use the SQL endpoint URL with `psql` version 16 or later and a bearer token:
+
+[,bash]
+----
+PGPASSWORD="$AUTH_TOKEN" psql \
+  "host=<sql-endpoint> port=5432 dbname=oxla user=ignored options='-c auth_method=bearer' sslmode=require" \
+  -c 'SHOW NODES;'
+----
+
+This example uses bearer-token authentication (`auth_method=bearer`), so Redpanda SQL takes the session identity from the token and ignores the `user` field. Redpanda SQL always connects to the `oxla` database regardless of the `dbname` value. For client-credentials and SCRAM authentication, where the `user` field carries the identity, see xref:sql:connect-to-sql/authenticate.adoc[Authenticate to Redpanda SQL].
+
+// TODO: Confirm with SME whether OIDC bearer-token authentication works on GCP for end users.
+// Marat's 2026-07-21 run connected successfully with a Cloud bearer token (auth_method=bearer),
+// which suggests the earlier "OIDC broken on GCP" concern may be resolved. Cross-check
+// xref:sql:connect-to-sql/authenticate.adoc[] before publishing.
 
 == Disable Redpanda SQL
 
@@ -314,57 +165,25 @@ To verify the SQL engine is running, connect with `psql` version 16 or later, or
 Disabling Redpanda SQL tears down the SQL compute engine and clears its catalog state (catalog metadata, table mappings, and role/grant data). In-flight queries fail when SQL is disabled.
 ====
 
-If you disable Redpanda SQL, Redpanda topic data, Schema Registry subjects, and any Iceberg-committed history for Iceberg-enabled topics are not affected. The Redpanda cluster itself continues to run normally and only the SQL engine and its associated state are removed.
+Redpanda topic data, Schema Registry subjects, and any Iceberg-committed history for Iceberg-enabled topics are not affected. The Redpanda cluster itself continues to run normally, and only the SQL engine and its associated state are removed.
 
 Re-enabling SQL on the same cluster provisions a fresh engine. Redpanda does not restore prior catalog state, table mappings, or grants. You must re-create catalogs, tables, and grants after re-enabling.
 
-[NOTE]
-====
-The SQL-specific GCP resources (service accounts and GCS bucket) are not deleted when you disable SQL. They remain in your project and can be reused if you re-enable SQL. To remove them, set `enable_redpanda_sql = false` in the Terraform module and run `terraform apply`, or run `terraform destroy` to remove all BYOVPC resources.
-====
+The SQL-specific GCP resources (service accounts and bucket) are not deleted when you disable SQL. They remain in your project and can be reused if you re-enable SQL.
 
-[tabs]
-=====
-Terraform::
-+
---
-Set `rpsql.enabled` to `false` in the `redpanda_cluster` resource and apply:
-
-[,hcl]
-----
-resource "redpanda_cluster" "cluster" {
-  # ... existing BYOVPC cluster configuration ...
-  rpsql = {
-    enabled = false
-  }
-}
-----
+To disable SQL, make a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_updatecluster[`PATCH /v1/clusters/{cluster.id}`] request with `rpsql.enabled` set to `false`:
 
 [,bash]
 ----
-terraform apply
-----
---
-
-Cloud API::
-+
---
-Make a link:/api/doc/cloud-controlplane/operation/operation-clusterservice_updatecluster[`PATCH /v1/clusters/{cluster.id}`] request with `rpsql.enabled` set to `false`. Replace `{cluster.id}` with your cluster ID:
-
-[,bash]
-----
-curl -X PATCH "https://api.redpanda.com/v1/clusters/{cluster.id}" \
+curl -sX PATCH "https://api.redpanda.com/v1/clusters/{cluster-id}?update_mask=rpsql.enabled" \
   -H "Authorization: Bearer $AUTH_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"rpsql":{"enabled":false}}'
+  -d '{"rpsql": {"enabled": false}}'
 ----
 
-The request returns the ID of a long-running operation. Poll link:/api/doc/cloud-controlplane/operation/operation-operationservice_getoperation[`GET /v1/operations/{operation.id}`] until the operation completes.
---
-=====
+Poll the link:/api/doc/cloud-controlplane/operation/operation-operationservice_getoperation[`GET /v1/operations/{operation.id}`] endpoint until the operation completes.
 
 == Next steps
 
-* xref:sql:get-started/deploy-sql-cluster.adoc[Scale the SQL engine]: Adjust compute size after enabling SQL.
 * xref:sql:get-started/sql-quickstart.adoc[Quickstart]: Connect to Redpanda SQL with `psql` and run your first query.
 * xref:sql:connect-to-sql/authenticate.adoc[Authenticate to Redpanda SQL]: Connect with OIDC client credentials or a SCRAM password.
