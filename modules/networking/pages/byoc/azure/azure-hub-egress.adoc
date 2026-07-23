@@ -1,0 +1,395 @@
+= Create an Azure Hub for Centralized Egress
+:description: Provision a hub VNet and Azure Firewall so one or more BYOC clusters can route their internet egress through a single, predictable public IP.
+:page-beta: true
+:page-topic-type: how-to
+:personas: platform_admin
+:learning-objective-1: Provision a hub VNet with Azure Firewall
+:learning-objective-2: Configure VNet peering so the hub exports connectivity to Redpanda spoke VNets
+:learning-objective-3: Collect the hub VNet ID and firewall IPs needed for BYOC cluster configuration
+
+Use this guide to provision the customer-side infrastructure required for centralized egress on a Redpanda Bring Your Own Cloud (BYOC) cluster on Azure. After completing the procedure, you have a hub VNet with an Azure Firewall, a VNet peering to the Redpanda spoke VNet, and the IDs needed to configure your BYOC network. You can then follow xref:networking:byoc/azure/nat-free-egress.adoc[Configure Centralized Egress with Azure Firewall] to enable centralized egress at cluster creation.
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
+
+== What this sets up
+
+A hub VNet with Azure Firewall provides centralized internet egress for one or more Redpanda spoke VNets. All outbound traffic from clusters is routed through the hub and exits from a single, predictable public IP.
+
+----
+Redpanda BYOC VNet --> VNet Peering --> Hub VNet --> Azure Firewall --> Internet
+  (Route Table: 0.0.0.0/0 -> firewall private IP)
+----
+
+Traffic path:
+
+. Redpanda spoke subnets have a Route Table (UDR) with a `0.0.0.0/0` route pointing at the Azure Firewall's private IP.
+. The route crosses the VNet peering into the hub VNet because both peerings allow forwarded traffic.
+. The Azure Firewall in the hub receives the packet, evaluates it against its policy rules, and performs SNAT to its public IP.
+. Return traffic arrives at the firewall's public IP. The firewall reverses the SNAT and forwards the packet back across the peering to the originating spoke subnet.
+
+[NOTE]
+====
+Redpanda creates and manages the Route Table (UDR) on the spoke subnets, not you. This hub setup only needs to provide the Azure Firewall's private IP as the next hop, and the VNet peering that lets spoke traffic reach it.
+====
+
+[#automated-alternative]
+== Automated alternative
+
+If you prefer to provision this infrastructure with Terraform, the configuration used to produce the setup in this guide is published in the Redpanda Cloud Examples repository: link:https://github.com/redpanda-data/cloud-examples/tree/main/azure-hub-egress[azure-hub-egress^]
+
+The rest of this guide covers the equivalent steps using the Azure Portal or Azure CLI.
+
+[#prerequisites]
+== Prerequisites
+
+* The `az` CLI, configured with credentials for the hub subscription.
+* Network Contributor permissions in the hub subscription.
+* The Redpanda spoke VNet CIDR must not overlap your hub VNet CIDR.
+* The Azure resource ID of the Redpanda spoke VNet, visible in the Redpanda Cloud console after the network is created, in the form `/subscriptions/<subscription-id>/resourceGroups/<resource-group>/providers/Microsoft.Network/virtualNetworks/<vnet-name>`.
+* Centralized egress requires a Redpanda-managed VNet. It is not compatible with xref:get-started:cluster-types/byoc/azure/vnet-azure.adoc[BYOVNet clusters].
+
+You provision the hub VNet and Azure Firewall first, then give Redpanda the hub VNet ID and firewall private IP to create the BYOC network with centralized egress. The Redpanda spoke VNet's resource ID becomes available only after that network is created, so you create the hub-side peering (see <<peer-hub-vnet>>) after network creation, not before.
+
+[WARNING]
+====
+Hub and spoke VNet CIDRs must not overlap. Azure rejects VNet peering when CIDRs conflict. Plan your CIDRs before you start. For background, see xref:networking:cidr-ranges.adoc#what-are-cidrs[What are CIDRs?]
+====
+
+== Default values
+
+The procedure uses the values in the following table. Replace any value that does not match your environment.
+
+[cols="2,2,3"]
+|===
+| Parameter | Default | Notes
+
+| Hub subscription | `<hub-subscription-id>` | Replace with your Azure subscription ID
+| Hub resource group | `hub-egress-rg` |
+| Hub VNet name | `hub-vnet` |
+| Hub VNet address space | `10.255.0.0/16` | Example only. It is a normal RFC 1918 range, so verify it does not conflict with existing enterprise networks before using it.
+| Firewall subnet CIDR | `10.255.0.0/26` | Must be named exactly `AzureFirewallSubnet` and be at least `/26`
+| Region | `eastus2` | Replace with your target region
+| Spoke VNet resource ID | `/subscriptions/<redpanda-subscription-id>/resourceGroups/<redpanda-rg>/providers/Microsoft.Network/virtualNetworks/<redpanda-vnet>` | Visible in the Redpanda Cloud console
+|===
+
+== Set environment variables
+
+Set these variables once and reuse them throughout the guide.
+
+[,bash]
+----
+HUB_SUBSCRIPTION_ID="<hub-subscription-id>"
+LOCATION="eastus2"
+RESOURCE_GROUP="hub-egress-rg"
+VNET_NAME="hub-vnet"
+VNET_CIDR="10.255.0.0/16"
+FIREWALL_SUBNET_CIDR="10.255.0.0/26"
+FIREWALL_NAME="hub-fw"
+FIREWALL_POLICY_NAME="hub-fw-policy"
+FIREWALL_PIP_NAME="hub-fw-pip"
+
+az account set --subscription "$HUB_SUBSCRIPTION_ID"
+
+# Fill in after the Redpanda cluster network is provisioned
+SPOKE_VNET_ID="/subscriptions/<redpanda-subscription-id>/resourceGroups/<redpanda-rg>/providers/Microsoft.Network/virtualNetworks/<redpanda-vnet>"
+PEERING_NAME="hub-to-redpanda-cluster-a"
+----
+
+== Create the hub resource group and VNet
+
+[tabs]
+======
+Portal::
++
+. Go to *Resource groups > Create*.
+. Set the resource group name to `hub-egress-rg` and the region to `eastus2`.
+. Click *Review + create*, then *Create*.
+. Go to *Virtual networks > Create*.
+. Select the `hub-egress-rg` resource group, set the name to `hub-vnet`, the region to `eastus2`, and the IPv4 address space to `10.255.0.0/16`.
+. Click *Review + create*, then *Create*. You add the firewall subnet as a separate step.
+
+CLI::
++
+[,bash]
+----
+az group create \
+  --name $RESOURCE_GROUP \
+  --location $LOCATION
+
+az network vnet create \
+  --name $VNET_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --location $LOCATION \
+  --address-prefix $VNET_CIDR
+
+echo "VNet created: $VNET_NAME"
+----
+======
+
+== Create the Azure Firewall subnet
+
+[NOTE]
+====
+Azure requires this subnet to be named exactly `AzureFirewallSubnet`, and it must be at least `/26`.
+====
+
+[tabs]
+======
+Portal::
++
+. Open the `hub-vnet` VNet and go to *Subnets > + Subnet*.
+. Set the name to `AzureFirewallSubnet`.
+. Set the IPv4 address range to `10.255.0.0/26`.
+. Click *Save*.
+
+CLI::
++
+[,bash]
+----
+az network vnet subnet create \
+  --name AzureFirewallSubnet \
+  --vnet-name $VNET_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --address-prefixes $FIREWALL_SUBNET_CIDR
+
+echo "Firewall subnet created: AzureFirewallSubnet ($FIREWALL_SUBNET_CIDR)"
+----
+======
+
+== Reserve a public IP for the firewall
+
+This public IP becomes the single egress address for all Redpanda cluster traffic.
+
+[tabs]
+======
+Portal::
++
+. Go to *Public IP addresses > Create*.
+. Set the name to `hub-fw-pip`, the SKU to *Standard*, and the assignment to *Static*.
+. Select the `hub-egress-rg` resource group and the `eastus2` region.
+. Click *Review + create*, then *Create*.
+
+CLI::
++
+[,bash]
+----
+az network public-ip create \
+  --name $FIREWALL_PIP_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --location $LOCATION \
+  --sku Standard \
+  --allocation-method Static
+
+echo "Public IP reserved: $FIREWALL_PIP_NAME"
+----
+======
+
+== Create the firewall policy
+
+The policy holds the network rules that control what the firewall allows to egress. The default rule in this guide allows all outbound traffic. Restrict it to the specific destinations your organization requires before using this hub in production. See xref:networking:byoc/azure/nat-free-egress.adoc#internet-endpoints[Internet endpoints required from your hub] for the minimum set Redpanda needs.
+
+[tabs]
+======
+Portal::
++
+. Go to *Firewall Policies > Create*.
+. Set the name to `hub-fw-policy`, the resource group to `hub-egress-rg`, the region to `eastus2`, and the tier to *Standard*.
+. Click *Review + create*, then *Create*.
+. Open the policy and go to *Network rules > Add a rule collection*.
+. Set the rule collection name to `AllowEgress`, the priority to `100`, and the action to *Allow*.
+. Add a rule named `AllowAll` with protocol *Any*, source `*`, destination `*`, and destination ports `*`. Replace this with specific destinations before production use.
+. Click *Add*.
+
+CLI::
++
+[,bash]
+----
+az network firewall policy create \
+  --name $FIREWALL_POLICY_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --location $LOCATION \
+  --sku Standard
+
+az network firewall policy rule-collection-group create \
+  --name DefaultRules \
+  --policy-name $FIREWALL_POLICY_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --priority 100
+
+# Replace source-addresses/destination-addresses with specific ranges and
+# endpoints before using this hub in production.
+az network firewall policy rule-collection-group collection add-filter-collection \
+  --resource-group $RESOURCE_GROUP \
+  --policy-name $FIREWALL_POLICY_NAME \
+  --rule-collection-group-name DefaultRules \
+  --name AllowEgress \
+  --collection-priority 100 \
+  --action Allow \
+  --rule-name AllowAll \
+  --rule-type NetworkRule \
+  --ip-protocols Any \
+  --source-addresses '*' \
+  --destination-addresses '*' \
+  --destination-ports '*'
+
+echo "Firewall policy created: $FIREWALL_POLICY_NAME"
+----
+======
+
+== Create the Azure Firewall
+
+The firewall takes 5 to 10 minutes to provision.
+
+[NOTE]
+====
+Azure Firewall Standard tier costs approximately $1.25 per hour while running. Destroy the firewall when you are not using it, or use the <<automated-alternative,Terraform reference module>> to make teardown repeatable.
+====
+
+[tabs]
+======
+Portal::
++
+. Go to *Firewalls > Create*.
+. Select the `hub-egress-rg` resource group and set the name to `hub-fw`.
+. Set the region to `eastus2`, the firewall tier to *Standard*, and the firewall management to *Use a Firewall Policy*.
+. Select the existing `hub-fw-policy` policy.
+. Under *Virtual network*, select `hub-vnet` (this populates from the `AzureFirewallSubnet` you created).
+. Under *Public IP address*, select `hub-fw-pip`.
+. Click *Review + create*, then *Create*.
+
+CLI::
++
+[,bash]
+----
+FIREWALL_POLICY_ID=$(az network firewall policy show \
+  --name $FIREWALL_POLICY_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --query id --output tsv)
+
+az network firewall create \
+  --name $FIREWALL_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --location $LOCATION \
+  --sku AZFW_VNet \
+  --tier Standard \
+  --firewall-policy $FIREWALL_POLICY_ID
+
+az network firewall ip-config create \
+  --firewall-name $FIREWALL_NAME \
+  --name hub-fw-ipconfig \
+  --resource-group $RESOURCE_GROUP \
+  --vnet-name $VNET_NAME \
+  --public-ip-address $FIREWALL_PIP_NAME
+
+az network firewall update \
+  --name $FIREWALL_NAME \
+  --resource-group $RESOURCE_GROUP
+
+echo "Firewall created: $FIREWALL_NAME"
+----
+======
+
+[#peer-hub-vnet]
+== Peer the hub VNet to the Redpanda spoke VNet
+
+Create this peering after the BYOC network has been provisioned with your hub's values, once the Redpanda spoke VNet's resource ID is available in the Redpanda Cloud console (see <<prerequisites,Prerequisites>>). Redpanda creates the reciprocal peering from the spoke side during cluster provisioning.
+
+[NOTE]
+====
+Set `--allow-forwarded-traffic` on both sides so traffic that neither originates from nor is destined for the hub VNet's own address space (like the spoke's `0.0.0.0/0` route to the firewall) is allowed to cross the peering. This is what enables the Azure Firewall forwarding path; Redpanda sets the same flag on the reciprocal spoke-side peering.
+
+`--allow-gateway-transit` on the hub side is unrelated to firewall forwarding. It only lets the spoke use a VPN/ExpressRoute gateway attached to the hub VNet, and has no effect if the hub has no such gateway or the spoke doesn't opt in. It's safe to include even when the hub has no gateway.
+
+Both peerings must show `Connected` before traffic flows. The peering you create here stays in a non-connected state until Redpanda creates the reciprocal peering during cluster provisioning.
+====
+
+[tabs]
+======
+Portal::
++
+. Open the `hub-vnet` VNet and go to *Peerings > Add*.
+. Set the peering link name (this VNet to remote VNet) to `hub-to-redpanda-cluster-a`.
+. Under *Traffic to remote virtual network*, select *Allow*, and under *Traffic forwarded from remote virtual network*, select *Allow*.
+. Under *Virtual network gateway*, select *Use this virtual network's gateway* if the hub has one (allows gateway transit to the spoke).
+. For the remote virtual network, choose *Resource ID* and paste the Redpanda spoke VNet's resource ID.
+. Set the peering link name for the remote VNet to this VNet as required by the portal, then click *Add*.
+
+CLI::
++
+[,bash]
+----
+az network vnet peering create \
+  --name $PEERING_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --vnet-name $VNET_NAME \
+  --remote-vnet $SPOKE_VNET_ID \
+  --allow-forwarded-traffic \
+  --allow-gateway-transit
+
+echo "Peering created: $PEERING_NAME (hub -> $SPOKE_VNET_ID)"
+echo "Status stays non-connected until Redpanda creates the reciprocal peering."
+----
+======
+
+[#collect-values]
+== Collect the values to provide to Redpanda
+
+Record these values. Provide the hub VNet ID and the firewall's private IP when you configure centralized egress on your BYOC network. See xref:networking:byoc/azure/nat-free-egress.adoc[Configure Centralized Egress with Azure Firewall].
+
+[,bash]
+----
+HUB_VNET_ID=$(az network vnet show \
+  --name $VNET_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --query id --output tsv)
+
+FIREWALL_PRIVATE_IP=$(az network firewall show \
+  --name $FIREWALL_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --query 'ipConfigurations[0].privateIPAddress' --output tsv)
+
+FIREWALL_PUBLIC_IP=$(az network public-ip show \
+  --name $FIREWALL_PIP_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --query ipAddress --output tsv)
+
+echo "hub_vnet_id           = $HUB_VNET_ID"
+echo "hub_resource_group    = $RESOURCE_GROUP"
+echo "firewall_private_ip   = $FIREWALL_PRIVATE_IP"
+echo "firewall_public_ip    = $FIREWALL_PUBLIC_IP"
+----
+
+All outbound internet traffic from every BYOC spoke that peers to this hub exits from the same firewall public IP. Use that public IP for outbound IP allowlisting on external services.
+
+== Plan for high availability
+
+New Azure Firewall deployments are zone-redundant by default in regions that support availability zones: Azure spreads the firewall (and a Standard SKU public IP) across multiple zones automatically, with no `zones` parameter required. You only need to set zones explicitly if you want a single-zone deployment, or if your target region does not support availability zones. The firewall is still a single point of egress for every peered spoke, so for production deployments:
+
+* Confirm your target region supports availability zones so the firewall and its public IP get zone-redundant placement by default.
+* Consider the Premium tier if you need TLS inspection or IDPS on egress traffic.
+* Monitor firewall health and throughput using Azure Monitor metrics for the `Microsoft.Network/azureFirewalls` resource.
+
+The <<automated-alternative,Terraform reference module>> does not set an explicit `zones` argument on the firewall or its public IP, so it inherits the same zone-redundant default in regions that support it. Only add explicit zones if you need a single-zone deployment or the Premium tier.
+
+== Troubleshooting
+
+[cols="2,2"]
+|===
+| Symptom | Likely cause
+
+| Spoke cannot reach the internet | The spoke's Route Table is missing the `0.0.0.0/0` route to the firewall's private IP. Redpanda creates this route when the network is configured for centralized egress.
+| Peering stays in a non-connected state | The reciprocal peering from the Redpanda spoke VNet has not been created yet. This is expected until cluster provisioning completes. If the cluster is already running, confirm that both peerings show `Connected` in *Peerings*.
+| Peering creation fails with a CIDR conflict error | The spoke VNet address space overlaps the hub VNet address space `10.255.0.0/16`. Choose non-overlapping address spaces.
+| Peering creation fails with a permissions error | The principal creating the peering needs Network Contributor permissions in the hub subscription. If the hub and spoke are in different subscriptions or tenants, the principal also needs access to create a peering that references the remote VNet's resource ID.
+| Outbound traffic is intermittently dropped | The firewall policy's rule collection does not allow the third-party endpoints required by Redpanda. See xref:networking:byoc/azure/nat-free-egress.adoc#internet-endpoints[Internet endpoints required from your hub].
+| All traffic appears to come from one public IP | This is the expected behavior of centralized egress. Use that IP for outbound allowlisting.
+|===
+
+== Next steps
+
+* xref:networking:byoc/azure/nat-free-egress.adoc[Configure Centralized Egress with Azure Firewall]
+* xref:get-started:cluster-types/byoc/azure/create-byoc-cluster-azure.adoc[Create a BYOC Cluster on Azure]
