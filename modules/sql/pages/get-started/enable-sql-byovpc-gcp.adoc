@@ -53,13 +53,7 @@ gcloud storage buckets create "gs://redpanda-rpsql-storage-<unique-id>" \
   --project "<project-id>" --location "<region>" --uniform-bucket-level-access
 ----
 
-// TODO: SME/source confirmation needed on the exact IAM role bindings for the two SQL service
-// accounts and whether a roles/iam.workloadIdentityUser binding to the Oxla Kubernetes service
-// account is required. Marat's verified run used broad predefined roles (roles/storage.objectAdmin
-// on the bucket for the compute SA; roles/secretmanager.admin on the project for both SAs) and
-// flagged the workload-identity binding as possibly needed. The terraform-gcp-redpanda-byovpc
-// module (iam_rpsql.tf) instead grants narrower custom roles plus workload-identity bindings.
-// Confirm the canonical customer-facing IAM before publishing this section.
+// TODO: Document the IAM roles the two SQL service accounts require. Pending SME confirmation.
 
 Grant each service account the permissions it needs. Confirm the exact roles with your Redpanda account team before you rely on this in production.
 
@@ -153,10 +147,7 @@ PGPASSWORD="$AUTH_TOKEN" psql \
 
 This example uses bearer-token authentication (`auth_method=bearer`), so Redpanda SQL takes the session identity from the token and ignores the `user` field. Redpanda SQL always connects to the `oxla` database regardless of the `dbname` value. For client-credentials and SCRAM authentication, where the `user` field carries the identity, see xref:sql:connect-to-sql/authenticate.adoc[Authenticate to Redpanda SQL].
 
-// TODO: Confirm with SME whether OIDC bearer-token authentication works on GCP for end users.
-// Marat's 2026-07-21 run connected successfully with a Cloud bearer token (auth_method=bearer),
-// which suggests the earlier "OIDC broken on GCP" concern may be resolved. Cross-check
-// xref:sql:connect-to-sql/authenticate.adoc[] before publishing.
+// TODO: Confirm OIDC bearer-token authentication on GCP before publishing; cross-check authenticate.adoc.
 
 == Disable Redpanda SQL
 
