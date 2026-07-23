@@ -12,6 +12,17 @@ This page lists new features added to Redpanda Cloud.
 
 Redpanda SQL is now available on BYOVPC clusters on AWS. Provision the required SQL-specific AWS resources using the Redpanda BYOVPC Terraform module, then supply them as customer-managed resources when enabling the SQL engine via the Cloud Console, Cloud API, or Terraform provider. See xref:sql:get-started/enable-sql-byovpc-aws.adoc[Enable Redpanda SQL on a BYOVPC Cluster on AWS].
 
+=== Terraform provider: Egress allowlist for Redpanda Connect pipelines
+
+The Redpanda Terraform provider (v2.1.1+) now supports allowing Redpanda Connect pipelines on BYOC clusters to open outbound connections to custom destinations, such as a database with a private address in a peered VPC. Use the `redpanda_connect.allowed_destination_cidr_ports` attribute on a `redpanda_cluster` resource to allow egress to up to 16 CIDR and port range combinations. See xref:manage:terraform-provider.adoc#enable-egress-to-custom-destinations[Enable egress to custom destinations].
+
+=== New AWS regions for BYOC
+
+For xref:reference:tiers/byoc-tiers.adoc#byoc-supported-regions[BYOC clusters], Redpanda added support for the following AWS regions:
+
+* ap-northeast-2 (Seoul)
+* ap-south-2 (Hyderabad)
+
 === Improved Serverless trial onboarding
 
 New Serverless free-trial users now get a guided start in the Redpanda Cloud UI. After you sign up, a few quick questions help Redpanda tailor your experience. The welcome cluster's *Overview* page summarizes your trial credits, and the *Get started* button offers options to start streaming: create a Redpanda Connect pipeline, use `rpk` from the command line, or connect with your own Kafka client. See xref:get-started:cluster-types/serverless.adoc#get-started-with-serverless[Get started with Serverless].
@@ -24,11 +35,20 @@ Redpanda Cloud Console now includes a built-in SQL editor. For SQL-enabled envir
 
 You can now permanently delete a Serverless organization (free trial and pay-as-you-go plans) directly from the Cloud UI, without contacting Redpanda Support. The new *Manage organization* page, available from your profile icon, shows your plan and organization-wide resource counts, and walks you through the deletion prerequisites: delete all clusters, delete all private links, and settle any pending or outstanding invoices. See xref:manage:manage-organization.adoc[Manage Your Organization].
 
+=== Redpanda Connect updates
+
+* Inputs:
+** xref:develop:connect/components/inputs/jira.adoc[jira]: Streams Jira issues, comments, or changelog entries via JQL with incremental polling.
+
 == June 2026
 
 === Terraform provider: Redpanda SQL support
 
 The Redpanda Terraform provider (v2.1.0+) now supports enabling and managing Redpanda SQL on BYOC clusters on AWS. Use the `rpsql` block on a `redpanda_cluster` resource to enable SQL, configure compute replicas, and retrieve the SQL endpoint URL. See xref:manage:terraform-provider.adoc#enable-redpanda-sql-on-a-byoc-cluster[Enable Redpanda SQL on a BYOC cluster].
+
+=== Terraform provider: Secrets management
+
+The Redpanda Terraform provider (v2.0.0+) now supports managing cluster secrets with the new `redpanda_secret` resource. The secret value is a write-only attribute, so Terraform never stores it in your state file, and scopes control which features can use the secret, such as Redpanda Connect pipelines. See xref:manage:terraform-provider.adoc#manage-cluster-secrets[Manage cluster secrets].
 
 === Centralized egress for BYOC on GCP: beta
 
@@ -237,7 +257,7 @@ You can now enable xref:manage:schema-reg/schema-id-validation.adoc[schema ID va
 
 === Cross-region AWS PrivateLink
 
-AWS PrivateLink now supports cross-region connectivity, allowing clients in different AWS regions to connect to your Redpanda cluster through PrivateLink. Configure supported regions in the xref:networking:configure-privatelink-in-cloud-ui.adoc#cross-region-privatelink[Cloud UI] or using the xref:networking:aws-privatelink.adoc#cross-region-privatelink[Cloud API] to specify which regions can establish PrivateLink connections. This feature requires multi-AZ cluster deployments.
+AWS PrivateLink now supports cross-region connectivity, allowing clients in different AWS regions to connect to your Redpanda cluster through PrivateLink. Configure supported regions in the xref:networking:configure-privatelink-in-cloud-ui.adoc#cross-region-privatelink[Cloud Console], using the xref:networking:aws-privatelink.adoc#cross-region-privatelink[Cloud API], or with the Redpanda Terraform provider (v1.7.0+) using the `supported_regions` attribute of the `aws_private_link` block. See xref:manage:terraform-provider.adoc#configure-cross-region-aws-privatelink[Configure cross-region AWS PrivateLink]. This feature requires multi-AZ cluster deployments.
 
 == January 2026
 

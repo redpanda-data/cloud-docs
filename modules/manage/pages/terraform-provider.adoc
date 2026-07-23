@@ -2,9 +2,9 @@
 :description: Use the Redpanda Terraform provider to create and manage Redpanda Cloud resources.
 :page-topic-type: how-to
 :personas: platform_admin
-:learning-objective-1: Configure and deploy Redpanda Cloud clusters using Terraform
-:learning-objective-2: Manage sensitive credentials using Terraform write-only attributes
-:learning-objective-3: Enable Redpanda SQL on a BYOC cluster using the rpsql block
+:learning-objective-1: Create a BYOC cluster using Terraform
+:learning-objective-2: Enable Redpanda SQL on a BYOC cluster using the rpsql block
+:learning-objective-3: Create Redpanda Connect pipelines and allow pipeline egress to custom destinations
 
 Use the https://registry.terraform.io/providers/redpanda-data/redpanda/latest[Redpanda Terraform provider^] to define, automate, and track changes to your Redpanda Cloud infrastructure as code.
 
@@ -19,6 +19,7 @@ With the Redpanda Terraform provider, you can manage:
 * link:https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs/resources/role_assignments[Role assignments^]
 * link:https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs/resources/schema[Schemas^]
 * link:https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs/resources/schema_registry_acl[Schema Registry ACLs^]
+* link:https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs/resources/secret[Secrets^]
 * link:https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs/resources/serverless_cluster[Serverless clusters^]
 * link:https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs/resources/serverless_private_link[Serverless private links^]
 * link:https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs/resources/topic[Topics^]
@@ -109,7 +110,6 @@ output "cluster_api_url" {
 The following functionality is supported in the Cloud API but not in the Redpanda Terraform provider:
 
 * Creating or deleting BYOVNet clusters on Azure
-* Secrets
 * Kafka Connect
 
 [WARNING]
@@ -187,7 +187,7 @@ terraform {
   required_providers {
     redpanda = {
       source  = "redpanda-data/redpanda"
-      version = "~> 1.0"
+      version = ">= 2.1.1"
     }
   }
 }
@@ -240,7 +240,7 @@ For each supported sensitive field, the provider exposes two new attributes alon
 * `<field>_wo`: A write-only attribute. Terraform sends the value to the provider during `apply` but never persists it to state.
 * `<field>_wo_version`: An integer version. Because Terraform cannot detect changes in a write-only value (there is nothing to compare against in state), you increment this number to signal that the value has changed and to trigger an update on the next apply.
 
-NOTE: `redpanda_pipeline` is an exception to this naming convention. The existing `client_secret` attribute is the write-only attribute (no separate `client_secret_wo` field), and is paired with `secret_version` instead of `client_secret_wo_version`.
+NOTE: `redpanda_pipeline` and `redpanda_secret` are exceptions to this naming convention. For `redpanda_pipeline`, the existing `client_secret` attribute is the write-only attribute (no separate `client_secret_wo` field), and is paired with `secret_version` instead of `client_secret_wo_version`. For `redpanda_secret`, the `secret_data` attribute is write-only by design (there is no plaintext variant), and is paired with `secret_data_version`.
 
 The provider retains the original plaintext attributes for backward compatibility. You can migrate to the write-only variants on your own schedule. Avoid setting both the plaintext attribute and its write-only counterpart on the same resource. If both are set, the provider uses the write-only value.
 
@@ -268,6 +268,11 @@ The provider retains the original plaintext attributes for backward compatibilit
 | `client_secret`
 | `client_secret` (write-only)
 | `secret_version`
+
+| `redpanda_secret`
+| None (write-only by design)
+| `secret_data`
+| `secret_data_version`
 |===
 
 === Set a write-only attribute
@@ -319,6 +324,162 @@ resource "redpanda_user" "schema_user" {
 
 After running `terraform apply`, the provider sends the new password to Redpanda Cloud. Neither the old nor the new value is written to state.
 
+== Create Redpanda Connect pipelines
+
+Use the `redpanda_pipeline` resource to create and manage xref:develop:connect/about.adoc[Redpanda Connect] pipelines as code. Pass the pipeline configuration as YAML in the `config_yaml` attribute.
+
+[source,hcl]
+----
+resource "redpanda_pipeline" "example" {
+  cluster_api_url = redpanda_cluster.example.cluster_api_url
+  display_name    = "example-pipeline"
+  description     = "Generates data and writes it to a topic"
+  state           = "running"
+  allow_deletion  = true
+
+  config_yaml = <<-YAML
+    input:
+      generate:
+        interval: 5s
+        mapping: |
+          root.message = "hello world"
+          root.timestamp = now()
+
+    output:
+      redpanda:
+        seed_brokers:
+          - $${REDPANDA_BROKERS}
+        tls:
+          enabled: true
+        sasl:
+          - mechanism: SCRAM-SHA-256
+            username: $${secrets.KAFKA_USER_CONNECT}
+            password: $${secrets.KAFKA_PASSWORD_CONNECT}
+        topic: example-topic
+  YAML
+
+  resources = {
+    memory_shares = "128Mi"
+    cpu_shares    = "100m"
+  }
+
+  tags = {
+    environment = "dev"
+  }
+}
+----
+
+* `cluster_api_url`: The URL of the data plane API for the cluster that runs the pipeline.
+* `config_yaml`: The pipeline configuration in YAML format. Escape literal `$\{...}` references, such as xref:develop:connect/configuration/secret-management.adoc[secrets] and xref:develop:connect/configuration/contextual-variables.adoc[contextual variables], as `$$\{...}` so that Terraform doesn't interpret them as its own interpolation syntax. Redpanda Connect resolves them at runtime.
+* `state`: The desired state of the pipeline: `running` or `stopped`. The provider ensures the pipeline reaches this state after create and update operations.
+* `resources` (optional): The amount of memory and CPU to allocate for the pipeline. See xref:develop:connect/configuration/scale-pipelines.adoc[].
+* `allow_deletion` (optional): Whether Terraform may destroy the pipeline. Defaults to `false`.
+
+This example references the `KAFKA_USER_CONNECT` and `KAFKA_PASSWORD_CONNECT` cluster secrets for SASL authentication. You can create these secrets with the `redpanda_secret` resource. See <<manage-cluster-secrets>>.
+
+For the full schema and import syntax, see the https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs/resources/pipeline[redpanda_pipeline resource documentation^].
+
+=== Enable egress to custom destinations
+
+On BYOC clusters, Redpanda Connect pipelines run inside the Redpanda data plane VPC in your cloud account. By default, pipelines can connect to your Redpanda cluster and to publicly routable endpoints. Outbound connections to other destinations, such as a database with a private address in a peered VPC, are blocked.
+
+To allow pipelines to reach these destinations, add the `redpanda_connect.allowed_destination_cidr_ports` attribute to the `redpanda_cluster` resource (requires provider version `>= 2.1.1`). The attribute accepts up to 16 rules, each allowing egress to a destination CIDR block on a port or port range:
+
+[source,hcl]
+----
+resource "redpanda_cluster" "example" {
+  # ... other cluster arguments ...
+
+  redpanda_connect = {
+    allowed_destination_cidr_ports = [
+      {
+        cidr       = "10.62.0.0/16" # CIDR of the VPC that hosts your database
+        port_start = 5432           # PostgreSQL
+      },
+      {
+        cidr       = "203.0.113.0/24"
+        port_start = 9000
+        port_end   = 9100
+      }
+    ]
+  }
+}
+----
+
+* `cidr`: The destination IPv4 CIDR block, for example `10.62.0.0/16`.
+* `port_start`: The start of the TCP/UDP port range, 1-65535.
+* `port_end` (optional): The end of the TCP/UDP port range. To allow a single port, omit this attribute. When set, the value must be greater than or equal to `port_start`.
+
+You can add or change the `redpanda_connect` block on an existing cluster. Terraform updates the cluster in place without recreating it.
+
+The allowlist permits outbound traffic from pipelines, but it does not create a network path to the destination. For private destinations, you must also establish routing, for example by peering the Redpanda data plane VPC with the VPC that hosts your database and adding routes in both directions.
+
+After you apply the configuration, pipelines can connect to the allowed destinations. For example, a pipeline with a xref:develop:connect/components/outputs/sql_insert.adoc[`sql_insert`] output can write to a PostgreSQL database at a private address in the peered VPC:
+
+[source,hcl]
+----
+resource "redpanda_pipeline" "postgres_sink" {
+  cluster_api_url = redpanda_cluster.example.cluster_api_url
+  display_name    = "postgres-sink"
+  description     = "Writes topic data to a private PostgreSQL database"
+  state           = "running"
+  allow_deletion  = true
+
+  config_yaml = <<-YAML
+    input:
+      redpanda:
+        seed_brokers:
+          - $${REDPANDA_BROKERS}
+        topics: ["orders"]
+        consumer_group: postgres-sink
+        tls:
+          enabled: true
+        sasl:
+          - mechanism: SCRAM-SHA-256
+            username: $${secrets.KAFKA_USER_CONNECT}
+            password: $${secrets.KAFKA_PASSWORD_CONNECT}
+
+    output:
+      sql_insert:
+        driver: postgres
+        dsn: postgres://$${secrets.PG_USER}:$${secrets.PG_PASSWORD}@db.private.example.internal:5432/orders?sslmode=require
+        table: orders
+        columns: ["payload"]
+        args_mapping: root = [ content().string() ]
+  YAML
+}
+----
+
+== Manage cluster secrets
+
+The Redpanda Terraform provider (v2.0.0+) supports creating and managing secrets in a cluster's secret store with the `redpanda_secret` resource. Cluster secrets hold sensitive values, such as pipeline credentials, that other resources reference by name using `${secrets.<NAME>}`.
+
+The secret value (`secret_data`) is a write-only attribute, so Terraform never stores it in state. To rotate the value, change `secret_data` and increment `secret_data_version`, following the same pattern as <<manage-sensitive-attributes-with-write-only-fields,other write-only attributes>>.
+
+[source,hcl]
+----
+variable "secret_value" {
+  description = "Value to store in the secret"
+  sensitive   = true
+}
+
+resource "redpanda_secret" "example" {
+  name                = "EXAMPLE_SECRET"
+  secret_data         = var.secret_value
+  secret_data_version = 1
+  scopes              = ["SCOPE_REDPANDA_CONNECT"]
+  cluster_api_url     = data.redpanda_cluster.byoc.cluster_api_url
+  allow_deletion      = true
+}
+----
+
+* `name`: An uppercase identifier matching `^[A-Z][A-Z0-9_]*$`. You cannot rename a secret after you create it.
+* `secret_data`: The secret value. Requires Terraform 1.11 or later.
+* `scopes`: The features that can use the secret. For example, use `SCOPE_REDPANDA_CONNECT` for Redpanda Connect pipelines or `SCOPE_REDPANDA_CLUSTER` for Shadowing credentials. If a secret doesn't have a scope that matches its consumer, the consumer fails at runtime.
+* `labels` (optional): Labels to organize your secrets. You can update labels on an existing secret (provider v2.1.0+).
+
+For the full schema and import syntax, see the https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs/resources/secret[redpanda_secret resource documentation^]. To use secrets in Redpanda Connect pipelines, see xref:develop:connect/configuration/secret-management.adoc[].
+
 == Configure cluster properties
 
 To set xref:reference:properties/cluster-properties.adoc[cluster configuration properties] on a BYOC or Dedicated cluster, add a `cluster_configuration` block to the `redpanda_cluster` resource and pass the properties as a JSON string with `custom_properties_json`:
@@ -340,6 +501,46 @@ Only the properties listed in xref:reference:properties/cluster-properties.adoc[
 
 NOTE: Cluster properties are not available on Serverless clusters or on BYOC and Dedicated clusters running on Azure.
 
+== Configure cross-region AWS PrivateLink
+
+By default, AWS PrivateLink only accepts connections from VPCs in the same region as your Redpanda cluster. The Redpanda Terraform provider (v1.7.0+) supports xref:networking:aws-privatelink.adoc#cross-region-privatelink[cross-region PrivateLink], which allows clients in other AWS regions to connect to your cluster through PrivateLink.
+
+To enable cross-region PrivateLink, add the `supported_regions` attribute to the `aws_private_link` block of a `redpanda_cluster` resource. The attribute accepts a list of up to 50 unique AWS region identifiers from which PrivateLink endpoints can connect. If you omit it, only same-region connections are allowed.
+
+Requirements:
+
+* The cluster must be deployed across multiple availability zones (multi-AZ). This is an AWS limitation for cross-region PrivateLink.
+* For BYOC clusters, the Redpanda agent IAM role must have the `vpce:AllowMultiRegion` and `elasticloadbalancing:DescribeListenerAttributes` permissions.
+
+[source,hcl]
+----
+resource "redpanda_cluster" "example" {
+  # ... other cluster arguments ...
+
+  zones = ["use2-az1", "use2-az2", "use2-az3"]  # Cross-region PrivateLink requires a multi-AZ cluster
+
+  aws_private_link = {
+    enabled            = true
+    connect_console    = true
+    allowed_principals = ["arn:aws:iam::123456789012:root"]
+    supported_regions  = ["us-east-1", "us-west-2", "eu-west-1"]
+  }
+}
+
+output "privatelink_service_name" {
+  value = redpanda_cluster.example.aws_private_link.status.service_name
+}
+----
+
+* `enabled`: Whether the Redpanda PrivateLink endpoint service is enabled.
+* `connect_console`: Whether Redpanda Console is connected over PrivateLink.
+* `allowed_principals`: The ARNs of the AWS principals allowed to access the endpoint service. To allow all principals, use an asterisk (`*`).
+* `supported_regions` (optional): The AWS regions from which clients can create PrivateLink endpoints that connect to the cluster.
+
+You can add or change the `aws_private_link` block on an existing cluster. Terraform updates the cluster in place without recreating it.
+
+After you apply the configuration, clients in the listed regions can create VPC endpoints that connect to the cluster's endpoint service, identified by the `service_name` output in the example. See xref:networking:aws-privatelink.adoc#create-a-cross-region-vpc-endpoint[Create a cross-region VPC endpoint] for the AWS CLI workflow, and xref:networking:aws-privatelink.adoc[] for the full PrivateLink setup, including client VPC configuration and connection testing.
+
 == Examples
 
 The following examples use the Redpanda Terraform provider to create and manage clusters. For descriptions of resources and data sources, see the https://registry.terraform.io/providers/redpanda-data/redpanda/latest/docs[Redpanda Terraform Provider documentation^].
@@ -358,7 +559,7 @@ terraform {
   required_providers {
     redpanda = {
       source  = "redpanda-data/redpanda"
-      version = "~> 1.0"
+      version = ">= 2.1.1"
     }
   }
 }
@@ -549,7 +750,7 @@ terraform {
   required_providers {
     redpanda = {
       source  = "redpanda-data/redpanda"
-      version = "~> 1.0"
+      version = ">= 2.1.1"
     }
   }
 }
@@ -630,13 +831,15 @@ resource "redpanda_cluster" "test" {
     enabled            = true
     connect_console    = true
     allowed_principals = ["arn:aws:iam::123456789024:root"]
-    supported_regions  = ["us-east-1", "us-west-2"]  # Optional: Enable cross-region PrivateLink
+    supported_regions  = ["us-east-1", "us-west-2"]  # Optional: Enable cross-region PrivateLink (requires a multi-AZ cluster)
   }
   tags = {
     "environment" = "dev"
   }
 }
 ----
+
+For details on the `aws_private_link` block, including the multi-AZ requirement for cross-region PrivateLink, see <<configure-cross-region-aws-privatelink>>.
 
 === Create a Serverless cluster
 
@@ -648,7 +851,7 @@ terraform {
   required_providers {
     redpanda = {
       source  = "redpanda-data/redpanda"
-      version = "~> 1.0"
+      version = ">= 2.1.1"
     }
   }
 }
