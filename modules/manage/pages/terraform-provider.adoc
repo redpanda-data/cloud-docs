@@ -130,8 +130,16 @@ lifecycle {
 }
 ----
 +
-This setting protects your cluster in the event Redpanda Support upgrades your cluster's throughput tier. Without it, the next `terraform apply` command triggers replacement.
+This setting protects your cluster when Redpanda migrates it to a different tier, for example after you request a xref:manage:maintenance.adoc#tier-migrations[tier migration]. Without it, the next `terraform apply` command triggers replacement.
 ====
+
+// TODO(DOC-1860, gated on ENG-928): When user scaling reaches GA, revise the
+// warning above. Self-service scaling replaces the support-mediated tier-change
+// framing, and the provider story needs eng confirmation: does the provider gain
+// scaling support (machine type and node count fields, or in-place
+// throughput_tier updates), or should customers scale through the UI/API and
+// keep the ignore_changes lifecycle block? Coordinate with DOC-1133 (Kat
+// Batuigas) for the API surface.
 
 == Prerequisites
 

@@ -1,0 +1,84 @@
+= Scale a BYOC Cluster
+:description: Scale a BYOC cluster up or down by changing its node count or machine type to match your workload.
+:page-topic-type: how-to
+:personas: platform_admin
+:learning-objective-1: Choose between horizontal and vertical scaling for a workload change
+:learning-objective-2: Scale a cluster up or down from the Redpanda Cloud UI
+:learning-objective-3: Explain what happens to your cluster and clients during a scaling operation
+
+// Draft for User Scaling GA (ENG-928, in development). The PR stays in
+// draft until GA ships; merge with the GA release. Before merge, resolve
+// the TODO(eng)/TODO(ux)/TODO(api) items against the shipped UI and
+// public API. Sources: ENG-928 epic, ENG-315 (LA epic). The API section
+// supports DOC-1133 (owned by Kat Batuigas - coordinate before editing).
+// Simon Lord's "User Scaling - beta internal notes" Confluence page is
+// restricted; request access to firm up the UI flow before GA.
+
+Scale a BYOC cluster up or down as your workload changes, without contacting Redpanda Support. You can add or remove glossterm:broker[,brokers] to absorb short-term changes in traffic, or change the machine type to right-size the cluster for a sustained change in throughput.
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
+
+== Choose a scaling method
+
+You can scale a cluster in two ways:
+
+[cols="1,2,2", options="header"]
+|===
+| Method | What changes | When to use it
+
+| Horizontal scaling
+| Adds or removes brokers of the current machine type. Completes in about 15 to 30 minutes.
+| Intraday changes in traffic, such as daily peaks or batch windows.
+
+| Vertical scaling
+| Changes the machine type that the cluster runs on. Redpanda decommissions the existing brokers and recommissions brokers of the new type, which takes a few hours.
+| Sustained changes in throughput on a timescale of days, such as scaling up for weekdays and down for weekends.
+|===
+
+// TODO(eng): DOC-1860 - confirm at GA (Simon Lord): (1) is the 24-node horizontal maximum a GA limit or a tested-so-far number, (2) availability and client impact during vertical scaling (partition movement, latency), (3) confirm scale-to-zero is out of scope (Aha comment flagged confusion between "user scaling" and "scale to zero").
+
+If you are not sure how much capacity your workload needs, describe your workload in the sizing calculator to get recommended configurations and price estimates. See xref:get-started:cluster-types/byoc/size-byoc-cluster.adoc[Size and price a BYOC cluster].
+
+// TODO(eng): DOC-1860 - Core is releasing a single load metric for judging whether a cluster is over- or under-provisioned, and PM wants it exposed to users (Denis Coady, Slack 2026-07-20; Piyush Agarwal owns exposure timing; may not be RPU-aware, check Tyson/Matt). When it ships, document it here as the signal for deciding when to scale. Related: DOC-1381 tracks the Self-Managed load factor dashboard.
+
+== Scale a cluster in the Cloud UI
+
+// TODO(ux): DOC-1860 - replace with the shipped UI flow at GA. The steps below are a placeholder drafted from the ENG-928 design intent (scaling UX integrates the sizing calculator so you scale in workload terms).
+
+. Log in to https://cloud.redpanda.com[Redpanda Cloud^] and open your cluster.
+. Open the cluster's settings and select the option to resize the cluster.
+. Describe your new workload requirements, or select a target configuration (machine type and broker count).
+. Review the price estimate for the new configuration, then confirm.
+. Monitor the scaling operation's progress from the cluster overview.
+
+== Scale a cluster with the Control Plane API
+
+// TODO(api): DOC-1133 (Kat Batuigas) - document the public API surface when it ships with GA. As of 2026-07-15, the public cluster.proto (v1beta2) has no scaling fields; ScaleCluster exists only in the internal admin API. Confirm whether GA ships a new scaling endpoint or new UpdateCluster fields, and add request/response examples from the published OpenAPI spec.
+
+== What happens during scaling
+
+// TODO(eng): DOC-1860 - verify this section with engineering at GA.
+
+During both horizontal and vertical scaling, your cluster continues to serve traffic and its endpoints do not change:
+
+* When scaling horizontally, Redpanda adds or removes brokers and rebalances glossterm:partition[] data and leadership across the resulting set of brokers.
+* When scaling vertically, Redpanda provisions brokers of the new machine type, moves partition data and leadership to them in a rolling fashion, then decommissions the original brokers.
+
+When Redpanda decommissions a broker, the broker's client connections restart, and all mainstream Kafka client libraries reconnect automatically.
+
+== Limits
+
+* You can scale horizontally up to 24 brokers.
+* Scaling applies to BYOC clusters only.
+
+// TODO(eng): DOC-1860 - confirm both limits at GA. (Per docs plan 2026-07-20, we assume scaling is not feature-gated at GA and is available to all BYOC clusters.)
+
+== Next steps
+
+* xref:get-started:cluster-types/byoc/size-byoc-cluster.adoc[Size and price a BYOC cluster]
+* xref:manage:maintenance.adoc#tier-migrations[Tier migrations]
+* xref:manage:monitor-cloud.adoc[Monitor your cluster]

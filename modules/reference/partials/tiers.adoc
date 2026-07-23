@@ -1,7 +1,13 @@
 ifdef::env-byoc[]
 == BYOC usage tiers
 
-When you create a BYOC cluster, you select your usage tier. Each tier provides tested workload configurations for maximum throughput, partitions, and connections. 
+When you create a BYOC cluster, you choose its capacity. If your organization uses usage-based billing, describe your workload and let Redpanda recommend a configuration, rather than choosing a tier directly. See xref:get-started:cluster-types/byoc/size-byoc-cluster.adoc[Size and Price a BYOC Cluster]. Otherwise, you select a usage tier. Each tier defines a tested workload configuration with maximum (up to) values for throughput, partitions, and connections.
+
+// TODO(pm): DOC-940/DOC-1861 - Denis Coady (Slack, 2026-07-20) says tiers are being phased out in favor of calculator-based sizing and customers shouldn't reason in tiers or RPUs. Asked on PR #642 whether docs should state a phase-out or keep "recommended" framing. Do not state a phase-out without official deprecation comms.
+
+Treat tier values as guidance rather than enforced caps. Redpanda does not throttle your workload at the advertised values. You can push one dimension beyond its advertised value, for example ingress throughput, by accepting trade-offs in other dimensions, such as egress capacity or latency.
+
+// TODO(eng): DOC-940 (Travis Downs sync) - confirm before publishing: (1) no dimension is throttled or otherwise enforced, (2) approved wording for exceeding advertised values, (3) tier table values are current. Tristan Stevens' June 2025 hold on DOC-940 must be confirmed lifted.
 
 |=== 
 | Tier | Ingress | Egress | Partitions (pre-replication) | Connections
@@ -23,9 +29,17 @@ When you create a BYOC cluster, you select your usage tier. Each tier provides t
 * On Azure, tiers 1-5 are supported.
 * Redpanda supports compute-optimized tiers with AWS Graviton3 processors.
 * Depending on the workload, it may not be possible to achieve all maximum values. For example, a high number of partitions may make it more difficult to reach the maximum value in throughput.
-* Connections are regulated per broker for best performance. For example, in a tier 1 cluster with 3 brokers, there could be up to 3,000 connections per broker. 
+* Connections are regulated per broker for best performance. For example, in a tier 1 cluster with 3 brokers, there could be up to 3,000 connections per broker.
 
 ====
+
+=== Machine types and RPUs
+
+Each tier maps to a machine type from your cloud provider, with capacity measured in Redpanda Processing Units (RPUs), the internal unit that workload-based sizing and usage-based pricing use. You don't need to reason in RPUs: describe your workload in the xref:get-started:cluster-types/byoc/size-byoc-cluster.adoc[sizing calculator], and Redpanda resolves the machine configuration for you.
+
+To see the machine type and RPU count for each tier, use the link:/api/doc/cloud-controlplane[Control Plane API^] (`GET /v1beta2/throughput-tiers`).
+
+// TODO(eng): DOC-940/DOC-1861 - verify the public tiers endpoint path in the published Control Plane API reference (GET /v1beta2/throughput-tiers vs /v1beta2/tiers) before publishing.
 
 == BYOC supported regions
 

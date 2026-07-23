@@ -1,0 +1,76 @@
+= Size and Price a BYOC Cluster
+:description: Get machine configurations and price estimates matched to your workload before you create a BYOC cluster.
+:page-topic-type: how-to
+:personas: platform_admin
+:learning-objective-1: Describe your workload to get recommended machine configurations with price estimates
+:learning-objective-2: Compare sizing options by RPU rate, machine type, and node count
+:learning-objective-3: Request sizing estimates programmatically with the Control Plane API
+
+When you create a BYOC cluster, size it from your workload requirements instead of translating them into Redpanda tier terminology. Describe your workload, such as throughput, glossterm:partition[,partitions], and retention, and Redpanda recommends machine configurations with itemized price estimates. Workload-based sizing is the recommended way to size a cluster: it applies the same logic Redpanda's performance team uses, and it stays accurate as performance improvements change what a given configuration can handle.
+
+After reading this page, you will be able to:
+
+* [ ] {learning-objective-1}
+* [ ] {learning-objective-2}
+* [ ] {learning-objective-3}
+
+[NOTE]
+====
+Sizing options appear only for organizations on usage-based billing. If you don't see them when you create a BYOC cluster, contact your Redpanda account team.
+====
+// TODO(pm): DOC-1861 - confirm rollout state of the `enableSizingCalculator` feature flag with Julin/Denis: is it enabled for all usage-based-billing orgs in production? Also confirm what annual-commit (non-UBB) customers see, and adjust the note above.
+
+== How sizing works
+
+You can size a cluster in two ways:
+
+* *Describe your workload.* Provide workload parameters, such as partition count, ingress and egress throughput, retention, average message size, replication factor, producer count, and target latency. You can also indicate whether you plan to use cloud topics or Iceberg topics. Redpanda resolves the compute capacity your workload needs and recommends machine configurations that provide it.
+* *Specify capacity directly.* Provide a rate of Redpanda Processing Units (RPUs), from 1 to 384. One RPU represents two vCPUs of glossterm:broker[] compute. Redpanda resolves the machine configurations that deliver that capacity. Use this mode only if you already know the capacity you need; describing your workload is the recommended path.
+
+Both ways return a ranked list of viable machine configurations. Each option includes the machine type, node count, RPU rate, and the xref:reference:tiers/byoc-tiers.adoc[usage tier] it maps to, along with an itemized price estimate covering compute, ingress, egress, storage, and Iceberg, with hourly and monthly totals.
+
+Price estimates use your organization's rate card.
+
+// TODO(eng): DOC-1861 - confirm how to describe estimates vs billed amounts (estimates are based on the org rate card, but actual billing depends on measured usage).
+
+== Size a cluster in the Cloud UI
+
+. Log in to https://cloud.redpanda.com[Redpanda Cloud^].
+. On the Clusters page, click *Create cluster*, then click *Create* for BYOC.
+. In the cluster settings step, describe your workload or enter an RPU rate, then compare the recommended configurations and price estimates.
+. Select a configuration and continue with the create flow for your cloud provider. See xref:get-started:cluster-types/byoc/aws/create-byoc-cluster-aws.adoc[AWS], xref:get-started:cluster-types/byoc/gcp/create-byoc-cluster-gcp.adoc[GCP], or xref:get-started:cluster-types/byoc/azure/create-byoc-cluster-azure.adoc[Azure].
+
+// TODO(ux): DOC-1861 - verify the exact field names and step order against the production create flow before publishing, and capture screenshots if the docs team wants them.
+
+== Size a cluster with the Control Plane API
+
+To script sizing estimates, send a `POST` request to the `/v1beta2/sizing` endpoint of the link:/api/doc/cloud-controlplane[Control Plane API^]. Include your cloud provider, region, availability zone configuration, cluster type, and either a workload description or an RPU rate. The request requires the `read:organization-info` permission.
+
+// TODO(api): DOC-1861 - verify that /v1beta2/sizing appears in the published Control Plane API reference, and replace this example with the exact request and response field names from the published OpenAPI spec. The field names below are drafted from sizing.proto and are unverified.
+
+[source,bash]
+----
+curl -X POST "https://api.redpanda.com/v1beta2/sizing" \
+  -H "Authorization: Bearer $AUTH_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "cloud_provider": "CLOUD_PROVIDER_AWS",
+    "region": "us-east-1",
+    "cluster_type": "TYPE_BYOC",
+    "workload": {
+      "partition_count": 5000,
+      "ingress_mbps": 100,
+      "egress_mbps": 200,
+      "retention_days": 7,
+      "average_message_size_bytes": 1024,
+      "replication_factor": 3
+    }
+  }'
+----
+
+The response contains the resolved RPU rate and a ranked list of machine configurations, each with an itemized price breakdown.
+
+== Next steps
+
+* xref:get-started:cluster-types/byoc/index.adoc[Create a BYOC cluster]
+* xref:reference:tiers/byoc-tiers.adoc[BYOC tiers and regions]
